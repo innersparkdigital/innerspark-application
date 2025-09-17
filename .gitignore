@@ -2,6 +2,15 @@
 #
 .DS_Store
 
+# dev_artifacts
+# 
+/dev_artifacts
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Xcode
 #
 build/
