@@ -33,6 +33,8 @@ import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import RNOtpVerify from 'react-native-otp-verify';
 import { storeItemLS } from '../../global/StorageActions';
+import { maskEmail, maskPhoneNumber } from '../../global/LHShortcuts';
+import { isEmailLoginType } from '../../global/LHValidators';
 
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore 'Log Notification Error by RNElement Timer
 // LogBox.ignoreAllLogs(); // Ignore all log notifications
@@ -95,7 +97,7 @@ export default function SigninOTPScreen( { navigation, route } ){
     
       } catch(error) {
          console.log('An error occured...');
-         console.log(error.message);
+         // console.log(error.message);
          //setRestartListener(true);
          restartSMSListener ? setRestartSMSListener(false) : setRestartSMSListener(true);
       }
@@ -144,11 +146,18 @@ export default function SigninOTPScreen( { navigation, route } ){
         // making a request to the API
         try {
 
-            const response = await axios.post( `${baseUrl}/auth/login`, {
-                email: loginData.email,
-                password: loginData.password,
-                phone: loginData.phone,
-            });
+            let response;
+            if (isEmailLoginType(loginData.type)) {
+                response = await axios.post(`${baseUrl}/auth/login`, {
+                    email: loginData.email,
+                    password: loginData.password,
+                });
+            } else {
+                response = await axios.post(`${baseUrl}/auth/login`, {
+                    phone: loginData.phone,
+                    password: loginData.password,
+                });
+            }
             
             // checking the status
             if (response.status === 200) {
@@ -157,25 +166,25 @@ export default function SigninOTPScreen( { navigation, route } ){
                 if (response.data.status == "success"){
 
                     // console.log(response.data);
-                    notifyWithToast("Your OTP has been sent!"); // Notify Resend
+                    notifyWithToast("OTP sent successfully!"); // Notify Resend
                     setIsReloadingOTP(false);
 
                 } else {
                     // console.log(response.data); // what happened
-                    notifyWithToast("An error occurred."); // Notify
+                    notifyWithToast("Something went wrong."); // Notify
                     setIsReloadingOTP(false);
                   
                 }
 
             } else {
 
-                throw new Error("Oops! an error has occurred!");
+                throw new Error("Oops! Something went wrong!");
 
             }
 
         } catch (error) {
             // console.log(error.message);
-            notifyWithToast("Oops? There's been an error!"); // Notify with Toasts
+            notifyWithToast("Oops? Something went wrong!"); // Notify with Toasts
             setIsReloadingOTP(false);
         }
 
@@ -214,7 +223,21 @@ export default function SigninOTPScreen( { navigation, route } ){
         // making API request to verify OTP Code
             try {
 
-            const response = await axios.post(`${baseUrl}/auth/verify-otp`, { "otp" : OTP_Code });
+                let response;
+                if (isEmailLoginType(loginData.type)) {
+                    response = await axios.post(`${baseUrl}/auth/verify-email`, {
+                        email: loginData.email,
+                        otpcode: OTP_Code,
+                    });
+                } else {
+                    response = await axios.post(`${baseUrl}/auth/verify-phone`, {
+                        phone: loginData.phone,
+                        otpcode: OTP_Code,
+                    });
+                }
+
+            // const response = await axios.post(`${baseUrl}/auth/verify-otp`, { "otp" : OTP_Code });
+
 
             // checking the status
             if (response.status === 200) {
@@ -227,59 +250,70 @@ export default function SigninOTPScreen( { navigation, route } ){
                     // Store Insider User token data
                     // get it from the response after OTP Verification
                     setUserTokenData({
-                        userId: response.data.userid,
-                        name: response.data.name,
-                        email: response.data.email,
-                        phone: response.data.phone,
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
+                        
                     });
 
                     // Set User Details Object 
                     setUserDetails({
-                        userId: response.data.userid,
-                        name: response.data.name,
-                        email: response.data.email,
-                        phone: response.data.phone,
-                        image: response.data.image, // default '' or null
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
                     });
 
                     // Dispatch update user dettails
                     dispatch(updateUserDetails({
-                        userId: response.data.userid,
-                        name: response.data.name,
-                        email: response.data.email,
-                        phone: response.data.phone,
-                        image: response.data.image, // default '' or null
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
 
                     })); 
                     
                     // store user login data
                     storeItemLS("userDetailsLS", { 
-                        userId: response.data.userid,
-                        name: response.data.name,
-                        email: response.data.email,
-                        phone: response.data.phone,
-                        image: response.data.image, // default '' or null
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
                     });
 
+                    // ### Implement Later -- When Endpoint Available - #KNEXT
                     // Run the getAppHomeData to get the user's app home data
-                    getAppHomeData({ dispatch:dispatch, userID:response.data.userid, loadingSetter:setIsLoadingAppData });
-                    setIsLogedInModalVisible(true); // Show the Logged In Success Modal
+                    // getAppHomeData({ dispatch:dispatch, userID:response.data.user.user_id, loadingSetter:setIsLoadingAppData });
+                    setIsLoggedInModalVisible(true); // Show the Logged In Success Modal
                     setIsLoading(false); // Toggle Loading State
                     
                 } else {
-                    notifyWithToast(response.data.message); // Notify with toasts
+                    notifyWithToast(response?.data?.message); // Notify with toasts
                     setIsLoading(false); // Toggle Loading State
                 }
 
             } else {
 
-                throw new Error("Oops! an error has occurred!");
+                throw new Error("Oops! something went wrong!");
 
                 }
 
             } catch (error) {
                 console.log(error.message);
-                notifyWithToast("Oops, An error occurred!");  // Notify with toasts
+                notifyWithToast("Oops, something went wrong!");  // Notify with toasts
                 setIsLoading(false); // Toggle Loading State
             }
     
@@ -310,9 +344,10 @@ export default function SigninOTPScreen( { navigation, route } ){
                   
                         {/* OTP Header */}
                         <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:10 }}>
-                            <Text style={{ fontSize:26, color:appColors.AppBlue, fontWeight:'bold', paddingVertical:5 }}>Verify OTP</Text>
+                            <Text style={{ fontSize:26, color:appColors.AppBlue, fontWeight:'bold', paddingVertical:5 }}>Verify {isEmailLoginType(loginData.type) ? "Email" : "Phone"}</Text>
                            <Text style={{ fontSize:14, color:appColors.AppBlue, fontWeight:'400', paddingVertical:5, textAlign:'center' }}>
-                                Enter the code sent to your phone/email to continue.
+                                Enter the code sent to your {isEmailLoginType(loginData.type) ? "email " : "phone "} 
+                                {isEmailLoginType(loginData.type) ? maskEmail(loginData.email) : maskPhoneNumber(loginData.phone)} to continue.
                            </Text>
                         </View>
 

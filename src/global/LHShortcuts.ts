@@ -11,7 +11,7 @@ import { isValidPhoneNumber, isValidEmailAddress } from './LHValidators';
 
 
  // Toast Notifications 
-export const notifyWithToast = (toast, description, placement="bottom", duration=1000) => {
+export const notifyWithToast = (toast: any, description: string, placement="bottom", duration=1000) => {
     toast.show({ 
       description: description,
       placement: placement,
@@ -26,8 +26,18 @@ export const notifyWithToast = (toast, description, placement="bottom", duration
  * @param {string} fullName - The user fullname that will be split
  * @returns {string} - The First name string is returned
  */
-export const getFirstName = (fullName) => {
+export const getFirstName = ( fullName: string) => {
    return fullName.split(' ')[0];
+}
+
+/**
+ * Returns Fullname, by concantenating Firstname and Lastname
+ * @param {string} firstName - The user firstname
+ * @param {string} lastName - The user lastname
+ * @returns {string} - The Fullname string is returned
+ */
+export const getFullname = (firstName: string, lastName: string) => {
+   return `${firstName} ${lastName}`;
 }
 
 
@@ -60,7 +70,7 @@ export const getGreeting = () => {
   * @returns Return the day of the week
   * 
   */
- export const getDayOfWeek = (date) => {
+ export const getDayOfWeek = (date: string) => {
     const dayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const newDate = new Date(date);
     const day = dayOfWeek[newDate.getDay()];
@@ -76,7 +86,7 @@ export const getGreeting = () => {
  * Example: pluralizeThis(1) // Returns: ""
  * Example: pluralizeThis(2) // Returns: "s"    
  */
-export const pluralizeThis = (count) => {
+export const pluralizeThis = (count: number) => {
     if(Number(count)) {
         if(Number(count) > 1) {
             return "s";
@@ -114,7 +124,7 @@ export const pluralizeThis = (count) => {
   * @param phoneNumber The phone number whose operator is to be determined
   * @returns Return operator as a string. [MTN, ATL, VODAFONE, AIRTEL, OTHER]
   */
-export const getPhoneNumberOperator = (phoneNumber) => {
+export const getPhoneNumberOperator = (phoneNumber: string) => {
     // Check if the number starts with "+256" (Uganda country code)
     if (phoneNumber.startsWith("+256")) {
         // Extract the next two digits after the country code
@@ -152,7 +162,7 @@ export const getPhoneNumberOperator = (phoneNumber) => {
  * 
  * Example: maskPhoneNumber('+12345678901') // Returns: "*******8901"
  */
-export const maskPhoneNumber = (phone) => {
+export const maskPhoneNumber = (phone: string) => {
     // Get the last four digits of the phone number using slice
     const lastFourDigits = phone.slice(-4);
     
@@ -175,7 +185,7 @@ export const maskPhoneNumber = (phone) => {
    * 
    * Example: maskEmail('johndoe@example.com') // Returns: "j*****e@example.com"
    */
-  export const maskEmail = (email) => {
+  export const maskEmail = (email: string) => {
     // Split the email into two parts: the username and domain using the '@' symbol
     const [username, domain] = email.split('@');
     
@@ -204,7 +214,7 @@ export const maskPhoneNumber = (phone) => {
    * 
    * Example: normalizePhone('0123456789', '+256') // Returns: '+256123456789'
    */
-  export const normalizePhone = (phone, callingCode) => { 
+  export const normalizePhone = (phone:string, callingCode:string) => { 
     let normalizedPhone = '';
   
     // Check if the phone number is valid using isValidPhoneNumber function
@@ -230,7 +240,7 @@ export const maskPhoneNumber = (phone) => {
  * @param {object} user - The user object to be appended to the form data.
  * @returns {FormData} - The final form data object.
  */
-export const createFormData = (photo, user) => {
+export const createFormData = (photo: any, user: any) => {
 
     const data = new FormData();
 

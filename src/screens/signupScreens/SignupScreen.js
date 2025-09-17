@@ -31,7 +31,6 @@ import {
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 
-import Config from 'react-native-config';
 
 const baseUrl = baseUrlRoot + baseUrlV1; // Base URL for API requests
 APIGlobaltHeaders(); // API Global headers
@@ -117,14 +116,6 @@ export default function SignupScreen({navigation}){
             duration: 1000,
         })
     }
-
-
-    // Test if env variables are being loaded
-    useEffect(() => {
-        console.log("API Base URL: ", Config.API_BASE_URL);
-        console.log("API Version: ", Config.API_VERSION);
-        console.log("API Auth Token: ", Config.AUTH_TOKEN);
-    }, []);
 
 
     /*

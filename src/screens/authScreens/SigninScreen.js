@@ -40,7 +40,7 @@ export default function SigninScreen({navigation}){
     const [isLoading, setIsLoading] = useState(false);
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [username, setUsername] = useState("");
+    const [username, setUsername] = useState(""); // represents email or phone number
     const [isFeatureModalVisible, setIsFeatureModalVisible] = useState(false); 
     // const [userToken, setUserToken] = useState(null); // do we need this ?
 
@@ -66,12 +66,12 @@ export default function SigninScreen({navigation}){
     /* Validate Signin Inputs */
     const validateSigninInputs = () => {
         // validate email or phone number
-        if (!isValidEmailOrPhone(username)) {
+        if (!isValidEmailOrPhone(username.trim())) {
             notifyWithToast("Enter a valid email or phone number.");
             return false;
         }
         // validate password
-        if (password.length < 3) {
+        if (password.trim().length < 3) {
             notifyWithToast("Enter a valid password.");
             return false;
         }
@@ -97,12 +97,10 @@ export default function SigninScreen({navigation}){
         if (isValidEmailOrPhone(username)) {
            // check if provided username is email otherwise phone
            if (isValidEmailAddress(username)) {
-              // login with email
-              userLoginWithEmailHandler();
+              userLoginWithEmailHandler();  // login with email
 
            } else if (isValidPhoneNumber(username)) {
-              // login with phone
-              userLoginWithPhoneHandler();
+              userLoginWithPhoneHandler(); // login with phone
 
            }
         }
@@ -121,10 +119,13 @@ export default function SigninScreen({navigation}){
             
             let trimmedEmail = username.toLocaleLowerCase().trim(); // trimmed email or username
             let trimmedPassword = password.trim(); // trimmed Password
+
+            console.log("Email: ", trimmedEmail);
+            console.log("Password: ", trimmedPassword);
+           
             const response = await axios.post( `${baseUrl}/auth/login`, {
-                phone: '',
-                password: trimmedPassword,
                 email: trimmedEmail,
+                password: trimmedPassword,
             });
             
             // checking the status
@@ -132,7 +133,7 @@ export default function SigninScreen({navigation}){
 
                 // IF status is successful
                 // JSON.stringify(response.data)
-                if (response.data.status == "success"){
+                if (response.data.status === "success"){
 
                     console.log(response.data); // just for debugging
                     
@@ -140,11 +141,10 @@ export default function SigninScreen({navigation}){
                     navigation.navigate(
                         'SigninOTPScreen', 
                         { 
-                            userId: response.data.userid,
+                            userId: response.data.user.user_id,
                             loginData: {
                                 type: 'email',
                                 email: trimmedEmail,
-                                phone: '',
                                 password: trimmedPassword 
                             } 
                         }
@@ -157,20 +157,19 @@ export default function SigninScreen({navigation}){
                     console.log(response.data); // what happened
                     notifyWithToast("Email or Password is incorrect!"); // Notify
                     setIsLoading(false);
-                    // reset sensitive fields
-                    setPassword('');
+                    setPassword(''); // reset sensitive fields
                 }
 
             } else {
 
-                throw new Error("Oops! an error has occurred!");
+                throw new Error("Whoops! Something went wrong.");
 
             }
 
 
         } catch (error) {
             console.log(error.message);
-            notifyWithToast("Oops? There's been an error!"); // Notify with Toasts
+            notifyWithToast("Whoops! Something went wrong."); // Notify with Toasts
             setIsLoading(false);
         }
 
@@ -197,7 +196,6 @@ export default function SigninScreen({navigation}){
             const response = await axios.post( `${baseUrl}/auth/login`, {
                 phone: normalizedPhone,
                 password: trimmedPassword,
-                email: '',
             });
             
             // checking the status
@@ -205,17 +203,16 @@ export default function SigninScreen({navigation}){
 
                 // IF status is successful
                 // JSON.stringify(response.data)
-                if (response.data.status == "success"){
+                if (response.data.status === "success"){
 
                     console.log(response.data);
                     // redirect to OTP Screen
                     navigation.navigate(
                         'SigninOTPScreen', 
                         { 
-                            userId: response.data.userid,
+                            userId: response.data.user.user_id,
                             loginData: {
                                 type: 'phone',
-                                email: '',
                                 phone: normalizedPhone,
                                 password: trimmedPassword 
                             }  
@@ -229,8 +226,7 @@ export default function SigninScreen({navigation}){
                     console.log(response.data); // what happened
                     setIsLoading(false);
                     notifyWithToast("Phone or Password is incorrect!"); // Notify
-                    // reset sensitive fields   
-                    setPassword('');
+                    setPassword(''); // reset sensitive fields
                 }
 
             } else {
@@ -336,12 +332,12 @@ export default function SigninScreen({navigation}){
                                         () => {
                                             
                                             // testing the feature modal
-                                            setIsFeatureModalVisible(true);
+                                            // setIsFeatureModalVisible(true);
 
                                             // the username and password are global variables
-                                            // smartLoginSelect(); 
+                                            smartLoginSelect(); 
+                                            
                                             // Just temporary fix
-
                                             // dispatch user token to the signin action
                                             
                                             /*
