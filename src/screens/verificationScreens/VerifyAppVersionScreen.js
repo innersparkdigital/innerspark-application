@@ -43,8 +43,8 @@ const OpenURLButton = ({ url, title, children }) => {
     return (
         <Button 
             title={title} 
-            buttonStyle={ parameters.appButtonXL }
-            titleStyle={ parameters.appButtonXLTitle } 
+            buttonStyle={ parameters.appButtonXLBlue }
+            titleStyle={ parameters.appButtonXLBlueTitle } 
             onPress={handlePress}  
     />);
 
@@ -56,8 +56,8 @@ export default function VerifyAppVersionScreen({navigation}){
     const dispatch = useDispatch();
 
     // default update url
-    // const [updateURL, setUpdateURL] = useState("https://play.google.com/store/apps/details?id=com.innersparkafrica.innerspark");
-    const [updateURL, setUpdateURL] = useState("https://play.google.com/store/apps/");
+    const [updateURL, setUpdateURL] = useState("https://play.google.com/store/apps/details?id=com.innersparkafrica.innerspark");
+    //const [updateURL, setUpdateURL] = useState("https://play.google.com/store/apps/");
     //const [updateURL, setUpdateURL] = useState("#");
 
     // the function running the whole thing
@@ -110,6 +110,7 @@ export default function VerifyAppVersionScreen({navigation}){
                     >
                         <Text style={{ color:appColors.grey2, fontSize:15,fontWeight:'bold' }}>Not Now</Text>
                     </Pressable>
+
                 </View> 
            </ImageBackground>
         </SafeAreaView>

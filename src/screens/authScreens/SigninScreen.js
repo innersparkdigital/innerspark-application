@@ -1,7 +1,9 @@
 import axios from 'axios';
-import React, { useState, useRef } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { signin } from '../../features/user/userSlice'
+import React, { useState, useRef, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { signin } from '../../features/user/userSlice';
+import { updateUserAvatar, updateUserDetails } from '../../features/user/userDataSlice';
+import { getAppHomeData } from '../../api/LHFunctions';
 import { 
     View, 
     Text, 
@@ -15,19 +17,21 @@ import {
     ActivityIndicator,
     Pressable,
 
-} from 'react-native'
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { appColors, parameters } from '../../global/Styles'
-import { Button, Icon} from '@rneui/base'
+import { appColors, parameters } from '../../global/Styles';
+import { Button, Icon} from '@rneui/base';
 import { useToast } from 'native-base';
 import { storeItemLS } from '../../global/StorageActions';
 import { appImages } from '../../global/Data';
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
-import { isValidEmailAddress, isValidPhoneNumber, isValidEmailOrPhone } from '../../global/LHValidators'
+import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
+import { isValidEmailAddress, isValidPhoneNumber, isValidEmailOrPhone } from '../../global/LHValidators';
 import { normalizePhone } from '../../global/LHShortcuts';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
+import { isEmailVerified, isPhoneVerified } from '../../global/LHValidators';
 
 
 const baseUrl = baseUrlRoot + baseUrlV1; // Base URL for API requests
@@ -43,14 +47,21 @@ export default function SigninScreen({navigation}){
     const [username, setUsername] = useState(""); // represents email or phone number
     const [isFeatureModalVisible, setIsFeatureModalVisible] = useState(false); 
     // const [userToken, setUserToken] = useState(null); // do we need this ?
+    const [isLoadingAppData, setIsLoadingAppData] = useState(false); // Toggles App Home Data Loading states
+    const [loginPayload, setLoginPayload] = useState(null); // user login payload data
 
+    const [isLoggedInModalVisible, setIsLoggedInModalVisible] = useState(false); // Login Success Modal
+    const [userTokenData, setUserTokenData] = useState(null);  // user token data
+    const [userDetails, setUserDetails] = useState(null); // user details
+
+    // country calling code
     const countryCodes = { 'ug' : '+256' }; // country calling code
 
     // Toast Notifications
     const notifyWithToast = (description) => {
         toast.show({
             description: description,
-            duration: 2000,
+            duration: 1000,
         })
     }
 
@@ -85,24 +96,22 @@ export default function SigninScreen({navigation}){
      * @returns {void}
     */
     const smartLoginSelect = async (event) => {
-
         // validate inputs
         if (!validateSigninInputs()) {
             return;
         }   
 
-        setIsLoading(true);  // set loading state
-
         // select the login method based on the username (email or password)
         if (isValidEmailOrPhone(username)) {
            // check if provided username is email otherwise phone
            if (isValidEmailAddress(username)) {
-              userLoginWithEmailHandler();  // login with email
-
+              userLoginWithEmailHandler(); // login with email
            } else if (isValidPhoneNumber(username)) {
               userLoginWithPhoneHandler(); // login with phone
-
            }
+        } else {
+            notifyWithToast("Enter a valid email or phone number.");
+            return;
         }
           
     }
@@ -113,15 +122,14 @@ export default function SigninScreen({navigation}){
      * @returns {void}
     */
     const userLoginWithEmailHandler = async (event) => {
+
+        setIsLoading(true); // set loading state
             
         // making a request to the API to login with email
         try {
             
             let trimmedEmail = username.toLocaleLowerCase().trim(); // trimmed email or username
             let trimmedPassword = password.trim(); // trimmed Password
-
-            console.log("Email: ", trimmedEmail);
-            console.log("Password: ", trimmedPassword);
            
             const response = await axios.post( `${baseUrl}/auth/login`, {
                 email: trimmedEmail,
@@ -132,34 +140,112 @@ export default function SigninScreen({navigation}){
             if (response.status === 200) {
 
                 // IF status is successful
-                // JSON.stringify(response.data)
                 if (response.data.status === "success"){
-
                     console.log(response.data); // just for debugging
-                    
-                    // redirect to OTP Screen
-                    navigation.navigate(
-                        'SigninOTPScreen', 
-                        { 
-                            userId: response.data.user.user_id,
-                            loginData: {
-                                type: 'email',
-                                email: trimmedEmail,
-                                password: trimmedPassword 
-                            } 
-                        }
-                    );
 
-                    setIsLoading(false);
+                    // Prepare the login payload data
+                    setLoginPayload({
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
+                        phone_verified: response.data.user.phone_verified,
+                    });
+
+                    // redirect to OTP Verification Screen if email is not verified 
+                    if (response.data.user.email_verified === 0) {
+                        navigation.navigate(
+                            'SigninOTPScreen', 
+                            { 
+                                userId: response.data.user.user_id,
+                                loginData: {
+                                    type: 'email',
+                                    email: trimmedEmail,
+                                    password: trimmedPassword 
+                                }, 
+                                loginPayload: loginPayload
+                            }
+                        );
+
+                    } else {
+
+                        // Store Insider User token data
+                        // get it from the response
+                        setUserTokenData({
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                            
+                        });
+
+                        // Set User Details Object 
+                        setUserDetails({
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                        });
+    
+                        // Dispatch update user dettails
+                        dispatch(updateUserDetails({
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                        })); 
+                        
+                        // store user login data
+                        storeItemLS("userDetailsLS", { 
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                        });
+
+                        // ### Implement Later -- When Endpoint Available - #KNEXT
+                        // Run the getAppHomeData to get the user's app home data
+                        // getAppHomeData({ dispatch:dispatch, userID:response.data.user.user_id, loadingSetter:setIsLoadingAppData });
+                       
+                        setIsLoggedInModalVisible(true); // Show the Logged In Success Modal
+                       
+                    }
+
+                    setIsLoading(false); // Toggle Loading State
                     setPassword(''); // reset password
 
                 } else {
-                    console.log(response.data); // what happened
+                    console.log(response.data); // what happened?
                     notifyWithToast("Email or Password is incorrect!"); // Notify
                     setIsLoading(false);
                     setPassword(''); // reset sensitive fields
                 }
 
+            } else if (response.status === 400) {
+                console.log(response.data); // what happened?
+                notifyWithToast("Email or Password is incorrect!"); // Email or Password is incorrect!
+                setIsLoading(false);
+                setPassword(''); // reset sensitive fields
+                
             } else {
 
                 throw new Error("Whoops! Something went wrong.");
@@ -169,8 +255,9 @@ export default function SigninScreen({navigation}){
 
         } catch (error) {
             console.log(error.message);
-            notifyWithToast("Whoops! Something went wrong."); // Notify with Toasts
+            notifyWithToast("Login failed. Check details and try again."); // Notify with Toasts
             setIsLoading(false);
+            setPassword(''); // reset sensitive fields
         }
 
     }
@@ -184,7 +271,9 @@ export default function SigninScreen({navigation}){
      * @returns {void}
      */
     const userLoginWithPhoneHandler = async (event) => {
-        
+
+        setIsLoading(true); // set loading state
+
         // making a request to the API to login with phone number
         try {
             
@@ -202,24 +291,108 @@ export default function SigninScreen({navigation}){
             if (response.status === 200) {
 
                 // IF status is successful
-                // JSON.stringify(response.data)
                 if (response.data.status === "success"){
 
-                    console.log(response.data);
-                    // redirect to OTP Screen
-                    navigation.navigate(
-                        'SigninOTPScreen', 
-                        { 
-                            userId: response.data.user.user_id,
-                            loginData: {
-                                type: 'phone',
-                                phone: normalizedPhone,
-                                password: trimmedPassword 
-                            }  
-                        }
-                    );
+                    console.log(response.data); // log response data
 
-                    setIsLoading(false);
+                     // Prepare the login payload data
+                     setLoginPayload({
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
+                        phone_verified: response.data.user.phone_verified,
+                    });
+
+
+                    // redirect to OTP Screen if phone is not verified
+                    if (response.data.user.phone_verified === 0) {
+                        navigation.navigate(
+                            'SigninOTPScreen', 
+                            { 
+                                userId: response.data.user.user_id,
+                                loginData: {
+                                    type: 'phone',
+                                    phone: normalizedPhone,
+                                    password: trimmedPassword 
+                                },
+                                loginPayload: {
+                                    userId: response.data.user.user_id,
+                                    firstName: response.data.user.firstName,
+                                    lastName: response.data.user.lastName,
+                                    email: response.data.user.email,
+                                    phone: response.data.user.phoneNumber,
+                                    role: response.data.user.role,
+                                    email_verified: response.data.user.email_verified,
+                                    phone_verified: response.data.user.phone_verified,
+                                } 
+                            }
+                        );
+
+                    } else {
+                        
+                        // Store Insider User token data
+                        // get it from the response
+                        setUserTokenData({
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                            
+                        });
+
+                        // Set User Details Object 
+                        setUserDetails({
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                        });
+    
+                        // Dispatch update user dettails
+                        dispatch(updateUserDetails({
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                        })); 
+                        
+                        // store user login data
+                        storeItemLS("userDetailsLS", { 
+                            userId: response.data.user.user_id,
+                            firstName: response.data.user.firstName,
+                            lastName: response.data.user.lastName,
+                            email: response.data.user.email,
+                            phone: response.data.user.phoneNumber,
+                            role: response.data.user.role,
+                            email_verified: response.data.user.email_verified,
+                            phone_verified: response.data.user.phone_verified,
+                        });
+
+                        // ### Implement Later -- When Endpoint Available - #KNEXT
+                        // Run the getAppHomeData to get the user's app home data
+                        // getAppHomeData({ dispatch:dispatch, userID:response.data.user.user_id, loadingSetter:setIsLoadingAppData });
+                       
+                        setIsLoggedInModalVisible(true); // Show the Logged In Success Modal
+
+                    }
+
+                    setIsLoading(false); // Toggle Loading State
                     setPassword(''); // reset password
 
                 } else {
@@ -239,7 +412,8 @@ export default function SigninScreen({navigation}){
         } catch (error) {
             console.log(error.message);
             setIsLoading(false); // set loading state
-            notifyWithToast("Oops! We encountered an error!"); // Notify with Toasts
+            notifyWithToast("Login failed. Check details and try again."); // Notify with Toasts
+            setPassword(''); // reset sensitive fields
         }
 
     }
@@ -273,7 +447,6 @@ export default function SigninScreen({navigation}){
                         </View>
 
                         <View style={{ paddingHorizontal:10 }}>
-
                             {/* Email, Phone Input Block */}
                             <View style={ styles.inputBlockRow }>
                                 <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
@@ -330,42 +503,15 @@ export default function SigninScreen({navigation}){
                                     titleStyle={ parameters.appButtonXLTitleBlue } 
                                     onPress={ 
                                         () => {
-                                            
                                             // testing the feature modal
                                             // setIsFeatureModalVisible(true);
 
-                                            // the username and password are global variables
+                                            // Select Login Method (Email or Phone)
                                             smartLoginSelect(); 
-                                            
-                                            // Just temporary fix
-                                            // dispatch user token to the signin action
-                                            
-                                            /*
-                                            storeItemLS(
-                                                "userToken", 
-                                                {
-                                                    userId: "123456",
-                                                    name: "Alphonse J",
-                                                    email: "alphonse@juakaly.com",
-                                                    phone: "+256700000000",
-                                                }
-                                            ); 
-                                            */
-
-                                            /*
-                                            dispatch(signin({
-                                                userId: "123456",
-                                                name: "Alphonse J",
-                                                email: "alphonse@juakaly.com",
-                                                phone: "+256700000000",
-                                            }));
-                                            */
-
                                         } 
                                     }
                                 /> 
                             </View>
-
                         </View>
                     
                         {/* Forgot Password Section */}
@@ -400,7 +546,6 @@ export default function SigninScreen({navigation}){
                             > Sign up</Text>
                         </View>
 
-
                         {/* Terms of Service - with separate links */}
                         {/* <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:15 }}>
                             <Text style={{ color:appColors.grey3, fontSize:12, textAlign:'center' }}>
@@ -420,13 +565,30 @@ export default function SigninScreen({navigation}){
                     </View>
                 </ScrollView>
 
-                {/** Generic Feature Modal */}
+                {/* Generic Feature Modal */}
                 <LHGenericFeatureModal 
                     isModVisible={ isFeatureModalVisible } 
                     visibilitySetter={setIsFeatureModalVisible} 
                     isDismissable={true}
                     title="Stay Tuned"
                     description="This feature is in progress. Check back soon."
+                />
+
+                {/* Login Success Modal */}
+                <LHLoginSuccessModal 
+                    isModVisible={isLoggedInModalVisible} 
+                    isLoading={isLoadingAppData}
+                    title="Welcome aboard!"
+                    description="You’re all set!"
+                    loadingText="Please wait, getting ready..."
+                    buttonTitle="Continue"
+                    onPressAction={ 
+                        () => { 
+                            storeItemLS("userToken", userTokenData); // Local Session to keep user loggedin
+                            dispatch(signin(userTokenData)); // Dispatch user token to the signin action
+                            setIsLoggedInModalVisible(false); // Close the success modal
+                        } 
+                    }
                 />
 
                 {/* Loader Modal */}

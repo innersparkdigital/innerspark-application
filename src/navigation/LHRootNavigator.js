@@ -84,6 +84,7 @@ export default function LHRootNavigator() {
     }, []);
 
 
+    /*
     
     // Checking the App Intro Slider Status
     useEffect(
@@ -110,7 +111,7 @@ export default function LHRootNavigator() {
 
     }, []);
 
-
+    */
 
     /*
         // Load splashscreen while fetching the token from local storage
@@ -121,6 +122,7 @@ export default function LHRootNavigator() {
     */
 
 
+        /*
         // checking if a new app version is available
         useEffect( 
             () => {
@@ -147,6 +149,8 @@ export default function LHRootNavigator() {
             }, []
         );
 
+        */
+       
 
         // Load splashscreen while fetching the token from local storage
         if (user.isLoading) {
@@ -169,15 +173,13 @@ export default function LHRootNavigator() {
     // check user token
     return(
         <NavigationContainer>
-            {/* { 
+            { 
                 appNeedsUpdate && <UpdateAppNavigator /> 
                     || 
                 user.userToken == null && <LHAuthNavigator /> 
                     ||
                 <LHStackNavigator /> 
-            } */}
-
-           <LHAuthNavigator /> 
+            }
         </NavigationContainer>
     )
 

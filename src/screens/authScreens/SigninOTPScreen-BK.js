@@ -20,6 +20,7 @@ import {
     ActivityIndicator, 
     ImageBackground,
     LogBox,
+    //SafeAreaView,
 
  } from 'react-native';
  import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,7 +29,6 @@ import { useToast } from 'native-base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
-import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import RNOtpVerify from 'react-native-otp-verify';
@@ -49,7 +49,7 @@ export default function SigninOTPScreen( { navigation, route } ){
     const toast = useToast();
 
     // previous screen data
-    const {userId, loginData, loginPayload} = route.params; 
+    const {userId, loginData} = route.params; 
 
     const [finalOTP, setFinalOTP] = useState("");
 
@@ -191,81 +191,12 @@ export default function SigninOTPScreen( { navigation, route } ){
     }
 
 
-     /**
-     * Initialize Critical User Session Data
-     * This function is used to initialize the critical user session data
-     * Get the data from the loginPayload
-     */
-     const initializeUserSessionData = () => {
-    
-        // Store Insider User token data
-        setUserTokenData({
-            userId: loginPayload.userId,
-            firstName: loginPayload.firstName,
-            lastName: loginPayload.lastName,
-            email: loginPayload.email,
-            phone: loginPayload.phone,
-            role: loginPayload.role,
-            email_verified: loginPayload.email_verified,
-            phone_verified: loginPayload.phone_verified,
-            
-        });
-
-        // Set User Details Object 
-        setUserDetails({
-            userId: loginPayload.userId,
-            firstName: loginPayload.firstName,
-            lastName: loginPayload.lastName,
-            email: loginPayload.email,
-            phone: loginPayload.phone,
-            role: loginPayload.role,
-            email_verified: loginPayload.email_verified,
-            phone_verified: loginPayload.phone_verified,
-        });
-
-        // Dispatch update user dettails
-        dispatch(updateUserDetails({
-            userId: loginPayload.userId,
-            firstName: loginPayload.firstName,
-            lastName: loginPayload.lastName,
-            email: loginPayload.email,
-            phone: loginPayload.phoneNumber,
-            role: loginPayload.role,
-            email_verified: loginPayload.email_verified,
-            phone_verified: loginPayload.phone_verified,
-        })); 
-        
-        // store user login data
-        storeItemLS("userDetailsLS", { 
-            userId: loginPayload.userId,
-            firstName: loginPayload.firstName,
-            lastName: loginPayload.lastName,
-            email: loginPayload.email,
-            phone: loginPayload.phoneNumber,
-            role: loginPayload.role,
-            email_verified: loginPayload.email_verified,
-            phone_verified: loginPayload.phone_verified,
-        });
-
-
-        // ### Implement Later -- When Endpoint Available - #KNEXT
-        // Run the getAppHomeData to get the user's app home data
-        // getAppHomeData(
-        //     { 
-        //         dispatch:dispatch, 
-        //         userID:loginPayload.userId, 
-        //         loadingSetter:setIsLoadingAppData 
-        //     }
-        // );
-        
-    }
-
-
     /** OTP Verification Handler
      * This function is used to verify the OTP Code from the user's phone number or email address
      * 
     */
     const OTPVerificationHandler = async (code) => {
+
         // Just some basic validation
         if ( !isSubmitEnabled ) {
             console.log('All fields are required!');
@@ -292,7 +223,7 @@ export default function SigninOTPScreen( { navigation, route } ){
         // making API request to verify OTP Code
             try {
 
-                let response; // response variable initialized
+                let response;
                 if (isEmailLoginType(loginData.type)) {
                     response = await axios.post(`${baseUrl}/auth/verify-email`, {
                         email: loginData.email,
@@ -305,16 +236,67 @@ export default function SigninOTPScreen( { navigation, route } ){
                     });
                 }
 
+            // const response = await axios.post(`${baseUrl}/auth/verify-otp`, { "otp" : OTP_Code });
+
+
             // checking the status
             if (response.status === 200) {
 
-                // If status is successful
+                    // IF status is successful
                 if (response.data.status === "success"){ 
-                    
-                    console.log(response.data); // console results
+                    // console results
+                    console.log(response.data);
 
-                    // Initialize critical user session data
-                    initializeUserSessionData();
+                    // Store Insider User token data
+                    // get it from the response after OTP Verification
+                    setUserTokenData({
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
+                        
+                    });
+
+                    // Set User Details Object 
+                    setUserDetails({
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
+                    });
+
+                    // Dispatch update user dettails
+                    dispatch(updateUserDetails({
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
+
+                    })); 
+                    
+                    // store user login data
+                    storeItemLS("userDetailsLS", { 
+                        userId: response.data.user.user_id,
+                        firstName: response.data.user.firstName,
+                        lastName: response.data.user.lastName,
+                        email: response.data.user.email,
+                        phone: response.data.user.phoneNumber,
+                        role: response.data.user.role,
+                        email_verified: response.data.user.email_verified,
+                    });
+
+                    // ### Implement Later -- When Endpoint Available - #KNEXT
+                    // Run the getAppHomeData to get the user's app home data
+                    // getAppHomeData({ dispatch:dispatch, userID:response.data.user.user_id, loadingSetter:setIsLoadingAppData });
                     setIsLoggedInModalVisible(true); // Show the Logged In Success Modal
                     setIsLoading(false); // Toggle Loading State
                     
@@ -337,10 +319,10 @@ export default function SigninOTPScreen( { navigation, route } ){
     
         }
 
-
     return(
         <SafeAreaView style={ styles.container }>
             <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, backgroundColor:appColors.CardBackground }}>
+
                 {/* Header back button */}
                 <View style={{ paddingVertical:parameters.headerHeightTinier }}>
                     <LHGenericHeader
@@ -353,6 +335,7 @@ export default function SigninOTPScreen( { navigation, route } ){
 
                 {/* OTP Container */}
                 <View style={{ flex:1, paddingVertical:20 }}>
+
                     <View style={ styles.OPTContainer }>
                         {/* Logo */}
                         <View style={{ justifyContent: "center", alignItems:"center" }}>
@@ -448,22 +431,71 @@ export default function SigninOTPScreen( { navigation, route } ){
                     </View>  
                 </View>
 
-                {/* Login Success Modal */}
-                <LHLoginSuccessModal 
-                    isModVisible={isLoggedInModalVisible} 
-                    isLoading={isLoadingAppData}
-                    title="Welcome, let’s begin!"
-                    description="You’re Successfully Verified!"
-                    loadingText="Please wait, getting ready..."
-                    buttonTitle="Continue"
-                    onPressAction={ 
-                        () => { 
-                            storeItemLS("userToken", userTokenData); // Local Session to keep user loggedin
-                            dispatch(signin(userTokenData)); // Dispatch user token to the signin action
-                            setIsLoggedInModalVisible(false); // Close the success modal
-                        } 
-                    }
-                />
+
+                {/* Logged In Success Modal */}
+                <BottomSheet
+                    // containerStyle={{ flex:1, justifyContent:'center', backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
+                    containerStyle={{ flex:1, justifyContent:'center', backgroundColor: appColors.CardBackground }}
+                    modalProps = {{ presentationStyle:"overFullScreen", visible: isLoggedInModalVisible, }}>
+                        <View style={{ ...parameters.doffeeModalContainer, paddingVertical:50, backgroundColor:appColors.CardBackground }}>
+                            <View style={{ paddingVertical:15, }}>
+
+                                {/* Modal Content */}
+                                <View style={{ flex:1, justifyContent:"center", alignItems:"center", paddingVertical:20 }}>
+                                    <View style={{ justifyContent: "center", alignItems:"center", paddingVertical:15 }}>
+                                        <Icon type="material-community" name="check-circle" color={appColors.AppBlue} size={60} />
+                                    </View>
+                                    {/* <View style={{ marginVertical:5, paddingHorizontal:5 }}>
+                                        <Text style={{ fontSize:18, textAlign:'center', fontWeight:"700", paddingVertical:5, color:appColors.black }}>
+                                          Welcome back! You've logged in!
+                                        </Text>
+                                    </View> */}
+
+                                    <View style={{ marginVertical:10, paddingHorizontal:5 }}>
+                                        <Text style={{ fontSize:18, textAlign:'center', paddingVertical:5, color:appColors.AppBlue, fontFamily:appFonts.headerTextBold }}>
+                                          You’re all set!
+                                        </Text>
+                                        <Text style={{ fontSize:22, textAlign:'center', paddingVertical:5, color:appColors.AppBlue, fontFamily:appFonts.headerTextExtraBold }}>
+                                          Welcome back.
+                                        </Text>
+                                    </View>
+
+                                </View>
+
+                                {/* The following options  */}
+                                <View style={{ flex:1, justifyContent:"center", marginVertical:10, paddingHorizontal:10, }}>
+                                    { isLoadingAppData && 
+                                        <View style={{ flexDirection:'row', justifyContent:'center', alignItems:'center', paddingVertical:20, marginBottom:10 }}>
+                                            <ActivityIndicator size="small" style={{ marginHorizontal:5, }} color={appColors.AppBlue} /> 
+                                            <Text style={{ color:appColors.AppBlue, paddingHorizontal:5, fontSize:14 }}>Just a moment, preparing for you...</Text>
+                                        </View>
+                                    } 
+
+                                    { !isLoadingAppData && 
+                                        <Button 
+                                            title="Continue" 
+                                            buttonStyle={ parameters.appButtonXLBlue }
+                                            titleStyle={ parameters.appButtonXLTitle }
+                                            disabled={isLoadingAppData}
+                                            onPress = { 
+                                                () => { 
+
+                                                    // dispatch user token to the signin action
+                                                    storeItemLS("userToken", userTokenData); // Local Session to keep user loggedin
+                                                    dispatch(signin(userTokenData));
+
+                                                   // setIsLoggedInModalVisible(false);
+                                                
+                                                }
+                                            }
+                                        />
+                                    }
+
+                                </View>
+                            </View>
+                        </View>
+                   </BottomSheet>
+                   {/* -- Logged In Success Modal ends */}
 
             </ImageBackground>
         </SafeAreaView>

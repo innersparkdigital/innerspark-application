@@ -98,3 +98,35 @@ export const isEmailLoginType = (type: string): boolean => {
 export const isValidPassword = (value: string): boolean => {
   return value.length >= 8;
 };
+
+
+/**
+ * Check if User email is verified. 0 = not verified, 1 = verified
+ * This checks the value of the field rather than the email validity
+ * @param value - The email to validate.
+ * @returns Returns true if the email is verified, false if it is not.
+ * 
+ * Example: isEmailVerified(0) // Returns: false
+ * Example: isEmailVerified(1) // Returns: true
+ */
+export const isEmailVerified = (value: number | string): boolean => {
+  return value === 1 || value === '1';
+};
+
+/**
+ * Check if User phone is verified. 0 = not verified, 1 = verified
+ * This checks the value of the field rather than the phone validity
+ * @param value - The phone to validate.
+ * @returns Returns true if the phone is verified, false if it is not.
+ * 
+ * Example: isPhoneVerified(0) // Returns: false
+ * Example: isPhoneVerified(1) // Returns: true
+ */
+export const isPhoneVerified = (value: number | string): boolean => {
+  return value === 1 || value === '1';
+};
+
+
+
+
+

@@ -30,13 +30,13 @@ import {
 } from '../../global/LHValidators';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
-
+import { API_BASE_URL, API_VERSION, AUTH_TOKEN } from '../../config/env';
 
 const baseUrl = baseUrlRoot + baseUrlV1; // Base URL for API requests
 APIGlobaltHeaders(); // API Global headers
 
 export default function SignupScreen({navigation}){
-
+    
     const dispatch = useDispatch(); // dispatch actions
     const toast = useToast();
     
@@ -61,7 +61,6 @@ export default function SignupScreen({navigation}){
     // Phone related controls
     const [isCountrySupported, setIsCountrySupported] = useState(true);
     const [formattedPhone, setFormattedPhone] = useState(""); // Formatted phone
-
 
     // Toggle Password Handler
     const togglePassword = () => { 

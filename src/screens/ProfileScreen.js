@@ -25,7 +25,7 @@ import { Icon, Button, Avatar, BottomSheet } from '@rneui/base';
 import { appImages, appLinks } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
 import LHHomeFooter from '../components/LHHomeFooter';
-import { storeItemLS, removeItemLS } from '../global/StorageActions';
+import { storeItemLS, removeItemLS, retrieveItemLS } from '../global/StorageActions';
 
 
 // Returns a touchable opacity button that opens a url on press

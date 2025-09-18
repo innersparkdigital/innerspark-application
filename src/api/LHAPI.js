@@ -1,10 +1,15 @@
 import axios from 'axios';
-import Config from 'react-native-config';
+import { API_BASE_URL, API_VERSION, AUTH_TOKEN } from '../config/env';
 
-export const baseUrlRoot = Config.API_BASE_URL || 'https://server.innersparkafrica.us/api';
-export const baseUrlV1 = Config.API_VERSION || ''; // if version is present, it will use /v1 or /v2, etc.
-export const authToken = Config.AUTH_TOKEN; // API Authorization token
-// export const apiKey = Config.API_KEY;
+console.log('🔧 === LHAPI.js LOADED ===');
+console.log('  Imported API_BASE_URL:', API_BASE_URL);
+console.log('  Imported API_VERSION:', API_VERSION);
+console.log('  Imported AUTH_TOKEN:', AUTH_TOKEN);
+console.log('🔧 === END LHAPI.js ===');
+
+export const baseUrlRoot = API_BASE_URL;
+export const baseUrlV1 = API_VERSION;
+export const authToken = AUTH_TOKEN;
 
 export const APIInstance = axios.create({ baseURL: baseUrlRoot + baseUrlV1 }); // Axios instance for API requests
 
