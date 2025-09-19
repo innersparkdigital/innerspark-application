@@ -23,7 +23,6 @@ import {
 import { Icon, Button, Avatar, BottomSheet } from '@rneui/base';
 import { appImages, appLinks } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
-import LHHomeFooter from '../components/LHHomeFooter';
 
 
 // Returns a touchable opacity button that opens a url on press
@@ -167,14 +166,6 @@ export default function MoreScreen({ navigation }){
                 </ScrollView>
             </ImageBackground>
         </View>
-        <LHHomeFooter  
-            activeTab="more"
-            onPressHome={ () => { navigation.navigate('HomeScreen') } }
-            onPressExplore={ () => { navigation.navigate('ExploreScreen') } }
-            onPressBookings={ () => { navigation.navigate('BookingsScreen') } }
-            onPressProfile={ () => { navigation.navigate('ProfileScreen') }  }
-            onPressMore={ () => { navigation.navigate('MoreScreen') } }
-      />
       </SafeAreaView>
     )
 }

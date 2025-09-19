@@ -56,6 +56,15 @@ export default function LHStackNavigator(){
     return(
         <LHStack.Navigator>
 
+             <LHStack.Screen
+                name="LHBottomTabs"
+                component={LHBottomTabs}
+                options={{
+                    headerShown: false,
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
             {/* Bottom Tabs Screens */}
             <LHStack.Screen
                 name="HomeScreen"
@@ -106,24 +115,6 @@ export default function LHStackNavigator(){
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
-        
-            {/* <LHStack.Screen
-                name="LHBottomTabs"
-                component={LHBottomTabs}
-                options={{
-                    headerShown: false,
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            /> */}
-
-            {/* <LHStack.Screen
-                name="LHBottomTabs"
-                component={LHBottomTabs}
-                options={{
-                    headerShown: false,
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            /> */}
 
             <LHStack.Screen
                 name="AboutAppScreen"

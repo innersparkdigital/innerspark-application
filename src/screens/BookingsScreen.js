@@ -31,7 +31,6 @@ import { useToast } from 'native-base';
 import { LaundromatCardH, BookingCard } from '../components/laundromats/LMCards';
 import { appImages, laundromatsData } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
-import LHHomeFooter from '../components/LHHomeFooter';
 
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1,   } from '../api/LHAPI';
 
@@ -334,14 +333,6 @@ const BookingsScreen = ({navigation, route}) => {
               </View>
           </ImageBackground>
         </View>
-        <LHHomeFooter 
-            activeTab="bookings"
-            onPressExplore={ () => { navigation.navigate('ExploreScreen') } }
-            onPressBookings={ () => { navigation.navigate('BookingsScreen') } }
-            onPressProfile={ () => { navigation.navigate('ProfileScreen') }  }
-            onPressMore={ () => { navigation.navigate('MoreScreen') } }
-            onPressHome={ () => { navigation.navigate('HomeScreen') } }
-        />
     </SafeAreaView>
   );
 };

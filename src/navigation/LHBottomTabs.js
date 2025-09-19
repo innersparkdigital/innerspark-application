@@ -5,10 +5,10 @@ import { Icon } from '@rneui/base';
 import { appColors, appImages } from '../global/Styles';
 
 import HomeScreen from '../screens/HomeScreen';
-import ExploreScreen from '../screens/ExploreScreen';
-import BookingsScreen from '../screens/BookingsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import MoreScreen from '../screens/MoreScreen';
+import MoodScreen from '../screens/MoodScreen';
+import TherapistsScreen from '../screens/TherapistsScreen';
+import AccountScreen from '../screens/AccountScreen';
+import EmergencyScreen from '../screens/EmergencyScreen';
 
 const BottomTab = createBottomTabNavigator();
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -20,25 +20,32 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 
   const getTabIcon = (name, isActive) => {
     const iconMap = {
-      HomeScreen: { active: appImages?.homeFooterIcon1, inactive: appImages?.homeFooterIcon1Inactive },
-      ExploreScreen: { active: appImages?.homeFooterIcon2, inactive: appImages?.homeFooterIcon2Inactive },
-      BookingsScreen: { active: appImages?.homeFooterIcon3, inactive: appImages?.homeFooterIcon3Inactive },
-      ProfileScreen: { active: appImages?.homeFooterIcon4, inactive: appImages?.homeFooterIcon4Inactive },
-      MoreScreen: { active: appImages?.homeFooterIcon5, inactive: appImages?.homeFooterIcon5Inactive },
+      HomeScreen: { icon: 'home', type: 'material' },
+      MoodScreen: { icon: 'mood', type: 'material' },
+      TherapistsScreen: { icon: 'people', type: 'material' },
+      AccountScreen: { icon: 'person', type: 'material' },
+      EmergencyScreen: { icon: 'emergency', type: 'material' },
     };
 
-    const icon = isActive ? iconMap[name]?.active : iconMap[name]?.inactive;
-
-    if (icon) {
-      return <Image source={icon} style={styles.footerTabIcon} />;
-    } else {
-      // Fallback to a default icon if the image is not available
+    const iconConfig = iconMap[name];
+    
+    if (iconConfig) {
       return (
         <Icon
-          name="question-mark-circle"
-          type="material-community"
+          name={iconConfig.icon}
+          type={iconConfig.type}
           color={isActive ? appColors.AppBlue : appColors.CardBackground}
-          size={25}
+          size={22}
+        />
+      );
+    } else {
+      // Fallback to a default icon if the mapping is not available
+      return (
+        <Icon
+          name="help-outline"
+          type="material"
+          color={isActive ? appColors.AppBlue : appColors.CardBackground}
+          size={22}
         />
       );
     }
@@ -65,10 +72,10 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
     <View style={styles.footerContainer}>
       <View style={styles.footerTabsContainer}>
         <TabButton name="HomeScreen" label="Home" />
-        <TabButton name="ExploreScreen" label="Explore" />
-        <TabButton name="BookingsScreen" label="Bookings" />
-        <TabButton name="ProfileScreen" label="Profile" />
-        <TabButton name="MoreScreen" label="More" />
+        <TabButton name="MoodScreen" label="Mood" />
+        <TabButton name="TherapistsScreen" label="Therapists" />
+        <TabButton name="AccountScreen" label="Account" />
+        <TabButton name="EmergencyScreen" label="Emergency" />
       </View>
     </View>
   );
@@ -83,10 +90,10 @@ const LHBottomTabs = () => {
       }}
     >
       <BottomTab.Screen name="HomeScreen" component={HomeScreen} />
-      <BottomTab.Screen name="ExploreScreen" component={ExploreScreen} />
-      <BottomTab.Screen name="BookingsScreen" component={BookingsScreen} />
-      <BottomTab.Screen name="ProfileScreen" component={ProfileScreen} />
-      <BottomTab.Screen name="MoreScreen" component={MoreScreen} />
+      <BottomTab.Screen name="MoodScreen" component={MoodScreen} />
+      <BottomTab.Screen name="TherapistsScreen" component={TherapistsScreen} />
+      <BottomTab.Screen name="AccountScreen" component={AccountScreen} />
+      <BottomTab.Screen name="EmergencyScreen" component={EmergencyScreen} />
     </BottomTab.Navigator>
   );
 };
@@ -135,13 +142,15 @@ const styles = StyleSheet.create({
   footerTabText: {
     color: appColors.CardBackground,
     fontWeight: "600",
-    fontSize: 10,
+    fontSize: 9,
     marginTop: 3,
+    textAlign: 'center',
   },
   footerTabTextActive: {
     color: appColors.AppBlue,
     fontWeight: "800",
-    fontSize: 10,
+    fontSize: 9,
+    textAlign: 'center',
   },
   footerTabIcon: {
     width: 25,

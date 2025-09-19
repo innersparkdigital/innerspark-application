@@ -28,7 +28,6 @@ import LHGenericHeader from '../components/LHGenericHeader';
 import { appImages, laundromatsData } from '../global/Data';
 import { useToast } from 'native-base';
 import { LaundromatCardH, FeaturedServiceCard } from '../components/laundromats/LMCards';
-import LHHomeFooter from '../components/LHHomeFooter';
 
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1, } from '../api/LHAPI';
 
@@ -176,14 +175,6 @@ const ExploreScreen = ({navigation}) => {
                 </View>
             </ImageBackground>
         </View>
-        <LHHomeFooter 
-            activeTab="explore"
-            onPressExplore={ () => { navigation.navigate('ExploreScreen') } }
-            onPressBookings={ () => { navigation.navigate('BookingsScreen') } }
-            onPressProfile={ () => { navigation.navigate('ProfileScreen') }  }
-            onPressMore={ () => { navigation.navigate('MoreScreen') } }
-            onPressHome={ () => { navigation.navigate('HomeScreen') } }
-        />
     </SafeAreaView>
   );
 };

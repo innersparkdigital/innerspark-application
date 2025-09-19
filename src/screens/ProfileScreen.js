@@ -24,7 +24,6 @@ import {
 import { Icon, Button, Avatar, BottomSheet } from '@rneui/base';
 import { appImages, appLinks } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
-import LHHomeFooter from '../components/LHHomeFooter';
 import { storeItemLS, removeItemLS, retrieveItemLS } from '../global/StorageActions';
 
 
@@ -239,14 +238,6 @@ export default function ProfileScreen({ navigation }){
 
             </ImageBackground>
         </View>
-        <LHHomeFooter 
-            activeTab="profile"
-            onPressExplore={ () => { navigation.navigate('ExploreScreen') } }
-            onPressBookings={ () => { navigation.navigate('BookingsScreen') } }
-            onPressProfile={ () => { navigation.navigate('ProfileScreen') }  }
-            onPressMore={ () => { navigation.navigate('MoreScreen') } }
-            onPressHome={ () => { navigation.navigate('HomeScreen') } }
-        />
     </SafeAreaView>
     )
 }

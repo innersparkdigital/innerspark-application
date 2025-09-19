@@ -27,6 +27,8 @@ export const notifyWithToast = (toast: any, description: string, placement="bott
  * @returns {string} - The First name string is returned
  */
 export const getFirstName = ( fullName: string) => {
+    // handle case where fullname is null or undefined
+    if (!fullName) { return ''; }
    return fullName.split(' ')[0];
 }
 

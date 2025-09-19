@@ -166,7 +166,16 @@ export default function SigninScreen({navigation}){
                                     email: trimmedEmail,
                                     password: trimmedPassword 
                                 }, 
-                                loginPayload: loginPayload
+                                loginPayload: {
+                                    userId: response.data.user.user_id,
+                                    firstName: response.data.user.firstName,
+                                    lastName: response.data.user.lastName,
+                                    email: response.data.user.email,
+                                    phone: response.data.user.phoneNumber,
+                                    role: response.data.user.role,
+                                    email_verified: response.data.user.email_verified,
+                                    phone_verified: response.data.user.phone_verified,
+                                }
                             }
                         );
 

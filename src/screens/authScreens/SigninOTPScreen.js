@@ -68,6 +68,7 @@ export default function SigninOTPScreen( { navigation, route } ){
     const [otpCode, setOTPCode] = useState('');
     const [restartSMSListener, setRestartSMSListener] = useState(false);
 
+
     // OTP SMS Handler --- Access Code from Received SMS
     const OTPSMSHandler = (message) => {
 
@@ -148,14 +149,12 @@ export default function SigninOTPScreen( { navigation, route } ){
 
             let response;
             if (isEmailLoginType(loginData.type)) {
-                response = await axios.post(`${baseUrl}/auth/login`, {
+                response = await axios.post(`${baseUrl}/auth/resend-verification`, {
                     email: loginData.email,
-                    password: loginData.password,
                 });
             } else {
-                response = await axios.post(`${baseUrl}/auth/login`, {
+                response = await axios.post(`${baseUrl}/auth/resend-verification`, {
                     phone: loginData.phone,
-                    password: loginData.password,
                 });
             }
             

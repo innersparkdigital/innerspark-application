@@ -1,12 +1,10 @@
 /**
  * App HomeScreen
  */
-
 import axios from 'axios';
 import React, { useState, useEffect, useRef, useCallback }  from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -23,6 +21,7 @@ import {
   ImageBackground,
 
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import { Icon, Button, BottomSheet } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
@@ -32,7 +31,6 @@ import { LaundromatCard, FeaturedServiceCard } from '../components/laundromats/L
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1,   } from '../api/LHAPI';
 import { appImages } from '../global/Data';
 import LHGenericFeatureModal from '../components/LHGenericFeatureModal';
-import LHHomeFooter from '../components/LHHomeFooter';
 import { getFirstName } from '../global/LHShortcuts';
 
 
@@ -58,7 +56,7 @@ const HomeScreen = ({navigation}) => {
     <SafeAreaView style={{ flex:1 }}>
         <StatusBar barStyle='light-content' backgroundColor={appColors.AppBlue} />
         <View style={ styles.container }>
-          <ImageBackground source={appImages.laundryBg} style={{ flex: 1, }}>
+          <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, }}>
                 {/* Home Header Section */}
                 <View style={{ paddingTop:parameters.headerHeightS, paddingBottom:5 }}>
                      {/* Header section */}
@@ -75,37 +73,19 @@ const HomeScreen = ({navigation}) => {
                     
                 </View>
 
-                <ScrollView contentContainerStyle={{  }}>
+                <ScrollView contentContainerStyle={{ flex:1, }}>
                     <View style={{ flex:1, }}>
 
-                      {/* Dynamic Home Banner Ads section */}
-                      <View style={{ paddingHorizontal:10, paddingBottom:10, }}>
-                          <LHBannerSlider /> 
-                      </View>
+                      
                       
                   </View> 
               </ScrollView>
 
 
-               {/** Generic Feature Modal */}
-                <LHGenericFeatureModal 
-                    isModVisible={ isFeatureModalVisible } 
-                    visibilitySetter={setIsFeatureModalVisible} 
-                    isDismissable={true}
-                    title="Laundromats"
-                    description="Featured Laudromats coming soon. View Laundromats business info and services."
-                />
+             
 
             </ImageBackground>
         </View>
-        <LHHomeFooter  
-            activeTab="home"
-            onPressHome={ () => { navigation.navigate('HomeScreen') } }
-            onPressExplore={ () => { navigation.navigate('ExploreScreen') } }
-            onPressBookings={ () => { navigation.navigate('BookingsScreen') } }
-            onPressProfile={ () => { navigation.navigate('ProfileScreen') }  }
-            onPressMore={ () => { navigation.navigate('MoreScreen') } }
-        />
     </SafeAreaView>
   );
 };
