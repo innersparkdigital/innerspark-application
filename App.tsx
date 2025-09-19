@@ -1,7 +1,5 @@
 /**
  * Innerspark App
- * The Innerspark App is a mobile application built with React Native that provides fast, reliable internet access to users. 
- * It enables users to manage data usage, top-up accounts, purchase data bundles, track payments, and access VPN for secure browsing.
  * 
  * https://github.com/innerspark
  * @author Innerspark Team
