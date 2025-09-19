@@ -8,7 +8,6 @@ import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import { 
   StatusBar,
-  SafeAreaView,
   ScrollView,
   View, 
   Text, 
@@ -20,11 +19,12 @@ import {
   Pressable,
   ImageBackground,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar, BottomSheet } from '@rneui/base';
 import { appImages, appLinks } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
 import { storeItemLS, removeItemLS, retrieveItemLS } from '../global/StorageActions';
-import { getFirstName } from '../global/LHShortcuts';
+import { getFullname } from '../global/LHShortcuts';
 
 // Returns a touchable opacity button that opens a url on press
 const OpenURLButton = ({ url, title }) => {
@@ -119,7 +119,7 @@ export default function AccountScreen({ navigation }){
                     />
                 </View>
                 <Text style={styles.profileAvatarUserName}>
-                    {userDetails?.firstName || 'User'}
+                    {getFullname(userDetails?.firstName, userDetails?.lastName) || 'User'}
                 </Text>
                 <Text style={styles.profileEmail}>
                     {userDetails?.email || 'user@example.com'}

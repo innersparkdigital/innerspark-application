@@ -1,4 +1,3 @@
-import { IconButton } from "native-base";
 import { appColors } from "./Styles";
 
 /* App Assets, Images,logos, etc. */
@@ -9,36 +8,12 @@ export const appImages = {
     logoRecBlue : require("../assets/icons/app-logo.png"),
     
     avatarDefault : require("../assets/icons/avatar.png"),
-    laundromatDefault: require("../assets/images/laundromats/lm-default.png"),
-    qrCodeImage: require("../assets/images/qr-code.png"),
+    isDefaultImage: require("../assets/images/is-default.png"),
     UGFlag : require("../assets/icons/flag-ug.png"),
-    ugxIconBlue: require("../assets/icons/ugx-icon-b.png"),
-    ugxIconWhite: require("../assets/icons/ugx-icon-w.png"),
 
     // custom backgrounds
     laundryBg : require("../assets/backgrounds/bg-patterns.png"),
     bgPatterns : require("../assets/backgrounds/bg-patterns.png"),
-
-    /**
-     * #### REMOVE THESE ICONS AFTER FIXING THE ISSUE
-     */
-    // Home footer icons with active and inactive states
-    homeFooterIcon1: require("../assets/icons/home-icon-a.png"),
-    homeFooterIcon1Inactive: require("../assets/icons/home-icon.png"),
-    homeFooterIcon2: require("../assets/icons/explore-icon-a.png"),
-    homeFooterIcon2Inactive: require("../assets/icons/explore-icon.png"),
-    homeFooterIcon3: require("../assets/icons/bookings-icon-a.png"),
-    homeFooterIcon3Inactive: require("../assets/icons/bookings-icon.png"),
-    homeFooterIcon4: require("../assets/icons/profile-icon-a.png"),
-    homeFooterIcon4Inactive: require("../assets/icons/profile-icon.png"),
-    homeFooterIcon5: require("../assets/icons/more-icon-a.png"),
-    homeFooterIcon5Inactive: require("../assets/icons/more-icon.png"),
-
-    // App Home Banner Slides
-    homeBanner1: require("../assets/banners/slide1.png"),
-    homeBanner2: require("../assets/banners/slide2.png"),
-    homeBanner3: require("../assets/banners/slide3.png"),
-    homeBanner4: require("../assets/banners/slide4.png"),
 
 };
 
@@ -57,23 +32,10 @@ export const appLinks = {
 
 };
 
-// Laundry House Services data
-export const servicesData = [
-    { name:"WASHING", image: require('../assets/images/cc/cc-service-11.png'), id:"0" },
-    { name:"DRY CLEANING", image:require("../assets/images/cc/cc-service-71.png"), id:"1" },
-    { name:"SHOE CARE", image:require("../assets/images/cc/cc-service-201.png"), id:"2" },
-    { name:"WASHING", image:require("../assets/images/cc/cc-service-41.png"), id:"3" },
-    { name:"DRY CLEANING", image:require("../assets/images/cc/cc-service-41.png"), id:"4" },
-    { name:"IRONING", image:require("../assets/images/cc/cc-service-171.png"), id:"5" },
-    { name:"WASHING", image:require("../assets/images/cc/cc-service-191.png"), id:"6" },
- ];
-
 
 /* App Content: Text Descriptions, intro, etc. */
 export const appContents = {
     aboutAppText : "Enjoy hassle-free, efficient service designed to meet all your laundry needs. Schedule pick-ups, track your laundry in real-time, and manage payments all in one convenient app.",
-    aboutAppText1 : "Enjoy hassle-free, efficient service designed to meet all your laundry needs. Laundry House is a mobile application that allows you to book laundry services, track your laundry in real-time, and manage payments.", 
-    aboutAppText2 : "Simplify your laundry experience with Laundry House. Schedule pick-ups, track your laundry in real-time, and manage payments all in one convenient app.", 
 }
 
 
@@ -157,7 +119,6 @@ export const slides = [
 /**
  * Laundromats test data --- Remove Later
  * This is TEST Data
- * This data will be loaded from the server
  */
 export const laundromatsData = [ 
         {

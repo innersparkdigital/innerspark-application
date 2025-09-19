@@ -14,8 +14,6 @@ import {
   Dimensions,
   FlatList,
   Pressable,
-  TouchableOpacity,
-  TouchableHighlight,
   ActivityIndicator,
   TextInput,
   ImageBackground,
@@ -25,12 +23,8 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import { Icon, Button, BottomSheet } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import { servicesData, laundromatsData } from '../global/Data';
-import { LHBannerSlider } from '../components/LHBannerSlider';
-import { LaundromatCard, FeaturedServiceCard } from '../components/laundromats/LMCards'; 
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1,   } from '../api/LHAPI';
 import { appImages } from '../global/Data';
-import LHGenericFeatureModal from '../components/LHGenericFeatureModal';
 import { getFirstName } from '../global/LHShortcuts';
 
 
@@ -57,6 +51,7 @@ const HomeScreen = ({navigation}) => {
         <StatusBar barStyle='light-content' backgroundColor={appColors.AppBlue} />
         <View style={ styles.container }>
           <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, }}>
+
                 {/* Home Header Section */}
                 <View style={{ paddingTop:parameters.headerHeightS, paddingBottom:5 }}>
                      {/* Header section */}
@@ -69,8 +64,6 @@ const HomeScreen = ({navigation}) => {
                             <Icon type="material-community" name="bell-badge-outline" color={appColors.AppBlue} size={35} />
                         </Pressable>
                      </View>
-
-                    
                 </View>
 
                 <ScrollView contentContainerStyle={{ flex:1, }}>
@@ -80,10 +73,6 @@ const HomeScreen = ({navigation}) => {
                       
                   </View> 
               </ScrollView>
-
-
-             
-
             </ImageBackground>
         </View>
     </SafeAreaView>
@@ -95,58 +84,6 @@ const styles = StyleSheet.create({
     flex:1,
     backgroundColor: appColors.CardBackground
   },
-
-  locationBoxContainer: {
-    flexDirection:'row', 
-    alignItems:'center',
-    backgroundColor:appColors.grey6,
-    borderRadius: 10,
-    paddingVertical:5,
-
-    // adding some box shadow effect to home features icon containers
-    shadowColor: 'black',
-    shadowOpacity: 0.16,
-    shadowOffset: { width: 0, height: 3},
-    shadowRadius: 10,
-    elevation: 10,
-
-  },
-
-  servicesInfobox: {
-    backgroundColor:appColors.AppBlue, 
-    width:80, 
-    height:80, 
-    borderRadius:50, 
-    overflow:'hidden', 
-    marginHorizontal:5,
-    borderColor:appColors.grey2,
-    alignItems:'center',
-    padding:8,
-
-  },
-
-
-  inputBlockRow: {
-    flexDirection:'row',
-    backgroundColor: appColors.grey7,
-    paddingHorizontal:12, 
-    paddingVertical:15, 
-    alignItems:'center',
-    borderRadius:10, 
-    marginVertical:8,
-    marginHorizontal:5,
-
-    // adding some box shadow effect to home features icon containers
-    shadowColor: 'black',
-    shadowOpacity: 0.16,
-    shadowOffset: { width: 0, height: 3},
-    shadowRadius: 10,
-    elevation: 10,
-
-  },
-
-
-
 
 
 });
