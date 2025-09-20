@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, Image, Pressable, Dimensions } from 'react-native';
 import { Icon } from '@rneui/base';
@@ -14,9 +14,10 @@ const BottomTab = createBottomTabNavigator();
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
-  const [activeTab, setActiveTab] = useState('HomeScreen');
+  const currentRoute = state.routes[state.index];
+  const currentRouteName = currentRoute.name;
 
-  const isActive = (tabName) => activeTab === tabName;
+  const isActive = (tabName) => currentRouteName === tabName;
 
   const getTabIcon = (name, isActive) => {
     const iconMap = {
@@ -55,7 +56,6 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
     <Pressable
       style={[styles.footerTab, isActive(name) ? styles.footerTabActive : styles.footerTabInactive]}
       onPress={() => {
-        setActiveTab(name);
         navigation.navigate(name);
       }}
     >

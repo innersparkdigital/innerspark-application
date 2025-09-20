@@ -137,7 +137,7 @@ export default function AccountScreen({ navigation }){
                 
                 <TouchableOpacity 
                   style={styles.shortcutCard}
-                  onPress={() => navigation.navigate('AppointmentsScreen')}
+                  onPress={() => notifyWithToast('Appointments feature coming soon!')}
                 >
                   <Icon name="event" type="material" color="#333" size={24} />
                   <Text style={styles.shortcutText}>Appointments</Text>
@@ -175,22 +175,27 @@ export default function AccountScreen({ navigation }){
                 
                 <MenuRow
                     icon="info"
-                    title="About App"
-                    onPress={() => navigation.navigate('AboutAppScreen')}
+                    title="About"
+                    onPress={() => notifyWithToast('About feature coming soon!')}
                 />
                 
-                {/* <MenuRow
+                <MenuRow
                     icon="logout"
                     title="Logout"
                     onPress={() => setIsLogoutModalVisible(true)}
                     isLast={true}
                     iconColor="#F44336"
-                /> */}
-            
+                />
+                
+                <MenuRow
+                    icon="payment"
+                    title="Payment Methods"
+                    onPress={() => navigation.navigate("PaymentOptionsScreen")}
+                />
             </View>
 
             {/* Mental Health Section */}
-            {/* <View style={styles.section}>
+            <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Mental Health</Text>
                 
                 <MenuRow
@@ -216,25 +221,42 @@ export default function AccountScreen({ navigation }){
                     title="Emergency Contacts"
                     onPress={() => navigation.navigate("EmergencyScreen")}
                 />
-            </View> */}
-
-
-
+            </View>
 
             {/* App Section */}
-            {/* <View style={styles.section}>
+            <View style={styles.section}>
                 <Text style={styles.sectionTitle}>App</Text>
+                
+                <MenuRow
+                    icon="settings"
+                    title="Settings"
+                    onPress={() => navigation.navigate("SettingsScreen")}
+                />
+                
+                <MenuRow
+                    icon="help-outline"
+                    title="Help & Support"
+                    onPress={() => notifyWithToast('Help center coming soon!')}
+                />
+                
+                <MenuRow
+                    icon="info-outline"
+                    title="About App"
+                    onPress={() => navigation.navigate("AboutAppScreen")}
+                />
+                
                 <MenuRow
                     icon="privacy-tip"
                     title="Privacy Policy"
                     onPress={() => navigation.navigate("PrivacyPolicyScreen")}
                 />
+                
                 <MenuRow
                     icon="description"
                     title="Terms of Service"
                     onPress={() => navigation.navigate("TermsOfServiceScreen")}
                 />
-            </View> */}
+            </View>
 
             {/* Logout Section */}
             <View style={styles.section}>

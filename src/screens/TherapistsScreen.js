@@ -31,63 +31,84 @@ const TherapistsScreen = ({ navigation }) => {
   const toast = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('All');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [recentSearches, setRecentSearches] = useState(['Anxiety therapy', 'Dr. Sarah', 'Couples counseling']);
+  const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Mock therapist data
+  // Mock therapist data with complete information
   const therapists = [
     {
       id: 1,
-      name: 'Dr. Sarah Johnson',
-      specialty: 'Anxiety & Depression',
-      rating: 4.9,
+      name: 'Dr. Martin Pilier',
+      specialty: 'Therapist - Specialist',
+      rating: 3,
+      location: 'Kampala Down Town - 2 km',
+      image: require('../assets/images/dummy-people/d-person1.png'),
+      reviews: 213,
       experience: '8 years',
-      price: '$80/session',
-      image: appImages.defaultAvatar,
+      price: 'UGX 50,000',
+      priceUnit: '/session',
       available: true,
       bio: 'Specialized in cognitive behavioral therapy and mindfulness techniques.',
+      nextAvailable: 'Today 2:00 PM',
     },
     {
       id: 2,
-      name: 'Dr. Michael Chen',
-      specialty: 'Relationship Counseling',
-      rating: 4.8,
-      experience: '12 years',
-      price: '$90/session',
-      image: appImages.defaultAvatar,
+      name: 'Dr. Clara Odding',
+      specialty: 'Therapist',
+      rating: 2,
+      location: 'Nakawa - 3 km',
+      image: require('../assets/images/dummy-people/d-person2.png'),
+      reviews: 25,
+      experience: '5 years',
+      price: 'UGX 45,000',
+      priceUnit: '/session',
       available: true,
-      bio: 'Expert in couples therapy and family counseling.',
+      bio: 'Expert in anxiety and depression treatment.',
+      nextAvailable: 'Tomorrow 10:00 AM',
     },
     {
       id: 3,
-      name: 'Dr. Emily Davis',
-      specialty: 'Trauma Therapy',
-      rating: 4.9,
-      experience: '10 years',
-      price: '$85/session',
-      image: appImages.defaultAvatar,
+      name: 'Dr. Julien More',
+      specialty: 'Therapist',
+      rating: 5,
+      location: 'Mukono - 10 km',
+      image: require('../assets/images/dummy-people/d-person3.png'),
+      reviews: 456,
+      experience: '12 years',
+      price: 'UGX 60,000',
+      priceUnit: '/session',
       available: false,
-      bio: 'Specializes in PTSD treatment and trauma recovery.',
+      bio: 'Specializes in trauma therapy and PTSD treatment.',
+      nextAvailable: 'Next week',
     },
     {
       id: 4,
-      name: 'Dr. James Wilson',
-      specialty: 'Teen Counseling',
-      rating: 4.7,
-      experience: '6 years',
-      price: '$75/session',
-      image: appImages.defaultAvatar,
+      name: 'Dr. Sarah Johnson',
+      specialty: 'Anxiety & Depression',
+      rating: 4,
+      location: 'Kampala Central - 5 km',
+      image: require('../assets/images/dummy-people/d-person4.png'),
+      reviews: 189,
+      experience: '10 years',
+      price: 'UGX 55,000',
+      priceUnit: '/session',
       available: true,
       bio: 'Focused on adolescent mental health and behavioral issues.',
+      nextAvailable: 'Today 4:30 PM',
     },
   ];
 
-  const specialties = ['All', 'Anxiety & Depression', 'Relationship Counseling', 'Trauma Therapy', 'Teen Counseling'];
+  const specialties = ['All Specialities', 'Therapist', 'Specialist', 'Counselor'];
 
   const filteredTherapists = therapists.filter(therapist => {
     const matchesSearch = therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          therapist.specialty.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = selectedSpecialty === 'All' || therapist.specialty === selectedSpecialty;
+    const matchesSpecialty = selectedSpecialty === 'All Specialities' || 
+                            therapist.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase());
     return matchesSearch && matchesSpecialty;
   });
 
@@ -99,21 +120,98 @@ const TherapistsScreen = ({ navigation }) => {
   };
 
   const handleBookSession = (therapist) => {
-    notifyWithToast(`Booking session with ${therapist.name}...`);
-    // Navigate to booking screen or implement booking logic
+    if (therapist.available) {
+      navigation.navigate('TherapistDetailScreen', { therapist });
+    } else {
+      notifyWithToast('This therapist is currently unavailable');
+    }
   };
 
   const handleViewProfile = (therapist) => {
-    notifyWithToast(`Viewing ${therapist.name}'s profile`);
-    // Navigate to therapist profile screen
+    navigation.navigate('TherapistDetailScreen', { therapist });
   };
 
-  const TherapistCard = ({ therapist }) => (
-    <View style={styles.therapistCard}>
-      <View style={styles.therapistHeader}>
+  const handleSearchFocus = () => {
+    setIsSearchFocused(true);
+  };
+
+  const handleSearchBlur = () => {
+    setIsSearchFocused(false);
+  };
+
+  const handleRecentSearchPress = (searchTerm) => {
+    setSearchQuery(searchTerm);
+    setIsSearchFocused(false);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+
+  const toggleViewType = () => {
+    setViewType(viewType === 'compact' ? 'detailed' : 'compact');
+  };
+
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
+
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }, (_, index) => (
+      <Icon
+        key={index}
+        name="star"
+        type="material"
+        color={index < rating ? "#FFD700" : "#E0E0E0"}
+        size={14}
+      />
+    ));
+  };
+
+  const CompactTherapistCard = ({ therapist }) => (
+    <TouchableOpacity 
+      style={styles.therapistCard}
+      onPress={() => handleViewProfile(therapist)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cardContent}>
         <Avatar
           source={therapist.image}
           size={60}
+          rounded
+          containerStyle={styles.avatar}
+        />
+        
+        <View style={styles.therapistInfo}>
+          <Text style={styles.therapistName}>{therapist.name}</Text>
+          <Text style={styles.therapistSpecialty}>{therapist.specialty}</Text>
+          <Text style={styles.therapistLocation}>{therapist.location}</Text>
+          
+          <View style={styles.ratingContainer}>
+            <View style={styles.starsContainer}>
+              {renderStars(therapist.rating)}
+            </View>
+            <Text style={styles.reviewCount}>({therapist.reviews})</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.menuButton}>
+          <Icon name="more-vert" type="material" color={appColors.grey2} size={24} />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const DetailedTherapistCard = ({ therapist }) => (
+    <TouchableOpacity 
+      style={styles.detailedTherapistCard}
+      onPress={() => handleViewProfile(therapist)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.therapistHeader}>
+        <Avatar
+          source={therapist.image}
+          size={70}
           rounded
           containerStyle={styles.avatar}
         />
@@ -123,11 +221,13 @@ const TherapistsScreen = ({ navigation }) => {
           <View style={styles.ratingContainer}>
             <Icon name="star" type="material" color="#FFD700" size={16} />
             <Text style={styles.rating}>{therapist.rating}</Text>
-            <Text style={styles.experience}>• {therapist.experience}</Text>
+            <Text style={styles.reviewCount}>({therapist.reviews} reviews)</Text>
           </View>
+          <Text style={styles.experience}>{therapist.experience} experience</Text>
         </View>
         <View style={styles.priceContainer}>
           <Text style={styles.price}>{therapist.price}</Text>
+          <Text style={styles.priceUnit}>{therapist.priceUnit}</Text>
           <View style={[
             styles.availabilityBadge,
             therapist.available ? styles.available : styles.unavailable
@@ -142,34 +242,41 @@ const TherapistsScreen = ({ navigation }) => {
         </View>
       </View>
       
-      <Text style={styles.therapistBio}>{therapist.bio}</Text>
+      <Text style={styles.therapistBio} numberOfLines={2}>{therapist.bio}</Text>
       
-      <View style={styles.therapistActions}>
-        <TouchableOpacity
-          style={styles.viewProfileButton}
-          onPress={() => handleViewProfile(therapist)}
-        >
-          <Text style={styles.viewProfileText}>View Profile</Text>
-        </TouchableOpacity>
+      <View style={styles.therapistFooter}>
+        <View style={styles.nextAvailableContainer}>
+          <Icon name="schedule" type="material" color={appColors.AppBlue} size={16} />
+          <Text style={styles.nextAvailableText}>Next: {therapist.nextAvailable}</Text>
+        </View>
         
         <TouchableOpacity
           style={[
             styles.bookButton,
             !therapist.available && styles.disabledButton
           ]}
-          onPress={() => handleBookSession(therapist)}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleBookSession(therapist);
+          }}
           disabled={!therapist.available}
         >
           <Text style={[
             styles.bookButtonText,
             !therapist.available && styles.disabledButtonText
           ]}>
-            {therapist.available ? 'Book Session' : 'Unavailable'}
+            {therapist.available ? 'Book Now' : 'Unavailable'}
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
+
+  const TherapistCard = ({ therapist }) => {
+    return viewType === 'compact' ? 
+      <CompactTherapistCard therapist={therapist} /> : 
+      <DetailedTherapistCard therapist={therapist} />;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -183,11 +290,11 @@ const TherapistsScreen = ({ navigation }) => {
 
       <View style={styles.content}>
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, isSearchFocused && styles.searchContainerFocused]}>
           <Icon
             name="search"
             type="material"
-            color={appColors.AppGray}
+            color={isSearchFocused ? appColors.AppBlue : appColors.AppGray}
             size={20}
             style={styles.searchIcon}
           />
@@ -196,55 +303,130 @@ const TherapistsScreen = ({ navigation }) => {
             placeholder="Search therapists or specialties..."
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onFocus={handleSearchFocus}
+            onBlur={handleSearchBlur}
             placeholderTextColor={appColors.AppGray}
           />
-        </View>
-
-        {/* Specialty Filter */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.specialtyContainer}
-        >
-          {specialties.map((specialty) => (
-            <TouchableOpacity
-              key={specialty}
-              style={[
-                styles.specialtyChip,
-                selectedSpecialty === specialty && styles.selectedSpecialtyChip
-              ]}
-              onPress={() => setSelectedSpecialty(specialty)}
-            >
-              <Text style={[
-                styles.specialtyText,
-                selectedSpecialty === specialty && styles.selectedSpecialtyText
-              ]}>
-                {specialty}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Therapists List */}
-        <FlatList
-          data={filteredTherapists}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <TherapistCard therapist={item} />}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
               <Icon
-                name="person-search"
+                name="close"
                 type="material"
                 color={appColors.AppGray}
-                size={60}
+                size={20}
               />
-              <Text style={styles.emptyText}>No therapists found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Search Expanded State */}
+        {isSearchFocused && (
+          <View style={styles.searchExpandedContainer}>
+            <Text style={styles.searchSectionTitle}>Recent Searches</Text>
+            {recentSearches.map((search, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.recentSearchItem}
+                onPress={() => handleRecentSearchPress(search)}
+              >
+                <Icon
+                  name="history"
+                  type="material"
+                  color={appColors.AppGray}
+                  size={18}
+                />
+                <Text style={styles.recentSearchText}>{search}</Text>
+              </TouchableOpacity>
+            ))}
+            
+            <Text style={styles.searchSectionTitle}>Popular Specialties</Text>
+            {['Anxiety & Depression', 'Relationship Counseling', 'Trauma Therapy'].map((specialty, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.recentSearchItem}
+                onPress={() => handleRecentSearchPress(specialty)}
+              >
+                <Icon
+                  name="trending-up"
+                  type="material"
+                  color={appColors.AppBlue}
+                  size={18}
+                />
+                <Text style={styles.recentSearchText}>{specialty}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Filter Section - Hidden when search is focused */}
+        {!isSearchFocused && (
+          <View style={styles.filterSection}>
+            <Text style={styles.filterText}>All Specialities</Text>
+            <View style={styles.filterActions}>
+              <TouchableOpacity style={styles.viewToggleButton} onPress={toggleViewType}>
+                <Icon 
+                  name={viewType === 'compact' ? 'view-list' : 'view-module'} 
+                  type="material" 
+                  color={appColors.grey2} 
+                  size={24} 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.filterButton} onPress={toggleFilters}>
+                <Icon name="tune" type="material" color={appColors.grey2} size={24} />
+              </TouchableOpacity>
             </View>
-          }
-        />
+          </View>
+        )}
+
+        {/* Specialty Filter Chips - Show when filters are toggled */}
+        {!isSearchFocused && showFilters && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.specialtyContainer}
+          >
+            {specialties.map((specialty) => (
+              <TouchableOpacity
+                key={specialty}
+                style={[
+                  styles.specialtyChip,
+                  selectedSpecialty === specialty && styles.selectedSpecialtyChip
+                ]}
+                onPress={() => setSelectedSpecialty(specialty)}
+              >
+                <Text style={[
+                  styles.specialtyText,
+                  selectedSpecialty === specialty && styles.selectedSpecialtyText
+                ]}>
+                  {specialty}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
+        {/* Therapists List - Hidden when search is focused */}
+        {!isSearchFocused && (
+          <FlatList
+            data={filteredTherapists}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => <TherapistCard therapist={item} />}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Icon
+                  name="person-search"
+                  type="material"
+                  color={appColors.AppGray}
+                  size={60}
+                />
+                <Text style={styles.emptyText}>No therapists found</Text>
+                <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+              </View>
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -253,7 +435,7 @@ const TherapistsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppLightGray,
   },
   content: {
     flex: 1,
@@ -284,6 +466,46 @@ const styles = StyleSheet.create({
     color: appColors.AppBlue,
     fontFamily: appFonts.appTextRegular,
   },
+  searchContainerFocused: {
+    borderColor: appColors.AppBlue,
+    borderWidth: 2,
+  },
+  clearButton: {
+    padding: 5,
+  },
+  searchExpandedContainer: {
+    backgroundColor: appColors.CardBackground,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  searchSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    marginBottom: 15,
+    marginTop: 10,
+    fontFamily: appFonts.appTextBold,
+  },
+  recentSearchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 5,
+    borderBottomWidth: 0.5,
+    borderBottomColor: appColors.grey4,
+  },
+  recentSearchText: {
+    fontSize: 15,
+    color: appColors.grey1,
+    marginLeft: 12,
+    fontFamily: appFonts.appTextRegular,
+  },
   specialtyContainer: {
     marginBottom: 20,
   },
@@ -308,20 +530,63 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 20,
   },
+  filterSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  filterText: {
+    fontSize: 16,
+    color: appColors.grey1,
+    fontFamily: appFonts.appTextMedium,
+  },
+  filterActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewToggleButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  filterButton: {
+    padding: 8,
+  },
+  specialtyContainer: {
+    marginBottom: 20,
+  },
+  specialtyChip: {
+    backgroundColor: appColors.AppLightGray,
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+  },
+  selectedSpecialtyChip: {
+    backgroundColor: appColors.AppBlue,
+  },
+  specialtyText: {
+    fontSize: 14,
+    color: appColors.AppGray,
+    fontFamily: appFonts.appTextMedium,
+  },
+  selectedSpecialtyText: {
+    color: appColors.CardBackground,
+  },
   therapistCard: {
     backgroundColor: appColors.CardBackground,
     borderRadius: 15,
-    padding: 20,
+    padding: 15,
     marginBottom: 15,
-    elevation: 3,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
   },
-  therapistHeader: {
+  cardContent: {
     flexDirection: 'row',
-    marginBottom: 15,
+    alignItems: 'center',
   },
   avatar: {
     marginRight: 15,
@@ -330,43 +595,80 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   therapistName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: appColors.AppBlue,
-    marginBottom: 5,
+    color: appColors.grey1,
+    marginBottom: 3,
     fontFamily: appFonts.appTextBold,
   },
   therapistSpecialty: {
     fontSize: 14,
-    color: appColors.AppGray,
-    marginBottom: 5,
+    color: appColors.grey2,
+    marginBottom: 3,
+    fontFamily: appFonts.appTextRegular,
+  },
+  therapistLocation: {
+    fontSize: 13,
+    color: appColors.grey2,
+    marginBottom: 8,
     fontFamily: appFonts.appTextRegular,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  rating: {
-    fontSize: 14,
-    color: appColors.AppBlue,
-    marginLeft: 5,
-    fontFamily: appFonts.appTextMedium,
+  starsContainer: {
+    flexDirection: 'row',
+    marginRight: 8,
   },
-  experience: {
-    fontSize: 14,
-    color: appColors.AppGray,
-    marginLeft: 5,
+  reviewCount: {
+    fontSize: 12,
+    color: appColors.grey2,
     fontFamily: appFonts.appTextRegular,
+  },
+  menuButton: {
+    padding: 8,
+  },
+  detailedTherapistCard: {
+    backgroundColor: appColors.CardBackground,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  therapistHeader: {
+    flexDirection: 'row',
+    marginBottom: 15,
   },
   priceContainer: {
     alignItems: 'flex-end',
   },
   price: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    marginBottom: 5,
     fontFamily: appFonts.appTextBold,
+  },
+  priceUnit: {
+    fontSize: 12,
+    color: appColors.grey2,
+    marginBottom: 8,
+    fontFamily: appFonts.appTextRegular,
+  },
+  rating: {
+    fontSize: 14,
+    color: appColors.grey1,
+    marginLeft: 4,
+    fontFamily: appFonts.appTextMedium,
+  },
+  experience: {
+    fontSize: 13,
+    color: appColors.grey2,
+    fontFamily: appFonts.appTextRegular,
   },
   availabilityBadge: {
     paddingHorizontal: 8,
@@ -391,34 +693,32 @@ const styles = StyleSheet.create({
   },
   therapistBio: {
     fontSize: 14,
-    color: appColors.AppGray,
+    color: appColors.grey2,
     marginBottom: 15,
     lineHeight: 20,
     fontFamily: appFonts.appTextRegular,
   },
-  therapistActions: {
+  therapistFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  viewProfileButton: {
-    flex: 1,
-    backgroundColor: appColors.AppLightGray,
-    borderRadius: 25,
-    paddingVertical: 12,
-    marginRight: 10,
     alignItems: 'center',
   },
-  viewProfileText: {
-    fontSize: 14,
+  nextAvailableContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  nextAvailableText: {
+    fontSize: 13,
     color: appColors.AppBlue,
-    fontWeight: '600',
+    marginLeft: 6,
     fontFamily: appFonts.appTextMedium,
   },
   bookButton: {
-    flex: 1,
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 12,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   bookButtonText: {

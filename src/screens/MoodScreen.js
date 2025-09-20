@@ -176,7 +176,11 @@ const MoodScreen = ({ navigation }) => {
         <View style={styles.insightsSection}>
           <Text style={styles.sectionTitle}>Your Mood Insights</Text>
           
-          <View style={styles.insightsGrid}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.insightsScrollContainer}
+          >
             {insights.map((insight) => (
               <View key={insight.id} style={styles.insightCard}>
                 <View style={[styles.insightIconContainer, { backgroundColor: insight.color + '15' }]}>
@@ -191,7 +195,7 @@ const MoodScreen = ({ navigation }) => {
                 <Text style={styles.insightDescription}>{insight.description}</Text>
               </View>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         {/* Mood History */}
@@ -390,27 +394,24 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.appTextBold,
   },
   insightsSection: {
-    marginHorizontal: 20,
     marginBottom: 25,
   },
-  insightsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+  insightsScrollContainer: {
+    paddingHorizontal: 20,
   },
   insightCard: {
     backgroundColor: appColors.CardBackground,
     borderRadius: 15,
     padding: 20,
     alignItems: 'center',
-    width: '31%',
-    minHeight: 120,
+    width: 160,
+    minHeight: 100,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    marginBottom: 10,
+    marginRight: 15,
   },
   insightIconContainer: {
     borderRadius: 25,

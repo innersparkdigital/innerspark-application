@@ -35,13 +35,19 @@ import SettingsScreen from '../screens/settingScreens/SettingsScreen';
 // Location Sreens
 import NewAddressScreen from '../screens/locationScreens/NewAddressScreen';
 
-
 // Payment Screens
 import PaymentOptionsScreen from '../screens/paymentScreens/PaymentOptionsScreen';
 
 // Verification Screens
 import VerifyPhoneScreen from '../screens/verificationScreens/VerifyPhoneScreen';
 import VerifyEmailScreen from '../screens/verificationScreens/VerifyEmailScreen';
+
+// Therapist Screens
+import TherapistsScreen from '../screens/TherapistsScreen';
+import TherapistDetailScreen from '../screens/therapistScreens/TherapistDetailScreen';
+import BookingCheckoutScreen from '../screens/therapistScreens/BookingCheckoutScreen';
+import BookingConfirmationScreen from '../screens/therapistScreens/BookingConfirmationScreen';
+import AppointmentsScreen from '../screens/therapistScreens/AppointmentsScreen';
 
 /** A new library will be used for Location Services */
 // Yo Location Screens
@@ -68,56 +74,8 @@ export default function LHStackNavigator(){
                 }}
             />
 
-            {/* Bottom Tabs Screens */}
-            <LHStack.Screen
-                name="HomeScreen"
-                component={HomeScreen}
-                options={{
-                    headerShown: false,
-                    title: '',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
-            <LHStack.Screen
-                name="ProfileScreen"
-                component={ProfileScreen}
-                options={{
-                    headerShown: false,
-                    title: '',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
-            <LHStack.Screen
-                name="MoreScreen"
-                component={MoreScreen}
-                options={{
-                    headerShown: false,
-                    title: '',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
-            <LHStack.Screen
-                name="BookingsScreen"
-                component={BookingsScreen}
-                options={{
-                    headerShown: false,
-                    title: '',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
-            <LHStack.Screen
-                name="ExploreScreen"
-                component={ExploreScreen}
-                options={{
-                    headerShown: false,
-                    title: '',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
+            {/* Note: Bottom Tab screens (HomeScreen, MoodScreen, TherapistsScreen, AccountScreen, EmergencyScreen) 
+                 are now only defined in LHBottomTabs to avoid navigation conflicts */}
 
             <LHStack.Screen
                 name="AboutAppScreen"
@@ -280,6 +238,57 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Verify Email Address',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Therapist Screens */}
+            <LHStack.Screen
+                name="TherapistsScreen"
+                component={TherapistsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Find Therapists',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="TherapistDetailScreen"
+                component={TherapistDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Therapist Profile',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="BookingCheckoutScreen"
+                component={BookingCheckoutScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Booking Checkout',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="BookingConfirmationScreen"
+                component={BookingConfirmationScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Booking Confirmed',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="AppointmentsScreen"
+                component={AppointmentsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'My Appointments',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

@@ -53,9 +53,9 @@ const HomeScreen = ({ navigation }) => {
 
   const quickActions = [
     { id: 1, title: 'My Goals', icon: 'flag', color: '#4CAF50', screen: 'GoalsScreen' },
-    { id: 2, title: 'Therapy Groups', icon: 'people', color: '#2196F3', screen: 'TherapistsScreen' },
+    { id: 2, title: 'Therapy Groups', icon: 'people', color: '#2196F3', screen: 'TherapyGroupsScreen' },
     { id: 3, title: 'Events', icon: 'event', color: '#FF9800', screen: 'EventsScreen' },
-    { id: 4, title: 'Sessions', icon: 'psychology', color: '#9C27B0', screen: 'BookingsScreen' },
+    { id: 4, title: 'Sessions', icon: 'psychology', color: '#9C27B0', screen: 'AppointmentsScreen' },
     { id: 5, title: 'Mood Tracker', icon: 'mood', color: '#E91E63', screen: 'MoodScreen' },
     { id: 6, title: 'Emergency', icon: 'emergency', color: '#F44336', screen: 'EmergencyScreen' },
     { id: 7, title: 'Meditation', icon: 'self-improvement', color: '#673AB7', screen: 'MeditationScreen' },
@@ -71,9 +71,14 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleQuickAction = (action) => {
-    const availableScreens = ['TherapistsScreen', 'BookingsScreen', 'MoodScreen', 'EmergencyScreen'];
+    const bottomTabScreens = ['TherapistsScreen', 'MoodScreen', 'EmergencyScreen'];
+    const stackScreens = ['AppointmentsScreen'];
     
-    if (availableScreens.includes(action.screen)) {
+    if (bottomTabScreens.includes(action.screen)) {
+      // Navigate to the bottom tab screen
+      navigation.navigate('LHBottomTabs', { screen: action.screen });
+    } else if (stackScreens.includes(action.screen)) {
+      // Navigate to stack screen directly
       navigation.navigate(action.screen);
     } else {
       toast.show({
