@@ -35,8 +35,6 @@ import SettingsScreen from '../screens/settingScreens/SettingsScreen';
 // Location Sreens
 import NewAddressScreen from '../screens/locationScreens/NewAddressScreen';
 
-// Payment Screens
-import PaymentOptionsScreen from '../screens/paymentScreens/PaymentOptionsScreen';
 
 // Verification Screens
 import VerifyPhoneScreen from '../screens/verificationScreens/VerifyPhoneScreen';
@@ -47,6 +45,17 @@ import TherapistsScreen from '../screens/TherapistsScreen';
 import TherapistDetailScreen from '../screens/therapistScreens/TherapistDetailScreen';
 import BookingCheckoutScreen from '../screens/therapistScreens/BookingCheckoutScreen';
 import BookingConfirmationScreen from '../screens/therapistScreens/BookingConfirmationScreen';
+import EventDetailScreen from '../screens/eventScreens/EventDetailScreen';
+import EventsScreen from '../screens/EventsScreen';
+
+// Notification Screens
+import NotificationScreen from '../screens/NotificationScreen';
+import NotificationDetailScreen from '../screens/NotificationDetailScreen';
+
+// Goal Screens
+import GoalsScreen from '../screens/GoalsScreen';
+import CreateGoalScreen from '../screens/goalScreens/CreateGoalScreen';
+import GoalDetailScreen from '../screens/goalScreens/GoalDetailScreen';
 import AppointmentsScreen from '../screens/therapistScreens/AppointmentsScreen';
 
 /** A new library will be used for Location Services */
@@ -189,18 +198,6 @@ export default function LHStackNavigator(){
                 }}
             /> */}
 
-
-            {/* Payment Screens */}
-            <LHStack.Screen
-                name="PaymentOptionsScreen"
-                component={PaymentOptionsScreen}
-                options={{
-                    headerShown: false,
-                    title: 'Payment Options',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
             <LHStack.Screen
                 name="TestScreen"
                 component={TestScreen}
@@ -238,6 +235,68 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Verify Email Address',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Event Screens */}
+            <LHStack.Screen
+                name="EventsScreen"
+                component={EventsScreen}
+                options={{
+                    headerShown: false,
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+            <LHStack.Screen
+                name="EventDetailScreen"
+                component={EventDetailScreen}
+                options={{
+                    headerShown: false,
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Notification Screens */}
+            <LHStack.Screen
+                name="NotificationScreen"
+                component={NotificationScreen}
+                options={{
+                    headerShown: false,
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+            <LHStack.Screen
+                name="NotificationDetailScreen"
+                component={NotificationDetailScreen}
+                options={{
+                    headerShown: false,
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Goal Screens */}
+            <LHStack.Screen
+                name="GoalsScreen"
+                component={GoalsScreen}
+                options={{
+                    headerShown: false,
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+            <LHStack.Screen
+                name="CreateGoalScreen"
+                component={CreateGoalScreen}
+                options={{
+                    headerShown: false,
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+            <LHStack.Screen
+                name="GoalDetailScreen"
+                component={GoalDetailScreen}
+                options={{
+                    headerShown: false,
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
