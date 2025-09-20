@@ -35,7 +35,8 @@ export const appLinks = {
 
 /* App Content: Text Descriptions, intro, etc. */
 export const appContents = {
-    aboutAppText : "Enjoy hassle-free, efficient service designed to meet all your laundry needs. Schedule pick-ups, track your laundry in real-time, and manage payments all in one convenient app.",
+    aboutAppText: "Innerspark helps you care for your mental well-being with ease. Book therapy sessions, track your moods, join support groups, and access wellness resources—all in one simple, supportive app.",
+
 }
 
 

@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   },
   activityTime: {
     fontSize: 13,
-    color: appColors.AppGray,
+    color: appColors.grey2,
     fontFamily: appFonts.appTextRegular,
   },
   emergencyButton: {
