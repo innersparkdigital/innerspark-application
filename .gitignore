@@ -4,7 +4,7 @@
 
 # dev_artifacts
 # 
-/dev_artifacts
+dev_artifacts/
 
 # Environment variables
 .env
