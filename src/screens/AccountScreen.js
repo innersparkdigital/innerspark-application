@@ -99,7 +99,7 @@ export default function AccountScreen({ navigation }){
 
     return(
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+        <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" translucent={false} animated={true} />
         
         {/* Curved Header with Profile */}
         <View style={styles.curvedHeader}>
@@ -107,24 +107,18 @@ export default function AccountScreen({ navigation }){
             <View style={styles.avatarContainer}>
               <Avatar 
                 rounded 
-                size={100} 
+                size={80} 
                 source={userDetails?.image || appImages.avatarDefault}
                 containerStyle={styles.avatarStyle}
+                avatarStyle={styles.avatarImageStyle}
               />
             </View>
             <Text style={styles.userName}>
               {getFullname(userDetails?.firstName, userDetails?.lastName) || 'Jane Doe'}
             </Text>
-            
-            {/* Mood Prompt */}
-            <TouchableOpacity 
-              style={styles.moodPrompt}
-              onPress={() => navigation.navigate('MoodScreen')}
-            >
-              <Icon name="mood" type="material" color={appColors.AppBlue} size={20} />
-              <Text style={styles.moodPromptText}>What's your mood today ?</Text>
-              <Icon name="chevron-right" type="material" color={appColors.AppBlue} size={20} />
-            </TouchableOpacity>
+            <Text style={styles.userEmail}>
+              {userDetails?.email || 'user@example.com'}
+            </Text>
           </View>
         </View>
              
@@ -136,7 +130,7 @@ export default function AccountScreen({ navigation }){
                   style={styles.shortcutCard}
                   onPress={() => notifyWithToast('Goals feature coming soon!')}
                 >
-                  <Icon name="flag" type="material" color={appColors.AppBlue} size={24} />
+                  <Icon name="flag" type="material" color="#333" size={24} />
                   <Text style={styles.shortcutText}>Goals</Text>
                 </TouchableOpacity>
                 
@@ -144,23 +138,15 @@ export default function AccountScreen({ navigation }){
                   style={styles.shortcutCard}
                   onPress={() => notifyWithToast('Appointments feature coming soon!')}
                 >
-                  <Icon name="event" type="material" color={appColors.AppBlue} size={24} />
+                  <Icon name="event" type="material" color="#333" size={24} />
                   <Text style={styles.shortcutText}>Appointments</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.shortcutCard}
-                  onPress={() => navigation.navigate('MoodScreen')}
+                  onPress={() => navigation.navigate('WellnessVaultScreen')}
                 >
-                  <Icon name="mood" type="material" color={appColors.AppBlue} size={24} />
-                  <Text style={styles.shortcutText}>Mood</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.shortcutCard}
-                  onPress={() => notifyWithToast('WellnessVault feature coming soon!')}
-                >
-                  <Icon name="health-and-safety" type="material" color={appColors.AppBlue} size={24} />
+                  <Icon name="health-and-safety" type="material" color="#333" size={24} />
                   <Text style={styles.shortcutText}>WellnessVault</Text>
                 </TouchableOpacity>
               </View>
@@ -373,32 +359,32 @@ const styles = StyleSheet.create({
     },
     avatarContainer: {
         marginBottom: 15,
+        alignItems: 'center',
+        backgroundColor: appColors.AppBlue,
     },
     avatarStyle: {
-        borderWidth: 4,
+        borderWidth: 2,
         borderColor: appColors.CardBackground,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarImageStyle: {
+        width: 76,
+        height: 76,
+        borderRadius: 40,
+        resizeMode: 'cover',
     },
     userName: {
         fontSize: 24,
         fontWeight: 'bold',
         color: appColors.CardBackground,
-        marginBottom: 20,
+        marginBottom: 8,
         fontFamily: appFonts.appTextBold,
     },
-    moodPrompt: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: appColors.CardBackground,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 25,
-        marginTop: 10,
-    },
-    moodPromptText: {
-        flex: 1,
-        marginLeft: 10,
+    userEmail: {
         fontSize: 16,
-        color: appColors.AppBlue,
+        color: appColors.CardBackground,
+        opacity: 0.9,
         fontFamily: appFonts.appTextRegular,
     },
     scrollView: {
@@ -408,7 +394,7 @@ const styles = StyleSheet.create({
     },
     shortcutsSection: {
         paddingHorizontal: 20,
-        marginBottom: 30,
+        marginBottom: 20,
     },
     shortcutsGrid: {
         flexDirection: 'row',
@@ -416,9 +402,9 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     shortcutCard: {
-        width: '22%',
+        width: '30%',
         backgroundColor: appColors.CardBackground,
-        borderRadius: 15,
+        borderRadius: 16,
         paddingVertical: 20,
         paddingHorizontal: 10,
         alignItems: 'center',
@@ -428,25 +414,29 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         marginBottom: 10,
+        minHeight: 90,
+        justifyContent: 'center',
     },
     shortcutText: {
-        fontSize: 12,
-        color: appColors.AppBlue,
+        fontSize: 11,
+        color: '#333',
         fontWeight: '600',
         textAlign: 'center',
-        marginTop: 8,
+        marginTop: 6,
         fontFamily: appFonts.appTextMedium,
+        lineHeight: 14,
     },
     menuSection: {
         backgroundColor: appColors.CardBackground,
         marginHorizontal: 20,
-        borderRadius: 15,
-        paddingVertical: 10,
-        elevation: 2,
+        borderRadius: 20,
+        paddingVertical: 5,
+        elevation: 3,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        marginBottom: 20,
     },
 
     accountImageContainer: {
@@ -509,20 +499,18 @@ const styles = StyleSheet.create({
     },
 
     listRow: {
-        flexDirection: 'row',
-        paddingVertical: 15,
+        flexDirection:'row',
+        alignItems:'center',
         paddingHorizontal: 20,
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        paddingVertical: 18,
         borderBottomWidth: 0.5,
         borderBottomColor: appColors.AppLightGray,
     },
-
     listRowLast: {
-        flexDirection: 'row',
-        paddingVertical: 15,
+        flexDirection:'row',
+        alignItems:'center',
         paddingHorizontal: 20,
-        alignItems: 'center',
+        paddingVertical: 18,
         justifyContent: 'space-between',
         borderBottomLeftRadius: 15,
         borderBottomRightRadius: 15,
@@ -540,7 +528,8 @@ const styles = StyleSheet.create({
 
     menuText: {
         fontSize: 16,
-        color: appColors.AppBlue,
+        color: '#333',
+        fontWeight: '500',
         fontFamily: appFonts.appTextMedium,
     },
 

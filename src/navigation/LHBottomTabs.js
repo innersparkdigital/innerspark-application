@@ -34,7 +34,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
         <Icon
           name={iconConfig.icon}
           type={iconConfig.type}
-          color={isActive ? appColors.AppBlue : appColors.CardBackground}
+          color={isActive ? appColors.AppBlue : '#000'}
           size={22}
         />
       );
@@ -42,10 +42,10 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
       // Fallback to a default icon if the mapping is not available
       return (
         <Icon
-          name="help-outline"
+          name={getIconName(name)}
           type="material"
-          color={isActive ? appColors.AppBlue : appColors.CardBackground}
-          size={22}
+          size={25}
+          color={isActive ? appColors.AppBlue : '#000'}
         />
       );
     }
@@ -100,7 +100,9 @@ const LHBottomTabs = () => {
 
 const styles = StyleSheet.create({
   footerContainer: {
-    backgroundColor: appColors.AppBlue,
+    backgroundColor: appColors.CardBackground,
+    borderTopWidth: 1,
+    borderTopColor: appColors.AppLightGray,
   },
   footerTabsContainer: {
     flexDirection: "row",
@@ -108,8 +110,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 15,
     paddingHorizontal: 5,
-    borderTopColor: appColors.AppBlue,
-    borderTopWidth: 2,
   },
   footerTab: {
     paddingVertical: 5,
@@ -119,6 +119,9 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 50,
     overflow: 'hidden',
+  },
+  footerTabActive: {
+    backgroundColor: appColors.CardBackground,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -128,11 +131,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  footerTabActive: {
-    backgroundColor: appColors.CardBackground,
-  },
   footerTabInactive: {
-    backgroundColor: appColors.AppBlue,
+    backgroundColor: appColors.CardBackground,
   },
   footerTabContent: {
     alignItems: 'center',
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   footerTabText: {
-    color: appColors.CardBackground,
+    color: appColors.grey1,
     fontWeight: "600",
     fontSize: 9,
     marginTop: 3,

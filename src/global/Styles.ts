@@ -22,6 +22,7 @@ export const appColors = {
     AppBlueDark: "#2C7A7C", // alternative base color
     AppOrange: "#EE7810", // base color  -- same as dark
     AppGreen: "#64D64E",
+    AppLightGray: "#F6F6F6",
 
     DoffeeGreen: "#2C7A7C",
     DoffeeYellow: "#FFC12F",

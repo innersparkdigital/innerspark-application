@@ -15,10 +15,13 @@ import MoreScreen from '../screens/MoreScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import ExploreScreen from '../screens/ExploreScreen';
 
+// Wellness Vault Screens
+import WellnessVaultScreen from '../screens/vaultScreens/WellnessVaultScreen';
+import MoMoTopupScreen from '../screens/vaultScreens/MoMoTopupScreen';
+
 import AboutAppScreen from '../screens/AboutAppScreen';
 import NotificationScreen from '../screens/NotificationScreen';
 import ProfileInfoScreen from '../screens/profileScreens/ProfileInfoScreen';
-
 
 // Booking Screens - Pickup Details & Service Item Selection and more
 import ServiceItemSelectScreen from '../screens/bookingScreens/ServiceItemSelectScreen';
@@ -125,6 +128,30 @@ export default function LHStackNavigator(){
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
+
+            {/* Wellness Vault Screens */}
+            <LHStack.Screen
+                name="WellnessVaultScreen"
+                component={WellnessVaultScreen}
+                options={{
+                    headerShown: false,
+                    title: '',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* MoMo Topup Screen */}
+            <LHStack.Screen
+                name="MoMoTopupScreen"
+                component={MoMoTopupScreen}
+                options={{
+                    headerShown: false,
+                    title: '',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+
 
             {/* Profile Screens */}
             <LHStack.Screen
