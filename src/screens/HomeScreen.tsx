@@ -1,7 +1,7 @@
 /**
  * App HomeScreen - Mental Health Wellness Dashboard
  */
-import React, { useState, useEffect, useCallback }  from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -20,6 +20,14 @@ import { useToast } from 'native-base';
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../api/LHAPI';
 import { appImages } from '../global/Data';
 import { getFirstName } from '../global/LHShortcuts';
+
+// test notification trigger
+import { 
+  triggerTestNotifications, 
+  initializeNotificationChannels, 
+  requestNotificationPermissions,
+  setupNotificationEventListeners
+} from '../api/LHNotifications';
 
 
 const baseUrl = baseUrlRoot + baseUrlV1;
@@ -62,6 +70,42 @@ const HomeScreen = ({ navigation }) => {
     { id: 8, title: 'Journal', icon: 'book', color: '#795548', screen: 'JournalScreen' },
   ];
 
+  // Initialize notification system on component mount
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      try {
+        console.log('🔔 Initializing notification system...');
+        
+        // Request notification permissions first
+        const permissionGranted = await requestNotificationPermissions();
+        if (!permissionGranted) {
+          console.log('❌ Notification permissions denied');
+          return;
+        }
+        
+        // Initialize notification channels
+        await initializeNotificationChannels();
+        
+        // Setup notification event listeners (THIS WAS MISSING!)
+        const unsubscribe = setupNotificationEventListeners();
+        
+        console.log('✅ Notification system initialized successfully');
+        
+        // Return cleanup function
+        return () => {
+          if (unsubscribe) {
+            unsubscribe();
+          }
+        };
+        
+      } catch (error) {
+        console.error('❌ Failed to initialize notification system:', error);
+      }
+    };
+
+    initializeNotifications();
+  }, []);
+
   const handleMoodSelect = (mood) => {
     setSelectedMood(mood);
     toast.show({
@@ -71,8 +115,8 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleQuickAction = (action) => {
-    const bottomTabScreens = ['TherapistsScreen', 'MoodScreen', 'EmergencyScreen'];
-    const stackScreens = ['AppointmentsScreen'];
+    const bottomTabScreens = ['TherapistsScreen', 'MoodScreen', 'EmergencyScreen']; // Tabs screens available
+    const stackScreens = ['AppointmentsScreen', 'GoalsScreen']; // Available screens that can be navigated to directly
     
     if (bottomTabScreens.includes(action.screen)) {
       // Navigate to the bottom tab screen
@@ -112,6 +156,30 @@ const HomeScreen = ({ navigation }) => {
       <Text style={styles.actionTitle}>{action.title}</Text>
     </TouchableOpacity>
   );
+
+
+  // Test Notification Trigger
+  const handleTestNotification = async () => {
+    console.log('🧪 User pressed test notification button');
+    toast.show({
+      description: 'Triggering test notifications... Check your notification drawer!',
+      duration: 3000,
+    });
+    await triggerTestNotifications();
+  };
+
+  // Test Notification Button
+  const TestNotificationButton = () => (
+    <TouchableOpacity
+      style={{ backgroundColor: appColors.AppBlue, padding: 10, borderRadius: 5 }}
+      onPress={handleTestNotification}
+    >
+      <Text style={{ color: appColors.CardBackground, fontSize: 16 }}>Test Notification</Text>
+    </TouchableOpacity>
+  );
+
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -265,6 +333,9 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.emergencyText}>Emergency Support</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Test Notification Button */}
+        <TestNotificationButton />
 
         <View style={styles.bottomSpacing} />
       </ScrollView>

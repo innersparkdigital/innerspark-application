@@ -1,5 +1,5 @@
 /**
- * LaundryHouse 
+ * Innerspark 
  * Reusable components, methods, functions, etc. 
  * Keep it DRY baby!
  */

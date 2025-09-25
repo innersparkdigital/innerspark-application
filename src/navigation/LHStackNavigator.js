@@ -20,7 +20,6 @@ import WellnessVaultScreen from '../screens/vaultScreens/WellnessVaultScreen';
 import MoMoTopupScreen from '../screens/vaultScreens/MoMoTopupScreen';
 
 import AboutAppScreen from '../screens/AboutAppScreen';
-import NotificationScreen from '../screens/NotificationScreen';
 import ProfileInfoScreen from '../screens/profileScreens/ProfileInfoScreen';
 
 // Booking Screens - Pickup Details & Service Item Selection and more
@@ -131,16 +130,7 @@ export default function LHStackNavigator(){
                 }}
             />
 
-            {/* Notification Screen */}
-            <LHStack.Screen
-                name="NotificationScreen"
-                component={NotificationScreen}
-                options={{
-                    headerShown: false,
-                    title: 'Notifications',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
+           
 
             {/* More Screens */}
             <LHStack.Screen
@@ -186,7 +176,6 @@ export default function LHStackNavigator(){
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
-
 
             {/* <YoStack.Screen
                 name = "LocationPickerScreen"
@@ -257,15 +246,18 @@ export default function LHStackNavigator(){
                 }}
             />
 
-            {/* Notification Screens */}
-            <LHStack.Screen
+             {/* Notification Screen */}
+             <LHStack.Screen
                 name="NotificationScreen"
                 component={NotificationScreen}
                 options={{
                     headerShown: false,
+                    title: 'Notifications',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
+
+
             <LHStack.Screen
                 name="NotificationDetailScreen"
                 component={NotificationDetailScreen}

@@ -1,5 +1,5 @@
 /**
- * Goals Screen - Mental Health Goals Management
+ * Goals Screen - Mental Health Goals Management with Status Tabs
  */
 import React, { useState, useEffect } from 'react';
 import {
@@ -10,9 +10,10 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon, Skeleton } from '@rneui/base';
+import { Icon, Skeleton, Tab, TabView, Button, FAB } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
@@ -39,6 +40,9 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Tab View State
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
 
   // Mock goals data
   const mockGoals: Goal[] = [
@@ -274,37 +278,70 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
     </View>
   );
 
-  const EmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Icon name="flag" type="material" color={appColors.AppGray} size={80} />
-      <Text style={styles.emptyTitle}>No Goals Yet</Text>
-      <Text style={styles.emptySubtitle}>
-        Create your first mental health goal to start your wellness journey
-      </Text>
-      <TouchableOpacity style={styles.createFirstGoalButton} onPress={handleCreateGoal}>
-        <Text style={styles.createFirstGoalText}>Create Your First Goal</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const EmptyState: React.FC<{ status: string }> = ({ status }) => {
+    const getEmptyStateContent = () => {
+      switch (status) {
+        case 'active':
+          return {
+            icon: 'flag',
+            title: 'No Active Goals',
+            subtitle: 'Create your first mental health goal to start your wellness journey',
+            showButton: true,
+          };
+        case 'completed':
+          return {
+            icon: 'check-circle',
+            title: 'No Completed Goals',
+            subtitle: 'Complete your active goals to see them here',
+            showButton: false,
+          };
+        case 'paused':
+          return {
+            icon: 'pause-circle-filled',
+            title: 'No Paused Goals',
+            subtitle: 'Goals you pause will appear here for later resumption',
+            showButton: false,
+          };
+        default:
+          return {
+            icon: 'flag',
+            title: 'No Goals',
+            subtitle: 'Create your first goal to get started',
+            showButton: true,
+          };
+      }
+    };
 
-  const activeGoals = goals.filter(g => g.status === 'active').length;
-  const completedGoals = goals.filter(g => g.status === 'completed').length;
+    const content = getEmptyStateContent();
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
-      
-      <LHGenericHeader
-        title="My Goals"
-        subtitle={`${activeGoals} active, ${completedGoals} completed`}
-        navigation={navigation}
-        rightIcon="add"
-        rightIconPressed={handleCreateGoal}
-      />
+    return (
+      <View style={styles.emptyContainer}>
+        <Icon name={content.icon} type="material" color={appColors.AppGray} size={80} />
+        <Text style={styles.emptyTitle}>{content.title}</Text>
+        <Text style={styles.emptySubtitle}>{content.subtitle}</Text>
+        {content.showButton && (
+          <TouchableOpacity style={styles.createFirstGoalButton} onPress={handleCreateGoal}>
+            <Text style={styles.createFirstGoalText}>Create Your First Goal</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
-      <View style={styles.content}>
+  // Filter goals by status
+  const getGoalsByStatus = (status: 'active' | 'completed' | 'paused') => {
+    return goals.filter(goal => goal.status === status)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  };
+
+  // Tab components
+  const GoalsList: React.FC<{ status: 'active' | 'completed' | 'paused' }> = ({ status }) => {
+    const filteredGoals = getGoalsByStatus(status);
+    
+    return (
+      <View style={styles.tabContent}>
         <FlatList
-          data={isLoading ? Array(4).fill({}) : goals}
+          data={isLoading ? Array(4).fill({}) : filteredGoals}
           keyExtractor={(item, index) => isLoading ? index.toString() : item.id?.toString()}
           renderItem={({ item }) => 
             isLoading ? <GoalSkeleton /> : <GoalCard goal={item} />
@@ -318,9 +355,78 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
               colors={[appColors.AppBlue]}
             />
           }
-          ListEmptyComponent={!isLoading ? <EmptyState /> : null}
+          ListEmptyComponent={!isLoading ? <EmptyState status={status} /> : null}
         />
       </View>
+    );
+  };
+
+  const activeGoals = goals.filter(g => g.status === 'active').length;
+  const completedGoals = goals.filter(g => g.status === 'completed').length;
+  const pausedGoals = goals.filter(g => g.status === 'paused').length;
+
+  const tabData = [
+    { title: `Active (${activeGoals})`, status: 'active' as const },
+    { title: `Completed (${completedGoals})`, status: 'completed' as const },
+    { title: `Paused (${pausedGoals})`, status: 'paused' as const },
+  ];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      
+      <LHGenericHeader
+        title="My Goals"
+        showLeftIcon={true}
+        showRightIcon={false}
+        leftIconPressed={() => navigation.goBack()}
+      />
+
+      <Tab
+        value={activeTabIndex}
+        onChange={setActiveTabIndex}
+        indicatorStyle={styles.tabIndicator}
+        variant="primary"
+        scrollable={false}
+      >
+        <Tab.Item
+          title="Active"
+          titleStyle={[styles.tabTitle, activeTabIndex === 0 && styles.activeTabTitle]}
+          containerStyle={[styles.tabItem, activeTabIndex === 0 && styles.activeTabItem]}
+        />
+        <Tab.Item
+          title="Completed"
+          titleStyle={[styles.tabTitle, activeTabIndex === 1 && styles.activeTabTitle]}
+          containerStyle={[styles.tabItem, activeTabIndex === 1 && styles.activeTabItem]}
+        />
+        <Tab.Item
+          title="Paused"
+          titleStyle={[styles.tabTitle, activeTabIndex === 2 && styles.activeTabTitle]}
+          containerStyle={[styles.tabItem, activeTabIndex === 2 && styles.activeTabItem]}
+        />
+      </Tab>
+
+      <TabView value={activeTabIndex} onChange={setActiveTabIndex} animationType="spring">
+        <TabView.Item style={styles.tabViewItem}>
+          <GoalsList status="active" />
+        </TabView.Item>
+        <TabView.Item style={styles.tabViewItem}>
+          <GoalsList status="completed" />
+        </TabView.Item>
+        <TabView.Item style={styles.tabViewItem}>
+          <GoalsList status="paused" />
+        </TabView.Item>
+      </TabView>
+
+      {/* Floating Action Button */}
+      <FAB
+        icon={{ name: 'add', color: appColors.CardBackground }}
+        color={appColors.AppBlue}
+        size="large"
+        placement="right"
+        onPress={handleCreateGoal}
+        style={styles.fab}
+      />
     </SafeAreaView>
   );
 };
@@ -330,9 +436,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: appColors.AppLightGray,
   },
+  tabIndicator: {
+    backgroundColor: appColors.AppBlue,
+    height: 3,
+  },
+  tabItem: {
+    backgroundColor: appColors.CardBackground,
+    paddingVertical: 12,
+  },
+  activeTabItem: {
+    backgroundColor: appColors.CardBackground,
+  },
+  tabTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextMedium,
+    textTransform: 'capitalize',
+  },
+  activeTabTitle: {
+    color: appColors.AppBlue,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
+  tabViewItem: {
+    flex: 1,
+    backgroundColor: appColors.AppLightGray,
+  },
+  tabContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   listContainer: {
     paddingVertical: 10,

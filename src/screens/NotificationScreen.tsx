@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Badge } from '@rneui/base';
+import { Swipeable } from 'react-native-gesture-handler';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
@@ -131,6 +132,34 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     navigation.navigate('NotificationDetailScreen', { notification });
   };
 
+  const handleMarkAsRead = (notificationId: number) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+    );
+    toast.show({
+      description: 'Notification marked as read',
+      duration: 2000,
+    });
+  };
+
+  const handleDismissNotification = (notificationId: number) => {
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    toast.show({
+      description: 'Notification dismissed',
+      duration: 2000,
+    });
+  };
+
+  const handleArchiveNotification = (notificationId: number) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === notificationId ? { ...n, isRead: true, archived: true } : n)
+    );
+    toast.show({
+      description: 'Notification archived',
+      duration: 2000,
+    });
+  };
+
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     toast.show({
@@ -166,45 +195,85 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   const NotificationCard: React.FC<{ notification: Notification }> = ({ notification }) => {
     const iconConfig = getNotificationIcon(notification.type);
     
-    return (
-      <TouchableOpacity
-        style={[styles.notificationCard, !notification.isRead && styles.unreadCard]}
-        onPress={() => handleNotificationPress(notification)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardContent}>
-          <View style={styles.iconContainer}>
-            {notification.avatar ? (
-              <Avatar source={notification.avatar} size={40} rounded />
-            ) : (
-              <View style={[styles.iconWrapper, { backgroundColor: iconConfig.color + '20' }]}>
-                <Icon
-                  name={iconConfig.name}
-                  type="material"
-                  color={iconConfig.color}
-                  size={20}
-                />
-              </View>
-            )}
-            {!notification.isRead && <Badge status="error" containerStyle={styles.unreadBadge} />}
-          </View>
+    const renderRightActions = () => (
+      <View style={styles.rightActions}>
+        {!notification.isRead && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.readAction]}
+            onPress={() => handleMarkAsRead(notification.id)}
+          >
+            <Icon name="done" type="material" color={appColors.CardBackground} size={20} />
+            <Text style={styles.actionText}>Read</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          style={[styles.actionButton, styles.archiveAction]}
+          onPress={() => handleArchiveNotification(notification.id)}
+        >
+          <Icon name="archive" type="material" color={appColors.CardBackground} size={20} />
+          <Text style={styles.actionText}>Archive</Text>
+        </TouchableOpacity>
+      </View>
+    );
 
-          <View style={styles.contentContainer}>
-            <View style={styles.headerRow}>
-              <Text style={[styles.title, !notification.isRead && styles.unreadTitle]}>
-                {notification.title}
-              </Text>
-              <Text style={styles.timestamp}>
-                {formatTimestamp(notification.timestamp)}
+    const renderLeftActions = () => (
+      <View style={styles.leftActions}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.dismissAction]}
+          onPress={() => handleDismissNotification(notification.id)}
+        >
+          <Icon name="delete" type="material" color={appColors.CardBackground} size={20} />
+          <Text style={styles.actionText}>Dismiss</Text>
+        </TouchableOpacity>
+      </View>
+    );
+    
+    return (
+      <Swipeable
+        renderRightActions={renderRightActions}
+        renderLeftActions={renderLeftActions}
+        rightThreshold={40}
+        leftThreshold={40}
+      >
+        <TouchableOpacity
+          style={[styles.notificationCard, !notification.isRead && styles.unreadCard]}
+          onPress={() => handleNotificationPress(notification)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.cardContent}>
+            <View style={styles.iconContainer}>
+              {notification.avatar ? (
+                <Avatar source={notification.avatar} size={40} rounded />
+              ) : (
+                <View style={[styles.iconWrapper, { backgroundColor: iconConfig.color + '20' }]}>
+                  <Icon
+                    name={iconConfig.name}
+                    type="material"
+                    color={iconConfig.color}
+                    size={20}
+                  />
+                </View>
+              )}
+              {!notification.isRead && <Badge status="error" containerStyle={styles.unreadBadge} />}
+            </View>
+
+            <View style={styles.contentContainer}>
+              <View style={styles.headerRow}>
+                <Text style={[styles.title, !notification.isRead && styles.unreadTitle]}>
+                  {notification.title}
+                </Text>
+                <Text style={styles.timestamp}>
+                  {formatTimestamp(notification.timestamp)}
+                </Text>
+              </View>
+              
+              <Text style={styles.message} numberOfLines={2}>
+                {notification.message}
               </Text>
             </View>
-            
-            <Text style={styles.message} numberOfLines={2}>
-              {notification.message}
-            </Text>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -345,6 +414,42 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginHorizontal: 40,
     fontFamily: appFonts.headerTextRegular,
+  },
+  // Swipe Actions Styles
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingLeft: 20,
+  },
+  leftActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingRight: 20,
+  },
+  actionButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 80,
+    height: '100%',
+    paddingVertical: 16,
+  },
+  readAction: {
+    backgroundColor: '#4CAF50',
+  },
+  archiveAction: {
+    backgroundColor: '#FF9800',
+  },
+  dismissAction: {
+    backgroundColor: '#F44336',
+  },
+  actionText: {
+    color: appColors.CardBackground,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 4,
+    fontFamily: appFonts.headerTextBold,
   },
 });
 
