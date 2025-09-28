@@ -45,6 +45,8 @@ import TherapistDetailScreen from '../screens/therapistScreens/TherapistDetailSc
 import BookingCheckoutScreen from '../screens/therapistScreens/BookingCheckoutScreen';
 import BookingConfirmationScreen from '../screens/therapistScreens/BookingConfirmationScreen';
 import DonateToTherapistScreen from '../screens/therapistScreens/DonateToTherapistScreen';
+import TherapistMatchingQuizScreen from '../screens/therapistScreens/TherapistMatchingQuizScreen';
+import TherapistSuggestionsScreen from '../screens/therapistScreens/TherapistSuggestionsScreen';
 
 // Chat Screens
 import ChatScreen from '../screens/ChatScreen';
@@ -80,6 +82,11 @@ import GoalsScreen from '../screens/GoalsScreen';
 import CreateGoalScreen from '../screens/goalScreens/CreateGoalScreen';
 import GoalDetailScreen from '../screens/goalScreens/GoalDetailScreen';
 import AppointmentsScreen from '../screens/therapistScreens/AppointmentsScreen';
+
+// Services Screens
+import ServicesCatalogScreen from '../screens/servicesScreens/ServicesCatalogScreen';
+import PlansSubscriptionsScreen from '../screens/servicesScreens/PlansSubscriptionsScreen';
+import BillingHistoryScreen from '../screens/servicesScreens/BillingHistoryScreen';
 
 /** A new library will be used for Location Services */
 // Yo Location Screens
@@ -378,6 +385,26 @@ export default function LHStackNavigator(){
                 }}
             />
 
+            <LHStack.Screen
+                name="TherapistMatchingQuizScreen"
+                component={TherapistMatchingQuizScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Therapist Matching Quiz',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="TherapistSuggestionsScreen"
+                component={TherapistSuggestionsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Therapist Suggestions',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
             {/* Chat Screens */}
             <LHStack.Screen
                 name="ChatScreen"
@@ -548,6 +575,37 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Create Support Ticket',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Services Screens */}
+            <LHStack.Screen
+                name="ServicesCatalogScreen"
+                component={ServicesCatalogScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Services & Plans',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="PlansSubscriptionsScreen"
+                component={PlansSubscriptionsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Plans & Subscriptions',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="BillingHistoryScreen"
+                component={BillingHistoryScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Billing History',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

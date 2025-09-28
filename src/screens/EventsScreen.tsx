@@ -46,6 +46,7 @@ interface EventsScreenProps {
 
 const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const [activeTab, setActiveTab] = useState<'events' | 'my-events'>('events');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -134,13 +135,14 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadEvents();
-    setIsRefreshing(false);
   };
 
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         event.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesTab = activeTab === 'events' ? true : event.isRegistered;
+    return matchesSearch && matchesCategory && matchesTab;
   });
 
   const handleEventPress = (event: Event) => {
@@ -263,13 +265,51 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
+      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       
       <LHGenericHeader
         title="Mental Health Events"
         subtitle="Workshops, seminars & community gatherings"
-        navigation={navigation}
       />
+
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'events' && styles.activeTab]}
+          onPress={() => setActiveTab('events')}
+        >
+          <Icon 
+            name="event" 
+            type="material" 
+            color={activeTab === 'events' ? appColors.AppBlue : appColors.grey3} 
+            size={20} 
+          />
+          <Text style={[
+            styles.tabText,
+            activeTab === 'events' && styles.activeTabText
+          ]}>
+            Events
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'my-events' && styles.activeTab]}
+          onPress={() => setActiveTab('my-events')}
+        >
+          <Icon 
+            name="event-available" 
+            type="material" 
+            color={activeTab === 'my-events' ? appColors.AppBlue : appColors.grey3} 
+            size={20} 
+          />
+          <Text style={[
+            styles.tabText,
+            activeTab === 'my-events' && styles.activeTabText
+          ]}>
+            My Events
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.content}>
         {/* Search Bar */}
@@ -342,6 +382,41 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: appColors.CardBackground,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    marginHorizontal: 4,
+  },
+  activeTab: {
+    backgroundColor: appColors.AppBlue + '15',
+  },
+  tabText: {
+    fontSize: 14,
+    color: appColors.grey3,
+    marginLeft: 6,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  activeTabText: {
+    color: appColors.AppBlue,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -369,6 +444,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 10,
     elevation: 1,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   selectedCategoryChip: {
     backgroundColor: appColors.AppBlue,
@@ -377,9 +455,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
+    textAlign: 'center',
   },
   selectedCategoryText: {
     color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextMedium,
   },
   listContainer: {
     paddingBottom: 20,

@@ -1,7 +1,7 @@
 /**
  * Group Messages View Screen - Group chat management and moderation
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
   RefreshControl,
   Alert,
   Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
@@ -46,9 +49,12 @@ interface GroupMessagesViewScreenProps {
 
 const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const flatListRef = useRef<FlatList>(null);
   const [groups, setGroups] = useState<GroupChat[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupChat | null>(null);
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
+  const [messageText, setMessageText] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -207,6 +213,46 @@ const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navig
       return;
     }
     setSelectedGroup(group);
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !selectedGroup || isSending) return;
+
+    const newMessage: GroupMessage = {
+      id: Date.now().toString(),
+      groupId: selectedGroup.id,
+      senderId: 'current_user',
+      senderName: 'You',
+      content: messageText.trim(),
+      createdAt: new Date().toISOString(),
+      isModerated: false,
+    };
+
+    setGroupMessages(prev => [...prev, newMessage]);
+    setMessageText('');
+    setIsSending(true);
+
+    // Scroll to bottom
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    try {
+      // Simulate API call
+      setTimeout(() => {
+        setIsSending(false);
+        toast.show({
+          description: 'Message sent',
+          duration: 1500,
+        });
+      }, 1000);
+    } catch (error) {
+      setIsSending(false);
+      toast.show({
+        description: 'Failed to send message',
+        duration: 3000,
+      });
+    }
   };
 
   const handleExportMessages = () => {
@@ -437,6 +483,7 @@ const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navig
 
         {/* Messages List */}
         <FlatList
+          ref={flatListRef}
           data={groupMessages}
           renderItem={renderGroupMessageItem}
           keyExtractor={(item) => item.id}
@@ -449,7 +496,43 @@ const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navig
             />
           }
           showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         />
+
+        {/* Message Composer */}
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        >
+          <View style={styles.composer}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Type a message..."
+                placeholderTextColor={appColors.grey3}
+                value={messageText}
+                onChangeText={setMessageText}
+                multiline
+                maxLength={1000}
+              />
+              <TouchableOpacity 
+                style={[
+                  styles.sendButton,
+                  messageText.trim() ? styles.sendButtonActive : styles.sendButtonInactive
+                ]}
+                onPress={handleSendMessage}
+                disabled={!messageText.trim() || isSending}
+              >
+                <Icon 
+                  name="send" 
+                  type="material" 
+                  color={messageText.trim() ? appColors.CardBackground : appColors.grey3} 
+                  size={20} 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
 
         {/* Export Modal */}
         <Modal
@@ -755,6 +838,47 @@ const styles = StyleSheet.create({
   },
   moderateButton: {
     padding: 4,
+  },
+  // Composer Styles
+  composer: {
+    backgroundColor: appColors.CardBackground,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: appColors.grey6,
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextRegular,
+    maxHeight: 100,
+    paddingVertical: 8,
+  },
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  sendButtonActive: {
+    backgroundColor: appColors.AppBlue,
+  },
+  sendButtonInactive: {
+    backgroundColor: 'transparent',
   },
   // Modal Styles
   modalOverlay: {

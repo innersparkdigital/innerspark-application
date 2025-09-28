@@ -81,6 +81,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
       
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Messages</Text>
         <TouchableOpacity 
           style={styles.headerButton}
@@ -180,6 +186,11 @@ const styles = StyleSheet.create({
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
   headerButton: {
     padding: 8,
     borderRadius: 20,
@@ -213,7 +224,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: appColors.grey3,
     marginLeft: 6,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.headerTextRegular,
   },
   activeTabText: {
     color: appColors.AppBlue,
@@ -252,7 +263,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: appColors.grey1,
     marginLeft: 16,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.headerTextRegular,
   },
 });
 

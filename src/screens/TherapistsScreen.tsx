@@ -159,6 +159,10 @@ const TherapistsScreen = ({ navigation, route }) => {
     setShowFilters(!showFilters);
   };
 
+  const handleStartMatchingQuiz = () => {
+    navigation.navigate('TherapistMatchingQuizScreen');
+  };
+
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Icon
@@ -444,6 +448,11 @@ const TherapistsScreen = ({ navigation, route }) => {
           />
         )}
       </View>
+      {/* Floating Matching Quiz Button */}
+      <TouchableOpacity style={styles.fab} onPress={handleStartMatchingQuiz} activeOpacity={0.85}>
+        <Icon name="psychology" type="material" color={appColors.CardBackground} size={26} />
+        <Text style={styles.fabText}>Match</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -577,6 +586,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     marginRight: 10,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   selectedSpecialtyChip: {
     backgroundColor: appColors.AppBlue,
@@ -585,9 +597,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: appColors.AppGray,
     fontFamily: appFonts.appTextMedium,
+    textAlign: 'center',
   },
   selectedSpecialtyText: {
     color: appColors.CardBackground,
+    fontFamily: appFonts.appTextMedium,
   },
   therapistCard: {
     backgroundColor: appColors.CardBackground,
@@ -788,6 +802,30 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.regularText,
     opacity: 0.9,
     marginTop: 4,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    backgroundColor: appColors.AppBlue,
+    borderRadius: 28,
+    paddingHorizontal: 18,
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  fabText: {
+    color: appColors.CardBackground,
+    fontSize: 14,
+    fontFamily: appFonts.appTextMedium,
+    marginLeft: 8,
+    fontWeight: '700',
   },
 });
 
