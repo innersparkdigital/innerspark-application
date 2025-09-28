@@ -45,8 +45,18 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
   const { therapist } = route.params;
   const toast = useToast();
   const [selectedTab, setSelectedTab] = useState('About');
+  const [selectedSessionType, setSelectedSessionType] = useState('individual');
+  const [isDMEnabled, setIsDMEnabled] = useState(false); // DM enabled after booking
 
-  const tabs = ['About', 'Reviews', 'Availability'];
+  const tabs = ['About', 'Reviews', 'Availability', 'Donate'];
+  
+  // Session types with different pricing
+  const sessionTypes = [
+    { id: 'individual', name: 'Individual Session', price: 'UGX 50,000', duration: '60 min' },
+    { id: 'couple', name: 'Couple Session', price: 'UGX 75,000', duration: '90 min' },
+    { id: 'group', name: 'Group Session', price: 'UGX 30,000', duration: '60 min' },
+    { id: 'consultation', name: 'Consultation', price: 'UGX 25,000', duration: '30 min' },
+  ];
   
   const availableSlots = [
     { id: 1, date: 'Today', time: '2:00 PM', available: true },
@@ -77,17 +87,39 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
       name: 'Lisa K.',
       rating: 4,
       comment: 'Very helpful sessions. Would definitely continue.',
-      date: '2 months ago',
+      date: '3 weeks ago',
     },
   ];
 
   const handleBookNow = () => {
     if (therapist.available) {
-      navigation.navigate('BookingCheckoutScreen', { therapist });
+      const selectedSession = sessionTypes.find(st => st.id === selectedSessionType);
+      navigation.navigate('BookingCheckoutScreen', { 
+        therapist, 
+        sessionType: selectedSession 
+      });
+      // Enable DM after booking
+      setIsDMEnabled(true);
     } else {
       toast.show({
         description: 'This therapist is currently unavailable',
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleDM = () => {
+    if (isDMEnabled) {
+      // Navigate to chat/messaging screen
+      toast.show({
+        description: 'Opening direct message with therapist...',
         duration: 2000,
+      });
+      // navigation.navigate('ChatScreen', { therapist });
+    } else {
+      toast.show({
+        description: 'Please book a session first to enable direct messaging',
+        duration: 3000,
       });
     }
   };
@@ -210,6 +242,40 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           </View>
         );
 
+      case 'Donate':
+        return (
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionTitle}>Support {therapist.name}</Text>
+            <Text style={styles.donateDescription}>
+              Your donations help support mental health professionals and make therapy more accessible to everyone.
+            </Text>
+            
+            <View style={styles.donateAmountContainer}>
+              <Text style={styles.donateAmountLabel}>Choose Amount</Text>
+              <View style={styles.donateAmountOptions}>
+                {['UGX 5,000', 'UGX 10,000', 'UGX 25,000', 'UGX 50,000'].map((amount) => (
+                  <TouchableOpacity key={amount} style={styles.donateAmountChip}>
+                    <Text style={styles.donateAmountText}>{amount}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <Button
+              title="Donate via Mobile Money"
+              buttonStyle={styles.donateButton}
+              titleStyle={styles.donateButtonText}
+              onPress={() => navigation.navigate('DonateToTherapistScreen', { therapist })}
+              icon={{
+                name: 'favorite',
+                type: 'material',
+                color: appColors.CardBackground,
+                size: 20,
+              }}
+            />
+          </View>
+        );
+
       default:
         return null;
     }
@@ -267,11 +333,51 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           </View>
         </View>
 
+        {/* Session Types */}
+        <View style={styles.sessionTypesSection}>
+          <Text style={styles.sectionTitle}>Session Types</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sessionTypesScroll}>
+            {sessionTypes.map((sessionType) => (
+              <TouchableOpacity
+                key={sessionType.id}
+                style={[
+                  styles.sessionTypeCard,
+                  selectedSessionType === sessionType.id && styles.selectedSessionType
+                ]}
+                onPress={() => setSelectedSessionType(sessionType.id)}
+              >
+                <Text style={[
+                  styles.sessionTypeName,
+                  selectedSessionType === sessionType.id && styles.selectedSessionTypeName
+                ]}>
+                  {sessionType.name}
+                </Text>
+                <Text style={[
+                  styles.sessionTypePrice,
+                  selectedSessionType === sessionType.id && styles.selectedSessionTypePrice
+                ]}>
+                  {sessionType.price}
+                </Text>
+                <Text style={[
+                  styles.sessionTypeDuration,
+                  selectedSessionType === sessionType.id && styles.selectedSessionTypeDuration
+                ]}>
+                  {sessionType.duration}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Price and Availability */}
         <View style={styles.priceSection}>
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>{therapist.price}</Text>
-            <Text style={styles.priceUnit}>{therapist.priceUnit}</Text>
+            <Text style={styles.price}>
+              {sessionTypes.find(st => st.id === selectedSessionType)?.price || therapist.price}
+            </Text>
+            <Text style={styles.priceUnit}>
+              {sessionTypes.find(st => st.id === selectedSessionType)?.duration || therapist.priceUnit}
+            </Text>
           </View>
           <View style={[
             styles.availabilityBadge,
@@ -313,7 +419,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Book Now Button */}
+      {/* Action Buttons */}
       <View style={styles.bookingFooter}>
         <Button
           title={therapist.available ? "Book Session" : "Currently Unavailable"}
@@ -327,6 +433,26 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           ]}
           onPress={handleBookNow}
           disabled={!therapist.available}
+        />
+        
+        <Button
+          title="Direct Message"
+          buttonStyle={[
+            styles.dmButton,
+            !isDMEnabled && styles.disabledButton
+          ]}
+          titleStyle={[
+            styles.dmButtonText,
+            !isDMEnabled && styles.disabledButtonText
+          ]}
+          onPress={handleDM}
+          disabled={!isDMEnabled}
+          icon={{
+            name: 'chat',
+            type: 'material',
+            color: isDMEnabled ? appColors.AppBlue : appColors.AppGray,
+            size: 20,
+          }}
         />
       </View>
     </SafeAreaView>
@@ -706,6 +832,133 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  // Session Types Styles
+  sessionTypesSection: {
+    backgroundColor: appColors.CardBackground,
+    marginHorizontal: 20,
+    marginBottom: 15,
+    padding: 20,
+    borderRadius: 15,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  sessionTypesScroll: {
+    marginTop: 10,
+  },
+  sessionTypeCard: {
+    backgroundColor: appColors.AppLightGray,
+    borderRadius: 12,
+    padding: 15,
+    marginRight: 10,
+    minWidth: 140,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedSessionType: {
+    backgroundColor: appColors.AppBlue + '15',
+    borderColor: appColors.AppBlue,
+  },
+  sessionTypeName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    textAlign: 'center',
+    marginBottom: 5,
+    fontFamily: appFonts.appTextBold,
+  },
+  selectedSessionTypeName: {
+    color: appColors.AppBlue,
+  },
+  sessionTypePrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.AppBlue,
+    textAlign: 'center',
+    marginBottom: 3,
+    fontFamily: appFonts.appTextBold,
+  },
+  selectedSessionTypePrice: {
+    color: appColors.AppBlue,
+  },
+  sessionTypeDuration: {
+    fontSize: 12,
+    color: appColors.grey2,
+    textAlign: 'center',
+    fontFamily: appFonts.appTextRegular,
+  },
+  selectedSessionTypeDuration: {
+    color: appColors.AppBlue,
+  },
+  // Donate Tab Styles
+  donateDescription: {
+    fontSize: 14,
+    color: appColors.grey2,
+    lineHeight: 20,
+    marginBottom: 20,
+    fontFamily: appFonts.appTextRegular,
+  },
+  donateAmountContainer: {
+    marginBottom: 25,
+  },
+  donateAmountLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    marginBottom: 15,
+    fontFamily: appFonts.appTextBold,
+  },
+  donateAmountOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  donateAmountChip: {
+    backgroundColor: appColors.AppLightGray,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: appColors.AppBlue,
+  },
+  donateAmountText: {
+    fontSize: 14,
+    color: appColors.AppBlue,
+    fontWeight: '500',
+    fontFamily: appFonts.appTextMedium,
+  },
+  donateButton: {
+    backgroundColor: appColors.AppBlue,
+    borderRadius: 25,
+    paddingVertical: 15,
+  },
+  donateButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    marginLeft: 10,
+    fontFamily: appFonts.appTextBold,
+  },
+  // DM Button Styles
+  dmButton: {
+    backgroundColor: appColors.CardBackground,
+    borderRadius: 25,
+    paddingVertical: 15,
+    marginTop: 10,
+    borderWidth: 2,
+    borderColor: appColors.AppBlue,
+  },
+  dmButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.AppBlue,
+    marginLeft: 10,
+    fontFamily: appFonts.appTextBold,
   },
 });
 

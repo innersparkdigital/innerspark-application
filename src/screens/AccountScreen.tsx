@@ -170,7 +170,7 @@ export default function AccountScreen({ navigation }){
                 <MenuRow
                     icon="help"
                     title="Help Center"
-                    onPress={() => notifyWithToast('Help Center coming soon!')}
+                    onPress={() => navigation.navigate('HelpCenterScreen')}
                 />
                 
                 <MenuRow

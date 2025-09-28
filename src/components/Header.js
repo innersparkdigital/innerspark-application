@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { appColors, parameters } from '../global/Styles';
-import { Icon } from 'react-native-elements';
+import { Icon } from '@rneui/base';
 
 // the header functional component
 export default function Header({title, type, navigation}) {

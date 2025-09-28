@@ -10,8 +10,12 @@ export default function LHGenericHeader({
     leftIconType,
     hasCustomStatusBar=true,
     title="Header Title",
+    subtitle,
     showLeftIcon = true,
     showTitle = true,
+    rightIcon,
+    rightIconPressed,
+    rightIconType = "material",
 }){
 
     return(
@@ -30,12 +34,24 @@ export default function LHGenericHeader({
             </View>
             }
 
-            {/* The Header Title */}
+            {/* The Header Title and Subtitle */}
             <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
                 { showTitle && <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerText}>{title}</Text> }
+                { subtitle && <Text numberOfLines={1} ellipsizeMode='tail' style={styles.subtitleText}>{subtitle}</Text> }
             </View>
-            {/* The Right space to balance the header */}
-            <View style={{ marginRight:10, paddingHorizontal:8 }}></View>
+            
+            {/* The Right Icon or space to balance the header */}
+            <View style={{ marginRight:10, paddingHorizontal:8 }}>
+                {rightIcon && (
+                    <Icon 
+                        type={rightIconType}
+                        name={rightIcon}
+                        color={appColors.AppBlue}
+                        size={28}
+                        onPress={rightIconPressed}
+                    />
+                )}
+            </View>
         </View>
     )
 }
@@ -66,5 +82,14 @@ const styles = StyleSheet.create({
         paddingHorizontal:5,
         fontFamily: appFonts.headerTextBold,
         textAlign:'center',
+    },
+
+    subtitleText: {
+        color: appColors.AppGray,
+        fontSize: 14,
+        paddingHorizontal:5,
+        fontFamily: appFonts.regularText,
+        textAlign:'center',
+        marginTop: 2,
     }
 })

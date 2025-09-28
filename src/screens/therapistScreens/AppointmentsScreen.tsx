@@ -12,6 +12,8 @@ import {
   TextInput,
   FlatList,
   RefreshControl,
+  Modal,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
@@ -28,6 +30,10 @@ interface Appointment {
   image: any;
   location?: string;
   sessionType?: string;
+  meetingLink?: string;
+  paymentStatus?: 'paid' | 'pending' | 'failed';
+  amount?: string;
+  timezone?: string;
 }
 
 interface AppointmentsScreenProps {
@@ -39,6 +45,8 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past'>('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
 
   // Mock appointments data
   const [appointments, setAppointments] = useState<Appointment[]>([
@@ -52,6 +60,10 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       image: require('../../assets/images/dummy-people/d-person2.png'),
       location: 'Nakawa - Kampala Uganda',
       sessionType: 'Individual Therapy',
+      meetingLink: 'https://meet.innerspark.com/room/clara-123',
+      paymentStatus: 'paid',
+      amount: 'UGX 45,000',
+      timezone: 'EAT (UTC+3)',
     },
     {
       id: '2',
@@ -63,6 +75,9 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       image: require('../../assets/images/dummy-people/d-person1.png'),
       location: 'Kampala Medical Center',
       sessionType: 'Consultation',
+      paymentStatus: 'pending',
+      amount: 'UGX 60,000',
+      timezone: 'EAT (UTC+3)',
     },
     {
       id: '3',
@@ -74,6 +89,10 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       image: require('../../assets/images/dummy-people/d-person3.png'),
       location: 'Skin Care Clinic',
       sessionType: 'Follow-up',
+      meetingLink: 'https://meet.innerspark.com/room/noemi-456',
+      paymentStatus: 'paid',
+      amount: 'UGX 35,000',
+      timezone: 'EAT (UTC+3)',
     },
     {
       id: '4',
@@ -85,6 +104,10 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       image: require('../../assets/images/dummy-people/d-person1.png'),
       location: 'Mental Health Center',
       sessionType: 'Individual Therapy',
+      meetingLink: 'https://meet.innerspark.com/room/sarah-789',
+      paymentStatus: 'paid',
+      amount: 'UGX 50,000',
+      timezone: 'EAT (UTC+3)',
     },
     {
       id: '5',
@@ -96,6 +119,23 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       image: require('../../assets/images/dummy-people/d-person2.png'),
       location: 'Wellness Center',
       sessionType: 'Couples Therapy',
+      paymentStatus: 'paid',
+      amount: 'UGX 75,000',
+      timezone: 'EAT (UTC+3)',
+    },
+    {
+      id: '6',
+      date: '28/02/2025',
+      time: '1:00 PM',
+      therapistName: 'Dr. Martin Pilier',
+      therapistType: 'Therapist',
+      status: 'cancelled',
+      image: require('../../assets/images/dummy-people/d-person1.png'),
+      location: 'Downtown Clinic',
+      sessionType: 'Group Therapy',
+      paymentStatus: 'failed',
+      amount: 'UGX 30,000',
+      timezone: 'EAT (UTC+3)',
     },
   ]);
 
@@ -156,68 +196,176 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
     }
   };
 
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return '#4CAF50';
+      case 'pending':
+        return '#FF9800';
+      case 'failed':
+        return '#F44336';
+      default:
+        return appColors.grey2;
+    }
+  };
+
+  const handleCancelAppointment = (appointment: Appointment) => {
+    setAppointmentToCancel(appointment);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelAppointment = () => {
+    if (appointmentToCancel) {
+      setAppointments(prev => 
+        prev.map(apt => 
+          apt.id === appointmentToCancel.id 
+            ? { ...apt, status: 'cancelled' as const }
+            : apt
+        )
+      );
+      toast.show({
+        description: `Appointment with ${appointmentToCancel.therapistName} has been cancelled`,
+        duration: 3000,
+      });
+    }
+    setShowCancelModal(false);
+    setAppointmentToCancel(null);
+  };
+
+  const handleViewDetails = (appointment: Appointment) => {
+    // Navigate to appointment details screen or show details modal
+    toast.show({
+      description: `Viewing details for appointment with ${appointment.therapistName}`,
+      duration: 2000,
+    });
+  };
+
+  const handleJoinMeeting = async (meetingLink: string) => {
+    try {
+      const supported = await Linking.canOpenURL(meetingLink);
+      if (supported) {
+        await Linking.openURL(meetingLink);
+      } else {
+        toast.show({
+          description: 'Cannot open meeting link',
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      toast.show({
+        description: 'Error opening meeting link',
+        duration: 3000,
+      });
+    }
+  };
+
   const AppointmentCard: React.FC<{ appointment: Appointment }> = ({ appointment }) => (
     <View style={styles.appointmentCard}>
       <View style={styles.appointmentHeader}>
-        <View style={styles.dateContainer}>
+        <View style={styles.dateTimeContainer}>
           <Text style={styles.appointmentDate}>{formatDate(appointment.date)}</Text>
           <Text style={styles.appointmentTime}>{appointment.time}</Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.modifyButton}
-          onPress={() => handleModifyAppointment(appointment)}
-        >
-          <Icon name="edit" type="material" color={appColors.AppBlue} size={18} />
-          <Text style={styles.modifyText}>Modify</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.appointmentBody}>
-        <Avatar
-          source={appointment.image}
-          size={50}
-          rounded
-          containerStyle={styles.therapistAvatar}
-        />
-        
-        <View style={styles.appointmentInfo}>
-          <Text style={styles.therapistName}>
-            {appointment.therapistType} - {appointment.therapistName}
-          </Text>
-          
-          {appointment.location && (
-            <View style={styles.locationContainer}>
-              <Icon name="location-on" type="material" color={appColors.grey2} size={16} />
-              <Text style={styles.locationText}>{appointment.location}</Text>
-            </View>
-          )}
-          
-          {appointment.sessionType && (
-            <Text style={styles.sessionType}>{appointment.sessionType}</Text>
+          {appointment.timezone && (
+            <Text style={styles.timezoneText}>{appointment.timezone}</Text>
           )}
         </View>
-
+        
         <View style={styles.statusContainer}>
           <View style={[
             styles.statusIndicator,
             { backgroundColor: getStatusColor(appointment.status) }
           ]}>
-            <Icon 
-              name={appointment.status === 'upcoming' ? 'schedule' : 'check-circle'} 
-              type="material" 
-              color={appColors.CardBackground} 
-              size={16} 
-            />
+            <Text style={styles.statusText}>
+              {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+            </Text>
           </View>
         </View>
+      </View>
+
+      <View style={styles.appointmentBody}>
+        <Avatar
+          source={appointment.image}
+          size={60}
+          rounded
+          containerStyle={styles.therapistAvatar}
+        />
+        
+        <View style={styles.appointmentInfo}>
+          <Text style={styles.therapistName}>{appointment.therapistName}</Text>
+          <Text style={styles.therapistType}>{appointment.therapistType}</Text>
+          
+          {appointment.sessionType && (
+            <Text style={styles.sessionType}>{appointment.sessionType}</Text>
+          )}
+
+          {appointment.location && (
+            <View style={styles.locationContainer}>
+              <Icon name="location-on" type="material" color={appColors.grey2} size={14} />
+              <Text style={styles.locationText}>{appointment.location}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Payment Status and Amount */}
+      {appointment.paymentStatus && appointment.amount && (
+        <View style={styles.paymentSection}>
+          <View style={styles.paymentInfo}>
+            <Text style={styles.amountText}>{appointment.amount}</Text>
+            <View style={[
+              styles.paymentStatusChip,
+              { backgroundColor: getPaymentStatusColor(appointment.paymentStatus) + '20' }
+            ]}>
+              <Text style={[
+                styles.paymentStatusText,
+                { color: getPaymentStatusColor(appointment.paymentStatus) }
+              ]}>
+                {appointment.paymentStatus.charAt(0).toUpperCase() + appointment.paymentStatus.slice(1)}
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Meeting Link */}
+      {appointment.meetingLink && appointment.status === 'upcoming' && (
+        <View style={styles.meetingSection}>
+          <TouchableOpacity 
+            style={styles.meetingButton}
+            onPress={() => handleJoinMeeting(appointment.meetingLink!)}
+          >
+            <Icon name="videocam" type="material" color={appColors.CardBackground} size={18} />
+            <Text style={styles.meetingButtonText}>Join Meeting</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={styles.detailsButton}
+          onPress={() => handleViewDetails(appointment)}
+        >
+          <Icon name="info" type="material" color={appColors.AppBlue} size={18} />
+          <Text style={styles.detailsButtonText}>Details</Text>
+        </TouchableOpacity>
+
+        {appointment.status === 'upcoming' && (
+          <TouchableOpacity 
+            style={styles.cancelButton}
+            onPress={() => handleCancelAppointment(appointment)}
+          >
+            <Icon name="cancel" type="material" color="#F44336" size={18} />
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
+      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -331,6 +479,42 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
           onPress={handleBookNewAppointment}
         />
       </View>
+
+      {/* Cancel Appointment Modal */}
+      <Modal
+        visible={showCancelModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCancelModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cancel Appointment</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to cancel your appointment with {appointmentToCancel?.therapistName}?
+            </Text>
+            <Text style={styles.modalSubMessage}>
+              This action cannot be undone.
+            </Text>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowCancelModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Keep Appointment</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.modalConfirmButton}
+                onPress={confirmCancelAppointment}
+              >
+                <Text style={styles.modalConfirmText}>Cancel Appointment</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -565,7 +749,185 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
+  },
+  // New styles for enhanced appointment cards
+  dateTimeContainer: {
+    flex: 1,
+  },
+  timezoneText: {
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.regularText,
+    marginTop: 2,
+  },
+  statusText: {
+    fontSize: 12,
+    color: appColors.CardBackground,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
+  paymentSection: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: appColors.grey6,
+  },
+  paymentInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  amountText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  paymentStatusChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  paymentStatusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
+  meetingSection: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: appColors.grey6,
+  },
+  meetingButton: {
+    backgroundColor: appColors.AppBlue,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+  },
+  meetingButtonText: {
+    color: appColors.CardBackground,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
+    fontFamily: appFonts.headerTextBold,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: appColors.grey6,
+  },
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: appColors.AppBlue + '10',
+  },
+  detailsButtonText: {
+    color: appColors.AppBlue,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 6,
+    fontFamily: appFonts.headerTextBold,
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#F4433610',
+  },
+  cancelButtonText: {
+    color: '#F44336',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 6,
+    fontFamily: appFonts.headerTextBold,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: appColors.CardBackground,
+    margin: 20,
+    borderRadius: 15,
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    marginBottom: 15,
+    fontFamily: appFonts.headerTextBold,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: appColors.grey2,
+    textAlign: 'center',
+    marginBottom: 10,
+    fontFamily: appFonts.regularText,
+  },
+  modalSubMessage: {
+    fontSize: 14,
+    color: appColors.grey3,
+    textAlign: 'center',
+    marginBottom: 25,
+    fontFamily: appFonts.regularText,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: appColors.grey6,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextBold,
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#F44336',
+    marginLeft: 10,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
   },
 });
 

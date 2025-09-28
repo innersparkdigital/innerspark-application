@@ -26,9 +26,12 @@ import LHGenericHeader from '../components/LHGenericHeader';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const TherapistsScreen = ({ navigation }) => {
+const TherapistsScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const toast = useToast();
+  
+  // Check if we came from outside bottom tabs (need back button)
+  const showBackButton = route?.params?.showBackButton || false;
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
@@ -280,13 +283,26 @@ const TherapistsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
+      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       
-      <LHGenericHeader
-        title="Find Therapists"
-        subtitle="Connect with mental health professionals"
-        navigation={navigation}
-      />
+      {showBackButton ? (
+        <LHGenericHeader
+          title="Find Therapists"
+          subtitle="Connect with mental health professionals"
+          showLeftIcon={true}
+          leftIconPressed={() => navigation.goBack()}
+        />
+      ) : (
+        // Custom Header like MoodScreen
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>Find Therapists</Text>
+              <Text style={styles.headerSubtitle}>Connect with mental health professionals</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       <View style={styles.content}>
         {/* Search Bar */}
@@ -748,8 +764,30 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: appColors.AppGray,
-    marginTop: 5,
-    fontFamily: appFonts.appTextRegular,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  header: {
+    backgroundColor: appColors.AppBlue,
+    paddingTop: parameters.headerHeightS,
+    paddingBottom: 25,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: appColors.CardBackground,
+    fontFamily: appFonts.regularText,
+    opacity: 0.9,
+    marginTop: 4,
   },
 });
 

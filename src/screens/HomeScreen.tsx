@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon, Button, Avatar } from '@rneui/base';
+import { Icon, Button, Avatar, Badge } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../api/LHAPI';
@@ -45,6 +45,7 @@ const HomeScreen = ({ navigation }) => {
 
   // Mock data for upcoming sessions
   const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(3); // Mock unread count
   const [recentActivities] = useState([
     { id: 1, type: 'mood', title: 'Mood Check-in', time: '2 hours ago' },
     { id: 2, type: 'session', title: 'Therapy Session', time: '1 day ago' },
@@ -61,7 +62,7 @@ const HomeScreen = ({ navigation }) => {
 
   const quickActions = [
     { id: 1, title: 'My Goals', icon: 'flag', color: '#4CAF50', screen: 'GoalsScreen' },
-    { id: 2, title: 'Therapy Groups', icon: 'people', color: '#2196F3', screen: 'TherapyGroupsScreen' },
+    { id: 2, title: 'Therapy Groups', icon: 'people', color: '#2196F3', screen: 'GroupsScreen' },
     { id: 3, title: 'Events', icon: 'event', color: '#FF9800', screen: 'EventsScreen' },
     { id: 4, title: 'Sessions', icon: 'psychology', color: '#9C27B0', screen: 'AppointmentsScreen' },
     { id: 5, title: 'Mood Tracker', icon: 'mood', color: '#E91E63', screen: 'MoodScreen' },
@@ -191,7 +192,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.headerTopRow}>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => notifyWithToast('Messages feature coming soon!')}
+            onPress={() => navigation.navigate('ChatScreen')}
           >
             <Icon name="chat" type="material" color={appColors.CardBackground} size={24} />
           </TouchableOpacity>
@@ -199,7 +200,17 @@ const HomeScreen = ({ navigation }) => {
             style={styles.iconButton}
             onPress={() => navigation.navigate('NotificationScreen')}
           >
-            <Icon name="notifications" type="material" color={appColors.CardBackground} size={24} />
+            <View style={styles.notificationIconContainer}>
+              <Icon name="notifications" type="material" color={appColors.CardBackground} size={24} />
+              {unreadNotifications > 0 && (
+                <Badge
+                  value={unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  status="error"
+                  containerStyle={styles.badgeContainer}
+                  textStyle={styles.badgeText}
+                />
+              )}
+            </View>
           </TouchableOpacity>
         </View>
         
@@ -379,6 +390,18 @@ const styles = StyleSheet.create({
   iconButton: {
     marginLeft: 15,
     padding: 8,
+  },
+  notificationIconContainer: {
+    position: 'relative',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   moodSection: {
     paddingHorizontal: 20,

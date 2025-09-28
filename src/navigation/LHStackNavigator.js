@@ -20,7 +20,7 @@ import WellnessVaultScreen from '../screens/vaultScreens/WellnessVaultScreen';
 import MoMoTopupScreen from '../screens/vaultScreens/MoMoTopupScreen';
 
 import AboutAppScreen from '../screens/AboutAppScreen';
-import ProfileInfoScreen from '../screens/profileScreens/ProfileInfoScreen';
+// import ProfileInfoScreen from '../screens/profileScreens/ProfileInfoScreen';
 
 // Booking Screens - Pickup Details & Service Item Selection and more
 import ServiceItemSelectScreen from '../screens/bookingScreens/ServiceItemSelectScreen';
@@ -44,8 +44,32 @@ import TherapistsScreen from '../screens/TherapistsScreen';
 import TherapistDetailScreen from '../screens/therapistScreens/TherapistDetailScreen';
 import BookingCheckoutScreen from '../screens/therapistScreens/BookingCheckoutScreen';
 import BookingConfirmationScreen from '../screens/therapistScreens/BookingConfirmationScreen';
+import DonateToTherapistScreen from '../screens/therapistScreens/DonateToTherapistScreen';
+
+// Chat Screens
+import ChatScreen from '../screens/ChatScreen';
+import ConversationsListScreen from '../screens/chatScreens/ConversationsListScreen';
+import DMThreadScreen from '../screens/chatScreens/DMThreadScreen';
+import NewMessageScreen from '../screens/chatScreens/NewMessageScreen';
+import GroupMessagesViewScreen from '../screens/chatScreens/GroupMessagesViewScreen';
+
+// Group Screens
+import GroupsScreen from '../screens/GroupsScreen';
+import GroupsListScreen from '../screens/groupScreens/GroupsListScreen';
+import MyGroupsScreen from '../screens/groupScreens/MyGroupsScreen';
+import GroupDetailScreen from '../screens/groupScreens/GroupDetailScreen';
+import GroupChatScreen from '../screens/groupScreens/GroupChatScreen';
+import GroupMessagesHistoryScreen from '../screens/groupScreens/GroupMessagesHistoryScreen';
+
+// Event Screens
 import EventDetailScreen from '../screens/eventScreens/EventDetailScreen';
 import EventsScreen from '../screens/EventsScreen';
+
+// Support Screens
+import HelpCenterScreen from '../screens/HelpCenterScreen';
+import MyTicketsScreen from '../screens/supportTicketScreens/MyTicketsScreen';
+import TicketDetailScreen from '../screens/supportTicketScreens/TicketDetailScreen';
+import CreateTicketScreen from '../screens/supportTicketScreens/CreateTicketScreen';
 
 // Notification Screens
 import NotificationScreen from '../screens/NotificationScreen';
@@ -120,7 +144,7 @@ export default function LHStackNavigator(){
 
 
             {/* Profile Screens */}
-            <LHStack.Screen
+            {/* <LHStack.Screen
                 name="ProfileInfoScreen"
                 component={ProfileInfoScreen}
                 options={{
@@ -128,7 +152,7 @@ export default function LHStackNavigator(){
                     title: 'Profile Info',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
-            />
+            /> */}
 
            
 
@@ -229,7 +253,7 @@ export default function LHStackNavigator(){
             />
 
             {/* Event Screens */}
-            <LHStack.Screen
+            {/* <LHStack.Screen
                 name="EventsScreen"
                 component={EventsScreen}
                 options={{
@@ -244,7 +268,7 @@ export default function LHStackNavigator(){
                     headerShown: false,
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
-            />
+            /> */}
 
              {/* Notification Screen */}
              <LHStack.Screen
@@ -340,6 +364,190 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'My Appointments',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="DonateToTherapistScreen"
+                component={DonateToTherapistScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Donate to Therapist',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Chat Screens */}
+            <LHStack.Screen
+                name="ChatScreen"
+                component={ChatScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Messages',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="ConversationsListScreen"
+                component={ConversationsListScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Conversations',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="DMThreadScreen"
+                component={DMThreadScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Chat',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="NewMessageScreen"
+                component={NewMessageScreen}
+                options={{
+                    headerShown: false,
+                    title: 'New Message',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="GroupMessagesViewScreen"
+                component={GroupMessagesViewScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Group Messages',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Group Screens */}
+            <LHStack.Screen
+                name="GroupsScreen"
+                component={GroupsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Groups',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="GroupsListScreen"
+                component={GroupsListScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Groups Directory',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="MyGroupsScreen"
+                component={MyGroupsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'My Groups',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="GroupDetailScreen"
+                component={GroupDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Group Details',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="GroupChatScreen"
+                component={GroupChatScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Group Chat',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="GroupMessagesHistoryScreen"
+                component={GroupMessagesHistoryScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Message History',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Event Screens */}
+            <LHStack.Screen
+                name="EventsScreen"
+                component={EventsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Events',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="EventDetailScreen"
+                component={EventDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Event Details',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Support Screens */}
+            <LHStack.Screen
+                name="HelpCenterScreen"
+                component={HelpCenterScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Help Center',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="MyTicketsScreen"
+                component={MyTicketsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'My Support Tickets',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="TicketDetailScreen"
+                component={TicketDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Ticket Details',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="CreateTicketScreen"
+                component={CreateTicketScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Create Support Ticket',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

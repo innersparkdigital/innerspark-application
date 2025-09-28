@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton, Tab, TabView, Button, FAB } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import LHGenericHeader from '../components/LHGenericHeader';
+import Header from '../components/Header';
 import { NavigationProp } from '@react-navigation/native';
 
 interface Goal {
@@ -375,11 +375,10 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       
-      <LHGenericHeader
+      <Header
         title="My Goals"
-        showLeftIcon={true}
-        showRightIcon={false}
-        leftIconPressed={() => navigation.goBack()}
+        type="chevron-left"
+        navigation={navigation}
       />
 
       <Tab

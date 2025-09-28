@@ -16,7 +16,7 @@ import { Icon, Avatar, Badge } from '@rneui/base';
 import { Swipeable } from 'react-native-gesture-handler';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import LHGenericHeader from '../components/LHGenericHeader';
+import Header from '../components/Header';
 import { NavigationProp } from '@react-navigation/native';
 
 interface Notification {
@@ -176,7 +176,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       event: { name: 'event-available', color: '#4CAF50' },
       goal: { name: 'flag', color: '#9C27B0' },
     };
-    return iconMap[type] || iconMap.system;
+    return iconMap[type as keyof typeof iconMap] || iconMap.system;
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -287,14 +287,12 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
+      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       
-      <LHGenericHeader
+      <Header
         title="Notifications"
-        subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+        type="chevron-left"
         navigation={navigation}
-        rightIcon={unreadCount > 0 ? 'done-all' : undefined}
-        rightIconPressed={unreadCount > 0 ? markAllAsRead : undefined}
       />
 
       <View style={styles.content}>
