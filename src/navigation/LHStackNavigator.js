@@ -47,6 +47,7 @@ import BookingConfirmationScreen from '../screens/therapistScreens/BookingConfir
 import DonateToTherapistScreen from '../screens/therapistScreens/DonateToTherapistScreen';
 import TherapistMatchingQuizScreen from '../screens/therapistScreens/TherapistMatchingQuizScreen';
 import TherapistSuggestionsScreen from '../screens/therapistScreens/TherapistSuggestionsScreen';
+import PostSessionFeedbackScreen from '../screens/therapistScreens/PostSessionFeedbackScreen';
 
 // Chat Screens
 import ChatScreen from '../screens/ChatScreen';
@@ -87,6 +88,11 @@ import AppointmentsScreen from '../screens/therapistScreens/AppointmentsScreen';
 import ServicesCatalogScreen from '../screens/servicesScreens/ServicesCatalogScreen';
 import PlansSubscriptionsScreen from '../screens/servicesScreens/PlansSubscriptionsScreen';
 import BillingHistoryScreen from '../screens/servicesScreens/BillingHistoryScreen';
+
+// Mood Screens
+import TodayMoodScreen from '../screens/moodScreens/TodayMoodScreen';
+import MoodHistoryScreen from '../screens/moodScreens/MoodHistoryScreen';
+import MoodPointsScreen from '../screens/moodScreens/MoodPointsScreen';
 
 /** A new library will be used for Location Services */
 // Yo Location Screens
@@ -376,6 +382,16 @@ export default function LHStackNavigator(){
             />
 
             <LHStack.Screen
+                name="PostSessionFeedbackScreen"
+                component={PostSessionFeedbackScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Session Feedback',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
                 name="DonateToTherapistScreen"
                 component={DonateToTherapistScreen}
                 options={{
@@ -600,17 +616,37 @@ export default function LHStackNavigator(){
                 }}
             />
 
+            {/* Mood Screens */}
             <LHStack.Screen
-                name="BillingHistoryScreen"
-                component={BillingHistoryScreen}
+                name="TodayMoodScreen"
+                component={TodayMoodScreen}
                 options={{
                     headerShown: false,
-                    title: 'Billing History',
+                    title: 'Daily Mood Check-in',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
 
+            <LHStack.Screen
+                name="MoodHistoryScreen"
+                component={MoodHistoryScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Mood History',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="MoodPointsScreen"
+                component={MoodPointsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Loyalty Points',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
 
         </LHStack.Navigator>
-    )
-}
+    );
+};

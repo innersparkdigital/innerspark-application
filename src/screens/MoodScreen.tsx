@@ -202,7 +202,7 @@ const MoodScreen = ({ navigation }) => {
         <View style={styles.historySection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Mood History</Text>
-            <TouchableOpacity onPress={() => notifyWithToast('Full history coming soon!')}>
+            <TouchableOpacity onPress={() => navigation.navigate('MoodHistoryScreen')}>
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
@@ -226,6 +226,34 @@ const MoodScreen = ({ navigation }) => {
         {/* Wellness Actions */}
         <View style={styles.actionsSection}>
           <Text style={styles.sectionTitle}>Wellness Actions</Text>
+          
+          <TouchableOpacity 
+            style={styles.actionCard}
+            onPress={() => navigation.navigate('TodayMoodScreen')}
+          >
+            <View style={styles.actionIcon}>
+              <Icon name="mood" type="material" color={appColors.AppBlue} size={24} />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Daily Mood Check-in</Text>
+              <Text style={styles.actionSubtitle}>Track your mood and earn loyalty points</Text>
+            </View>
+            <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionCard}
+            onPress={() => navigation.navigate('MoodPointsScreen')}
+          >
+            <View style={styles.actionIcon}>
+              <Icon name="stars" type="material" color="#FFD700" size={24} />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Loyalty Points</Text>
+              <Text style={styles.actionSubtitle}>Redeem points for therapy discounts</Text>
+            </View>
+            <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
+          </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.actionCard}
