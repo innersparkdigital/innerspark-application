@@ -168,6 +168,12 @@ export default function AccountScreen({ navigation }){
                 />
                 
                 <MenuRow
+                    icon="assessment"
+                    title="My Weekly Report"
+                    onPress={() => navigation.navigate('WeeklyReportScreen')}
+                />
+                
+                <MenuRow
                     icon="help"
                     title="Help Center"
                     onPress={() => navigation.navigate('HelpCenterScreen')}

@@ -94,6 +94,10 @@ import TodayMoodScreen from '../screens/moodScreens/TodayMoodScreen';
 import MoodHistoryScreen from '../screens/moodScreens/MoodHistoryScreen';
 import MoodPointsScreen from '../screens/moodScreens/MoodPointsScreen';
 
+// Report Screens
+import WeeklyReportScreen from '../screens/reportScreens/WeeklyReportScreen';
+import ReportDetailScreen from '../screens/reportScreens/ReportDetailScreen';
+
 /** A new library will be used for Location Services */
 // Yo Location Screens
 // import LocationPickerScreen from '../screens/locationScreens/LocationPickerScreen';
@@ -643,6 +647,27 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Loyalty Points',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Report Screens */}
+            <LHStack.Screen
+                name="WeeklyReportScreen"
+                component={WeeklyReportScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Weekly Report',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="ReportDetailScreen"
+                component={ReportDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Report Details',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

@@ -1,0 +1,857 @@
+/**
+ * Weekly Report Screen - Overview of weekly wellness report
+ */
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Share,
+  Alert,
+  RefreshControl,
+  Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Icon, Button, Skeleton } from '@rneui/base';
+import { appColors, parameters, appFonts } from '../../global/Styles';
+import { useToast } from 'native-base';
+import { NavigationProp } from '@react-navigation/native';
+
+interface WeeklyReport {
+  id: string;
+  weekStartDate: string;
+  weekEndDate: string;
+  generatedDate: string;
+  moodSummary: {
+    averageMood: number;
+    moodTrend: 'improving' | 'stable' | 'declining';
+    totalCheckIns: number;
+    streakDays: number;
+    dominantMood: string;
+    moodDistribution: { mood: string; percentage: number; emoji: string }[];
+  };
+  journalingSummary: {
+    totalEntries: number;
+    averageLength: number;
+    commonThemes: string[];
+    sentimentScore: number;
+    keyInsights: string[];
+  };
+  activitiesSummary: {
+    completedActivities: number;
+    recommendedActivities: string[];
+    upcomingGoals: string[];
+    achievedMilestones: string[];
+  };
+  recommendations: {
+    moodBased: string[];
+    activityBased: string[];
+    therapyRecommendations: string[];
+  };
+  pointsEarned: number;
+  nextReportDate: string;
+}
+
+interface WeeklyReportScreenProps {
+  navigation: NavigationProp<any>;
+}
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) => {
+  const toast = useToast();
+  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadWeeklyReport();
+  }, []);
+
+  const loadWeeklyReport = async () => {
+    setIsLoading(true);
+    try {
+      // Mock weekly report data
+      const mockReport: WeeklyReport = {
+        id: 'report-2024-w12',
+        weekStartDate: '2024-03-18',
+        weekEndDate: '2024-03-24',
+        generatedDate: new Date().toISOString(),
+        moodSummary: {
+          averageMood: 3.8,
+          moodTrend: 'improving',
+          totalCheckIns: 6,
+          streakDays: 6,
+          dominantMood: 'Good',
+          moodDistribution: [
+            { mood: 'Great', percentage: 33, emoji: '😊' },
+            { mood: 'Good', percentage: 50, emoji: '🙂' },
+            { mood: 'Okay', percentage: 17, emoji: '😐' },
+            { mood: 'Bad', percentage: 0, emoji: '😔' },
+            { mood: 'Terrible', percentage: 0, emoji: '😢' },
+          ],
+        },
+        journalingSummary: {
+          totalEntries: 6,
+          averageLength: 85,
+          commonThemes: ['gratitude', 'work stress', 'family time', 'self-care'],
+          sentimentScore: 0.72,
+          keyInsights: [
+            'You expressed more gratitude this week compared to last week',
+            'Work stress mentions decreased by 30%',
+            'Family time was a recurring positive theme',
+          ],
+        },
+        activitiesSummary: {
+          completedActivities: 4,
+          recommendedActivities: ['Morning meditation', 'Evening walk', 'Journaling'],
+          upcomingGoals: ['Complete 7-day streak', 'Try group therapy session'],
+          achievedMilestones: ['6-day mood tracking streak', 'First week of consistent journaling'],
+        },
+        recommendations: {
+          moodBased: [
+            'Continue your positive mood trend with morning affirmations',
+            'Consider scheduling a therapy session to maintain progress',
+          ],
+          activityBased: [
+            'Try our new mindfulness workshop this weekend',
+            'Join a support group to connect with others',
+          ],
+          therapyRecommendations: [
+            'Dr. Sarah Johnson - Specializes in stress management',
+            'Group therapy session on Thursdays',
+          ],
+        },
+        pointsEarned: 3500,
+        nextReportDate: '2024-03-31',
+      };
+
+      setWeeklyReport(mockReport);
+    } catch (error) {
+      toast.show({
+        description: 'Failed to load weekly report',
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadWeeklyReport();
+    setIsRefreshing(false);
+  };
+
+  const handleShareReport = async () => {
+    try {
+      const shareContent = `My Weekly Wellness Report (${formatDateRange()})\n\n` +
+        `🎯 Average Mood: ${weeklyReport?.moodSummary.averageMood}/5\n` +
+        `📈 Trend: ${weeklyReport?.moodSummary.moodTrend}\n` +
+        `✅ Check-ins: ${weeklyReport?.moodSummary.totalCheckIns}/7\n` +
+        `🔥 Streak: ${weeklyReport?.moodSummary.streakDays} days\n\n` +
+        `Generated by Innerspark - Your Mental Wellness Companion`;
+
+      await Share.share({
+        message: shareContent,
+        title: 'My Weekly Wellness Report',
+      });
+    } catch (error) {
+      toast.show({
+        description: 'Failed to share report',
+        duration: 2000,
+      });
+    }
+  };
+
+  const handleEmailReport = () => {
+    Alert.alert(
+      'Email Report',
+      'Your weekly report will be sent to your registered email address.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Send Email', 
+          onPress: () => {
+            toast.show({
+              description: 'Weekly report sent to your email!',
+              duration: 3000,
+            });
+          }
+        }
+      ]
+    );
+  };
+
+  const formatDateRange = () => {
+    if (!weeklyReport) return '';
+    const startDate = new Date(weeklyReport.weekStartDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+    const endDate = new Date(weeklyReport.weekEndDate).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    return `${startDate} - ${endDate}`;
+  };
+
+  const getMoodTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'improving':
+        return { name: 'trending-up', color: '#4CAF50' };
+      case 'declining':
+        return { name: 'trending-down', color: '#F44336' };
+      default:
+        return { name: 'trending-flat', color: '#FF9800' };
+    }
+  };
+
+  const ReportHeader: React.FC = () => (
+    <View style={styles.reportHeader}>
+      <View style={styles.headerContent}>
+        <Text style={styles.reportTitle}>Weekly Wellness Report</Text>
+        <Text style={styles.reportDate}>{formatDateRange()}</Text>
+        <Text style={styles.generatedDate}>
+          Generated on {new Date(weeklyReport?.generatedDate || '').toLocaleDateString()}
+        </Text>
+      </View>
+      <View style={styles.headerActions}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleShareReport}>
+          <Icon name="share" type="material" color={appColors.AppBlue} size={20} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={handleEmailReport}>
+          <Icon name="email" type="material" color={appColors.AppBlue} size={20} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const MoodSummaryCard: React.FC = () => {
+    if (!weeklyReport) return null;
+    const { moodSummary } = weeklyReport;
+    const trendIcon = getMoodTrendIcon(moodSummary.moodTrend);
+
+    return (
+      <View style={styles.summaryCard}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Mood Summary</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ReportDetailScreen', { 
+              reportId: weeklyReport.id, 
+              section: 'mood' 
+            })}
+          >
+            <Text style={styles.viewDetailsText}>View Details</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.moodOverview}>
+          <View style={styles.moodMetric}>
+            <Text style={styles.metricValue}>{moodSummary.averageMood}</Text>
+            <Text style={styles.metricLabel}>Average Mood</Text>
+          </View>
+          <View style={styles.moodMetric}>
+            <Icon name={trendIcon.name} type="material" color={trendIcon.color} size={32} />
+            <Text style={[styles.metricLabel, { color: trendIcon.color }]}>
+              {moodSummary.moodTrend}
+            </Text>
+          </View>
+          <View style={styles.moodMetric}>
+            <Text style={styles.metricValue}>{moodSummary.totalCheckIns}/7</Text>
+            <Text style={styles.metricLabel}>Check-ins</Text>
+          </View>
+        </View>
+
+        <View style={styles.moodDistribution}>
+          <Text style={styles.sectionSubtitle}>Mood Distribution</Text>
+          {moodSummary.moodDistribution.map((mood, index) => (
+            <View key={index} style={styles.moodDistributionItem}>
+              <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+              <Text style={styles.moodName}>{mood.mood}</Text>
+              <View style={styles.progressBarContainer}>
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    { width: `${mood.percentage}%` }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.moodPercentage}>{mood.percentage}%</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const JournalingSummaryCard: React.FC = () => {
+    if (!weeklyReport) return null;
+    const { journalingSummary } = weeklyReport;
+
+    return (
+      <View style={styles.summaryCard}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Journaling Insights</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ReportDetailScreen', { 
+              reportId: weeklyReport.id, 
+              section: 'journaling' 
+            })}
+          >
+            <Text style={styles.viewDetailsText}>View Details</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.journalingMetrics}>
+          <View style={styles.metricRow}>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{journalingSummary.totalEntries}</Text>
+              <Text style={styles.metricLabel}>Entries</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>{journalingSummary.averageLength}</Text>
+              <Text style={styles.metricLabel}>Avg Words</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>
+                {Math.round(journalingSummary.sentimentScore * 100)}%
+              </Text>
+              <Text style={styles.metricLabel}>Positive</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.themesSection}>
+          <Text style={styles.sectionSubtitle}>Common Themes</Text>
+          <View style={styles.themesContainer}>
+            {journalingSummary.commonThemes.map((theme, index) => (
+              <View key={index} style={styles.themeTag}>
+                <Text style={styles.themeText}>{theme}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.insightsSection}>
+          <Text style={styles.sectionSubtitle}>Key Insights</Text>
+          {journalingSummary.keyInsights.map((insight, index) => (
+            <View key={index} style={styles.insightItem}>
+              <Icon name="lightbulb" type="material" color="#FFD700" size={16} />
+              <Text style={styles.insightText}>{insight}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const ActivitiesSummaryCard: React.FC = () => {
+    if (!weeklyReport) return null;
+    const { activitiesSummary } = weeklyReport;
+
+    return (
+      <View style={styles.summaryCard}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Activities & Goals</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ReportDetailScreen', { 
+              reportId: weeklyReport.id, 
+              section: 'activities' 
+            })}
+          >
+            <Text style={styles.viewDetailsText}>View Details</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.activitiesMetric}>
+          <Text style={styles.metricValue}>{activitiesSummary.completedActivities}</Text>
+          <Text style={styles.metricLabel}>Activities Completed</Text>
+        </View>
+
+        <View style={styles.milestonesSection}>
+          <Text style={styles.sectionSubtitle}>Achieved Milestones</Text>
+          {activitiesSummary.achievedMilestones.map((milestone, index) => (
+            <View key={index} style={styles.milestoneItem}>
+              <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
+              <Text style={styles.milestoneText}>{milestone}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const RecommendationsCard: React.FC = () => {
+    if (!weeklyReport) return null;
+    const { recommendations } = weeklyReport;
+
+    return (
+      <View style={styles.summaryCard}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Personalized Recommendations</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ReportDetailScreen', { 
+              reportId: weeklyReport.id, 
+              section: 'recommendations' 
+            })}
+          >
+            <Text style={styles.viewDetailsText}>View All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.recommendationsSection}>
+          <Text style={styles.sectionSubtitle}>Based on Your Mood Trends</Text>
+          {recommendations.moodBased.slice(0, 2).map((rec, index) => (
+            <View key={index} style={styles.recommendationItem}>
+              <Icon name="psychology" type="material" color={appColors.AppBlue} size={16} />
+              <Text style={styles.recommendationText}>{rec}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.recommendationsSection}>
+          <Text style={styles.sectionSubtitle}>Suggested Activities</Text>
+          {recommendations.activityBased.slice(0, 2).map((rec, index) => (
+            <View key={index} style={styles.recommendationItem}>
+              <Icon name="local-activity" type="material" color="#FF9800" size={16} />
+              <Text style={styles.recommendationText}>{rec}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const PointsEarnedCard: React.FC = () => (
+    <View style={styles.pointsCard}>
+      <View style={styles.pointsContent}>
+        <Icon name="stars" type="material" color="#FFD700" size={32} />
+        <View style={styles.pointsInfo}>
+          <Text style={styles.pointsValue}>UGX {weeklyReport?.pointsEarned.toLocaleString()}</Text>
+          <Text style={styles.pointsLabel}>Loyalty Points Earned This Week</Text>
+        </View>
+      </View>
+      <TouchableOpacity
+        style={styles.redeemButton}
+        onPress={() => navigation.navigate('MoodPointsScreen')}
+      >
+        <Text style={styles.redeemButtonText}>Redeem</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Weekly Report</Text>
+          <View style={styles.placeholder} />
+        </View>
+        
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.loadingContainer}>
+            <Skeleton animation="pulse" width="100%" height={120} style={{ marginBottom: 20 }} />
+            <Skeleton animation="pulse" width="100%" height={200} style={{ marginBottom: 20 }} />
+            <Skeleton animation="pulse" width="100%" height={150} style={{ marginBottom: 20 }} />
+            <Skeleton animation="pulse" width="100%" height={180} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Weekly Report</Text>
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+        >
+          <Icon name="refresh" type="material" color={appColors.AppBlue} size={24} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[appColors.AppBlue]}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <ReportHeader />
+        <MoodSummaryCard />
+        <JournalingSummaryCard />
+        <ActivitiesSummaryCard />
+        <RecommendationsCard />
+        <PointsEarnedCard />
+
+        {/* Next Report Info */}
+        <View style={styles.nextReportCard}>
+          <Icon name="schedule" type="material" color={appColors.grey3} size={20} />
+          <Text style={styles.nextReportText}>
+            Next report will be generated on {new Date(weeklyReport?.nextReportDate || '').toLocaleDateString()}
+          </Text>
+        </View>
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: appColors.AppLightGray,
+  },
+  header: {
+    backgroundColor: appColors.CardBackground,
+    paddingTop: parameters.headerHeightS,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  refreshButton: {
+    padding: 8,
+  },
+  placeholder: {
+    width: 40,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  loadingContainer: {
+    padding: 20,
+  },
+  reportHeader: {
+    backgroundColor: appColors.CardBackground,
+    margin: 20,
+    padding: 20,
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  reportTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: 4,
+  },
+  reportDate: {
+    fontSize: 16,
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextMedium,
+    marginBottom: 2,
+  },
+  generatedDate: {
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  headerActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    padding: 12,
+    marginLeft: 8,
+    backgroundColor: appColors.AppLightGray,
+    borderRadius: 20,
+  },
+  summaryCard: {
+    backgroundColor: appColors.CardBackground,
+    margin: 20,
+    marginTop: 0,
+    padding: 20,
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  viewDetailsText: {
+    fontSize: 14,
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextMedium,
+  },
+  moodOverview: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  moodMetric: {
+    alignItems: 'center',
+  },
+  metricValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextBold,
+  },
+  metricLabel: {
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  moodDistribution: {
+    marginTop: 16,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: 12,
+  },
+  moodDistributionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  moodEmoji: {
+    fontSize: 16,
+    width: 24,
+  },
+  moodName: {
+    fontSize: 14,
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextRegular,
+    width: 60,
+    marginLeft: 8,
+  },
+  progressBarContainer: {
+    flex: 1,
+    height: 8,
+    backgroundColor: appColors.grey6,
+    borderRadius: 4,
+    marginHorizontal: 12,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: appColors.AppBlue,
+    borderRadius: 4,
+  },
+  moodPercentage: {
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    width: 30,
+    textAlign: 'right',
+  },
+  journalingMetrics: {
+    marginBottom: 16,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  metric: {
+    alignItems: 'center',
+  },
+  themesSection: {
+    marginBottom: 16,
+  },
+  themesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  themeTag: {
+    backgroundColor: appColors.AppBlue + '15',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  themeText: {
+    fontSize: 12,
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextMedium,
+  },
+  insightsSection: {
+    marginTop: 8,
+  },
+  insightItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  insightText: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextRegular,
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 20,
+  },
+  activitiesMetric: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  milestonesSection: {
+    marginTop: 8,
+  },
+  milestoneItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  milestoneText: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextRegular,
+    marginLeft: 8,
+    flex: 1,
+  },
+  recommendationsSection: {
+    marginBottom: 16,
+  },
+  recommendationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  recommendationText: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextRegular,
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 20,
+  },
+  pointsCard: {
+    backgroundColor: '#FFF3E0',
+    margin: 20,
+    marginTop: 0,
+    padding: 20,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  pointsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  pointsInfo: {
+    marginLeft: 16,
+  },
+  pointsValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#E65100',
+    fontFamily: appFonts.headerTextBold,
+  },
+  pointsLabel: {
+    fontSize: 12,
+    color: '#BF360C',
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 2,
+  },
+  redeemButton: {
+    backgroundColor: '#FF9800',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  redeemButtonText: {
+    fontSize: 14,
+    color: appColors.CardBackground,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
+  nextReportCard: {
+    backgroundColor: appColors.CardBackground,
+    margin: 20,
+    marginTop: 0,
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+  },
+  nextReportText: {
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    marginLeft: 12,
+    flex: 1,
+  },
+  bottomSpacing: {
+    height: 20,
+  },
+});
+
+export default WeeklyReportScreen;
