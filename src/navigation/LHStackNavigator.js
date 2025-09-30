@@ -20,7 +20,8 @@ import WellnessVaultScreen from '../screens/vaultScreens/WellnessVaultScreen';
 import MoMoTopupScreen from '../screens/vaultScreens/MoMoTopupScreen';
 
 import AboutAppScreen from '../screens/AboutAppScreen';
-// import ProfileInfoScreen from '../screens/profileScreens/ProfileInfoScreen';
+import ProfileScreen from '../screens/profileScreens/ProfileScreen';
+import ProfileUpdateScreen from '../screens/profileScreens/ProfileUpdateScreen';
 
 // Booking Screens - Pickup Details & Service Item Selection and more
 import ServiceItemSelectScreen from '../screens/bookingScreens/ServiceItemSelectScreen';
@@ -171,21 +172,6 @@ export default function LHStackNavigator(){
                 }}
             />
 
-
-
-            {/* Profile Screens */}
-            {/* <LHStack.Screen
-                name="ProfileInfoScreen"
-                component={ProfileInfoScreen}
-                options={{
-                    headerShown: false,
-                    title: 'Profile Info',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            /> */}
-
-           
-
             {/* More Screens */}
             <LHStack.Screen
                 name="PrivacyPolicyScreen"
@@ -193,6 +179,27 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Privacy Policy',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Profile Screens */}
+            <LHStack.Screen
+                name="ProfileScreen"
+                component={ProfileScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Profile',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="ProfileUpdateScreen"
+                component={ProfileUpdateScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Edit Profile',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

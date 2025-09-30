@@ -158,7 +158,7 @@ export default function AccountScreen({ navigation }){
                 <MenuRow
                     icon="person"
                     title="Profile"
-                    onPress={() => notifyWithToast('Profile feature coming soon!')}
+                    onPress={() => navigation.navigate('ProfileScreen')}
                 />
                 
                 <MenuRow
