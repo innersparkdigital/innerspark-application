@@ -164,7 +164,7 @@ export default function AccountScreen({ navigation }){
                 <MenuRow
                     icon="settings"
                     title="Settings"
-                    onPress={() => notifyWithToast('Settings feature coming soon!')}
+                    onPress={() => navigation.navigate('SettingsScreen')}
                 />
                 
                 <MenuRow

@@ -103,6 +103,14 @@ import EmergencyLandingScreen from '../screens/emergencyScreens/EmergencyLanding
 import PanicButtonScreen from '../screens/emergencyScreens/PanicButtonScreen';
 import SafetyPlanScreen from '../screens/emergencyScreens/SafetyPlanScreen';
 
+// Settings Screens
+import SettingsScreen from '../screens/settingScreens/SettingsScreen';
+import ProfileSettingsScreen from '../screens/settingScreens/ProfileSettingsScreen';
+import SecuritySettingsScreen from '../screens/settingScreens/SecuritySettingsScreen';
+import NotificationSettingsScreen from '../screens/settingScreens/NotificationSettingsScreen';
+import PrivacySettingsScreen from '../screens/settingScreens/PrivacySettingsScreen';
+import DeleteAccountScreen from '../screens/settingScreens/DeleteAccountScreen';
+
 /** A new library will be used for Location Services */
 // Yo Location Screens
 // import LocationPickerScreen from '../screens/locationScreens/LocationPickerScreen';
@@ -704,6 +712,67 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Safety Plan',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Settings Screens */}
+            <LHStack.Screen
+                name="SettingsScreen"
+                component={SettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Settings',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="ProfileSettingsScreen"
+                component={ProfileSettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Profile Settings',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="SecuritySettingsScreen"
+                component={SecuritySettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Security Settings',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="NotificationSettingsScreen"
+                component={NotificationSettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Notification Settings',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="PrivacySettingsScreen"
+                component={PrivacySettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Privacy Settings',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="DeleteAccountScreen"
+                component={DeleteAccountScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Delete Account',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
