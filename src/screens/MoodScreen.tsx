@@ -21,6 +21,7 @@ import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import { appImages } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
+import PanicButtonComponent from '../components/PanicButtonComponent';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -108,6 +109,13 @@ const MoodScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      
+      {/* Always-visible Panic Button */}
+      <PanicButtonComponent 
+        position="bottom-left" 
+        size="medium" 
+        quickAction="modal" 
+      />
       
       {/* Custom Header */}
       <View style={styles.header}>

@@ -98,6 +98,11 @@ import MoodPointsScreen from '../screens/moodScreens/MoodPointsScreen';
 import WeeklyReportScreen from '../screens/reportScreens/WeeklyReportScreen';
 import ReportDetailScreen from '../screens/reportScreens/ReportDetailScreen';
 
+// Emergency Screens
+import EmergencyLandingScreen from '../screens/emergencyScreens/EmergencyLandingScreen';
+import PanicButtonScreen from '../screens/emergencyScreens/PanicButtonScreen';
+import SafetyPlanScreen from '../screens/emergencyScreens/SafetyPlanScreen';
+
 /** A new library will be used for Location Services */
 // Yo Location Screens
 // import LocationPickerScreen from '../screens/locationScreens/LocationPickerScreen';
@@ -668,6 +673,37 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Report Details',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Emergency Screens */}
+            <LHStack.Screen
+                name="EmergencyLandingScreen"
+                component={EmergencyLandingScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Emergency Help',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="PanicButtonScreen"
+                component={PanicButtonScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Emergency Panic Button',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="SafetyPlanScreen"
+                component={SafetyPlanScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Safety Plan',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

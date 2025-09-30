@@ -12,12 +12,14 @@ import {
   Dimensions,
   Pressable,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon, Button, Avatar, Badge } from '@rneui/base';
+import { Icon, Badge } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../api/LHAPI';
+import LHGenericHeader from '../components/LHGenericHeader';
+import PanicButtonComponent from '../components/PanicButtonComponent';
 import { appImages } from '../global/Data';
 import { getFirstName } from '../global/LHShortcuts';
 
@@ -185,6 +187,13 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      
+      {/* Always-visible Panic Button */}
+      <PanicButtonComponent 
+        position="bottom-right" 
+        size="medium" 
+        quickAction="screen" 
+      />
       
       {/* Header Section */}
       <View style={styles.header}>
