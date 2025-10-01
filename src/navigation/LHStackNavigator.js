@@ -10,7 +10,6 @@ import LHBottomTabs from './LHBottomTabs';
 
 // Home Footer - Bottom Tabs
 import HomeScreen from '../screens/HomeScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import MoreScreen from '../screens/MoreScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import ExploreScreen from '../screens/ExploreScreen';
@@ -29,8 +28,6 @@ import ServiceItemSelectScreen from '../screens/bookingScreens/ServiceItemSelect
 // More Screens
 import PrivacyPolicyScreen from '../screens/moreScreens/PrivacyPolicyScreen';
 
-// Settings Screens
-import SettingsScreen from '../screens/settingScreens/SettingsScreen';
 
 // Location Sreens
 import NewAddressScreen from '../screens/locationScreens/NewAddressScreen';
@@ -200,17 +197,6 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Edit Profile',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
-            {/* Settings Screens */}
-            <LHStack.Screen
-                name="SettingsScreen"
-                component={SettingsScreen}
-                options={{
-                    headerShown: false,
-                    title: 'Settings',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

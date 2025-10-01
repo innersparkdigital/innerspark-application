@@ -152,7 +152,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'language',
           iconColor: '#9C27B0',
           hasChevron: true,
-          onPress: () => navigation.navigate('LanguageSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Language settings coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'theme',
@@ -161,7 +166,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'palette',
           iconColor: '#E91E63',
           hasChevron: true,
-          onPress: () => navigation.navigate('AppearanceSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Appearance settings coming soon!',
+              duration: 2000,
+            });
+          },
         },
       ],
     },
@@ -176,7 +186,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'mood',
           iconColor: '#FF5722',
           hasChevron: true,
-          onPress: () => navigation.navigate('MoodReminderSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Mood reminder settings coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'crisis_contacts',
@@ -185,7 +200,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'emergency',
           iconColor: '#F44336',
           hasChevron: true,
-          onPress: () => navigation.navigate('EmergencyContactsSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Emergency contacts settings coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'wellness_goals',
@@ -194,7 +214,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'flag',
           iconColor: '#4CAF50',
           hasChevron: true,
-          onPress: () => navigation.navigate('WellnessGoalsSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Wellness goals settings coming soon!',
+              duration: 2000,
+            });
+          },
         },
       ],
     },
@@ -209,7 +234,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'data-usage',
           iconColor: '#607D8B',
           hasChevron: true,
-          onPress: () => navigation.navigate('DataUsageSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Data usage settings coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'backup',
@@ -218,7 +248,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'backup',
           iconColor: '#795548',
           hasChevron: true,
-          onPress: () => navigation.navigate('BackupSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Backup settings coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'export_data',
@@ -227,7 +262,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'download',
           iconColor: '#009688',
           hasChevron: true,
-          onPress: () => navigation.navigate('DataExportScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Data export feature coming soon!',
+              duration: 2000,
+            });
+          },
         },
       ],
     },
@@ -242,7 +282,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'help',
           iconColor: appColors.AppBlue,
           hasChevron: true,
-          onPress: () => navigation.navigate('HelpCenterScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Help center coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'feedback',
@@ -251,7 +296,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'feedback',
           iconColor: '#FF9800',
           hasChevron: true,
-          onPress: () => navigation.navigate('FeedbackScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Feedback feature coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'rate_app',
@@ -280,7 +330,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'code',
           iconColor: '#607D8B',
           hasChevron: true,
-          onPress: () => navigation.navigate('DeveloperSettingsScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Developer options coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'reset',
@@ -322,7 +377,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'pause-circle',
           iconColor: '#FF9800',
           hasChevron: true,
-          onPress: () => navigation.navigate('DeactivateAccountScreen'),
+          onPress: () => {
+            toast.show({
+              description: 'Account deactivation coming soon!',
+              duration: 2000,
+            });
+          },
         },
         {
           id: 'delete',
