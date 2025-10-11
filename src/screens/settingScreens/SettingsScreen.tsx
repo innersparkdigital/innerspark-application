@@ -276,36 +276,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     },
     
 
-    {
-      id: 'account_actions',
-      title: 'Account Actions',
-      items: [
-        {
-          id: 'deactivate',
-          title: 'Deactivate Account',
-          subtitle: 'Temporarily disable your account',
-          icon: 'pause-circle',
-          iconColor: '#FF9800',
-          hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Account deactivation coming soon!',
-              duration: 2000,
-            });
-          },
-        },
-        {
-          id: 'delete',
-          title: 'Delete Account',
-          subtitle: 'Permanently delete your account',
-          icon: 'delete-forever',
-          iconColor: '#F44336',
-          hasChevron: true,
-          isDestructive: true,
-          onPress: () => navigation.navigate('DeleteAccountScreen'),
-        },
-      ],
-    },
+
+
   ];
 
   const renderSettingItem = (item: SettingItem) => (
@@ -400,12 +372,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         }
       >
         {settingSections.map(renderSection)}
-        
-        {/* App Version */}
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Innerspark v1.0.0</Text>
-          <Text style={styles.buildText}>Build 2024.03.001</Text>
-        </View>
 
         <View style={styles.bottomSpacing} />
       </ScrollView>

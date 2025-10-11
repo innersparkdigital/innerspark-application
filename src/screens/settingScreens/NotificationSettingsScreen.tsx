@@ -17,6 +17,7 @@ import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import ISGenericHeader from '../../components/ISGenericHeader';
 
 interface NotificationSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -73,6 +74,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     }, 1000);
   };
 
+  // Master Toggle Function
   const handleMasterToggle = (type: 'push' | 'email' | 'sms', value: boolean) => {
     switch (type) {
       case 'push':
@@ -99,6 +101,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     });
   };
 
+  // General Settings
   const generalSettings: NotificationSetting[] = [
     {
       id: 'push_notifications',
@@ -132,6 +135,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     },
   ];
 
+  // Wellness Settings
   const wellnessSettings: NotificationSetting[] = [
     {
       id: 'mood_reminders',
@@ -179,6 +183,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     },
   ];
 
+  // Social Settings
   const socialSettings: NotificationSetting[] = [
     {
       id: 'messages',
@@ -215,6 +220,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     },
   ];
 
+  // System Settings
   const systemSettings: NotificationSetting[] = [
     {
       id: 'security_alerts',
@@ -226,6 +232,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       switchValue: securityAlerts,
       onSwitchChange: setSecurityAlerts,
     },
+
     {
       id: 'system_updates',
       title: 'App Updates',
@@ -236,48 +243,12 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       switchValue: systemUpdates,
       onSwitchChange: setSystemUpdates,
     },
-    {
-      id: 'promotions',
-      title: 'Promotions & Offers',
-      subtitle: promotions ? 'Special offers and discounts' : 'Disabled',
-      icon: 'local-offer',
-      iconColor: '#FFC107',
-      hasSwitch: true,
-      switchValue: promotions,
-      onSwitchChange: setPromotions,
-    },
+
   ];
 
-  const quickActions: NotificationSetting[] = [
-    {
-      id: 'notification_history',
-      title: 'Notification History',
-      subtitle: 'View recent notifications',
-      icon: 'history',
-      iconColor: appColors.grey3,
-      hasChevron: true,
-      onPress: () => navigation.navigate('NotificationHistoryScreen'),
-    },
-    {
-      id: 'quiet_hours',
-      title: 'Quiet Hours',
-      subtitle: 'Set do not disturb schedule',
-      icon: 'do-not-disturb',
-      iconColor: '#9C27B0',
-      hasChevron: true,
-      onPress: () => navigation.navigate('QuietHoursScreen'),
-    },
-    {
-      id: 'notification_sounds',
-      title: 'Sounds & Vibration',
-      subtitle: 'Customize notification sounds',
-      icon: 'volume-up',
-      iconColor: '#FF9800',
-      hasChevron: true,
-      onPress: () => navigation.navigate('NotificationSoundsScreen'),
-    },
-  ];
 
+
+  // Render Notification Item
   const renderNotificationItem = (item: NotificationSetting) => (
     <TouchableOpacity
       key={item.id}
@@ -338,6 +309,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     </TouchableOpacity>
   );
 
+  // Render Section handler
   const renderSection = (title: string, items: NotificationSetting[], description?: string) => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -357,28 +329,24 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity
-          style={styles.testButton}
-          onPress={() => {
-            toast.show({
-              description: 'Test notification sent!',
-              duration: 2000,
-            });
-          }}
-        >
-          <Icon name="send" type="material" color={appColors.AppBlue} size={20} />
-        </TouchableOpacity>
-      </View>
 
+      {/* ISGenericHeader */}
+      <ISGenericHeader
+        title="Notifications"
+        navigation={navigation}
+        hasLightBackground={true}
+        hasRightIcon={true}
+        rightIconName="send"
+        rightIconType="material"
+        rightIconOnPress={() => {
+          toast.show({
+            description: 'Test notification sent!',
+            duration: 2000,
+          });
+        }}
+      />
+
+      {/* ScrollView -- Main Content */}
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -414,11 +382,6 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
           'Important updates and security notifications'
         )}
         
-        {renderSection(
-          'Advanced',
-          quickActions,
-          'Customize your notification experience'
-        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>

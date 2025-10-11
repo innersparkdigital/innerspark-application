@@ -158,13 +158,85 @@ export default function AboutAppScreen({ navigation }){
                     </View>
                 </View>
 
-                {/* App Info */}
+
+                 {/* Quick Actions */}
                 <View style={styles.section}>
-                    <View style={styles.infoCardPlain}>
-                        <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-                            <Text style={{ fontSize: 14, color: appColors.grey1 }}>Version {appVersion}</Text>
+                    <Text style={styles.sectionTitle}>Quick Actions</Text>
+                    
+                    <OpenURLButton url={appLinks.appWebsite}>
+                        <View style={styles.actionRow}>
+                            <View style={styles.actionIconContainer}>
+                                <Icon type="material" name="language" color={appColors.AppBlue} size={24} />
+                            </View>
+                            <View style={styles.actionContent}>
+                                <Text style={styles.actionTitle}>Visit Website</Text>
+                                <Text style={styles.actionSubtitle}>Learn more about us</Text>
+                            </View>
+                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={20} />
                         </View>
+                    </OpenURLButton>
+
+                    <OpenURLButton url={appLinks.appSupportEmail}>
+                        <View style={styles.actionRow}>
+                            <View style={styles.actionIconContainer}>
+                                <Icon type="material" name="support-agent" color={appColors.AppBlue} size={24} />
+                            </View>
+                            <View style={styles.actionContent}>
+                                <Text style={styles.actionTitle}>Get Support</Text>
+                                <Text style={styles.actionSubtitle}>We're here to help</Text>
+                            </View>
+                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={20} />
+                        </View>
+                    </OpenURLButton>
+
+                    <OpenURLButton url={appLinks.appGooglePlayURL}>
+                        <View style={styles.actionRow}>
+                            <View style={styles.actionIconContainer}>
+                                <Icon type="material" name="system-update" color={appColors.AppBlue} size={24} />
+                            </View>
+                            <View style={styles.actionContent}>
+                                <Text style={styles.actionTitle}>Check Updates</Text>
+                                <Text style={styles.actionSubtitle}>Stay up to date</Text>
+                            </View>
+                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={20} />
+                        </View>
+                    </OpenURLButton>
+                </View>
+
+                {/* Connect With Us */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Connect With Us</Text>
+                    <View style={styles.socialContainer}>
+                        <OpenURLButton url={appLinks.appLinkedIn}>
+                            <View style={styles.socialButton}>
+                                <Icon type="material-community" name="linkedin" color={appColors.CardBackground} size={24} />
+                            </View>
+                        </OpenURLButton>
+
+                        <OpenURLButton url={appLinks.appFacebook}>
+                            <View style={styles.socialButton}>
+                                <Icon type="material-community" name="facebook" color={appColors.CardBackground} size={24} />
+                            </View>
+                        </OpenURLButton>
+
+                        <OpenURLButton url={appLinks.appTwitter}>
+                            <View style={styles.socialButton}>
+                                <Icon type="material-community" name="twitter" color={appColors.CardBackground} size={24} />
+                            </View>
+                        </OpenURLButton>
+
+                        <OpenURLButton url={appLinks.appInstagram}>
+                            <View style={styles.socialButton}>
+                                <Icon type="material-community" name="instagram" color={appColors.CardBackground} size={24} />
+                            </View>
+                        </OpenURLButton>
                     </View>
+                </View>
+
+                {/* App Version */}
+                <View style={styles.versionContainer}>
+                    <Text style={styles.versionText}>Innerspark v{appVersion}</Text>
+                    <Text style={styles.buildText}>Build 2024.03.001</Text>
                 </View>
 
                 <View style={styles.bottomSpacing} />
@@ -355,5 +427,23 @@ const styles = StyleSheet.create({
     },
     bottomSpacing: {
         height: 20,
+    },
+
+    /* App Version Information styles */
+    versionContainer: {
+        alignItems: 'center',
+        marginTop: 30,
+        marginBottom: 20,
+    },
+    versionText: {
+        fontSize: 14,
+        color: appColors.grey3,
+        fontFamily: appFonts.headerTextMedium,
+        marginBottom: 4,
+    },
+    buildText: {
+        fontSize: 12,
+        color: appColors.grey4,
+        fontFamily: appFonts.headerTextRegular,
     },
 });

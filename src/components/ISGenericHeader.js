@@ -9,6 +9,11 @@ import { appColors, appFonts, parameters } from '../global/Styles';
 export default function ISGenericHeader({
     hasCustomStatusBar=true,
     hasLightBackground=false,
+    hasRightIcon=false,
+    rightIconName="info",
+    rightIconType="material",
+    rightIconSize=20,
+    rightIconOnPress=()=>{},
     title="Header Title",
     navigation,
 }){
@@ -23,7 +28,13 @@ export default function ISGenericHeader({
                 <Icon name="arrow-back" type="material" color={hasLightBackground ? appColors.grey1 : appColors.CardBackground} size={24} />
             </TouchableOpacity>
             <Text style={hasLightBackground ? styles.headerTitleLight : styles.headerTitle}>{title}</Text>
-            <View style={hasLightBackground ? styles.placeholderLight : styles.headerSpacer} />
+            { hasRightIcon && <TouchableOpacity 
+                style={hasLightBackground ? styles.rightButtonLight : styles.rightButton}
+                onPress={rightIconOnPress}
+            >
+                <Icon name={rightIconName} type={rightIconType} color={hasLightBackground ? appColors.grey1 : appColors.CardBackground} size={rightIconSize} />
+            </TouchableOpacity> }
+            { !hasRightIcon && <View style={styles.headerSpacer} /> }
         </View>
     )
 }
@@ -48,18 +59,20 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '700',
         color: appColors.CardBackground,
         fontFamily: appFonts.headerTextBold,
     },
     headerSpacer: {
         width: 40,
     },
+    rightButton: {
+        padding: 8,
+    },
 
    
     /** Header alternative styles for light background */
-
     headerLight: {
         backgroundColor: appColors.CardBackground,
         paddingTop: parameters.headerHeightS,
@@ -79,13 +92,13 @@ const styles = StyleSheet.create({
       },
       headerTitleLight: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
         color: appColors.grey1,
         fontFamily: appFonts.headerTextBold,
       },
-      placeholderLight: {
-        width: 40,
-      },
+       rightButtonLight: {
+        padding: 8,
+    },
 
 
 })
