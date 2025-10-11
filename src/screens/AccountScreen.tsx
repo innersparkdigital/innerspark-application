@@ -225,8 +225,6 @@ export default function AccountScreen({ navigation }){
             </View> */}
 
 
-
-
             {/* App Section */}
             {/* <View style={styles.section}>
                 <Text style={styles.sectionTitle}>App</Text>

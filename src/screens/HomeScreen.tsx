@@ -56,7 +56,7 @@ const HomeScreen = ({ navigation }) => {
       time: '3:00 PM',
       duration: '50 min',
       type: 'Video Call',
-      avatar: null
+      avatar: appImages.dPerson1
     },
     {
       id: 2,
@@ -66,7 +66,7 @@ const HomeScreen = ({ navigation }) => {
       time: '10:00 AM',
       duration: '45 min',
       type: 'In-Person',
-      avatar: null
+      avatar: appImages.dPerson2
     },
     {
       id: 3,
@@ -76,7 +76,7 @@ const HomeScreen = ({ navigation }) => {
       time: '2:30 PM',
       duration: '60 min',
       type: 'Video Call',
-      avatar: null
+      avatar: appImages.dPerson3
     }
   ]);
   const [unreadNotifications, setUnreadNotifications] = useState(3); // Mock unread count
@@ -415,9 +415,17 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sessionCard}>
               <View style={styles.sessionHeader}>
                 <View style={styles.therapistAvatar}>
-                  <Text style={styles.avatarText}>
-                    {upcomingSessions[0].therapistName.split(' ').map(n => n[0]).join('')}
-                  </Text>
+                  {upcomingSessions[0].avatar ? (
+                    <Image 
+                      source={upcomingSessions[0].avatar} 
+                      style={styles.avatarImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text style={styles.avatarText}>
+                      {upcomingSessions[0].therapistName.split(' ').map(n => n[0]).join('')}
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.sessionInfo}>
                   <Text style={styles.therapistName}>{upcomingSessions[0].therapistName}</Text>
@@ -830,6 +838,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
+  },
+  avatarImage: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
   },
   sessionInfo: {
     flex: 1,

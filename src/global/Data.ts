@@ -11,6 +11,12 @@ export const appImages = {
     isDefaultImage: require("../assets/images/is-default.png"),
     UGFlag : require("../assets/icons/flag-ug.png"),
 
+    // Dummy people photos
+    dPerson1 : require("../assets/images/dummy-people/d-person1.png"),
+    dPerson2 : require("../assets/images/dummy-people/d-person2.png"),
+    dPerson3 : require("../assets/images/dummy-people/d-person3.png"),
+    dPerson4 : require("../assets/images/dummy-people/d-person4.png"),
+
     // custom backgrounds
     laundryBg : require("../assets/backgrounds/bg-patterns.png"),
     bgPatterns : require("../assets/backgrounds/bg-patterns.png"),
@@ -29,6 +35,7 @@ export const appLinks = {
     appWebsite : "https://www.innersparkafrica.com/",  
     appSupportEmail : "mailto:info@innersparkafrica.com",  
     appGooglePlayURL : "https://www.innersparkafrica.com/",  
+    appUserGuide : "https://www.innersparkafrica.com/",  
 
 };
 
@@ -36,6 +43,9 @@ export const appLinks = {
 /* App Content: Text Descriptions, intro, etc. */
 export const appContents = {
     aboutAppText: "Innerspark helps you care for your mental well-being with ease. Book therapy sessions, track your moods, join support groups, and access wellness resources—all in one simple, supportive app.",
+    supportPhone : "+256 (0) 780-570-987", // support phone number 
+    supportEmail : "support@innersparkafrica.com", // support email address
+    supportHours : "Monday - Friday, 9 AM - 6 PM", // support working hours
 
 }
 
@@ -118,6 +128,52 @@ export const slides = [
 
 
 /**
+ * App FAQ Data
+ * This is TEST Data
+ */
+export const faqData = [
+
+    {
+      id: '1',
+      question: 'How do I book a therapy session?',
+      answer: 'Go to the Therapists tab, browse available therapists, select one that fits your needs, and choose an available time slot. You can pay securely through the app.',
+      category: 'Booking',
+    },
+    {
+      id: '2',
+      question: 'How do I join a support group?',
+      answer: 'Navigate to the Groups section from the home screen, browse available groups, and tap "Join Group" on any group that interests you. Some groups may require approval from the therapist.',
+      category: 'Groups',
+    },
+    {
+      id: '3',
+      question: 'Is my data secure and private?',
+      answer: 'Yes, we use industry-standard encryption to protect your data. All conversations with therapists are confidential and comply with healthcare privacy regulations.',
+      category: 'Privacy',
+    },
+    {
+      id: '4',
+      question: 'How do I track my mood?',
+      answer: 'Use the Mood tab to log your daily mood. You can add notes and view insights about your mood patterns over time.',
+      category: 'Features',
+    },
+    {
+      id: '5',
+      question: 'What if I need emergency help?',
+      answer: 'Use the Emergency tab for immediate crisis support. You\'ll find emergency contacts, coping tools, and safety planning resources.',
+      category: 'Emergency',
+    },
+    {
+      id: '6',
+      question: 'How do I cancel or reschedule an appointment?',
+      answer: 'Go to your appointments in the Sessions section, find the appointment you want to change, and use the cancel or reschedule options. Please note cancellation policies.',
+      category: 'Booking',
+    },
+  ];
+
+
+
+/**
  * Laundromats test data --- Remove Later
  * This is TEST Data
  */
@@ -134,84 +190,8 @@ export const laundromatsData = [
             cid : "25585",
         },
 
-        {
-            // image : "https://onpoint-laundry.com/wp-content/uploads/2021/07/pexels-pixabay-325876.jpg",
-            name : "Spot Dry Cleaners",
-            awayDistance: "O.3 Km",
-            awayTime: "2Hrs-48Hrs",
-            price: "4k",
-            priceUnit: "kg",
-            rating: "4.5",
-            cid : "25523",
-        },
 
-        {
-          
-          cid : "25524",
-          image : "https://laundryhouse.app/assets/images/About/About-1.jpg",
-          name : "The Laundry Guru"
-        },
 
 
 ];
 
-
-
-// Laundromats Test Data - Better format
-export const laundromatsDataTest = [
-  {
-    id: 1,
-    name: "Shine Laundry & Dry Cleaning",
-    image: "https://laundryhouse.app/assets/images/About/About-1.jpg",
-    location: {
-      distance: "0.3 Km",
-      time: "2Hrs-48Hrs",
-      latitude: 37.7749,
-      longitude: -122.4194
-    },
-    price: 4,
-    priceUnit: "KG",
-    rating: 4.5,
-    description: "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod dolore magna aliqua."
-  },
-  {
-    id: 2,
-    name: "Spot Dry Cleaners",
-    image: "https://onpoint-laundry.com/wp-content/uploads/2021/07/pexels-pixabay-325876.jpg",
-    location: {
-      distance: "0.3 Km",
-      time: "2Hrs-48Hrs",
-      latitude: 37.7859,
-      longitude: -122.4364
-    },
-    price: 4,
-    priceUnit: "KG",
-    rating: 4.5
-  },
-  
-];
-
-
-/**
- *  E-Receipt Data for testing
- */
-export const receiptTestData = {
-    laundromatName: 'Fast Boots & Dry Cleaning',
-    laundromatAddress: '7th Floor, Shop 8. Rumee Building.',
-    customerName: 'Ms Katy',
-    customerContact: '0778-753-768',
-    receiptNo: '7789',
-    pickUpAddress: 'Buziga, Makindye, Kampala',
-    pickUpDateTime: 'Aug 08, 2024 | 10:00AM',
-    services: {
-      Washing: 15000,
-      Ironing: 7000,
-      Beddings: 30000,
-      'Pick Up Fees': 10000
-    },
-    total: 62000,
-    paymentMethod: 'Cash On Pick Up',
-    amountPaid: 62000,
-    balance: 0,
-    transactionId: 'FcD678Jmdg7RRSJ9'
-};

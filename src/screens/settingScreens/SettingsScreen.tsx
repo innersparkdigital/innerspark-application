@@ -175,6 +175,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         },
       ],
     },
+    
     {
       id: 'wellness',
       title: 'Wellness & Health',
@@ -223,54 +224,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         },
       ],
     },
-    {
-      id: 'data',
-      title: 'Data & Storage',
-      items: [
-        {
-          id: 'data_usage',
-          title: 'Data Usage',
-          subtitle: 'Manage app data consumption',
-          icon: 'data-usage',
-          iconColor: '#607D8B',
-          hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Data usage settings coming soon!',
-              duration: 2000,
-            });
-          },
-        },
-        {
-          id: 'backup',
-          title: 'Backup & Sync',
-          subtitle: 'Last backup: Today',
-          icon: 'backup',
-          iconColor: '#795548',
-          hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Backup settings coming soon!',
-              duration: 2000,
-            });
-          },
-        },
-        {
-          id: 'export_data',
-          title: 'Export My Data',
-          subtitle: 'Download your data',
-          icon: 'download',
-          iconColor: '#009688',
-          hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Data export feature coming soon!',
-              duration: 2000,
-            });
-          },
-        },
-      ],
-    },
+
+
     {
       id: 'support',
       title: 'Support & Feedback',
@@ -319,53 +274,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         },
       ],
     },
-    {
-      id: 'advanced',
-      title: 'Advanced',
-      items: [
-        {
-          id: 'developer',
-          title: 'Developer Options',
-          subtitle: 'Advanced settings',
-          icon: 'code',
-          iconColor: '#607D8B',
-          hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Developer options coming soon!',
-              duration: 2000,
-            });
-          },
-        },
-        {
-          id: 'reset',
-          title: 'Reset Settings',
-          subtitle: 'Reset all settings to default',
-          icon: 'restore',
-          iconColor: '#FF5722',
-          hasChevron: true,
-          onPress: () => {
-            Alert.alert(
-              'Reset Settings',
-              'Are you sure you want to reset all settings to default? This action cannot be undone.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Reset',
-                  style: 'destructive',
-                  onPress: () => {
-                    toast.show({
-                      description: 'Settings reset to default',
-                      duration: 3000,
-                    });
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ],
-    },
+    
+
     {
       id: 'account_actions',
       title: 'Account Actions',

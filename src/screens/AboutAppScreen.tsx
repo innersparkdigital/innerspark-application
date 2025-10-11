@@ -24,6 +24,7 @@ import VersionInfo from 'react-native-version-info';
 import { appLinks, appContents } from '../global/Data';
 import HeaderBackButton from '../components/HeaderBackButton';
 import LHGenericHeader from '../components/LHGenericHeader';
+import ISGenericHeader from '../components/ISGenericHeader'; // generic header for Innerspark
 
 
 // App version
@@ -60,31 +61,26 @@ export default function AboutAppScreen({ navigation }){
     return(
         <SafeAreaView style={styles.container}>
             {/* Custom Header */}
-            <View style={styles.header}>
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>About Innerspark</Text>
-                <View style={styles.headerSpacer} />
-            </View>
+            <ISGenericHeader 
+                navigation={navigation}
+                title="About"
+            />
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Hero Section */}
                 <View style={styles.heroSection}>
-                    <View style={styles.logoContainer}>
-                        <Image 
-                            style={styles.logoImage} 
-                            source={appImages.logoRecBlue} 
-                        />
-                    </View>
-                    
-                    <View style={styles.descriptionCard}>
-                        <Text style={styles.descriptionText}>
-                            {appContents.aboutAppText}
-                        </Text>
+                    <View style={{ margin:20 }}>  
+                        <View style={styles.logoContainer}>
+                            <Image 
+                                style={styles.logoImage} 
+                                source={appImages.logoRecBlue} 
+                            />
+                        </View>
+                        <View style={styles.descriptionCard}>
+                            <Text style={styles.descriptionText}>
+                                {appContents.aboutAppText}
+                            </Text>
+                        </View>
                     </View>
                 </View>
 
@@ -164,18 +160,9 @@ export default function AboutAppScreen({ navigation }){
 
                 {/* App Info */}
                 <View style={styles.section}>
-                    <View style={styles.infoCard}>
-                        <View style={styles.infoRow}>
-                            <Icon type="material" name="info" color={appColors.AppBlue} size={20} />
-                            <Text style={styles.infoText}>Version {appVersion}</Text>
-                        </View>
-                        <View style={styles.infoRow}>
-                            <Icon type="material" name="copyright" color={appColors.AppBlue} size={20} />
-                            <Text style={styles.infoText}>© {new Date().getFullYear()} Innerspark. All rights reserved.</Text>
-                        </View>
-                        <View style={styles.infoRow}>
-                            <Icon type="material" name="favorite" color="#E91E63" size={20} />
-                            <Text style={styles.infoText}>Made with love for your wellness</Text>
+                    <View style={styles.infoCardPlain}>
+                        <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+                            <Text style={{ fontSize: 14, color: appColors.grey1 }}>Version {appVersion}</Text>
                         </View>
                     </View>
                 </View>
@@ -190,6 +177,7 @@ export default function AboutAppScreen({ navigation }){
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        // backgroundColor: appColors.CardBackground,
         backgroundColor: appColors.AppLightGray,
     },
     header: {
@@ -214,7 +202,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: appColors.CardBackground,
-        fontFamily: appFonts.appTextBold,
+        fontFamily: appFonts.headerTextBold,
     },
     headerSpacer: {
         width: 40,
@@ -224,36 +212,37 @@ const styles = StyleSheet.create({
     },
     heroSection: {
         backgroundColor: appColors.CardBackground,
-        margin: 20,
-        borderRadius: 20,
-        padding: 30,
-        alignItems: 'center',
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        marginBottom: 25,
+        // borderRadius: 20,
+        paddingHorizontal: 5,
+        paddingVertical: 10,
+        // alignItems: 'center',
+        // elevation: 3,
+        // shadowColor: '#000',
+        // shadowOffset: { width: 0, height: 2 },
+        // shadowOpacity: 0.1,
+        // shadowRadius: 4,
     },
     logoContainer: {
-        marginBottom: 25,
+        marginBottom: 10,
     },
     logoImage: {
-        width: 280,
+        width: 250,
         height: 70,
         resizeMode: 'contain',
     },
     descriptionCard: {
-        backgroundColor: appColors.AppLightGray,
-        borderRadius: 15,
-        padding: 20,
+        //backgroundColor: appColors.CardBackground,
+        // borderRadius: 15,
+        padding: 5,
         width: '100%',
     },
     descriptionText: {
         fontSize: 16,
         lineHeight: 24,
         color: appColors.grey1,
-        fontFamily: appFonts.appTextRegular,
-        textAlign: 'center',
+        fontFamily: appFonts.headerTextRegular,
+        textAlign: 'left',
     },
     section: {
         marginHorizontal: 20,
@@ -263,7 +252,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: appColors.grey1,
-        fontFamily: appFonts.appTextBold,
+        fontFamily: appFonts.headerTextBold,
         marginBottom: 15,
     },
     actionRow: {
@@ -295,13 +284,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: appColors.grey1,
-        fontFamily: appFonts.appTextBold,
+        fontFamily: appFonts.headerTextBold,
         marginBottom: 3,
     },
     actionSubtitle: {
         fontSize: 13,
         color: appColors.grey2,
-        fontFamily: appFonts.appTextRegular,
+        fontFamily: appFonts.headerTextRegular,
         lineHeight: 18,
     },
     socialContainer: {
@@ -341,6 +330,17 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
     },
+
+    infoCardPlain: {
+        // backgroundColor: appColors.AppLightGray,
+        // borderRadius: 15,
+        padding: 20,
+        //elevation: 2,
+        // shadowColor: '#000',
+        // shadowOffset: { width: 0, height: 1 },
+        // shadowOpacity: 0.1,
+        // shadowRadius: 2,
+    },
     infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -349,11 +349,11 @@ const styles = StyleSheet.create({
     infoText: {
         fontSize: 14,
         color: appColors.grey1,
-        fontFamily: appFonts.appTextRegular,
+        fontFamily: appFonts.headerTextRegular,
         marginLeft: 12,
         flex: 1,
     },
     bottomSpacing: {
-        height: 30,
+        height: 20,
     },
 });

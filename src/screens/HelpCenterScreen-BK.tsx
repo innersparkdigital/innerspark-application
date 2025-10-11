@@ -8,13 +8,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import { appContents, appLinks, faqData } from '../global/Data';
-import { openThisURL } from '../global/LHShortcuts';
 
 interface HelpItem {
   id: string;
@@ -41,30 +40,102 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
 
   const helpItems: HelpItem[] = [
     {
+      id: '1',
+      title: 'My Support Tickets',
+      description: 'View and manage your support requests',
+      icon: 'support-agent',
+      action: () => navigation.navigate('MyTicketsScreen'),
+    },
+    {
       id: '2',
       title: 'Contact Support',
       description: 'Get help from our support team',
       icon: 'contact-support',
-      // action: () => navigation.navigate('CreateTicketScreen'),
-      action: () => openThisURL(appLinks.appSupportEmail),
+      action: () => navigation.navigate('CreateTicketScreen'),
+    },
+    {
+      id: '3',
+      title: 'Live Chat',
+      description: 'Chat with a support representative',
+      icon: 'chat',
+      action: () => {
+        toast.show({
+          description: 'Live chat is currently unavailable. Please create a support ticket.',
+          duration: 3000,
+        });
+      },
     },
     {
       id: '4',
       title: 'User Guide',
       description: 'Learn how to use the app effectively',
       icon: 'menu-book',
-      action: () => openThisURL(appLinks.appUserGuide),
+      action: () => {
+        toast.show({
+          description: 'User guide will be available soon.',
+          duration: 2000,
+        });
+      },
     },
     {
       id: '5',
       title: 'Privacy Policy',
       description: 'Read our privacy policy and terms',
       icon: 'privacy-tip',
-      action: () => openThisURL(appLinks.appPrivacy),
+      action: () => {
+        toast.show({
+          description: 'Opening privacy policy...',
+          duration: 2000,
+        });
+      },
+    },
+    {
+      id: '6',
+      title: 'Report a Bug',
+      description: 'Report technical issues or bugs',
+      icon: 'bug-report',
+      action: () => navigation.navigate('CreateTicketScreen', { category: 'Technical Issue' }),
     },
   ];
 
-  const faqItems: FAQItem[] = faqData; // FAQ Data from Data.ts
+  const faqItems: FAQItem[] = [
+    {
+      id: '1',
+      question: 'How do I book a therapy session?',
+      answer: 'Go to the Therapists tab, browse available therapists, select one that fits your needs, and choose an available time slot. You can pay securely through the app.',
+      category: 'Booking',
+    },
+    {
+      id: '2',
+      question: 'How do I join a support group?',
+      answer: 'Navigate to the Groups section from the home screen, browse available groups, and tap "Join Group" on any group that interests you. Some groups may require approval from the therapist.',
+      category: 'Groups',
+    },
+    {
+      id: '3',
+      question: 'Is my data secure and private?',
+      answer: 'Yes, we use industry-standard encryption to protect your data. All conversations with therapists are confidential and comply with healthcare privacy regulations.',
+      category: 'Privacy',
+    },
+    {
+      id: '4',
+      question: 'How do I track my mood?',
+      answer: 'Use the Mood tab to log your daily mood. You can add notes and view insights about your mood patterns over time.',
+      category: 'Features',
+    },
+    {
+      id: '5',
+      question: 'What if I need emergency help?',
+      answer: 'Use the Emergency tab for immediate crisis support. You\'ll find emergency contacts, coping tools, and safety planning resources.',
+      category: 'Emergency',
+    },
+    {
+      id: '6',
+      question: 'How do I cancel or reschedule an appointment?',
+      answer: 'Go to your appointments in the Sessions section, find the appointment you want to change, and use the cancel or reschedule options. Please note cancellation policies.',
+      category: 'Booking',
+    },
+  ];
 
   const toggleFAQ = (faqId: string) => {
     setExpandedFAQ(expandedFAQ === faqId ? null : faqId);
@@ -119,7 +190,9 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
         >
           <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
         </TouchableOpacity>
+        
         <Text style={styles.headerTitle}>Help Center</Text>
+        
         <View style={styles.headerSpacer} />
       </View>
 
@@ -150,15 +223,15 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
           <View style={styles.contactInfo}>
             <View style={styles.contactItem}>
               <Icon name="email" type="material" color={appColors.AppBlue} size={20} />
-              <Text style={styles.contactText}>{appContents.supportEmail}</Text>
+              <Text style={styles.contactText}>support@innerspark.com</Text>
             </View>
             <View style={styles.contactItem}>
               <Icon name="phone" type="material" color={appColors.AppBlue} size={20} />
-              <Text style={styles.contactText}>{appContents.supportPhone}</Text>
+              <Text style={styles.contactText}>+256 (0) 700 123 456</Text>
             </View>
             <View style={styles.contactItem}>
               <Icon name="schedule" type="material" color={appColors.AppBlue} size={20} />
-              <Text style={styles.contactText}>{appContents.supportHours}</Text>
+              <Text style={styles.contactText}>Monday - Friday, 9 AM - 6 PM</Text>
             </View>
           </View>
         </View>
@@ -209,7 +282,6 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.CardBackground,
     padding: 24,
     margin: 16,
-    marginBottom: 24,
     borderRadius: 12,
     elevation: 2,
     shadowColor: '#000',

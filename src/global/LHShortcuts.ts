@@ -4,10 +4,11 @@
  * Keep it DRY baby!
  */
 import axios from 'axios';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { storeItemLS } from './StorageActions';
 import { appImages } from './Data';
 import { isValidPhoneNumber, isValidEmailAddress } from './LHValidators';
+import { useToast } from 'native-base';     
 
 
  // Toast Notifications 
@@ -257,5 +258,25 @@ export const createFormData = (photo: any, user: any) => {
 
     // return the final data
     return data;
+
+};
+
+
+
+/**
+ * Open URL Link
+ * @param {string} url - The URL to open.
+ */
+export const openThisURL = async (url: string) => {
+    // Checking if the link is supported for links with custom URL scheme.
+    const supported = await Linking.canOpenURL(url);
+        if (supported) {
+            // if the URL scheme is "http" the web link should be opened by some browser in the mobile
+            await Linking.openURL(url);
+        } else {
+            // Alert.alert(`Don't know how to open this URL: ${url}`);
+            console.log(`Don't know how to open this URL: ${url}`);
+
+    }
 
 };
