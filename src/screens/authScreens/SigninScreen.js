@@ -521,6 +521,46 @@ export default function SigninScreen({navigation}){
                                     }
                                 /> 
                             </View>
+
+                            {/* A temporary link to bypass the login and setup default user session data */}
+                            <View style={{ paddingVertical:15 }}>
+                                <Button 
+                                    title="Skip Login"
+                                    buttonStyle={ parameters.appButtonXLBlue }
+                                    titleStyle={ parameters.appButtonXLTitleBlue } 
+                                    onPress={ 
+                                        () => {
+                                            // Temporary skip login with hardcoded test data
+                                            // Using same field structure as UserLoginWithEmailHandler
+                                            const defaultUserTokenData = {
+                                                userId: 'TestUser-123',
+                                                firstName: 'Alpha',
+                                                lastName: 'Onyekanwa',
+                                                email: 'alpha@innersparkafrica.us',
+                                                phone: '+256700000000',
+                                                role: 'user',
+                                                email_verified: 1,
+                                                phone_verified: 1,
+                                            };
+
+                                            // Store user token data (same as UserLoginWithEmailHandler)
+                                            storeItemLS("userToken", defaultUserTokenData);
+                                            
+                                            // Dispatch signin action (same as UserLoginWithEmailHandler)
+                                            dispatch(signin(defaultUserTokenData));
+                                            
+                                            // Dispatch update user details (same as UserLoginWithEmailHandler)
+                                            dispatch(updateUserDetails(defaultUserTokenData));
+                                            
+                                            // Store user details in local storage (same as UserLoginWithEmailHandler)
+                                            storeItemLS("userDetailsLS", defaultUserTokenData);
+                                            
+                                            // Navigate to home (bypassing the success modal for testing)
+                                            // navigation.replace('HomeScreen');
+                                        } 
+                                    }
+                                /> 
+                            </View>
                         </View>
                     
                         {/* Forgot Password Section */}

@@ -16,26 +16,26 @@ export const appColors = {
     CardBackgroundFade3: "rgba(255,255,255,0.3)", // white with opacity
     CardBackgroundFade4: "rgba(255,255,255,0.2)", // white with opacity
 
-    AppBlue: "#2C7A7C", // base color  -- same as dark
+    AppBlue: "#5170FF", // base color [old: #2C7A7C]
     AppBlueFade: "rgba(15,123,169,0.4)", // blue fade alternative
     AppBlueOpacity: "#F1F9F9", // opacity
-    AppBlueDark: "#2C7A7C", // alternative base color
-    AppOrange: "#EE7810", // base color  -- same as dark
+    AppBlueDark: "#5170FF", // alternative base color
+    AppOrange: "#EE7810", // base color 
     AppGreen: "#64D64E",
     AppLightGray: "#F6F6F6",
     AppGray: "#5e6977", 
 
-    DoffeeGreen: "#2C7A7C",
+    DoffeeGreen: "#5170FF",
     DoffeeYellow: "#FFC12F",
     DoffeeButtons: "#1AA382",
     statusBar: "#800080",
     headerText: "white",
 
-    YoGreen: '#2C7A7C',
+    YoGreen: '#5170FF',
     YoPink: '#C93775',
     YoPurple: '#B800C4',
     YoGreenFade: '#E7F6DC',
-    YoBlue: '#2C7A7C',
+    YoBlue: '#5170FF',
     YoGrey: '#A9AEB1',
     black: '#000000',
 
