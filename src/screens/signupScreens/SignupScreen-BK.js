@@ -13,7 +13,6 @@ import {
     ScrollView,
     Pressable,
     ActivityIndicator,
-    Animated,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import { appColors, parameters, appFonts } from '../../global/Styles';
@@ -44,10 +43,6 @@ export default function SignupScreen({navigation}){
     // Redux selectors
     const storedGender = useSelector(state => state.signupFlow.gender); // gender default value
     const [isLoading, setIsLoading] = useState(false);
-    
-    // Multi-step flow state
-    const [currentStep, setCurrentStep] = useState(1);
-    const slideAnim = useRef(new Animated.Value(0)).current;
     const [showPassword, setShowPassword] = useState(false);
     const [showVerifyPassword, setShowVerifyPassword] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -122,9 +117,11 @@ export default function SignupScreen({navigation}){
     }
 
 
-    // Step-specific validation
-    const validateStep1 = () => {
-        // Validate First Name
+    /*
+    * Signup Validation
+    */
+    const validateSignupInputs = () => {
+        // Validate Name
         if ( !isValidName(firstName) ) {
             notifyWithToast("Enter valid First Name.");
             return false;
@@ -136,21 +133,12 @@ export default function SignupScreen({navigation}){
             return false;
         }
 
-        // Validate Gender
-        if ( !gender ) {
-            notifyWithToast("Please select your gender.");
-            return false;
-        }
-
-        return true;
-    };
-
-    const validateStep2 = () => {
         // Validate Email
         if ( !isValidEmailAddress(email) ) {
             notifyWithToast("Enter valid Email.");
             return false;
         }
+
 
         // check if country is supported
         if ( !isCountrySupported ) {
@@ -164,10 +152,6 @@ export default function SignupScreen({navigation}){
             return false;
         }
 
-        return true;
-    };
-
-    const validateStep3 = () => {
         // Validate Password
         if ( !isValidPassword(password) ) {
             notifyWithToast("Password must be at least 8 characters");
@@ -180,75 +164,10 @@ export default function SignupScreen({navigation}){
             return false;
         }
 
+        // All inputs are valid
         return true;
-    };
-
-    /*
-    * Signup Validation - Full validation for final submission
-    */
-    const validateSignupInputs = () => {
-        return validateStep1() && validateStep2() && validateStep3();
 
     }
-
-    // Step navigation with animation
-    const goToNextStep = () => {
-        let isValid = false;
-        
-        if (currentStep === 1) {
-            isValid = validateStep1();
-        } else if (currentStep === 2) {
-            isValid = validateStep2();
-        }
-
-        if (isValid && currentStep < 3) {
-            Animated.timing(slideAnim, {
-                toValue: -100,
-                duration: 200,
-                useNativeDriver: true,
-            }).start(() => {
-                setCurrentStep(currentStep + 1);
-                slideAnim.setValue(100);
-                Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
-            });
-        }
-    };
-
-    const goToPreviousStep = () => {
-        if (currentStep > 1) {
-            Animated.timing(slideAnim, {
-                toValue: 100,
-                duration: 200,
-                useNativeDriver: true,
-            }).start(() => {
-                setCurrentStep(currentStep - 1);
-                slideAnim.setValue(-100);
-                Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                }).start();
-            });
-        }
-    };
-
-    // Get step title
-    const getStepTitle = () => {
-        switch(currentStep) {
-            case 1:
-                return "Personal Information";
-            case 2:
-                return "Contact Details";
-            case 3:
-                return "Secure Your Account";
-            default:
-                return "Sign Up";
-        }
-    };
 
 
     /** 
@@ -367,36 +286,6 @@ export default function SignupScreen({navigation}){
                             </Text>
                         </View>
 
-                        {/* Progress Indicator */}
-                        <View style={styles.progressContainer}>
-                            <View style={styles.progressBar}>
-                                <View style={[styles.progressStep, currentStep >= 1 && styles.progressStepActive]}>
-                                    <Text style={[styles.progressStepText, currentStep >= 1 && styles.progressStepTextActive]}>1</Text>
-                                </View>
-                                <View style={[styles.progressLine, currentStep >= 2 && styles.progressLineActive]} />
-                                <View style={[styles.progressStep, currentStep >= 2 && styles.progressStepActive]}>
-                                    <Text style={[styles.progressStepText, currentStep >= 2 && styles.progressStepTextActive]}>2</Text>
-                                </View>
-                                <View style={[styles.progressLine, currentStep >= 3 && styles.progressLineActive]} />
-                                <View style={[styles.progressStep, currentStep >= 3 && styles.progressStepActive]}>
-                                    <Text style={[styles.progressStepText, currentStep >= 3 && styles.progressStepTextActive]}>3</Text>
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Step Title */}
-                        <View style={{ paddingVertical:10 }}>
-                            <Text style={{ fontSize:16, color:appColors.AppBlue, fontWeight:'600', textAlign:'center' }}>
-                                {getStepTitle()}
-                            </Text>
-                        </View>
-
-                        {/* Animated Step Container */}
-                        <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
-
-                        {/* STEP 1: Personal Information */}
-                        {currentStep === 1 && (
-                            <View>
                         {/* First Name Input block */}
                         <View style={ styles.inputBlockRow }>
                             <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
@@ -456,22 +345,6 @@ export default function SignupScreen({navigation}){
                             </View>
                         </View>
 
-                        {/* Step 1 Navigation */}
-                        <View style={{ paddingVertical:15 }}>
-                            <Button 
-                                title="Continue"
-                                buttonStyle={ parameters.appButtonXLBlue }
-                                titleStyle={ parameters.appButtonXLTitleBlue } 
-                                disabled={ isLoading }
-                                onPress={ goToNextStep }
-                            /> 
-                        </View>
-                            </View>
-                        )}
-
-                       {/* STEP 2: Contact Details */}
-                       {currentStep === 2 && (
-                            <View>
                        {/* Email Input Block */}
                        <View style={ styles.inputBlockRow }>
                             <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
@@ -499,33 +372,6 @@ export default function SignupScreen({navigation}){
 
                         />
 
-                        {/* Step 2 Navigation */}
-                        <View style={{ flexDirection:'row', paddingVertical:15, gap:10 }}>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Back"
-                                    buttonStyle={ parameters.appButtonXLOutline }
-                                    titleStyle={ parameters.appButtonXLOutlineTitle } 
-                                    disabled={ isLoading }
-                                    onPress={ goToPreviousStep }
-                                /> 
-                            </View>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Continue"
-                                    buttonStyle={ parameters.appButtonXLBlue }
-                                    titleStyle={ parameters.appButtonXLTitleBlue } 
-                                    disabled={ isLoading }
-                                    onPress={ goToNextStep }
-                                /> 
-                            </View>
-                        </View>
-                            </View>
-                        )}
-
-                        {/* STEP 3: Secure Your Account */}
-                        {currentStep === 3 && (
-                            <View>
                         {/* Password Input Block */}
                         <View style={ styles.inputBlockRow }>
                             <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
@@ -581,33 +427,7 @@ export default function SignupScreen({navigation}){
                             </View> 
                         </View>
 
-                        {/* Step 3 Navigation */}
-                        <View style={{ flexDirection:'row', paddingVertical:15, gap:10 }}>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Back"
-                                    buttonStyle={ parameters.appButtonXLOutline }
-                                    titleStyle={ parameters.appButtonXLOutlineTitle } 
-                                    disabled={ isLoading }
-                                    onPress={ goToPreviousStep }
-                                /> 
-                            </View>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Sign Up"
-                                    buttonStyle={ parameters.appButtonXLBlue }
-                                    titleStyle={ parameters.appButtonXLTitleBlue } 
-                                    disabled={ isLoading }
-                                    onPress={ UserSignupHandler }
-                                /> 
-                            </View>
-                        </View>
-                            </View>
-                        )}
-
-                        </Animated.View>
-
-                        {/* Terms of Service - Always visible at bottom */}
+                        {/* Terms of Service */}
                         <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:15, flexDirection: 'row' }}>
                             <Text style={{ color:appColors.grey3, fontSize:12, textAlign:'center', lineHeight:18 }}>By signing up, you accept our
                                 <Text 
@@ -629,8 +449,27 @@ export default function SignupScreen({navigation}){
                                 >Privacy Policy</Text>.
                             </Text>
                         </View>
+
+                        <View style={{ paddingVertical:15 }}>
+                            <Button 
+                                title="Sign Up"
+                                buttonStyle={ parameters.appButtonXLBlue }
+                                titleStyle={ parameters.appButtonXLTitleBlue } 
+                                disabled={ isLoading }
+                                onPress={ 
+                                    () => {
+                                        // Proceed to signup now
+                                        UserSignupHandler();
+
+                                        // testing Generic modal
+                                        // setIsFeatureModalVisible(true);
+                                        
+                                    } 
+                                }  
+                            /> 
+                        </View>
                         
-                        {/* Already have an Account? - Always visible at bottom */}
+                        {/* Already have an Account? */}
                         <View style={{ justifyContent:'center', paddingVertical:10, flexDirection: 'row' }}>
                             <Text style={{ color:appColors.AppBlue }}>Already have an account? </Text>
                             <Text 
@@ -798,49 +637,6 @@ const styles = StyleSheet.create({
         ...parameters.appButtonXLOutlineTitle,
         color: appColors.grey4,
         fontWeight:"600",
-    },
-
-    // Progress Indicator Styles
-    progressContainer: {
-        paddingVertical: 20,
-        paddingHorizontal: 20,
-    },
-    progressBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    progressStep: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: appColors.grey4,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: appColors.grey4,
-    },
-    progressStepActive: {
-        backgroundColor: appColors.AppBlue,
-        borderColor: appColors.AppBlue,
-    },
-    progressStepText: {
-        color: appColors.CardBackground,
-        fontSize: 14,
-        fontWeight: '700',
-        fontFamily: appFonts.headerTextBold,
-    },
-    progressStepTextActive: {
-        color: appColors.CardBackground,
-    },
-    progressLine: {
-        width: 60,
-        height: 2,
-        backgroundColor: appColors.grey4,
-        marginHorizontal: 5,
-    },
-    progressLineActive: {
-        backgroundColor: appColors.AppBlue,
     },
 
 })

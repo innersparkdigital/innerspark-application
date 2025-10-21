@@ -17,6 +17,12 @@ export const API_VERSION = VERSION || '';
 // Auth token
 export const AUTH_TOKEN = TOKEN || '';
 
+// Warn if token is missing
+if (!AUTH_TOKEN || AUTH_TOKEN === '') {
+  console.warn('⚠️ WARNING: AUTH_TOKEN is empty! Check your .env file.');
+  console.warn('⚠️ Make sure .env has: AUTH_TOKEN=your_token_here');
+}
+
 // Log the environment variables for debugging
 console.log('🚀 === ENVIRONMENT CONFIG LOADED ===');
 console.log('📍 Raw imports from @env:');

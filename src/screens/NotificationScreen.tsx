@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect } from 'react';
 import {
-  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -16,8 +15,8 @@ import { Icon, Avatar, Badge } from '@rneui/base';
 import { Swipeable } from 'react-native-gesture-handler';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import Header from '../components/Header';
 import { NavigationProp } from '@react-navigation/native';
+import ISGenericHeader from '../components/ISGenericHeader';
 
 interface Notification {
   id: number;
@@ -287,11 +286,10 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
-      <Header
+      <ISGenericHeader
         title="Notifications"
-        type="chevron-left"
+        hasRightIcon={false}
+        //hasLightBackground={true}
         navigation={navigation}
       />
 

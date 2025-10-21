@@ -102,22 +102,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       title: 'Account',
       items: [
         {
-          id: 'profile',
-          title: 'Profile Information',
-          subtitle: 'Manage your personal details',
+          id: 'account',
+          title: 'Account Settings',
+          subtitle: 'Security, password & account management',
           icon: 'person',
           iconColor: appColors.AppBlue,
           hasChevron: true,
-          onPress: () => navigation.navigate('ProfileSettingsScreen'),
-        },
-        {
-          id: 'security',
-          title: 'Security & Password',
-          subtitle: 'Password, biometric authentication',
-          icon: 'security',
-          iconColor: '#4CAF50',
-          hasChevron: true,
-          onPress: () => navigation.navigate('SecuritySettingsScreen'),
+          onPress: () => navigation.navigate('AccountSettingsScreen'),
         },
         {
           id: 'privacy',
@@ -150,14 +141,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           title: 'Language & Region',
           subtitle: 'English (US)',
           icon: 'language',
-          iconColor: '#9C27B0',
+          iconColor: '#00BCD4',
           hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Language settings coming soon!',
-              duration: 2000,
-            });
-          },
+          onPress: () => navigation.navigate('LanguageRegionSettingsScreen'),
         },
         {
           id: 'theme',
@@ -166,12 +152,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'palette',
           iconColor: '#E91E63',
           hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Appearance settings coming soon!',
-              duration: 2000,
-            });
-          },
+          onPress: () => navigation.navigate('AppearanceSettingsScreen'),
         },
       ],
     },
@@ -187,12 +168,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'mood',
           iconColor: '#FF5722',
           hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Mood reminder settings coming soon!',
-              duration: 2000,
-            });
-          },
+          onPress: () => navigation.navigate('MoodReminderSettingsScreen'),
         },
         {
           id: 'crisis_contacts',
@@ -201,12 +177,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'emergency',
           iconColor: '#F44336',
           hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Emergency contacts settings coming soon!',
-              duration: 2000,
-            });
-          },
+          onPress: () => navigation.navigate('EmergencyContactsScreen'),
         },
         {
           id: 'wellness_goals',
@@ -215,12 +186,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'flag',
           iconColor: '#4CAF50',
           hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Wellness goals settings coming soon!',
-              duration: 2000,
-            });
-          },
+          onPress: () => navigation.navigate('GoalsScreen'),
         },
       ],
     },
@@ -237,12 +203,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'help',
           iconColor: appColors.AppBlue,
           hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Help center coming soon!',
-              duration: 2000,
-            });
-          },
+          onPress: () => navigation.navigate('HelpCenterScreen'),
         },
         {
           id: 'feedback',
@@ -251,12 +212,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           icon: 'feedback',
           iconColor: '#FF9800',
           hasChevron: true,
-          onPress: () => {
-            toast.show({
-              description: 'Feedback feature coming soon!',
-              duration: 2000,
-            });
-          },
+          onPress: () => navigation.navigate('SendFeedbackScreen'),
         },
         {
           id: 'rate_app',

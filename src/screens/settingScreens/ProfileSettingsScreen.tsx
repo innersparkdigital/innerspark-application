@@ -185,12 +185,6 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
           onPress={handleSave}
           disabled={!hasChanges || isLoading}
         >
-          <Text style={[
-            styles.saveButtonText,
-            (!hasChanges || isLoading) && styles.disabledSaveText
-          ]}>
-            Save
-          </Text>
         </TouchableOpacity>
       </View>
 
@@ -199,119 +193,8 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Profile Picture Section */}
-          <View style={styles.avatarSection}>
-            <TouchableOpacity style={styles.avatarContainer} onPress={handleChangeAvatar}>
-              {profileData.avatar ? (
-                <Image source={{ uri: profileData.avatar }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarInitials}>
-                    {profileData.firstName.charAt(0)}{profileData.lastName.charAt(0)}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.cameraIcon}>
-                <Icon name="camera-alt" type="material" color="#FFF" size={16} />
-              </View>
-            </TouchableOpacity>
-            <Text style={styles.changePhotoText}>Tap to change photo</Text>
-          </View>
 
-          {/* Personal Information */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
-            <View style={styles.sectionContent}>
-              {renderInputField(
-                'First Name',
-                profileData.firstName,
-                (text) => handleInputChange('firstName', text),
-                'Enter your first name'
-              )}
-              
-              {renderInputField(
-                'Last Name',
-                profileData.lastName,
-                (text) => handleInputChange('lastName', text),
-                'Enter your last name'
-              )}
-              
-              {renderInputField(
-                'Email Address',
-                profileData.email,
-                (text) => handleInputChange('email', text),
-                'Enter your email',
-                false,
-                'email-address'
-              )}
-              
-              {renderInputField(
-                'Phone Number',
-                profileData.phone,
-                (text) => handleInputChange('phone', text),
-                'Enter your phone number',
-                false,
-                'phone-pad'
-              )}
-              
-              {renderSelectField(
-                'Date of Birth',
-                profileData.dateOfBirth,
-                () => toast.show({ description: 'Date picker coming soon' }),
-                'Select your date of birth'
-              )}
-              
-              {renderSelectField(
-                'Gender',
-                profileData.gender,
-                () => toast.show({ description: 'Gender selection coming soon' }),
-                'Select your gender'
-              )}
-              
-              {renderInputField(
-                'Location',
-                profileData.location,
-                (text) => handleInputChange('location', text),
-                'Enter your location'
-              )}
-            </View>
-          </View>
-
-          {/* About Me */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About Me</Text>
-            <View style={styles.sectionContent}>
-              {renderInputField(
-                'Bio',
-                profileData.bio,
-                (text) => handleInputChange('bio', text),
-                'Tell us about yourself...',
-                true
-              )}
-            </View>
-          </View>
-
-          {/* Emergency Contact */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Emergency Contact</Text>
-            <View style={styles.sectionContent}>
-              {renderInputField(
-                'Contact Name',
-                profileData.emergencyContact,
-                (text) => handleInputChange('emergencyContact', text),
-                'Emergency contact name'
-              )}
-              
-              {renderInputField(
-                'Contact Phone',
-                profileData.emergencyPhone,
-                (text) => handleInputChange('emergencyPhone', text),
-                'Emergency contact phone',
-                false,
-                'phone-pad'
-              )}
-            </View>
-          </View>
+          <View style={{ paddingVertical: 10 }}></View>
 
           {/* Account Actions */}
           <View style={styles.section}>

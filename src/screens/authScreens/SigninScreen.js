@@ -24,7 +24,7 @@ import { Button, Icon} from '@rneui/base';
 import { useToast } from 'native-base';
 import { storeItemLS } from '../../global/StorageActions';
 import { appImages } from '../../global/Data';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
+import { APIGlobaltHeaders, APIInstance, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
@@ -130,8 +130,14 @@ export default function SigninScreen({navigation}){
             
             let trimmedEmail = username.toLocaleLowerCase().trim(); // trimmed email or username
             let trimmedPassword = password.trim(); // trimmed Password
+
+            // testing console.log
+            console.log("User Login With Email")
+            console.log("Username: " + username);
+            console.log("Email: " + trimmedEmail);
+            console.log("Password: " + trimmedPassword);
            
-            const response = await axios.post( `${baseUrl}/auth/login`, {
+            const response = await APIInstance.post( '/auth/login', {
                 email: trimmedEmail,
                 password: trimmedPassword,
             });
@@ -263,8 +269,22 @@ export default function SigninScreen({navigation}){
 
 
         } catch (error) {
-            console.log(error.message);
-            notifyWithToast("Login failed. Check details and try again."); // Notify with Toasts
+            console.log("Login Error:", error.message);
+            console.log("Error Response:", error.response?.status, error.response?.data);
+            
+            // Better error handling for network issues
+            if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+                notifyWithToast("Request timed out. Please check your connection and try again.");
+            } else if (error.response?.status === 524) {
+                notifyWithToast("Server timeout. Please try again.");
+            } else if (error.response?.status === 401 || error.response?.status === 403) {
+                notifyWithToast("Authentication failed. Please check your credentials.");
+            } else if (!error.response) {
+                notifyWithToast("Network error. Please check your internet connection.");
+            } else {
+                notifyWithToast("Login failed. Check details and try again.");
+            }
+            
             setIsLoading(false);
             setPassword(''); // reset sensitive fields
         }
@@ -291,7 +311,7 @@ export default function SigninScreen({navigation}){
             let normalizedPhone = normalizePhone(trimmedPhone, countryCodes.ug);
             let trimmedPassword = password.trim(); // trimmed Password
 
-            const response = await axios.post( `${baseUrl}/auth/login`, {
+            const response = await APIInstance.post( '/auth/login', {
                 phone: normalizedPhone,
                 password: trimmedPassword,
             });
@@ -419,9 +439,23 @@ export default function SigninScreen({navigation}){
 
 
         } catch (error) {
-            console.log(error.message);
+            console.log("Login Error:", error.message);
+            console.log("Error Response:", error.response?.status, error.response?.data);
+            
+            // Better error handling for network issues
+            if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+                notifyWithToast("Request timed out. Please check your connection and try again.");
+            } else if (error.response?.status === 524) {
+                notifyWithToast("Server timeout. Please try again.");
+            } else if (error.response?.status === 401 || error.response?.status === 403) {
+                notifyWithToast("Authentication failed. Please check your credentials.");
+            } else if (!error.response) {
+                notifyWithToast("Network error. Please check your internet connection.");
+            } else {
+                notifyWithToast("Login failed. Check details and try again.");
+            }
+            
             setIsLoading(false); // set loading state
-            notifyWithToast("Login failed. Check details and try again."); // Notify with Toasts
             setPassword(''); // reset sensitive fields
         }
 
@@ -523,6 +557,8 @@ export default function SigninScreen({navigation}){
                             </View>
 
                             {/* A temporary link to bypass the login and setup default user session data */}
+                            {/*  Start of skip login section */}
+                            {/* 
                             <View style={{ paddingVertical:15 }}>
                                 <Button 
                                     title="Skip Login"
@@ -561,6 +597,9 @@ export default function SigninScreen({navigation}){
                                     }
                                 /> 
                             </View>
+                            */}
+                            {/*  End of skip login section */}
+                            
                         </View>
                     
                         {/* Forgot Password Section */}

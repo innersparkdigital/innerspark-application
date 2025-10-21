@@ -5,7 +5,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -19,6 +18,7 @@ import { Icon, Badge } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
+import ISStatusBar from '../components/ISStatusBar';
 import PanicButtonComponent from '../components/PanicButtonComponent';
 import { appImages } from '../global/Data';
 import { getFirstName } from '../global/LHShortcuts';
@@ -269,7 +269,7 @@ const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      <ISStatusBar />
       
       {/* Always-visible Panic Button */}
       <PanicButtonComponent 

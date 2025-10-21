@@ -2,17 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 
-import YoBottomTabs from './YoBottomTabs';
 import LHBottomTabs from './LHBottomTabs';
 
 // Auth Screens
 // import SigninScreen from '../screens/authScreens/SigninScreen';
-
-// Home Footer - Bottom Tabs
-import HomeScreen from '../screens/HomeScreen';
-import MoreScreen from '../screens/MoreScreen';
-import BookingsScreen from '../screens/BookingsScreen';
-import ExploreScreen from '../screens/ExploreScreen';
 
 // Wellness Vault Screens
 import WellnessVaultScreen from '../screens/vaultScreens/WellnessVaultScreen';
@@ -22,16 +15,11 @@ import AboutAppScreen from '../screens/AboutAppScreen';
 import ProfileScreen from '../screens/profileScreens/ProfileScreen';
 import ProfileUpdateScreen from '../screens/profileScreens/ProfileUpdateScreen';
 
-// Booking Screens - Pickup Details & Service Item Selection and more
-import ServiceItemSelectScreen from '../screens/bookingScreens/ServiceItemSelectScreen';
-
 // More Screens
-import PrivacyPolicyScreen from '../screens/moreScreens/PrivacyPolicyScreen';
-
+import PrivacyPolicyScreen from '../screens/termsScreens/PrivacyPolicyScreen';
 
 // Location Sreens
 import NewAddressScreen from '../screens/locationScreens/NewAddressScreen';
-
 
 // Verification Screens
 import VerifyPhoneScreen from '../screens/verificationScreens/VerifyPhoneScreen';
@@ -104,9 +92,20 @@ import SafetyPlanScreen from '../screens/emergencyScreens/SafetyPlanScreen';
 // Settings Screens
 import SettingsScreen from '../screens/settingScreens/SettingsScreen';
 import ProfileSettingsScreen from '../screens/settingScreens/ProfileSettingsScreen';
+import AccountSettingsScreen from '../screens/settingScreens/AccountSettingsScreen';
 import SecuritySettingsScreen from '../screens/settingScreens/SecuritySettingsScreen';
 import NotificationSettingsScreen from '../screens/settingScreens/NotificationSettingsScreen';
+import MoodReminderSettingsScreen from '../screens/settingScreens/MoodReminderSettingsScreen';
 import PrivacySettingsScreen from '../screens/settingScreens/PrivacySettingsScreen';
+import PrivacyCheckupScreen from '../screens/settingScreens/PrivacyCheckupScreen';
+import SendFeedbackScreen from '../screens/settingScreens/SendFeedbackScreen';
+import EmergencyContactsScreen from '../screens/settingScreens/EmergencyContactsScreen';
+import DeactivateAccountScreen from '../screens/settingScreens/DeactivateAccountScreen';
+import DataExportScreen from '../screens/settingScreens/DataExportScreen';
+import ChangePasswordScreen from '../screens/settingScreens/ChangePasswordScreen';
+import DataDeletionScreen from '../screens/settingScreens/DataDeletionScreen';
+import AppearanceSettingsScreen from '../screens/settingScreens/AppearanceSettingsScreen';
+import LanguageRegionSettingsScreen from '../screens/settingScreens/LanguageRegionSettingsScreen';
 import DeleteAccountScreen from '../screens/settingScreens/DeleteAccountScreen';
 
 /** A new library will be used for Location Services */
@@ -201,17 +200,6 @@ export default function LHStackNavigator(){
                 }}
             />
 
-
-            {/* Booking Screens */}
-            <LHStack.Screen
-                name="ServiceItemSelectScreen"
-                component={ServiceItemSelectScreen}
-                options={{
-                    headerShown: false,
-                    title: 'Select Service Items',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
 
 
             <LHStack.Screen
@@ -731,6 +719,16 @@ export default function LHStackNavigator(){
             />
 
             <LHStack.Screen
+                name="AccountSettingsScreen"
+                component={AccountSettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Account Settings',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
                 name="SecuritySettingsScreen"
                 component={SecuritySettingsScreen}
                 options={{
@@ -751,11 +749,111 @@ export default function LHStackNavigator(){
             />
 
             <LHStack.Screen
+                name="MoodReminderSettingsScreen"
+                component={MoodReminderSettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Mood Reminders',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
                 name="PrivacySettingsScreen"
                 component={PrivacySettingsScreen}
                 options={{
                     headerShown: false,
                     title: 'Privacy Settings',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="PrivacyCheckupScreen"
+                component={PrivacyCheckupScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Privacy Checkup',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="SendFeedbackScreen"
+                component={SendFeedbackScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Send Feedback',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="EmergencyContactsScreen"
+                component={EmergencyContactsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Emergency Contacts',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="DeactivateAccountScreen"
+                component={DeactivateAccountScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Deactivate Account',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="DataExportScreen"
+                component={DataExportScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Export Data',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="ChangePasswordScreen"
+                component={ChangePasswordScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Change Password',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="DataDeletionScreen"
+                component={DataDeletionScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Delete Data',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="AppearanceSettingsScreen"
+                component={AppearanceSettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Appearance',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="LanguageRegionSettingsScreen"
+                component={LanguageRegionSettingsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Language & Region',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

@@ -11,7 +11,14 @@ export const baseUrlRoot = API_BASE_URL;
 export const baseUrlV1 = API_VERSION;
 export const authToken = AUTH_TOKEN;
 
-export const APIInstance = axios.create({ baseURL: baseUrlRoot + baseUrlV1 }); // Axios instance for API requests
+export const APIInstance = axios.create({ 
+    baseURL: baseUrlRoot + baseUrlV1,
+    timeout: 30000, // 30 second timeout to prevent 524 errors
+    headers: {
+        'x-api-key': authToken,
+        'Content-Type': 'application/json',
+    }
+}); // Axios instance for API requests
 
 export const baseUrl = baseUrlRoot + baseUrlV1; // Base URL for API requests
 
@@ -20,13 +27,15 @@ export const APIGlobaltHeaders = () => {
     // axios.defaults.headers.common['Authorization'] = authToken;
     axios.defaults.headers.common['x-api-key'] = authToken;
     axios.defaults.headers.post['Content-Type'] = 'application/json';
+    // add timeout as well
+    axios.defaults.timeout = 30000;
 
 }
 
 // Custom Axios Instance for multipart form data -- (i.e avatar, etc)
 export const profileInstance = axios.create({
     baseURL: baseUrl,
-    //timeout: 1000,
+    timeout: 60000, // 60 second timeout for file uploads
   });
 
  // defaults AXIOS form the profile instance

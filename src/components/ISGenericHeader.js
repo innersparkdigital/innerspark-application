@@ -2,7 +2,7 @@
  * Innerspark Generic Header
  */
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts, parameters } from '../global/Styles';
 
@@ -18,9 +18,21 @@ export default function ISGenericHeader({
     navigation,
 }){
 
+    // Determine status bar style based on background and platform
+    const getStatusBarStyle = () => {
+        if (Platform.OS === 'ios') {
+            // On iOS, use dark-content for light backgrounds, light-content for dark backgrounds
+            return hasLightBackground ? 'dark-content' : 'light-content';
+        }
+        // On Android, always use light-content (white icons)
+        return 'light-content';
+    };
+
+    const statusBarBgColor = hasLightBackground ? appColors.CardBackground : appColors.AppBlue;
+
     return(
         <View style={hasLightBackground ? styles.headerLight : styles.header}>
-            { hasCustomStatusBar && <StatusBar backgroundColor={appColors.AppBlue} barStyle='light-content' /> }
+            { hasCustomStatusBar && <StatusBar backgroundColor={statusBarBgColor} barStyle={getStatusBarStyle()} /> }
              <TouchableOpacity 
                 style={hasLightBackground ? styles.backButtonLight : styles.backButton}
                 onPress={() => navigation.goBack()}

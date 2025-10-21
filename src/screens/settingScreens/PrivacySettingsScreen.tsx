@@ -136,49 +136,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
     }
   };
 
-  const dataCollectionSettings: PrivacySetting[] = [
-    {
-      id: 'analytics',
-      title: 'Analytics & Performance',
-      subtitle: analyticsEnabled ? 'Help improve app performance' : 'Disabled',
-      icon: 'analytics',
-      iconColor: '#2196F3',
-      hasSwitch: true,
-      switchValue: analyticsEnabled,
-      onSwitchChange: handleAnalyticsToggle,
-    },
-    {
-      id: 'crash_reports',
-      title: 'Crash Reports',
-      subtitle: crashReportsEnabled ? 'Send crash data to improve stability' : 'Disabled',
-      icon: 'bug-report',
-      iconColor: '#FF5722',
-      hasSwitch: true,
-      switchValue: crashReportsEnabled,
-      onSwitchChange: setCrashReportsEnabled,
-    },
-    {
-      id: 'usage_data',
-      title: 'Usage Statistics',
-      subtitle: usageDataEnabled ? 'Share app usage patterns' : 'Disabled',
-      icon: 'bar-chart',
-      iconColor: '#4CAF50',
-      hasSwitch: true,
-      switchValue: usageDataEnabled,
-      onSwitchChange: setUsageDataEnabled,
-    },
-    {
-      id: 'location_data',
-      title: 'Location Data',
-      subtitle: locationDataEnabled ? 'Used for location-based services' : 'Disabled',
-      icon: 'location-on',
-      iconColor: '#FF9800',
-      hasSwitch: true,
-      switchValue: locationDataEnabled,
-      onSwitchChange: handleLocationToggle,
-      isImportant: true,
-    },
-  ];
+
 
   const profileVisibilitySettings: PrivacySetting[] = [
     {
@@ -246,39 +204,6 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
     },
   ];
 
-  const dataSharingSettings: PrivacySetting[] = [
-    {
-      id: 'therapist_sharing',
-      title: 'Share with Therapists',
-      subtitle: shareWithTherapists ? 'Mood and progress data shared' : 'No data sharing',
-      icon: 'psychology',
-      iconColor: appColors.AppBlue,
-      hasSwitch: true,
-      switchValue: shareWithTherapists,
-      onSwitchChange: setShareWithTherapists,
-      isImportant: true,
-    },
-    {
-      id: 'research_sharing',
-      title: 'Research Participation',
-      subtitle: shareForResearch ? 'Anonymized data for research' : 'No research sharing',
-      icon: 'science',
-      iconColor: '#9C27B0',
-      hasSwitch: true,
-      switchValue: shareForResearch,
-      onSwitchChange: handleResearchSharingToggle,
-    },
-    {
-      id: 'partner_sharing',
-      title: 'Third-Party Partners',
-      subtitle: shareWithPartners ? 'Data shared with trusted partners' : 'No partner sharing',
-      icon: 'business',
-      iconColor: '#FF5722',
-      hasSwitch: true,
-      switchValue: shareWithPartners,
-      onSwitchChange: setShareWithPartners,
-    },
-  ];
 
   const privacyActions: PrivacySetting[] = [
     {
@@ -307,16 +232,8 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       iconColor: appColors.grey3,
       hasChevron: true,
       onPress: () => navigation.navigate('PrivacyPolicyScreen'),
-    },
-    {
-      id: 'data_usage',
-      title: 'How We Use Your Data',
-      subtitle: 'Learn about data usage',
-      icon: 'info',
-      iconColor: '#2196F3',
-      hasChevron: true,
-      onPress: () => navigation.navigate('DataUsageInfoScreen'),
-    },
+    }
+
   ];
 
   const renderPrivacyItem = (item: PrivacySetting) => (
@@ -434,12 +351,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
           />
         }
       >
-        {renderSection(
-          'Data Collection',
-          dataCollectionSettings,
-          'Control what data we collect to improve your experience'
-        )}
-        
+
         {renderSection(
           'Profile Visibility',
           profileVisibilitySettings,
@@ -450,12 +362,6 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
           'Communication',
           communicationSettings,
           'Control how others can contact and interact with you'
-        )}
-        
-        {renderSection(
-          'Data Sharing',
-          dataSharingSettings,
-          'Choose how your data is shared with healthcare providers and research'
         )}
         
         {renderSection(
