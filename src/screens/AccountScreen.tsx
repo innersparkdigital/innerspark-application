@@ -79,19 +79,18 @@ export default function AccountScreen({ navigation }){
         //if (retrieveItemLS("userAvatarLS")) { removeItemLS("userAvatarLS"); } 
     }
 
-    const MenuRow = ({ icon, iconType = "material", title, onPress, showChevron = true, isLast = false, iconColor = appColors.AppBlue }) => (
-        <TouchableOpacity onPress={onPress}>
+    const MenuRow = ({ icon, iconType = "material", title, subtitle, onPress, showChevron = true, isLast = false, iconColor = appColors.AppBlue }) => (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
             <View style={isLast ? styles.listRowLast : styles.listRow}>
-                <View style={styles.listRowItem}>
-                    <Icon type={iconType} name={icon} color={iconColor} size={25} />
+                <View style={[styles.iconCircle, { backgroundColor: iconColor + '15' }]}>
+                    <Icon type={iconType} name={icon} color={iconColor} size={22} />
                 </View>
                 <View style={styles.itemTextContainer}>
                     <Text style={styles.menuText}>{title}</Text>
+                    {subtitle && <Text style={styles.menuSubtext}>{subtitle}</Text>}
                 </View>
                 {showChevron && (
-                    <View style={styles.listRowItem}>
-                        <Icon type="material" name="chevron-right" color={appColors.AppBlue} size={25} />
-                    </View>
+                    <Icon type="material" name="chevron-right" color={appColors.grey4} size={22} />
                 )}
             </View>
         </TouchableOpacity>
@@ -107,11 +106,14 @@ export default function AccountScreen({ navigation }){
             <View style={styles.avatarContainer}>
               <Avatar 
                 rounded 
-                size={80} 
+                size={90} 
                 source={userDetails?.image || appImages.avatarDefault}
                 containerStyle={styles.avatarStyle}
                 avatarStyle={styles.avatarImageStyle}
               />
+              <TouchableOpacity style={styles.editAvatarButton} onPress={() => notifyWithToast('Edit profile photo coming soon!')}>
+                <Icon name="camera-alt" type="material" color="#FFF" size={16} />
+              </TouchableOpacity>
             </View>
             <Text style={styles.userName}>
               {getFullname(userDetails?.firstName, userDetails?.lastName) || 'Jane Doe'}
@@ -119,6 +121,10 @@ export default function AccountScreen({ navigation }){
             <Text style={styles.userEmail}>
               {userDetails?.email || 'user@example.com'}
             </Text>
+            <View style={styles.memberBadge}>
+              <Icon name="verified" type="material" color="#4CAF50" size={14} />
+              <Text style={styles.memberText}>Verified Member</Text>
+            </View>
           </View>
         </View>
              
@@ -126,63 +132,88 @@ export default function AccountScreen({ navigation }){
             
             {/* Wellness Shortcuts */}
             <View style={styles.shortcutsSection}>
+              <Text style={styles.shortcutsTitle}>Quick Actions</Text>
               <View style={styles.shortcutsGrid}>
                 <TouchableOpacity 
                   style={styles.shortcutCard}
                   onPress={() => notifyWithToast('Goals feature coming soon!')}
+                  activeOpacity={0.8}
                 >
-                  <Icon name="flag" type="material" color="#333" size={24} />
+                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#FFC107' + '15' }]}>
+                    <Icon name="flag" type="material" color="#FFC107" size={26} />
+                  </View>
                   <Text style={styles.shortcutText}>Goals</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.shortcutCard}
                   onPress={() => navigation.navigate('AppointmentsScreen')}
+                  activeOpacity={0.8}
                 >
-                  <Icon name="event" type="material" color="#333" size={24} />
+                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#2196F3' + '15' }]}>
+                    <Icon name="event" type="material" color="#2196F3" size={26} />
+                  </View>
                   <Text style={styles.shortcutText}>Appointments</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.shortcutCard}
                   onPress={() => navigation.navigate('WellnessVaultScreen')}
+                  activeOpacity={0.8}
                 >
-                  <Icon name="health-and-safety" type="material" color="#333" size={24} />
-                  <Text style={styles.shortcutText}>WellnessVault</Text>
+                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#4CAF50' + '15' }]}>
+                    <Icon name="health-and-safety" type="material" color="#4CAF50" size={26} />
+                  </View>
+                  <Text style={styles.shortcutText}>Wellness Vault</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Menu Section */}
             <View style={styles.menuSection}>
+                <Text style={styles.menuSectionTitle}>Account</Text>
                 <MenuRow
                     icon="person"
                     title="Profile"
+                    subtitle="Manage your personal information"
                     onPress={() => navigation.navigate('ProfileScreen')}
+                    iconColor={appColors.AppBlue}
                 />
                 
                 <MenuRow
                     icon="settings"
                     title="Settings"
+                    subtitle="App preferences and configuration"
                     onPress={() => navigation.navigate('SettingsScreen')}
+                    iconColor="#9C27B0"
                 />
                 
                 <MenuRow
                     icon="assessment"
                     title="My Weekly Report"
+                    subtitle="View your wellness progress"
                     onPress={() => navigation.navigate('WeeklyReportScreen')}
+                    iconColor="#FF5722"
                 />
-                
+            </View>
+
+            {/* Support Section */}
+            <View style={styles.menuSection}>
+                <Text style={styles.menuSectionTitle}>Support</Text>
                 <MenuRow
                     icon="help"
                     title="Help Center"
+                    subtitle="Get help and support"
                     onPress={() => navigation.navigate('HelpCenterScreen')}
+                    iconColor="#00BCD4"
                 />
                 
                 <MenuRow
                     icon="info"
                     title="About App"
+                    subtitle="Version, terms, and privacy"
                     onPress={() => navigation.navigate('AboutAppScreen')}
+                    iconColor="#607D8B"
                 />
                 
                 {/* <MenuRow
@@ -241,15 +272,17 @@ export default function AccountScreen({ navigation }){
             </View> */}
 
             {/* Logout Section */}
-            <View style={styles.section}>
-                <MenuRow
-                    icon="logout"
-                    title="Log Out"
+            <View style={styles.logoutSection}>
+                <TouchableOpacity 
+                    style={styles.logoutButton}
                     onPress={() => setIsLogoutModalVisible(true)}
-                    showChevron={false}
-                    isLast={true}
-                    iconColor="#F44336"
-                />
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.logoutIconContainer}>
+                        <Icon name="logout" type="material" color="#F44336" size={22} />
+                    </View>
+                    <Text style={styles.logoutText}>Log Out</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.bottomSpacing} />
@@ -352,23 +385,58 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarImageStyle: {
-        width: 76,
-        height: 76,
-        borderRadius: 40,
+        width: 86,
+        height: 86,
+        borderRadius: 45,
         resizeMode: 'cover',
+    },
+    editAvatarButton: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: appColors.AppBlue,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: appColors.CardBackground,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
     },
     userName: {
         fontSize: 24,
         fontWeight: 'bold',
         color: appColors.CardBackground,
-        marginBottom: 8,
-        fontFamily: appFonts.appTextBold,
+        marginBottom: 4,
+        fontFamily: appFonts.headerTextBold,
     },
     userEmail: {
-        fontSize: 16,
+        fontSize: 15,
         color: appColors.CardBackground,
         opacity: 0.9,
-        fontFamily: appFonts.appTextRegular,
+        fontFamily: appFonts.headerTextRegular,
+        marginBottom: 8,
+    },
+    memberBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginTop: 4,
+    },
+    memberText: {
+        fontSize: 13,
+        color: appColors.CardBackground,
+        fontFamily: appFonts.headerTextMedium,
+        marginLeft: 4,
+        fontWeight: '600',
     },
     scrollView: {
         flex: 1,
@@ -379,6 +447,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         marginBottom: 20,
     },
+    shortcutsTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: appColors.grey2,
+        fontFamily: appFonts.headerTextBold,
+        marginBottom: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
     shortcutsGrid: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -388,26 +465,33 @@ const styles = StyleSheet.create({
         width: '30%',
         backgroundColor: appColors.CardBackground,
         borderRadius: 16,
-        paddingVertical: 20,
-        paddingHorizontal: 10,
+        paddingVertical: 16,
+        paddingHorizontal: 8,
         alignItems: 'center',
         elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: 3,
         marginBottom: 10,
-        minHeight: 90,
+        minHeight: 100,
         justifyContent: 'center',
     },
+    shortcutIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
     shortcutText: {
-        fontSize: 11,
-        color: '#333',
+        fontSize: 12,
+        color: appColors.grey1,
         fontWeight: '600',
         textAlign: 'center',
-        marginTop: 6,
-        fontFamily: appFonts.appTextMedium,
-        lineHeight: 14,
+        fontFamily: appFonts.headerTextMedium,
+        lineHeight: 16,
     },
     menuSection: {
         backgroundColor: appColors.CardBackground,
@@ -481,39 +565,96 @@ const styles = StyleSheet.create({
         fontFamily: appFonts.appTextBold,
     },
 
+    menuSectionTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: appColors.grey3,
+        fontFamily: appFonts.headerTextBold,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        paddingBottom: 8,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
     listRow: {
         flexDirection:'row',
         alignItems:'center',
         paddingHorizontal: 20,
-        paddingVertical: 18,
+        paddingVertical: 16,
         borderBottomWidth: 0.5,
-        borderBottomColor: appColors.AppLightGray,
+        borderBottomColor: appColors.grey6,
     },
     listRowLast: {
         flexDirection:'row',
         alignItems:'center',
         paddingHorizontal: 20,
-        paddingVertical: 18,
+        paddingVertical: 16,
         justifyContent: 'space-between',
         borderBottomLeftRadius: 15,
         borderBottomRightRadius: 15,
     },
-
+    iconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
     listRowItem: {
         padding: 5,
     },
-
     itemTextContainer: {
         flex: 1,
-        paddingHorizontal: 15,
-        paddingVertical: 5,
+        paddingVertical: 2,
     },
-
     menuText: {
         fontSize: 16,
-        color: '#333',
-        fontWeight: '500',
-        fontFamily: appFonts.appTextMedium,
+        color: appColors.grey1,
+        fontWeight: '600',
+        fontFamily: appFonts.headerTextBold,
+        marginBottom: 2,
+    },
+    menuSubtext: {
+        fontSize: 13,
+        color: appColors.grey3,
+        fontFamily: appFonts.headerTextRegular,
+        lineHeight: 18,
+    },
+    logoutSection: {
+        marginHorizontal: 20,
+        marginTop: 20,
+    },
+    logoutButton: {
+        backgroundColor: appColors.CardBackground,
+        borderRadius: 16,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        borderWidth: 1,
+        borderColor: '#FFEBEE',
+    },
+    logoutIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFEBEE',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    logoutText: {
+        fontSize: 16,
+        color: '#F44336',
+        fontWeight: '600',
+        fontFamily: appFonts.headerTextBold,
     },
 
     bottomSpacing: {

@@ -6,6 +6,7 @@ export const appImages = {
     logoDefault : require("../assets/icons/app-icon.png"),
     logoRound : require("../assets/icons/app-icon-round.png"),
     logoRecBlue : require("../assets/icons/app-logo.png"),
+    logoRecWhite: require("../assets/icons/app-logo-white.png"),
     
     avatarDefault : require("../assets/icons/avatar.png"),
     isDefaultImage: require("../assets/images/is-default.png"),

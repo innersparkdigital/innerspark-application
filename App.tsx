@@ -20,6 +20,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import SplashScreen from 'react-native-splash-screen';
 
+// Import Screen Security Manager
+import { enableScreenSecurity, getSecurityStatus } from './src/utils/ScreenSecurityManager';
+
 
 const App = () => {
 
@@ -37,6 +40,16 @@ const App = () => {
      hideSplash && SplashScreen.hide();
 
   }, [hideSplash] );
+
+  // Enable screen security on app start
+  useEffect(() => {
+    const initializeSecurity = async () => {
+      await enableScreenSecurity();
+      console.log(getSecurityStatus());
+    };
+    
+    initializeSecurity();
+  }, []);
 
 
   return (

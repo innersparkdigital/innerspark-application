@@ -88,7 +88,23 @@ android {
 
         multiDexEnabled true // Added for WebView and large app support
         missingDimensionStrategy 'react-native-camera', 'mlkit' // For RN Camera with ML Kit
+        
+        // 16 KB Page Size Support - ensure proper library alignment
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
     }
+    // 16 KB Page Size Support - Split APKs by ABI
+    // This creates separate APKs for each architecture, properly aligned
+    splits {
+        abi {
+            enable true
+            reset()
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            universalApk true
+        }
+    }
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -108,6 +124,31 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
+    }
+
+    // ==========================================
+    // 16 KB Page Size Support (Android 15+)
+    // ==========================================
+    // Ensures native libraries are properly aligned for 16 KB page size devices
+    // while maintaining backward compatibility with 4 KB page size devices
+    // Uses modern 'packaging' block for AGP 8.1+
+    packaging {
+        jniLibs {
+            // CRITICAL: Set to false to enable proper 16KB alignment
+            useLegacyPackaging = false
+            // Keep debug symbols for better crash reports
+            keepDebugSymbols += ["**/libhermes.so", "**/libc++_shared.so"]
+        }
+        // Exclude duplicate files
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}']
+        }
+    }
+    
+    // Additional configuration for 16 KB page size
+    androidResources {
+        noCompress 'tflite'
+        noCompress 'lite'
     }
 }
 

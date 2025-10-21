@@ -14,11 +14,13 @@ import {  retrieveItemLS, storeItemLS } from '../global/StorageActions';
 import { checkVersion } from 'react-native-check-version';
 import LHAuthNavigator from './LHAuthNavigator';
 import LHStackNavigator from './LHStackNavigator';
+import LHTherapistNavigator from './LHTherapistNavigator';
 
 
 export default function LHRootNavigator() {
 
     const user = useSelector(state => state.user); // user state from the store
+    const userDetails = useSelector(state => state.userData.userDetails); // user details with role
     const introSliderStatus = useSelector(state => state.appStart.introSlider);
     const appNeedsUpdate = useSelector(state => state.appStart.appNeedsUpdate);
     const dispatch = useDispatch();
@@ -177,6 +179,8 @@ export default function LHRootNavigator() {
                 appNeedsUpdate && <UpdateAppNavigator /> 
                     || 
                 user.userToken == null && <LHAuthNavigator /> 
+                    ||
+                user.userToken != null && userDetails?.role === 'therapist' && <LHTherapistNavigator /> 
                     ||
                 <LHStackNavigator /> 
             }

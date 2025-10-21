@@ -634,6 +634,48 @@ export default function SigninScreen({navigation}){
                             > Sign up</Text>
                         </View>
 
+                        {/* Test Therapist Login Link */}
+                        <View style={{ justifyContent:'center', paddingVertical:10, paddingTop:20 }}>
+                            <Pressable
+                                style={{ flexDirection:'row', alignItems:'center', justifyContent:'center' }}
+                                onPress={ 
+                                    () => { 
+                                        // Test therapist login with default data
+                                        const therapistTestData = {
+                                            userId: 'TestTherapist-001',
+                                            firstName: 'Dr. Sarah',
+                                            lastName: 'Johnson',
+                                            email: 'therapist@innerspark.test',
+                                            phone: '+256700111222',
+                                            role: 'therapist',
+                                            email_verified: 1,
+                                            phone_verified: 1,
+                                        };
+
+                                        // Store user token data
+                                        storeItemLS("userToken", therapistTestData);
+                                        
+                                        // Dispatch signin action
+                                        dispatch(signin(therapistTestData));
+                                        
+                                        // Dispatch update user details
+                                        dispatch(updateUserDetails(therapistTestData));
+                                        
+                                        // Store user details in local storage
+                                        storeItemLS("userDetailsLS", therapistTestData);
+                                        
+                                        // Show success message
+                                        notifyWithToast("🩺 Therapist mode activated!");
+                                    } 
+                                }
+                            >
+                                <Icon type="material" name="medical-services" color={appColors.grey3} size={14} style={{ marginRight:5 }} />
+                                <Text style={{ fontSize:12, color:appColors.grey3, textDecorationLine:'underline' }}>
+                                    Try Therapist Dashboard
+                                </Text>
+                            </Pressable>
+                        </View>
+
                         {/* Terms of Service - with separate links */}
                         {/* <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:15 }}>
                             <Text style={{ color:appColors.grey3, fontSize:12, textAlign:'center' }}>
