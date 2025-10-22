@@ -6,8 +6,20 @@ import LHTherapistBottomTabs from './LHTherapistBottomTabs';
 import THRequestsScreen from '../screens/therapistDashboardScreens/THRequestsScreen';
 import THNotificationsScreen from '../screens/therapistDashboardScreens/THNotificationsScreen';
 import THAppointmentDetailsScreen from '../screens/therapistDashboardScreens/appointments/THAppointmentDetailsScreen';
+import THScheduleAppointmentScreen from '../screens/therapistDashboardScreens/appointments/THScheduleAppointmentScreen';
 import THGroupDetailsScreen from '../screens/therapistDashboardScreens/groups/THGroupDetailsScreen';
+import THGroupChatScreen from '../screens/therapistDashboardScreens/groups/THGroupChatScreen';
+import THGroupMembersScreen from '../screens/therapistDashboardScreens/groups/THGroupMembersScreen';
+import THCreateGroupScreen from '../screens/therapistDashboardScreens/groups/THCreateGroupScreen';
+import THScheduleGroupSessionScreen from '../screens/therapistDashboardScreens/groups/THScheduleGroupSessionScreen';
+import THClientProfileScreen from '../screens/therapistDashboardScreens/clients/THClientProfileScreen';
 import THChatConversationScreen from '../screens/therapistDashboardScreens/chats/THChatConversationScreen';
+import THSelectClientScreen from '../screens/therapistDashboardScreens/chats/THSelectClientScreen';
+import THAvailabilityScreen from '../screens/therapistDashboardScreens/account/THAvailabilityScreen';
+import THPricingScreen from '../screens/therapistDashboardScreens/account/THPricingScreen';
+import THAnalyticsScreen from '../screens/therapistDashboardScreens/account/THAnalyticsScreen';
+import THReviewsScreen from '../screens/therapistDashboardScreens/account/THReviewsScreen';
+import THTransactionHistoryScreen from '../screens/therapistDashboardScreens/account/THTransactionHistoryScreen';
 
 // Import shared screens from the main app
 import AboutAppScreen from '../screens/AboutAppScreen';
@@ -55,6 +67,22 @@ const LHTherapistNavigator = () => {
       />
       
       <THStack.Screen
+        name="THScheduleAppointmentScreen"
+        component={THScheduleAppointmentScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THClientProfileScreen"
+        component={THClientProfileScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
         name="THGroupDetailsScreen"
         component={THGroupDetailsScreen}
         options={{
@@ -63,8 +91,88 @@ const LHTherapistNavigator = () => {
       />
       
       <THStack.Screen
+        name="THGroupChatScreen"
+        component={THGroupChatScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THGroupMembersScreen"
+        component={THGroupMembersScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THCreateGroupScreen"
+        component={THCreateGroupScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THScheduleGroupSessionScreen"
+        component={THScheduleGroupSessionScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THSelectClientScreen"
+        component={THSelectClientScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
         name="THChatConversationScreen"
         component={THChatConversationScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THAvailabilityScreen"
+        component={THAvailabilityScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THPricingScreen"
+        component={THPricingScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THAnalyticsScreen"
+        component={THAnalyticsScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THReviewsScreen"
+        component={THReviewsScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THTransactionHistoryScreen"
+        component={THTransactionHistoryScreen}
         options={{
           ...TransitionPresets.SlideFromRightIOS,
         }}

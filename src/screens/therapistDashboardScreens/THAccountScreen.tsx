@@ -1,23 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@rneui/themed';
-import { useSelector } from 'react-redux';
-import { appColors, appFonts } from '../../global/Styles';
+import { Icon, Button, BottomSheet } from '@rneui/themed';
+import { useSelector, useDispatch } from 'react-redux';
+import { signout } from '../../features/user/userSlice';
+import { appColors, appFonts, parameters } from '../../global/Styles';
+import { removeItemLS, retrieveItemLS } from '../../global/StorageActions';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 
 const THAccountScreen = ({ navigation }: any) => {
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+
+  /** Signout current user */
+  const signOutHandler = async () => {
+    dispatch(signout());
+
+    // remove local storage session as well if there's one
+    const userToken = await retrieveItemLS('userToken');
+    if (userToken) {
+      removeItemLS('userToken');
+    }
+
+    // Remove all stored data if available
+    const userDetailsLS = await retrieveItemLS('userDetailsLS');
+    if (userDetailsLS) {
+      removeItemLS('userDetailsLS');
+    }
+  };
 
   const menuSections = [
     {
       title: 'Professional',
       items: [
-        { icon: 'schedule', label: 'Availability & Hours', screen: null, color: appColors.AppGreen },
-        { icon: 'attach-money', label: 'Pricing & Payments', screen: null, color: '#4CAF50' },
-        { icon: 'assessment', label: 'Performance Analytics', screen: null, color: '#FF9800' },
-        { icon: 'star', label: 'Reviews & Ratings', screen: null, color: '#FFD700' },
+        { icon: 'schedule', label: 'Availability & Hours', screen: 'THAvailabilityScreen', color: appColors.AppGreen },
+        { icon: 'attach-money', label: 'Pricing & Payments', screen: 'THPricingScreen', color: '#4CAF50' },
+        { icon: 'assessment', label: 'Performance Analytics', screen: 'THAnalyticsScreen', color: '#FF9800' },
+        { icon: 'star', label: 'Reviews & Ratings', screen: 'THReviewsScreen', color: '#FFD700' },
       ],
     },
     {
@@ -102,13 +123,97 @@ const THAccountScreen = ({ navigation }: any) => {
         ))}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={() => setIsLogoutModalVisible(true)}
+          activeOpacity={0.8}
+        >
           <Icon type="material" name="logout" size={20} color="#F44336" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      {/** Logout BottomSheet Modal */}
+      <BottomSheet
+        containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
+        modalProps={{
+          presentationStyle: 'overFullScreen',
+          visible: isLogoutModalVisible,
+        }}
+        onBackdropPress={() => {
+          setIsLogoutModalVisible(false);
+        }}
+      >
+        <View style={parameters.doffeeModalContainer}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              paddingVertical: 20,
+            }}
+          >
+            <Icon type="material" name="logout" color={appColors.AppBlue} size={50} />
+            <Text
+              style={{
+                fontSize: 18,
+                paddingVertical: 15,
+                color: appColors.AppBlue,
+                textAlign: 'center',
+                fontFamily: appFonts.headerTextBold,
+              }}
+            >
+              Are you sure you want to log out?
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: appColors.AppGray,
+                textAlign: 'center',
+                fontFamily: appFonts.bodyTextRegular,
+                paddingHorizontal: 20,
+              }}
+            >
+              You'll need to sign in again to access your account.
+            </Text>
+          </View>
+          <View style={{ paddingVertical: 5 }}></View>
+          <View style={{ flexDirection: 'row' }}>
+            <View style={{ flex: 1, paddingHorizontal: 10 }}>
+              <Button
+                title="Cancel"
+                buttonStyle={[
+                  parameters.appButtonXL,
+                  { backgroundColor: appColors.AppLightGray },
+                ]}
+                titleStyle={[
+                  parameters.appButtonXLTitle,
+                  { color: appColors.AppBlue },
+                ]}
+                onPress={() => setIsLogoutModalVisible(false)}
+              />
+            </View>
+            <View style={{ flex: 1, paddingHorizontal: 10 }}>
+              <Button
+                title="Log Out"
+                buttonStyle={[
+                  parameters.appButtonXL,
+                  { backgroundColor: '#F44336' },
+                ]}
+                titleStyle={parameters.appButtonXLTitle}
+                onPress={() => {
+                  signOutHandler();
+                  setIsLogoutModalVisible(false);
+                }}
+              />
+            </View>
+          </View>
+          <View style={{ paddingVertical: 25 }}></View>
+        </View>
+      </BottomSheet>
+      {/* -- Logout BottomSheet Modal ends */}
     </SafeAreaView>
   );
 };

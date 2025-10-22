@@ -58,6 +58,10 @@ const mockChats = [
 const THChatsScreen = ({ navigation }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
 
+  const handleNewMessage = () => {
+    navigation.navigate('THSelectClientScreen');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
@@ -115,7 +119,11 @@ const THChatsScreen = ({ navigation }: any) => {
         </ScrollView>
 
         {/* Floating Action Button */}
-        <TouchableOpacity style={styles.fab}>
+        <TouchableOpacity 
+          style={styles.fab}
+          onPress={handleNewMessage}
+          activeOpacity={0.8}
+        >
           <Icon type="material" name="message" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>

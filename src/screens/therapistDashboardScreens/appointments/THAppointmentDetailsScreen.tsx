@@ -30,7 +30,17 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   };
 
   const handleReschedule = () => {
-    navigation.navigate('THRescheduleAppointmentScreen', { appointment });
+    // Navigate to schedule screen with appointment data for rescheduling
+    const clientData = {
+      id: appointment.id,
+      name: appointment.clientName,
+      avatar: appointment.avatar,
+    };
+    navigation.navigate('THScheduleAppointmentScreen', { 
+      client: clientData,
+      isReschedule: true,
+      existingAppointment: appointment 
+    });
   };
 
   const handleCancel = () => {
@@ -52,8 +62,13 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   };
 
   const handleViewClientProfile = () => {
-    // Navigate to client profile
-    Alert.alert('Client Profile', 'View full client profile and history');
+    // Navigate to client profile with client data
+    const clientData = {
+      id: appointment.id,
+      name: appointment.clientName,
+      avatar: appointment.avatar,
+    };
+    navigation.navigate('THClientProfileScreen', { client: clientData });
   };
 
   const handleSendMessage = () => {

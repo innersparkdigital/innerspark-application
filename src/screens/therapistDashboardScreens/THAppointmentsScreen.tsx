@@ -71,6 +71,9 @@ const THAppointmentsScreen = ({ navigation }: any) => {
       <ISGenericHeader
         title="Appointments"
         navigation={navigation}
+        hasRightIcon={true}
+        rightIconName="add"
+        rightIconOnPress={() => navigation.navigate('THScheduleAppointmentScreen')}
       />
 
       <ScrollView style={styles.content}>

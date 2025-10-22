@@ -44,11 +44,11 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   };
 
   const handleEditGroup = () => {
-    navigation.navigate('THEditGroupScreen', { group });
+    navigation.navigate('THCreateGroupScreen', { group });
   };
 
   const handleMessageGroup = () => {
-    Alert.alert('Message Group', 'Send a message to all group members');
+    navigation.navigate('THGroupChatScreen', { group });
   };
 
   const handleAddMember = () => {
@@ -210,8 +210,15 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
 
         {selectedTab === 'members' && (
           <View style={styles.tabContent}>
+            <TouchableOpacity 
+              style={styles.viewAllButton}
+              onPress={() => navigation.navigate('THGroupMembersScreen', { group })}
+            >
+              <Text style={styles.viewAllText}>View All Members & Manage</Text>
+              <Icon type="material" name="arrow-forward" size={20} color={appColors.AppBlue} />
+            </TouchableOpacity>
             <FlatList
-              data={members}
+              data={members.slice(0, 5)}
               renderItem={renderMember}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
@@ -537,6 +544,21 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     marginLeft: 6,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: appColors.AppBlue + '10',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  viewAllText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.bodyTextMedium,
   },
 });
 

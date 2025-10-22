@@ -18,6 +18,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import ISStatusBar from '../../components/ISStatusBar';
 
 interface SendFeedbackScreenProps {
   navigation: NavigationProp<any>;
@@ -83,10 +84,10 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
 
   return (
     <SafeAreaView style={styles.container}>
+      <ISStatusBar />
       <ISGenericHeader
         title="Send Feedback"
         navigation={navigation}
-        hasLightBackground={true}
       />
 
       <KeyboardAvoidingView

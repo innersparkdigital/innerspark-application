@@ -130,14 +130,22 @@ const THGroupsScreen = ({ navigation }: any) => {
               </View>
 
               <View style={styles.groupActions}>
-                <TouchableOpacity style={styles.actionButton}>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => navigation.navigate('THGroupChatScreen', { group })}
+                  activeOpacity={0.7}
+                >
                   <Icon type="material" name="message" size={18} color={appColors.AppBlue} />
                   <Text style={styles.actionButtonText}>Message</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]}>
-                  <Icon type="material" name="video-call" size={18} color="#FFFFFF" />
+                <TouchableOpacity 
+                  style={[styles.actionButton, styles.actionButtonPrimary]}
+                  onPress={() => navigation.navigate('THGroupDetailsScreen', { group })}
+                  activeOpacity={0.7}
+                >
+                  <Icon type="material" name="play-circle-filled" size={18} color="#FFFFFF" />
                   <Text style={[styles.actionButtonText, styles.actionButtonTextPrimary]}>
-                    Join Session
+                    Start Session
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -146,7 +154,11 @@ const THGroupsScreen = ({ navigation }: any) => {
         </View>
 
         {/* Create New Group Button */}
-        <TouchableOpacity style={styles.createButton}>
+        <TouchableOpacity 
+          style={styles.createButton}
+          onPress={() => navigation.navigate('THCreateGroupScreen')}
+          activeOpacity={0.8}
+        >
           <Icon type="material" name="add-circle" size={24} color="#FFFFFF" />
           <Text style={styles.createButtonText}>Create New Group</Text>
         </TouchableOpacity>

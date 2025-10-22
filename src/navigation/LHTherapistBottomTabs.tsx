@@ -48,7 +48,7 @@ const LHTherapistBottomTabs = () => {
         name="THAppointments"
         component={THAppointmentsScreen}
         options={{
-          tabBarLabel: 'Appointments',
+          tabBarLabel: 'Sessions', // named 'sessions' to use less space
           tabBarIcon: ({ color, size }) => (
             <Icon type="material" name="calendar-today" color={color} size={size} />
           ),

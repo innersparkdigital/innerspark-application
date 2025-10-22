@@ -643,8 +643,8 @@ export default function SigninScreen({navigation}){
                                         // Test therapist login with default data
                                         const therapistTestData = {
                                             userId: 'TestTherapist-001',
-                                            firstName: 'Dr. Sarah',
-                                            lastName: 'Johnson',
+                                            firstName: 'Hellen',
+                                            lastName: 'Mugyenyi',
                                             email: 'therapist@innerspark.test',
                                             phone: '+256700111222',
                                             role: 'therapist',
