@@ -10,9 +10,11 @@ import THScheduleAppointmentScreen from '../screens/therapistDashboardScreens/ap
 import THGroupDetailsScreen from '../screens/therapistDashboardScreens/groups/THGroupDetailsScreen';
 import THGroupChatScreen from '../screens/therapistDashboardScreens/groups/THGroupChatScreen';
 import THGroupMembersScreen from '../screens/therapistDashboardScreens/groups/THGroupMembersScreen';
+import THGroupMemberProfileScreen from '../screens/therapistDashboardScreens/groups/THGroupMemberProfileScreen';
 import THCreateGroupScreen from '../screens/therapistDashboardScreens/groups/THCreateGroupScreen';
 import THScheduleGroupSessionScreen from '../screens/therapistDashboardScreens/groups/THScheduleGroupSessionScreen';
 import THClientProfileScreen from '../screens/therapistDashboardScreens/clients/THClientProfileScreen';
+import THAddClientNoteScreen from '../screens/therapistDashboardScreens/clients/THAddClientNoteScreen';
 import THChatConversationScreen from '../screens/therapistDashboardScreens/chats/THChatConversationScreen';
 import THSelectClientScreen from '../screens/therapistDashboardScreens/chats/THSelectClientScreen';
 import THAvailabilityScreen from '../screens/therapistDashboardScreens/account/THAvailabilityScreen';
@@ -83,6 +85,14 @@ const LHTherapistNavigator = () => {
       />
       
       <THStack.Screen
+        name="THAddClientNoteScreen"
+        component={THAddClientNoteScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
         name="THGroupDetailsScreen"
         component={THGroupDetailsScreen}
         options={{
@@ -101,6 +111,14 @@ const LHTherapistNavigator = () => {
       <THStack.Screen
         name="THGroupMembersScreen"
         component={THGroupMembersScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      
+      <THStack.Screen
+        name="THGroupMemberProfileScreen"
+        component={THGroupMemberProfileScreen}
         options={{
           ...TransitionPresets.SlideFromRightIOS,
         }}

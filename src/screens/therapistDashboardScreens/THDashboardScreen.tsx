@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/themed';
 import { useSelector } from 'react-redux';
@@ -11,6 +11,25 @@ import { appImages } from '../../global/Data';
 const THDashboardScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [unreadNotifications] = useState(3); // Mock unread count
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // TODO: Add API calls here to fetch:
+    // - Dashboard stats (appointments, requests, groups, messages)
+    // - User details
+    // - Notifications count
+    // Example:
+    // await Promise.all([
+    //   fetchDashboardStats(),
+    //   fetchNotifications(),
+    // ]);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  };
 
   // Dashboard cards configuration with stats
   const dashboardCards = [
@@ -158,6 +177,14 @@ const THDashboardScreen = ({ navigation }: any) => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
       >
         {/* Dashboard Cards Grid */}
         <View style={styles.cardsGrid}>

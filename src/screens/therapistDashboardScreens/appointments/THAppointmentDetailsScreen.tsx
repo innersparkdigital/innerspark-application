@@ -5,28 +5,16 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISConfirmationModal from '../../../components/ISConfirmationModal';
 
 const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const { appointment } = route.params || {};
   const [showActions, setShowActions] = useState(false);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const handleStartSession = () => {
-    Alert.alert(
-      'Start Session',
-      'Ready to start the session with ' + appointment.clientName + '?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Start',
-          onPress: () => {
-            // Navigate to session screen or open meeting link
-            if (appointment.meetingLink) {
-              Linking.openURL(appointment.meetingLink);
-            }
-          },
-        },
-      ]
-    );
+    setShowStartModal(true);
   };
 
   const handleReschedule = () => {
@@ -44,21 +32,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Appointment',
-      'Are you sure you want to cancel this appointment? The client will be notified.',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: () => {
-            // Handle cancellation
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    setShowCancelModal(true);
   };
 
   const handleViewClientProfile = () => {
@@ -76,6 +50,24 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
     navigation.navigate('THChats');
   };
 
+  const handleAddNote = () => {
+    const clientData = {
+      id: appointment.id,
+      name: appointment.clientName,
+      avatar: appointment.avatar,
+    };
+    navigation.navigate('THAddClientNoteScreen', { client: clientData });
+  };
+
+  const handleViewNotes = () => {
+    const clientData = {
+      id: appointment.id,
+      name: appointment.clientName,
+      avatar: appointment.avatar,
+    };
+    navigation.navigate('THClientProfileScreen', { client: clientData, initialTab: 'notes' });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
@@ -83,7 +75,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Status Banner */}
-        <View style={[styles.statusBanner, { backgroundColor: appointment.status === 'upcoming' ? appColors.AppGreen : appColors.AppBlue }]}>
+        <View style={[styles.statusBanner, { backgroundColor: appColors.AppGreen }]}>
           <Icon type="material" name="event" color="#FFFFFF" size={24} />
           <Text style={styles.statusBannerText}>
             {appointment.status === 'upcoming' ? 'Upcoming Appointment' : 'Scheduled Appointment'}
@@ -159,18 +151,6 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
           </View>
         </View>
 
-        {/* Session Notes Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Pre-Session Notes</Text>
-          <Text style={styles.notesText}>
-            Client requested to discuss anxiety management techniques and coping strategies for work-related stress.
-          </Text>
-          <TouchableOpacity style={styles.editNotesButton}>
-            <Icon type="material" name="edit" size={16} color={appColors.AppBlue} />
-            <Text style={styles.editNotesText}>Edit Notes</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Quick Actions */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Quick Actions</Text>
@@ -187,7 +167,13 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             <Icon type="material" name="chevron-right" size={20} color={appColors.grey3} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleAddNote}>
+            <Icon type="material" name="note-add" size={20} color={appColors.AppGreen} />
+            <Text style={styles.actionButtonText}>Add Session Note</Text>
+            <Icon type="material" name="chevron-right" size={20} color={appColors.grey3} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={handleViewNotes}>
             <Icon type="material" name="description" size={20} color={appColors.AppBlue} />
             <Text style={styles.actionButtonText}>View Previous Notes</Text>
             <Icon type="material" name="chevron-right" size={20} color={appColors.grey3} />
@@ -218,6 +204,39 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
           </View>
         </View>
       )}
+      {/* Start Session Confirmation Modal */}
+      <ISConfirmationModal
+        visible={showStartModal}
+        title="Start Session"
+        message={`Ready to start the session with ${appointment?.clientName}?`}
+        confirmText="Start Session"
+        cancelText="Not Yet"
+        type="success"
+        icon="play-circle-filled"
+        onConfirm={() => {
+          setShowStartModal(false);
+          if (appointment?.meetingLink) {
+            Linking.openURL(appointment.meetingLink);
+          }
+        }}
+        onCancel={() => setShowStartModal(false)}
+      />
+
+      {/* Cancel Appointment Confirmation Modal */}
+      <ISConfirmationModal
+        visible={showCancelModal}
+        title="Cancel Appointment"
+        message="Are you sure you want to cancel this appointment? The client will be notified."
+        confirmText="Yes, Cancel"
+        cancelText="No"
+        type="destructive"
+        icon="cancel"
+        onConfirm={() => {
+          setShowCancelModal(false);
+          navigation.goBack();
+        }}
+        onCancel={() => setShowCancelModal(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -344,23 +363,6 @@ const styles = StyleSheet.create({
     color: appColors.AppBlue,
     fontFamily: appFonts.bodyTextMedium,
     textDecorationLine: 'underline',
-  },
-  notesText: {
-    fontSize: 14,
-    color: appColors.grey2,
-    fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-  editNotesButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  editNotesText: {
-    fontSize: 14,
-    color: appColors.AppBlue,
-    fontFamily: appFonts.bodyTextMedium,
   },
   actionButton: {
     flexDirection: 'row',

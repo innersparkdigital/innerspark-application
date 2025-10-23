@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -77,6 +78,8 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   ]);
 
   const [showModTools, setShowModTools] = useState(false);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementText, setAnnouncementText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -103,31 +106,25 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   };
 
   const handleSendAnnouncement = () => {
-    Alert.prompt(
-      'Send Announcement',
-      'Enter your announcement message',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send',
-          onPress: (text) => {
-            if (text?.trim()) {
-              const announcement: GroupMessage = {
-                id: Date.now().toString(),
-                senderId: 'therapist_1',
-                senderName: 'You',
-                senderRole: 'therapist',
-                content: text.trim(),
-                timestamp: 'Just now',
-                isOwn: true,
-                type: 'announcement',
-              };
-              setMessages([...messages, announcement]);
-            }
-          },
-        },
-      ]
-    );
+    setShowAnnouncementModal(true);
+  };
+
+  const sendAnnouncement = () => {
+    if (announcementText.trim()) {
+      const announcement: GroupMessage = {
+        id: Date.now().toString(),
+        senderId: 'therapist_1',
+        senderName: 'You',
+        senderRole: 'therapist',
+        content: announcementText.trim(),
+        timestamp: 'Just now',
+        isOwn: true,
+        type: 'announcement',
+      };
+      setMessages([...messages, announcement]);
+      setAnnouncementText('');
+      setShowAnnouncementModal(false);
+    }
   };
 
   const handleMuteUser = (userId: string, userName: string) => {
@@ -162,6 +159,14 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
         },
       ]
     );
+  };
+
+  const handleViewMembers = () => {
+    navigation.navigate('THGroupMembersScreen', { group });
+  };
+
+  const handleViewMuted = () => {
+    navigation.navigate('THGroupMembersScreen', { group, filter: 'muted' });
   };
 
   const renderMessage = ({ item }: { item: GroupMessage }) => {
@@ -263,11 +268,11 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
               <Icon type="material" name="campaign" size={20} color={appColors.AppBlue} />
               <Text style={styles.modToolText}>Announcement</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modTool}>
+            <TouchableOpacity style={styles.modTool} onPress={handleViewMembers}>
               <Icon type="material" name="people" size={20} color={appColors.AppBlue} />
               <Text style={styles.modToolText}>Members ({group?.members})</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modTool}>
+            <TouchableOpacity style={styles.modTool} onPress={handleViewMuted}>
               <Icon type="material" name="block" size={20} color="#F44336" />
               <Text style={[styles.modToolText, { color: '#F44336' }]}>Muted</Text>
             </TouchableOpacity>
@@ -315,6 +320,66 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Announcement Modal */}
+      <Modal
+        visible={showAnnouncementModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowAnnouncementModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Icon type="material" name="campaign" size={24} color={appColors.AppBlue} />
+              <Text style={styles.modalTitle}>Send Announcement</Text>
+            </View>
+            
+            <Text style={styles.modalDescription}>
+              This message will be highlighted for all group members
+            </Text>
+
+            <TextInput
+              style={styles.announcementInput}
+              placeholder="Enter your announcement..."
+              placeholderTextColor={appColors.grey3}
+              value={announcementText}
+              onChangeText={setAnnouncementText}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              maxLength={300}
+              autoFocus
+            />
+
+            <Text style={styles.charCount}>{announcementText.length}/300</Text>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalButtonCancel}
+                onPress={() => {
+                  setAnnouncementText('');
+                  setShowAnnouncementModal(false);
+                }}
+              >
+                <Text style={styles.modalButtonCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalButtonSend,
+                  !announcementText.trim() && styles.modalButtonDisabled,
+                ]}
+                onPress={sendAnnouncement}
+                disabled={!announcementText.trim()}
+              >
+                <Icon type="material" name="send" size={18} color="#FFFFFF" />
+                <Text style={styles.modalButtonSendText}>Send</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -492,6 +557,98 @@ const styles = StyleSheet.create({
   },
   sendButtonActive: {
     backgroundColor: appColors.AppBlue,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: 16,
+  },
+  announcementInput: {
+    backgroundColor: appColors.AppLightGray,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextRegular,
+    minHeight: 100,
+    borderWidth: 1,
+    borderColor: appColors.grey6,
+  },
+  charCount: {
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    textAlign: 'right',
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButtonCancel: {
+    flex: 1,
+    backgroundColor: appColors.grey6,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextMedium,
+  },
+  modalButtonSend: {
+    flex: 1,
+    backgroundColor: appColors.AppBlue,
+    padding: 14,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  modalButtonDisabled: {
+    backgroundColor: appColors.grey5,
+  },
+  modalButtonSendText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: appFonts.bodyTextMedium,
   },
 });
 

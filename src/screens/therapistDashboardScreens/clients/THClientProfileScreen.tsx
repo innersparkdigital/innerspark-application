@@ -16,8 +16,8 @@ import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 
 const THClientProfileScreen = ({ navigation, route }: any) => {
-  const { client } = route.params;
-  const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'notes'>('overview');
+  const { client, initialTab } = route.params;
+  const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'notes'>(initialTab || 'overview');
 
   // Mock data
   const clientDetails = {
@@ -180,6 +180,16 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
 
   const renderNotes = () => (
     <View style={styles.section}>
+      {/* Add Note Button */}
+      <TouchableOpacity 
+        style={styles.addNoteButton}
+        onPress={() => navigation.navigate('THAddClientNoteScreen', { client: clientDetails })}
+        activeOpacity={0.8}
+      >
+        <Icon type="material" name="add" size={20} color="#FFFFFF" />
+        <Text style={styles.addNoteButtonText}>Add New Note</Text>
+      </TouchableOpacity>
+
       {notes.map((note) => (
         <View key={note.id} style={styles.noteCard}>
           <View style={styles.noteHeader}>
@@ -526,6 +536,22 @@ const styles = StyleSheet.create({
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
     lineHeight: 20,
+  },
+  addNoteButton: {
+    backgroundColor: appColors.AppBlue,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 8,
+  },
+  addNoteButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: appFonts.bodyTextMedium,
   },
 });
 

@@ -258,6 +258,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
               onDateChange={setSelectedDate}
               mode="date"
               minimumDate={new Date()}
+              theme="light"
             />
             
             <View style={styles.pickerButtons}>
@@ -296,6 +297,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
               onDateChange={setSelectedDate}
               mode="time"
               minuteInterval={15}
+              theme="light"
             />
             
             <View style={styles.pickerButtons}>

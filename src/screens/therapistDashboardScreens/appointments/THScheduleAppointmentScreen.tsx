@@ -392,6 +392,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
               onDateChange={setSelectedDate}
               mode="date"
               minimumDate={new Date()}
+              theme="light"
             />
             
             <View style={styles.pickerButtons}>
@@ -430,6 +431,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
               onDateChange={setSelectedDate}
               mode="time"
               minuteInterval={15}
+              theme="light"
             />
             
             <View style={styles.pickerButtons}>

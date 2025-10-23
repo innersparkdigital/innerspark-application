@@ -21,9 +21,9 @@ interface Member {
 }
 
 const THGroupMembersScreen = ({ navigation, route }: any) => {
-  const { group } = route.params || {};
+  const { group, filter } = route.params || {};
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'inactive' | 'muted'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'inactive' | 'muted'>(filter || 'all');
 
   const [members, setMembers] = useState<Member[]>([
     {
@@ -87,8 +87,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
   const handleMemberAction = (member: Member) => {
     const actions = [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'View Profile', onPress: () => Alert.alert('Profile', `View ${member.name}'s profile`) },
-      { text: 'Send Message', onPress: () => Alert.alert('Message', `Send message to ${member.name}`) },
+      { text: 'View Profile', onPress: () => navigation.navigate('THGroupMemberProfileScreen', { member }) },
     ];
 
     if (member.role === 'member') {
@@ -167,9 +166,6 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
     Alert.alert('Manage Member', `What would you like to do with ${member.name}?`, actions as any);
   };
 
-  const handleAddMember = () => {
-    Alert.alert('Add Member', 'Search and invite new members to this group');
-  };
 
   const renderMember = ({ item }: { item: Member }) => (
     <TouchableOpacity
@@ -241,9 +237,6 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
       <ISGenericHeader
         title="Group Members"
         navigation={navigation}
-        hasRightIcon={true}
-        rightIconName="person-add"
-        rightIconOnPress={handleAddMember}
       />
 
       <View style={styles.content}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../global/Styles';
@@ -52,6 +52,22 @@ const mockAppointments = [
 
 const THAppointmentsScreen = ({ navigation }: any) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // TODO: Add API calls here to fetch:
+    // - Appointments list (all, today, upcoming, completed)
+    // - Appointment stats (total, upcoming, completed)
+    // - Client details for each appointment
+    // Example:
+    // await fetchAppointments(selectedFilter);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -76,7 +92,17 @@ const THAppointmentsScreen = ({ navigation }: any) => {
         rightIconOnPress={() => navigation.navigate('THScheduleAppointmentScreen')}
       />
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      >
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
@@ -158,12 +184,6 @@ const THAppointmentsScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Add Appointment Button */}
-        <TouchableOpacity style={styles.addButton}>
-          <Icon type="material" name="add" size={24} color="#FFFFFF" />
-          <Text style={styles.addButtonText}>Schedule New Appointment</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -309,26 +329,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
     textTransform: 'capitalize',
-  },
-  addButton: {
-    backgroundColor: appColors.AppBlue,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
   },
 });
 

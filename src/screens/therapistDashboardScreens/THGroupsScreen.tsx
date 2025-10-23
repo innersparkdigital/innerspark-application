@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../global/Styles';
@@ -48,6 +48,23 @@ const mockGroups = [
 
 const THGroupsScreen = ({ navigation }: any) => {
   const [selectedTab, setSelectedTab] = useState('active');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // TODO: Add API calls here to fetch:
+    // - Groups list (active, scheduled, archived)
+    // - Group stats (active groups, total members)
+    // - Group details (members count, next session, status)
+    // - Member details for each group
+    // Example:
+    // await fetchGroups(selectedTab);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,9 +73,22 @@ const THGroupsScreen = ({ navigation }: any) => {
       <ISGenericHeader
         title="Support Groups"
         navigation={navigation}
+        hasRightIcon={true}
+        rightIconName="add"
+        rightIconOnPress={() => navigation.navigate('THCreateGroupScreen')}
       />
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      >
         {/* Stats Overview */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
@@ -118,14 +148,15 @@ const THGroupsScreen = ({ navigation }: any) => {
                 </View>
               </View>
 
-              <View style={styles.groupDetails}>
-                <View style={styles.detailRow}>
+              <View style={styles.groupMeta}>
+                <View style={styles.metaItem}>
                   <Icon type="material" name="people" size={16} color={appColors.grey3} />
-                  <Text style={styles.detailText}>{group.members} members</Text>
+                  <Text style={styles.metaText}>{group.members} members</Text>
                 </View>
-                <View style={styles.detailRow}>
+                <Text style={styles.metaSeparator}>•</Text>
+                <View style={styles.metaItem}>
                   <Icon type="material" name="schedule" size={16} color={appColors.grey3} />
-                  <Text style={styles.detailText}>{group.nextSession}</Text>
+                  <Text style={styles.metaText}>{group.nextSession}</Text>
                 </View>
               </View>
 
@@ -152,16 +183,6 @@ const THGroupsScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Create New Group Button */}
-        <TouchableOpacity 
-          style={styles.createButton}
-          onPress={() => navigation.navigate('THCreateGroupScreen')}
-          activeOpacity={0.8}
-        >
-          <Icon type="material" name="add-circle" size={24} color="#FFFFFF" />
-          <Text style={styles.createButtonText}>Create New Group</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -275,19 +296,26 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
   },
-  groupDetails: {
-    marginBottom: 12,
-  },
-  detailRow: {
+  groupMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
+    flexWrap: 'wrap',
   },
-  detailText: {
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
     fontSize: 13,
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
-    marginLeft: 6,
+  },
+  metaSeparator: {
+    fontSize: 13,
+    color: appColors.grey4,
+    marginHorizontal: 8,
   },
   groupActions: {
     flexDirection: 'row',
@@ -316,22 +344,6 @@ const styles = StyleSheet.create({
   },
   actionButtonTextPrimary: {
     color: '#FFFFFF',
-  },
-  createButton: {
-    backgroundColor: appColors.AppGreen,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  createButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
   },
 });
 

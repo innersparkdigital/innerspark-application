@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -30,6 +31,9 @@ interface Review {
 const THReviewsScreen = ({ navigation }: any) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | '5' | '4' | '3' | '2' | '1'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showReplyModal, setShowReplyModal] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
 
   const [reviews] = useState<Review[]>([
     {
@@ -95,21 +99,19 @@ const THReviewsScreen = ({ navigation }: any) => {
   });
 
   const handleReply = (reviewId: string) => {
-    Alert.prompt(
-      'Reply to Review',
-      'Enter your response',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send',
-          onPress: (text) => {
-            if (text) {
-              Alert.alert('Success', 'Your response has been posted!');
-            }
-          },
-        },
-      ]
-    );
+    setSelectedReviewId(reviewId);
+    setReplyText('');
+    setShowReplyModal(true);
+  };
+  
+  const submitReply = () => {
+    if (replyText.trim()) {
+      // TODO: Send reply to backend
+      Alert.alert('Success', 'Your response has been posted!');
+      setShowReplyModal(false);
+      setReplyText('');
+      setSelectedReviewId(null);
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -288,6 +290,79 @@ const THReviewsScreen = ({ navigation }: any) => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Reply Modal */}
+      <Modal
+        visible={showReplyModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReplyModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.replyModalContainer}>
+            {/* Icon */}
+            <View style={styles.replyIconContainer}>
+              <Icon
+                type="material"
+                name="reply"
+                size={40}
+                color={appColors.AppBlue}
+              />
+            </View>
+
+            <Text style={styles.replyModalTitle}>Reply to Review</Text>
+            <Text style={styles.replyModalSubtitle}>
+              Share your response with the client
+            </Text>
+            
+            <TextInput
+              style={styles.replyInput}
+              placeholder="Write your response..."
+              placeholderTextColor={appColors.grey3}
+              value={replyText}
+              onChangeText={setReplyText}
+              multiline
+              numberOfLines={6}
+              textAlignVertical="top"
+              maxLength={500}
+              autoFocus
+            />
+            
+            <Text style={styles.replyCharCount}>
+              {replyText.length}/500 characters
+            </Text>
+            
+            <View style={styles.replyModalButtons}>
+              <TouchableOpacity
+                style={[styles.replyModalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowReplyModal(false);
+                  setReplyText('');
+                  setSelectedReviewId(null);
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.replyModalButton,
+                  styles.sendButton,
+                  !replyText.trim() && styles.sendButtonDisabled
+                ]}
+                onPress={submitReply}
+                disabled={!replyText.trim()}
+              >
+                <Text style={[
+                  styles.sendButtonText,
+                  !replyText.trim() && styles.sendButtonTextDisabled
+                ]}>
+                  Send Reply
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -562,6 +637,96 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     marginTop: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  replyModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 32,
+    width: '100%',
+    maxWidth: 500,
+  },
+  replyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: appColors.AppBlue + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  replyModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  replyModalSubtitle: {
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  replyInput: {
+    backgroundColor: appColors.AppLightGray,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextRegular,
+    minHeight: 150,
+    marginBottom: 8,
+  },
+  replyCharCount: {
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    textAlign: 'right',
+    marginBottom: 20,
+  },
+  replyModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  replyModalButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: appColors.grey6,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextMedium,
+  },
+  sendButton: {
+    backgroundColor: appColors.AppBlue,
+  },
+  sendButtonDisabled: {
+    backgroundColor: appColors.grey5,
+  },
+  sendButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: appFonts.bodyTextMedium,
+  },
+  sendButtonTextDisabled: {
+    color: appColors.grey3,
   },
 });
 

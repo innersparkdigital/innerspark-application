@@ -95,15 +95,15 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
   };
 
   const handleViewClientProfile = () => {
-    Alert.alert('Client Profile', 'View full client profile and session history');
+    navigation.navigate('THClientProfileScreen', { client: chat });
   };
 
   const handleScheduleSession = () => {
-    Alert.alert('Schedule Session', 'Schedule a new session with ' + chat.clientName);
+    navigation.navigate('THScheduleAppointmentScreen', { client: chat });
   };
 
   const handleViewNotes = () => {
-    Alert.alert('Session Notes', 'View therapy notes for ' + chat.clientName);
+    navigation.navigate('THClientProfileScreen', { client: chat, initialTab: 'notes' });
   };
 
   const renderMessage = ({ item }: any) => {
