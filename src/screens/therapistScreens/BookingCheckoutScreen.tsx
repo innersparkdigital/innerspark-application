@@ -95,7 +95,7 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>{therapist.name} Confirmation</Text>
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -255,9 +255,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    flex: 1,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.appTextBold,
   },
   scrollView: {

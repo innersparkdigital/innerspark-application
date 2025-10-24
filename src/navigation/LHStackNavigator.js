@@ -30,7 +30,7 @@ import TherapistsScreen from '../screens/TherapistsScreen';
 import TherapistDetailScreen from '../screens/therapistScreens/TherapistDetailScreen';
 import BookingCheckoutScreen from '../screens/therapistScreens/BookingCheckoutScreen';
 import BookingConfirmationScreen from '../screens/therapistScreens/BookingConfirmationScreen';
-import DonateToTherapistScreen from '../screens/therapistScreens/DonateToTherapistScreen';
+import DonationFundScreen from '../screens/donateScreens/DonationFundScreen';
 import TherapistMatchingQuizScreen from '../screens/therapistScreens/TherapistMatchingQuizScreen';
 import TherapistSuggestionsScreen from '../screens/therapistScreens/TherapistSuggestionsScreen';
 import PostSessionFeedbackScreen from '../screens/therapistScreens/PostSessionFeedbackScreen';
@@ -41,6 +41,9 @@ import ConversationsListScreen from '../screens/chatScreens/ConversationsListScr
 import DMThreadScreen from '../screens/chatScreens/DMThreadScreen';
 import NewMessageScreen from '../screens/chatScreens/NewMessageScreen';
 import GroupMessagesViewScreen from '../screens/chatScreens/GroupMessagesViewScreen';
+import ClientGroupChatScreen from '../screens/chatScreens/ClientGroupChatScreen';
+import TherapistProfileViewScreen from '../screens/chatScreens/TherapistProfileViewScreen';
+import GroupInfoScreen from '../screens/chatScreens/GroupInfoScreen';
 
 // Group Screens
 import GroupsScreen from '../screens/GroupsScreen';
@@ -390,11 +393,11 @@ export default function LHStackNavigator(){
             />
 
             <LHStack.Screen
-                name="DonateToTherapistScreen"
-                component={DonateToTherapistScreen}
+                name="DonationFundScreen"
+                component={DonationFundScreen}
                 options={{
                     headerShown: false,
-                    title: 'Donate to Therapist',
+                    title: 'Support Our Community',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
@@ -466,6 +469,36 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Group Messages',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="ClientGroupChatScreen"
+                component={ClientGroupChatScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Group Chat',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="TherapistProfileViewScreen"
+                component={TherapistProfileViewScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Therapist Profile',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="GroupInfoScreen"
+                component={GroupInfoScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Group Information',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

@@ -38,7 +38,7 @@ interface DMThreadScreenProps {
 const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const flatListRef = useRef<FlatList>(null);
-  const { partnerId, partnerName, partnerAvatar, isOnline, lastSeen } = route.params;
+  const { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail } = route.params;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
@@ -335,7 +335,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         
         <View style={styles.headerInfo}>
@@ -355,8 +355,13 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.headerButton}>
-          <Icon name="more-vert" type="material" color={appColors.grey1} size={24} />
+        <TouchableOpacity 
+          style={styles.headerButton}
+          onPress={() => navigation.navigate('TherapistProfileViewScreen', { 
+            therapist: { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail } 
+          })}
+        >
+          <Icon name="info" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -416,7 +421,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 16,
@@ -444,14 +449,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerStatus: {
-    fontSize: 14,
-    color: appColors.grey3,
+    fontSize: 12,
+    color: appColors.CardBackground + 'CC',
     fontFamily: appFonts.regularText,
   },
   headerButton: {

@@ -304,6 +304,13 @@ const TherapistsScreen = ({ navigation, route }) => {
               <Text style={styles.headerTitle}>Find Therapists</Text>
               <Text style={styles.headerSubtitle}>Connect with mental health professionals</Text>
             </View>
+            <TouchableOpacity 
+              style={styles.donateButton}
+              onPress={() => navigation.navigate('DonationFundScreen')}
+              activeOpacity={0.7}
+            >
+              <Icon name="favorite" type="material" color={appColors.CardBackground} size={24} />
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -788,7 +795,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerContent: {
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  donateButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerTitle: {
     fontSize: 24,

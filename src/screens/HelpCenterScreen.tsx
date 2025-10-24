@@ -117,7 +117,7 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help Center</Text>
         <View style={styles.headerSpacer} />
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 16,

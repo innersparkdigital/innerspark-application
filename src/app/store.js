@@ -4,12 +4,14 @@ import userDataReducer from '../features/user/userDataSlice';
 import signupFlowReducer from '../features/flow/signupFlowSlice';
 import appSessionReducer from '../features/app/appSessionSlice';
 import appStartReducer from '../features/app/appStartSlice';
-//import recycleDataReducer from '../features/recycle/recycleDataSlice';
-//import userSettingsReducer from '../features/settings/userSettingsSlice';
-//import giftcardDataReducer from '../features/giftcard/giftcardDataSlice';
-//import utilityDataReducer from '../features/utility/utilityDataSlice';
-//import donateDataReducer from '../features/donate/donateDataSlice'; 
 
+// Therapist-specific slices
+import therapistDashboardReducer from '../features/therapist/dashboardSlice';
+import therapistAppointmentsReducer from '../features/therapist/appointmentsSlice';
+import therapistClientsReducer from '../features/therapist/clientsSlice';
+import therapistRequestsReducer from '../features/therapist/requestsSlice';
+import therapistGroupsReducer from '../features/therapist/groupsSlice';
+import therapistAnalyticsReducer from '../features/therapist/analyticsSlice';
 
 
 export default configureStore({
@@ -20,11 +22,15 @@ export default configureStore({
         //recycleFlow: recycleFlowReducer,
         appSession: appSessionReducer,
         appStart: appStartReducer,
-        //recycleData: recycleDataReducer,
-        //userSettings: userSettingsReducer,
-        //giftcardData: giftcardDataReducer,
-        //utilityData: utilityDataReducer,
-        //donateData: donateDataReducer,
+        
+        // Therapist-specific reducers
+        therapistDashboard: therapistDashboardReducer,
+        therapistAppointments: therapistAppointmentsReducer,
+        therapistClients: therapistClientsReducer,
+        therapistRequests: therapistRequestsReducer,
+        therapistGroups: therapistGroupsReducer,
+        therapistAnalytics: therapistAnalyticsReducer,
+
        
     }
 })

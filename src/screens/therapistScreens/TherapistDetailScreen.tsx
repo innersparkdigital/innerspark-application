@@ -48,7 +48,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
   const [selectedSessionType, setSelectedSessionType] = useState('individual');
   const [isDMEnabled, setIsDMEnabled] = useState(false); // DM enabled after booking
 
-  const tabs = ['About', 'Reviews', 'Availability', 'Donate'];
+  const tabs = ['About', 'Reviews', 'Availability'];
   
   // Session types with different pricing
   const sessionTypes = [
@@ -242,40 +242,6 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           </View>
         );
 
-      case 'Donate':
-        return (
-          <View style={styles.tabContent}>
-            <Text style={styles.sectionTitle}>Support {therapist.name}</Text>
-            <Text style={styles.donateDescription}>
-              Your donations help support mental health professionals and make therapy more accessible to everyone.
-            </Text>
-            
-            <View style={styles.donateAmountContainer}>
-              <Text style={styles.donateAmountLabel}>Choose Amount</Text>
-              <View style={styles.donateAmountOptions}>
-                {['UGX 5,000', 'UGX 10,000', 'UGX 25,000', 'UGX 50,000'].map((amount) => (
-                  <TouchableOpacity key={amount} style={styles.donateAmountChip}>
-                    <Text style={styles.donateAmountText}>{amount}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <Button
-              title="Donate via Mobile Money"
-              buttonStyle={styles.donateButton}
-              titleStyle={styles.donateButtonText}
-              onPress={() => navigation.navigate('DonateToTherapistScreen', { therapist })}
-              icon={{
-                name: 'favorite',
-                type: 'material',
-                color: appColors.CardBackground,
-                size: 20,
-              }}
-            />
-          </View>
-        );
-
       default:
         return null;
     }
@@ -291,11 +257,11 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{therapist.name} Profile</Text>
         <TouchableOpacity style={styles.menuButton}>
-          <Icon name="more-vert" type="material" color={appColors.grey1} size={24} />
+          <Icon name="more-vert" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -465,7 +431,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -485,7 +451,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.appTextBold,
   },
   menuButton: {

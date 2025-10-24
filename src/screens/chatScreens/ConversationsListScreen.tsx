@@ -38,7 +38,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Mock conversations data
+  // Mock conversations data - CLIENTS CAN ONLY MESSAGE THERAPISTS
   const mockConversations: Conversation[] = [
     {
       id: '1',
@@ -65,17 +65,6 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
     },
     {
       id: '3',
-      partnerId: 'user_1',
-      partnerName: 'Michael Chen',
-      partnerEmail: 'michael.chen@email.com',
-      partnerAvatar: require('../../assets/images/dummy-people/d-person3.png'),
-      lastMessage: 'Hey! How did your therapy session go today?',
-      lastMessageTime: '3 hours ago',
-      unreadCount: 1,
-      isOnline: true,
-    },
-    {
-      id: '4',
       partnerId: 'therapist_3',
       partnerName: 'Dr. Martin Pilier',
       partnerEmail: 'martin.pilier@innerspark.com',
@@ -85,17 +74,6 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
       unreadCount: 0,
       isOnline: false,
       lastSeen: '2 hours ago',
-    },
-    {
-      id: '5',
-      partnerId: 'user_2',
-      partnerName: 'Lisa Rodriguez',
-      partnerEmail: 'lisa.rodriguez@email.com',
-      lastMessage: 'Thanks for recommending that meditation app. It really helps!',
-      lastMessageTime: '2 days ago',
-      unreadCount: 0,
-      isOnline: false,
-      lastSeen: '1 day ago',
     },
   ];
 
@@ -227,13 +205,13 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
       <Icon name="chat-bubble-outline" type="material" color={appColors.grey3} size={80} />
       <Text style={styles.emptyTitle}>No conversations yet</Text>
       <Text style={styles.emptySubtitle}>
-        Start a conversation with a therapist or friend
+        Start a conversation with your therapist
       </Text>
       <TouchableOpacity 
         style={styles.startChatButton}
         onPress={() => navigation.navigate('NewMessageScreen')}
       >
-        <Text style={styles.startChatButtonText}>Start New Chat</Text>
+        <Text style={styles.startChatButtonText}>Message Therapist</Text>
       </TouchableOpacity>
     </View>
   );

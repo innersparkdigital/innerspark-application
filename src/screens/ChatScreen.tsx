@@ -20,7 +20,7 @@ interface ChatScreenProps {
 }
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState<'chats' | 'groups' | 'more'>('chats');
+  const [activeTab, setActiveTab] = useState<'chats' | 'groups'>('chats');
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -28,48 +28,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
         return <ConversationsListScreen navigation={navigation} />;
       case 'groups':
         return <GroupMessagesViewScreen navigation={navigation} />;
-      case 'more':
-        return (
-          <View style={styles.moreTabContent}>
-            <Text style={styles.moreTitle}>More Options</Text>
-            
-            <TouchableOpacity 
-              style={styles.moreOption}
-              onPress={() => navigation.navigate('NewMessageScreen')}
-            >
-              <Icon name="message" type="material" color={appColors.AppBlue} size={24} />
-              <Text style={styles.moreOptionText}>New Message</Text>
-              <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.moreOption}
-              onPress={() => {/* Add contact functionality */}}
-            >
-              <Icon name="person-add" type="material" color={appColors.AppBlue} size={24} />
-              <Text style={styles.moreOptionText}>Add Contact</Text>
-              <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.moreOption}
-              onPress={() => {/* Chat requests functionality */}}
-            >
-              <Icon name="mail" type="material" color={appColors.AppBlue} size={24} />
-              <Text style={styles.moreOptionText}>Chat Requests</Text>
-              <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.moreOption}
-              onPress={() => {/* Settings functionality */}}
-            >
-              <Icon name="settings" type="material" color={appColors.AppBlue} size={24} />
-              <Text style={styles.moreOptionText}>Chat Settings</Text>
-              <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
-            </TouchableOpacity>
-          </View>
-        );
       default:
         return <ConversationsListScreen navigation={navigation} />;
     }
@@ -131,24 +89,6 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
             activeTab === 'groups' && styles.activeTabText
           ]}>
             Groups
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'more' && styles.activeTab]}
-          onPress={() => setActiveTab('more')}
-        >
-          <Icon 
-            name="more-horiz" 
-            type="material" 
-            color={activeTab === 'more' ? appColors.AppBlue : appColors.grey3} 
-            size={20} 
-          />
-          <Text style={[
-            styles.tabText,
-            activeTab === 'more' && styles.activeTabText
-          ]}>
-            More
           </Text>
         </TouchableOpacity>
       </View>
@@ -233,37 +173,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  moreTabContent: {
-    flex: 1,
-    padding: 20,
-  },
-  moreTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    marginBottom: 20,
-    fontFamily: appFonts.headerTextBold,
-  },
-  moreOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: appColors.CardBackground,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  moreOptionText: {
-    flex: 1,
-    fontSize: 16,
-    color: appColors.grey1,
-    marginLeft: 16,
-    fontFamily: appFonts.headerTextRegular,
   },
 });
 

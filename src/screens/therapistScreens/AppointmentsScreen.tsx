@@ -373,7 +373,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Appointments</Text>
         <View style={styles.headerSpacer} />
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -543,9 +543,10 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   headerTitle: {
+    flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.appTextBold,
   },
   headerSpacer: {

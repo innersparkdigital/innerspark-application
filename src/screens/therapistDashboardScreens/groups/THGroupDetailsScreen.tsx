@@ -51,10 +51,6 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
     navigation.navigate('THGroupChatScreen', { group });
   };
 
-  const handleAddMember = () => {
-    Alert.alert('Add Member', 'Invite new members to this group');
-  };
-
   const handleScheduleSession = () => {
     navigation.navigate('THScheduleGroupSessionScreen', { group });
   };
@@ -141,10 +137,6 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
           <TouchableOpacity style={styles.quickActionButton} onPress={handleMessageGroup}>
             <Icon type="material" name="message" size={20} color={appColors.AppBlue} />
             <Text style={styles.quickActionText}>Message</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionButton} onPress={handleAddMember}>
-            <Icon type="material" name="person-add" size={20} color={appColors.AppBlue} />
-            <Text style={styles.quickActionText}>Add Member</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickActionButton} onPress={handleScheduleSession}>
             <Icon type="material" name="schedule" size={20} color={appColors.AppBlue} />

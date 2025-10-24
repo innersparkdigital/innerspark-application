@@ -60,7 +60,7 @@ const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navig
   const [showExportModal, setShowExportModal] = useState(false);
   const [showModerationModal, setShowModerationModal] = useState(false);
 
-  // Mock group data
+  // Mock group data - CLIENTS ARE NEVER ADMINS
   const mockGroups: GroupChat[] = [
     {
       id: '1',
@@ -71,7 +71,7 @@ const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navig
       lastMessage: 'Thanks everyone for the support today!',
       lastMessageTime: '5 min ago',
       unreadCount: 3,
-      isAdmin: true,
+      isAdmin: false, // Clients are never admins
       isMember: true,
       type: 'therapy',
     },
@@ -107,7 +107,7 @@ const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navig
       lastMessage: 'Great article about sleep hygiene!',
       lastMessageTime: '1 day ago',
       unreadCount: 0,
-      isAdmin: true,
+      isAdmin: false,
       isMember: true,
       type: 'general',
     },
@@ -212,7 +212,8 @@ const GroupMessagesViewScreen: React.FC<GroupMessagesViewScreenProps> = ({ navig
       );
       return;
     }
-    setSelectedGroup(group);
+    // Navigate to ClientGroupChatScreen for privacy-focused group chat
+    navigation.navigate('ClientGroupChatScreen', { group });
   };
 
   const handleSendMessage = async () => {

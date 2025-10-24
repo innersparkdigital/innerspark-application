@@ -7,8 +7,11 @@ import { Platform } from 'react-native';
 
 // Regex patterns for validation
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
-// the phone regex, if a phone has 9 digits it's not valid, it must be 10 digits if the first digit is 0 and 13+ and not more than 15 if the country code is included (e.g +256704123456)
-const phoneRegex = /^(\+[1-9]\d{1,14}|0\d{9})$/; // phone number regex
+
+// Phone regex: Requires country code (+256) OR leading zero (0), followed by exactly 9 digits
+// Examples: +256705161188, +256 705161188, 0705161188
+// Note: Spaces are removed before validation on Android
+const phoneRegex = /^(\+\d{3}|0)\d{9}$/;
 
 // Helper function to clean input on Android
 const cleanInput = (value: string): string => {

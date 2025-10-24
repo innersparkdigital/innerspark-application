@@ -41,7 +41,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
-  // Mock contacts data
+  // Mock contacts data - CLIENTS CAN ONLY MESSAGE THERAPISTS
   const mockContacts: Contact[] = [
     {
       id: 'therapist_1',
@@ -73,27 +73,23 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
       lastSeen: '2 hours ago',
     },
     {
-      id: 'user_1',
-      name: 'Michael Chen',
-      email: 'michael.chen@email.com',
-      avatar: require('../../assets/images/dummy-people/d-person3.png'),
-      type: 'user',
+      id: 'therapist_4',
+      name: 'Dr. Emily Carter',
+      email: 'emily.carter@innerspark.com',
+      avatar: require('../../assets/images/dummy-people/d-person2.png'),
+      type: 'therapist',
+      specialty: 'Trauma & PTSD',
       isOnline: true,
     },
     {
-      id: 'user_2',
-      name: 'Lisa Rodriguez',
-      email: 'lisa.rodriguez@email.com',
-      type: 'user',
+      id: 'therapist_5',
+      name: 'Dr. James Mitchell',
+      email: 'james.mitchell@innerspark.com',
+      avatar: require('../../assets/images/dummy-people/d-person1.png'),
+      type: 'therapist',
+      specialty: 'Mindfulness & Meditation',
       isOnline: false,
-      lastSeen: '1 day ago',
-    },
-    {
-      id: 'user_3',
-      name: 'James Wilson',
-      email: 'james.wilson@email.com',
-      type: 'user',
-      isOnline: true,
+      lastSeen: '1 hour ago',
     },
   ];
 
@@ -259,7 +255,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Message</Text>
         <View style={styles.headerSpacer} />
@@ -354,7 +350,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 16,
@@ -371,9 +367,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSpacer: {

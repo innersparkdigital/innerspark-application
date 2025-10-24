@@ -105,7 +105,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Therapist Matching Quiz</Text>
         <TouchableOpacity style={styles.headerRight} onPress={handleSaveDraft}>
@@ -250,7 +250,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: appColors.AppLightGray },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 16,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },

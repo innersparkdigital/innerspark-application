@@ -247,7 +247,7 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Therapist Suggestions</Text>
         <View style={{ width: 40 }} />
@@ -271,7 +271,7 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: appColors.AppLightGray },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 16,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   backButton: { padding: 8, marginRight: 8 },
-  headerTitle: { flex: 1, fontSize: 20, fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold, textAlign: 'center' },
+  headerTitle: { flex: 1, fontSize: 20, fontWeight: 'bold', color: appColors.CardBackground, fontFamily: appFonts.headerTextBold, textAlign: 'center' },
   listContent: { padding: 16, paddingBottom: 32 },
   card: { backgroundColor: appColors.CardBackground, borderRadius: 16, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
   cardHeader: { flexDirection: 'row', marginBottom: 8 },

@@ -259,7 +259,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Session Feedback</Text>
           <TouchableOpacity 
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -505,9 +505,10 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    flex: 1,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   skipButton: {
