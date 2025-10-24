@@ -48,14 +48,23 @@ interface FeedbackData {
 
 interface PostSessionFeedbackScreenProps {
   navigation: NavigationProp<any>;
-  route: RouteProp<{ params: { sessionDetails: SessionDetails } }, 'params'>;
+  route: RouteProp<{ params: { sessionDetails?: SessionDetails; appointment?: any } }, 'params'>;
 }
 
 const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({ 
   navigation, 
   route 
 }) => {
-  const { sessionDetails } = route.params;
+  // Handle both sessionDetails and appointment params
+  const sessionDetails = route.params?.sessionDetails || route.params?.appointment || {
+    id: '1',
+    therapistName: 'Unknown Therapist',
+    therapistId: '1',
+    sessionDate: new Date().toLocaleDateString(),
+    sessionTime: '12:00 PM',
+    sessionDuration: 60,
+    sessionType: 'individual' as const,
+  };
   const toast = useToast();
   
   const [feedback, setFeedback] = useState<FeedbackData>({
@@ -161,12 +170,19 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString; // Return original if invalid
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch (error) {
+      return dateString;
+    }
   };
 
   const RatingSlider: React.FC<{
@@ -188,6 +204,8 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           trackStyle={styles.sliderTrack}
           minimumTrackTintColor={appColors.AppBlue}
           maximumTrackTintColor={appColors.grey5}
+          thumbTouchSize={{ width: 40, height: 40 }}
+          style={{ width: '100%' }}
         />
         <View style={styles.ratingLabels}>
           <Text style={styles.ratingLabel}>{labels[0]}</Text>
@@ -296,47 +314,61 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
 
           {/* Rating Sections */}
           <View style={styles.ratingsSection}>
-            <Text style={styles.sectionTitle}>Rate Your Experience</Text>
             
-            <RatingSlider
-              title="Overall Session Rating"
-              value={feedback.overallRating}
-              onValueChange={(value) => setFeedback(prev => ({ ...prev, overallRating: value }))}
-              labels={['Poor', 'Excellent']}
-            />
+          <RatingSlider
+            title="Overall Session Rating"
+            value={feedback.overallRating}
+            onValueChange={(value) => {
+              const numValue = Math.round(value);
+              setFeedback(prev => ({ ...prev, overallRating: numValue }));
+            }}
+            labels={['Poor', 'Excellent']}
+          />
 
-            <RatingSlider
-              title="Therapist Performance"
-              value={feedback.therapistRating}
-              onValueChange={(value) => setFeedback(prev => ({ ...prev, therapistRating: value }))}
-              labels={['Poor', 'Excellent']}
-            />
+          <RatingSlider
+            title="Therapist Performance"
+            value={feedback.therapistRating}
+            onValueChange={(value) => {
+              const numValue = Math.round(value);
+              setFeedback(prev => ({ ...prev, therapistRating: numValue }));
+            }}
+            labels={['Poor', 'Excellent']}
+          />
 
-            <RatingSlider
-              title="Session Effectiveness"
-              value={feedback.sessionEffectiveness}
-              onValueChange={(value) => setFeedback(prev => ({ ...prev, sessionEffectiveness: value }))}
-              labels={['Not Helpful', 'Very Helpful']}
-            />
+          <RatingSlider
+            title="Session Effectiveness"
+            value={feedback.sessionEffectiveness}
+            onValueChange={(value) => {
+              const numValue = Math.round(value);
+              setFeedback(prev => ({ ...prev, sessionEffectiveness: numValue }));
+            }}
+            labels={['Not Helpful', 'Very Helpful']}
+          />
 
-            <RatingSlider
-              title="Communication Quality"
-              value={feedback.communicationRating}
-              onValueChange={(value) => setFeedback(prev => ({ ...prev, communicationRating: value }))}
-              labels={['Poor', 'Excellent']}
-            />
+          <RatingSlider
+            title="Communication Quality"
+            value={feedback.communicationRating}
+            onValueChange={(value) => {
+              const numValue = Math.round(value);
+              setFeedback(prev => ({ ...prev, communicationRating: numValue }));
+            }}
+            labels={['Poor', 'Excellent']}
+          />
 
-            <RatingSlider
-              title="Environment/Setting"
-              value={feedback.environmentRating}
-              onValueChange={(value) => setFeedback(prev => ({ ...prev, environmentRating: value }))}
-              labels={['Uncomfortable', 'Very Comfortable']}
-            />
-          </View>
+          <RatingSlider
+            title="Environment/Setting"
+            value={feedback.environmentRating}
+            onValueChange={(value) => {
+              const numValue = Math.round(value);
+              setFeedback(prev => ({ ...prev, environmentRating: numValue }));
+            }}
+            labels={['Poor', 'Excellent']}
+          />
+        </View>
 
-          {/* Text Feedback Sections */}
-          <View style={styles.textFeedbackSection}>
-            <Text style={styles.sectionTitle}>Detailed Feedback</Text>
+        {/* Text Feedback Sections */}
+        <View style={styles.textFeedbackSection}>
+          <Text style={styles.sectionTitle}>Detailed Feedback</Text>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>What went well in this session? *</Text>
@@ -345,6 +377,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 multiline
                 numberOfLines={4}
                 placeholder="Describe what you found helpful or positive about this session..."
+                placeholderTextColor={appColors.grey3}
                 value={feedback.whatWentWell}
                 onChangeText={(text) => setFeedback(prev => ({ ...prev, whatWentWell: text }))}
                 maxLength={500}
@@ -361,6 +394,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 multiline
                 numberOfLines={3}
                 placeholder="How did this session help you progress toward your mental health goals?"
+                placeholderTextColor={appColors.grey3}
                 value={feedback.goalProgress}
                 onChangeText={(text) => setFeedback(prev => ({ ...prev, goalProgress: text }))}
                 maxLength={300}
@@ -377,6 +411,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 multiline
                 numberOfLines={3}
                 placeholder="What could be improved in future sessions?"
+                placeholderTextColor={appColors.grey3}
                 value={feedback.areasForImprovement}
                 onChangeText={(text) => setFeedback(prev => ({ ...prev, areasForImprovement: text }))}
                 maxLength={300}
@@ -393,6 +428,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 multiline
                 numberOfLines={3}
                 placeholder="Any specific concerns you'd like to address?"
+                placeholderTextColor={appColors.grey3}
                 value={feedback.specificConcerns}
                 onChangeText={(text) => setFeedback(prev => ({ ...prev, specificConcerns: text }))}
                 maxLength={300}
@@ -409,6 +445,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 multiline
                 numberOfLines={2}
                 placeholder="Did you experience any technical problems during the online session?"
+                placeholderTextColor={appColors.grey3}
                 value={feedback.technicalIssues}
                 onChangeText={(text) => setFeedback(prev => ({ ...prev, technicalIssues: text }))}
                 maxLength={200}
@@ -440,23 +477,6 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 I would like a follow-up contact from the wellness team
               </Text>
             </TouchableOpacity>
-          </View>
-
-          {/* Additional Comments */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Additional comments</Text>
-            <TextInput
-              style={styles.textInput}
-              multiline
-              numberOfLines={4}
-              placeholder="Any other feedback or suggestions you'd like to share?"
-              value={feedback.additionalComments}
-              onChangeText={(text) => setFeedback(prev => ({ ...prev, additionalComments: text }))}
-              maxLength={500}
-            />
-            <Text style={styles.characterCount}>
-              {feedback.additionalComments.length}/500
-            </Text>
           </View>
 
           {/* Submit Button */}
@@ -516,7 +536,7 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: 16,
-    color: appColors.grey3,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextMedium,
   },
   scrollView: {
@@ -602,15 +622,17 @@ const styles = StyleSheet.create({
   },
   sliderContainer: {
     paddingHorizontal: 8,
+    width: '100%',
   },
   sliderThumb: {
     backgroundColor: appColors.AppBlue,
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   sliderTrack: {
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
   },
   ratingLabels: {
     flexDirection: 'row',
@@ -660,7 +682,8 @@ const styles = StyleSheet.create({
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
     textAlignVertical: 'top',
-    minHeight: 80,
+    minHeight: 100,
+    backgroundColor: appColors.CardBackground,
   },
   characterCount: {
     fontSize: 12,

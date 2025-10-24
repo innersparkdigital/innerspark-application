@@ -72,6 +72,7 @@ import GoalsScreen from '../screens/GoalsScreen';
 import CreateGoalScreen from '../screens/goalScreens/CreateGoalScreen';
 import GoalDetailScreen from '../screens/goalScreens/GoalDetailScreen';
 import AppointmentsScreen from '../screens/therapistScreens/AppointmentsScreen';
+import AppointmentDetailsScreen from '../screens/therapistScreens/AppointmentDetailsScreen';
 
 // Services Screens
 import ServicesCatalogScreen from '../screens/servicesScreens/ServicesCatalogScreen';
@@ -86,6 +87,11 @@ import MoodPointsScreen from '../screens/moodScreens/MoodPointsScreen';
 // Report Screens
 import WeeklyReportScreen from '../screens/reportScreens/WeeklyReportScreen';
 import ReportDetailScreen from '../screens/reportScreens/ReportDetailScreen';
+
+// Meditation Screens
+import MeditationsScreen from '../screens/MeditationsScreen';
+import ArticleDetailScreen from '../screens/meditationScreens/ArticleDetailScreen';
+import SoundPlayerScreen from '../screens/meditationScreens/SoundPlayerScreen';
 
 // Emergency Screens
 import EmergencyLandingScreen from '../screens/emergencyScreens/EmergencyLandingScreen';
@@ -378,7 +384,17 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'My Appointments',
-                    ...TransitionPresets.RevealFromBottomAndroid
+                    ...TransitionPresets.SlideFromRightIOS
+                }}
+            />
+
+            <LHStack.Screen
+                name="AppointmentDetailsScreen"
+                component={AppointmentDetailsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Appointment Details',
+                    ...TransitionPresets.SlideFromRightIOS
                 }}
             />
 
@@ -581,6 +597,37 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Event Details',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Meditation Screens */}
+            <LHStack.Screen
+                name="MeditationScreen"
+                component={MeditationsScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Meditations',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="ArticleDetailScreen"
+                component={ArticleDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Article',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="SoundPlayerScreen"
+                component={SoundPlayerScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Sound Player',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

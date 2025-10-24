@@ -98,8 +98,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
       <ISGenericHeader
         title="Appearance"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       <ScrollView 
         style={styles.scrollView}

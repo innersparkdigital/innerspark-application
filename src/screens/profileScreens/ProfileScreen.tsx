@@ -18,7 +18,8 @@ import { Icon, Avatar, Button } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
-import LHGenericHeader from '../../components/LHGenericHeader';
+import ISGenericHeader from '../../components/ISGenericHeader';
+import ISStatusBar from '../../components/ISStatusBar';
 import { getFullname } from '../../global/LHShortcuts';
 
 // TypeScript interfaces
@@ -64,16 +65,12 @@ const ProfileField = ({
   value, 
   icon, 
   iconType = "material", 
-  onEdit, 
-  isEditable = true,
   isLast = false 
 }: {
   label: string;
   value: string;
   icon: string;
   iconType?: string;
-  onEdit?: () => void;
-  isEditable?: boolean;
   isLast?: boolean;
 }) => (
   <View style={[styles.profileField, isLast && styles.profileFieldLast]}>
@@ -87,18 +84,8 @@ const ProfileField = ({
         />
         <Text style={styles.fieldLabel}>{label}</Text>
       </View>
-      {isEditable && (
-        <TouchableOpacity onPress={onEdit} style={styles.editButton}>
-          <Icon 
-            type="material" 
-            name="edit" 
-            color={appColors.AppBlue} 
-            size={18} 
-          />
-        </TouchableOpacity>
-      )}
     </View>
-    <Text style={styles.fieldValue}>{value || 'Not provided'}</Text>
+    <Text style={styles.fieldValue}>{value || 'Not set'}</Text>
   </View>
 );
 
@@ -175,16 +162,10 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-        <LHGenericHeader
+        <ISStatusBar backgroundColor={appColors.AppBlue} />
+        <ISGenericHeader
           title="Profile"
-          subtitle="Loading..."
-          showLeftIcon={true}
-          leftIconPressed={() => navigation.goBack()}
-          leftIconName="chevron-left"
-          leftIconType="material"
-          rightIcon="settings"
-          rightIconPressed={() => navigation.navigate('SettingsScreen')}
+          navigation={navigation}
         />
         <ProfileSkeleton />
       </SafeAreaView>
@@ -193,17 +174,11 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      <ISStatusBar backgroundColor={appColors.AppBlue} />
       
-      <LHGenericHeader
+      <ISGenericHeader
         title="Profile"
-        subtitle="Manage your profile information"
-        showLeftIcon={true}
-        leftIconPressed={() => navigation.goBack()}
-        leftIconName="chevron-left"
-        leftIconType="material"
-        rightIcon="settings"
-        rightIconPressed={() => navigation.navigate('SettingsScreen')}
+        navigation={navigation}
       />
 
       <ScrollView 
@@ -241,93 +216,84 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             {getFullname(profileData.firstName, profileData.lastName)}
           </Text>
           
-          <Text style={styles.userRole}>{profileData.role}</Text>
-          
-          <View style={styles.statusContainer}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusText}>Active now</Text>
+          {/* header meta data */}
+          <View style={styles.metaDataContainer}>
+            <Text style={styles.userRole}>{profileData.role}</Text>
+            <View style={styles.statusContainer}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusText}>Active now</Text>
+            </View>
           </View>
+
         </View>
 
         {/* Profile Information */}
         <View style={styles.profileSection}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <TouchableOpacity 
+              style={styles.editProfileButton}
+              onPress={() => navigation.navigate('ProfileUpdateScreen')}
+            >
+              <Icon name="edit" type="material" color={appColors.AppBlue} size={18} />
+              <Text style={styles.editProfileText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
           
           <ProfileField
             label="First Name"
             value={profileData.firstName || ''}
             icon="person"
-            onEdit={() => handleEditField('firstName')}
           />
           
           <ProfileField
             label="Last Name"
             value={profileData.lastName || ''}
             icon="person-outline"
-            onEdit={() => handleEditField('lastName')}
           />
           
           <ProfileField
             label="Email Address"
             value={profileData.email || ''}
             icon="email"
-            onEdit={() => handleEditField('email')}
           />
           
           <ProfileField
             label="Phone Number"
             value={profileData.phone || ''}
             icon="phone"
-            onEdit={() => handleEditField('phone')}
           />
           
           <ProfileField
             label="Bio"
             value={profileData.bio || ''}
             icon="info"
-            onEdit={() => handleEditField('bio')}
             isLast={true}
           />
         </View>
 
         {/* Account Information */}
         <View style={styles.profileSection}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
+          <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Account Information</Text>
+          </View>
           
           <ProfileField
             label="Member Since"
             value={profileData.dateJoined || ''}
             icon="calendar-today"
-            isEditable={false}
           />
           
           <ProfileField
             label="Last Active"
             value={profileData.lastActive || ''}
             icon="access-time"
-            isEditable={false}
             isLast={true}
           />
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionSection}>
-          <Button
-            title="Edit Profile"
-            buttonStyle={styles.editProfileButton}
-            titleStyle={styles.editProfileButtonText}
-            onPress={() => navigation.navigate('ProfileUpdateScreen', { currentData: profileData })}
-            icon={
-              <Icon
-                type="material"
-                name="edit"
-                color={appColors.CardBackground}
-                size={20}
-                style={{ marginRight: 8 }}
-              />
-            }
-          />
-          
           <Button
             title="Account Settings"
             buttonStyle={styles.settingsButton}
@@ -395,11 +361,17 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },
+  metaDataContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
   userRole: {
     fontSize: 16,
     color: appColors.AppGray,
-    marginBottom: 12,
     fontFamily: appFonts.bodyTextMedium,
+    marginRight: 12,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -429,13 +401,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    paddingHorizontal: 20,
-    marginBottom: 15,
     fontFamily: appFonts.headerTextBold,
+    // paddingHorizontal: 0,
   },
   profileField: {
     paddingHorizontal: 20,
@@ -471,25 +449,24 @@ const styles = StyleSheet.create({
   editButton: {
     padding: 8,
   },
+  editProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: appColors.AppBlue + '10',
+    borderRadius: 8,
+  },
+  editProfileText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextBold,
+    marginLeft: 4,
+  },
   actionSection: {
     paddingHorizontal: 20,
     marginBottom: 20,
-  },
-  editProfileButton: {
-    backgroundColor: appColors.AppBlue,
-    borderRadius: 12,
-    paddingVertical: 15,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  editProfileButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: appFonts.bodyTextMedium,
   },
   settingsButton: {
     backgroundColor: 'transparent',

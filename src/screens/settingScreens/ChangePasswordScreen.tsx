@@ -149,8 +149,7 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation 
       <ISGenericHeader
         title="Change Password"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       <KeyboardAvoidingView
         style={styles.content}

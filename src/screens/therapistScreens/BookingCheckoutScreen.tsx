@@ -18,11 +18,18 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 
 const BookingCheckoutScreen = ({ navigation, route }) => {
-  const { therapist, selectedSlot } = route.params;
+  const { 
+    therapist, 
+    selectedSlot,
+    isExistingAppointment = false,
+    appointmentId = null,
+    sessionType = 'Individual Therapy',
+    location = '2 Avenue Street, Nakawa - Kampala Uganda, 3 km',
+  } = route.params;
   const toast = useToast();
   
   const [message, setMessage] = useState('');
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState(isExistingAppointment ? 'Payment for scheduled appointment' : '');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wellness_vault');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -31,10 +38,10 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
     date: selectedSlot?.date || 'Thu, 09 Apr',
     time: selectedSlot?.time || '08:00 AM',
     duration: '50 minutes',
-    sessionType: 'Individual Therapy',
-    price: therapist.price.replace('$', ''),
+    sessionType: sessionType,
+    price: therapist.price?.replace?.('$', '') || therapist.price,
     currency: 'UGX',
-    location: '2 Avenue Street, Nakawa - Kampala Uganda, 3 km',
+    location: location,
   };
 
   const paymentMethods = [
@@ -52,7 +59,7 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
   };
 
   const handlePayNow = async () => {
-    if (!reason.trim()) {
+    if (!isExistingAppointment && !reason.trim()) {
       toast.show({
         description: 'Please provide a reason for the visit',
         duration: 2000,
@@ -66,17 +73,28 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
     setTimeout(() => {
       setIsProcessing(false);
       
-      // Navigate to confirmation screen
-      navigation.navigate('BookingConfirmationScreen', {
-        therapist,
-        appointmentDetails: {
-          ...appointmentDetails,
-          message,
-          reason,
-          paymentMethod: paymentMethods.find(method => method.id === selectedPaymentMethod),
-          bookingId: 'BK' + Date.now().toString().slice(-6),
-        },
-      });
+      if (isExistingAppointment) {
+        // Payment for existing appointment
+        toast.show({
+          description: 'Payment successful! Your appointment is now confirmed.',
+          duration: 3000,
+        });
+        
+        // Navigate back to appointments screen
+        navigation.navigate('AppointmentsScreen');
+      } else {
+        // New booking flow
+        navigation.navigate('BookingConfirmationScreen', {
+          therapist,
+          appointmentDetails: {
+            ...appointmentDetails,
+            message,
+            reason,
+            paymentMethod: paymentMethods.find(method => method.id === selectedPaymentMethod),
+            bookingId: 'BK' + Date.now().toString().slice(-6),
+          },
+        });
+      }
     }, 2000);
   };
 
@@ -98,7 +116,9 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>{therapist.name} Confirmation</Text>
+          <Text style={styles.headerTitle}>
+          {isExistingAppointment ? 'Complete Payment' : `${therapist.name} Confirmation`}
+        </Text>
         </View>
         <Avatar
           source={therapist.image}
@@ -127,33 +147,37 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Message Input */}
-        <View style={styles.inputCard}>
-          <Text style={styles.inputLabel}>Message (Optional)</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Any specific concerns or topics you'd like to discuss..."
-            value={message}
-            onChangeText={setMessage}
-            multiline
-            numberOfLines={3}
-            placeholderTextColor={appColors.grey3}
-          />
-        </View>
+        {/* Message Input - Only show for new bookings */}
+        {!isExistingAppointment && (
+          <View style={styles.inputCard}>
+            <Text style={styles.inputLabel}>Message (Optional)</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Any specific concerns or topics you'd like to discuss..."
+              value={message}
+              onChangeText={setMessage}
+              multiline
+              numberOfLines={3}
+              placeholderTextColor={appColors.grey3}
+            />
+          </View>
+        )}
 
-        {/* Reason Input */}
-        <View style={styles.inputCard}>
-          <Text style={styles.inputLabel}>Reason for Visit *</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Brief description of what you'd like help with..."
-            value={reason}
-            onChangeText={setReason}
-            multiline
-            numberOfLines={2}
-            placeholderTextColor={appColors.grey3}
-          />
-        </View>
+        {/* Reason Input - Only show for new bookings */}
+        {!isExistingAppointment && (
+          <View style={styles.inputCard}>
+            <Text style={styles.inputLabel}>Reason for Visit *</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Brief description of what you'd like help with..."
+              value={reason}
+              onChangeText={setReason}
+              multiline
+              numberOfLines={2}
+              placeholderTextColor={appColors.grey3}
+            />
+          </View>
+        )}
 
         {/* Payment Summary */}
         <View style={styles.paymentSummaryCard}>

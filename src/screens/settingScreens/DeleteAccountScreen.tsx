@@ -18,6 +18,8 @@ import { Icon, Button, CheckBox } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import ISStatusBar from '../../components/ISStatusBar';
+import ISGenericHeader from '../../components/ISGenericHeader';
 
 interface DeleteAccountScreenProps {
   navigation: NavigationProp<any>;
@@ -152,17 +154,11 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Delete Account</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ISStatusBar backgroundColor={appColors.AppBlue} />
+      <ISGenericHeader
+        title="Delete Account"
+        navigation={navigation}
+      />
 
       <KeyboardAvoidingView
         style={styles.content}

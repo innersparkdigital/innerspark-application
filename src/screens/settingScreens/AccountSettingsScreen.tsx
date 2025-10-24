@@ -194,7 +194,6 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
       <ISGenericHeader
         title="Account Settings"
         navigation={navigation}
-        hasLightBackground={true}
       />
 
       <ScrollView 

@@ -204,8 +204,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       <ISGenericHeader
         title="Export Your Data"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       <ScrollView 
         style={styles.scrollView}

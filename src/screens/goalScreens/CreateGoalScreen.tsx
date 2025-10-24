@@ -3,7 +3,6 @@
  */
 import React, { useState } from 'react';
 import {
-  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -17,6 +16,7 @@ import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import ISStatusBar from '../../components/ISStatusBar';
 
 interface CreateGoalScreenProps {
   navigation: NavigationProp<any>;
@@ -131,12 +131,12 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
+      <ISStatusBar backgroundColor={appColors.AppBlue} />
       
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
-          <Icon name="close" type="material" color={appColors.grey1} size={24} />
+          <Icon name="close" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Goal</Text>
         <View style={styles.placeholder} />
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   placeholder: {

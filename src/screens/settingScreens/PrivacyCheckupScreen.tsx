@@ -377,8 +377,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
       <ISGenericHeader
         title="Privacy Checkup"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       {isScanning ? renderScanningView() : renderCheckupResults()}
     </SafeAreaView>

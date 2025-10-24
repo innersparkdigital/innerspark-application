@@ -96,7 +96,12 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
       const selectedSession = sessionTypes.find(st => st.id === selectedSessionType);
       navigation.navigate('BookingCheckoutScreen', { 
         therapist, 
-        sessionType: selectedSession 
+        selectedSlot: {
+          date: 'Select Date',
+          time: 'Select Time',
+        },
+        sessionType: selectedSession?.name || 'Individual Therapy',
+        location: therapist.location || 'Virtual Session',
       });
       // Enable DM after booking
       setIsDMEnabled(true);

@@ -133,8 +133,7 @@ const LanguageRegionSettingsScreen: React.FC<LanguageRegionSettingsScreenProps> 
       <ISGenericHeader
         title="Language & Region"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       <ScrollView 
         style={styles.scrollView}

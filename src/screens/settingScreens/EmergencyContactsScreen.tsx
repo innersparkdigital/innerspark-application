@@ -197,8 +197,7 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
       <ISGenericHeader
         title="Emergency Contacts"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       <ScrollView 
         style={styles.scrollView}

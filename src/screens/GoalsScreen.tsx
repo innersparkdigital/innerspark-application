@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect } from 'react';
 import {
-  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -16,7 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton, Tab, TabView, Button, FAB } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import Header from '../components/Header';
+import ISStatusBar from '../components/ISStatusBar';
+import ISGenericHeader from '../components/ISGenericHeader';
 import { NavigationProp } from '@react-navigation/native';
 
 interface Goal {
@@ -373,11 +373,9 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
-      <Header
+      <ISStatusBar backgroundColor={appColors.AppBlue} />
+      <ISGenericHeader
         title="My Goals"
-        type="chevron-left"
         navigation={navigation}
       />
 
@@ -434,6 +432,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: appColors.AppLightGray,
+  },
+  header: {
+    backgroundColor: appColors.AppBlue,
+    paddingTop: 10,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+    marginHorizontal: 12,
+  },
+  headerSpacer: {
+    width: 40,
   },
   tabIndicator: {
     backgroundColor: appColors.AppBlue,

@@ -11,6 +11,8 @@ import {
   Alert,
   Linking,
   Vibration,
+  Modal,
+  Dimensions,
 } from 'react-native';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
@@ -24,17 +26,22 @@ interface PanicButtonComponentProps {
   quickAction?: 'modal' | 'screen' | 'call';
 }
 
+const { width, height } = Dimensions.get('window');
+
 const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
   position = 'bottom-right',
   size = 'medium',
   showLabel = false,
-  quickAction = 'screen',
+  quickAction = 'modal',
 }) => {
   const navigation = useNavigation();
   const toast = useToast();
   const [isPressed, setIsPressed] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const modalScale = useRef(new Animated.Value(0)).current;
+  const modalOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     startPulseAnimation();
@@ -76,50 +83,99 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
     ]).start();
 
     setIsPressed(true);
-    
-    switch (quickAction) {
-      case 'screen':
-        navigation.navigate('PanicButtonScreen' as never);
-        break;
-      case 'modal':
-        showQuickActionModal();
-        break;
-      case 'call':
-        handleDirectCall();
-        break;
-      default:
-        navigation.navigate('EmergencyLandingScreen' as never);
-    }
+    setModalVisible(true);
+    showModalAnimation();
     
     setTimeout(() => setIsPressed(false), 200);
   };
 
-  const showQuickActionModal = () => {
-    Alert.alert(
-      'Emergency Help',
-      'Choose your emergency response:',
-      [
-        {
-          text: 'Call Counselor',
-          onPress: () => handleCall('+256-700-123-456', 'Counselor'),
-          style: 'destructive',
-        },
-        {
-          text: 'Crisis Line',
-          onPress: () => handleCall('+256-800-567-890', 'Crisis Line'),
-          style: 'destructive',
-        },
-        {
-          text: 'Emergency Screen',
-          onPress: () => navigation.navigate('EmergencyLandingScreen' as never),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+  const showModalAnimation = () => {
+    Animated.parallel([
+      Animated.spring(modalScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
+
+  const hideModalAnimation = () => {
+    Animated.parallel([
+      Animated.timing(modalScale, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(modalOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalVisible(false);
+      modalScale.setValue(0);
+      modalOpacity.setValue(0);
+    });
+  };
+
+  const handleCloseModal = () => {
+    Vibration.vibrate(50);
+    hideModalAnimation();
+  };
+
+  const emergencyActions = [
+    {
+      id: 1,
+      icon: 'phone',
+      label: 'Call\nCounselor',
+      color: '#2196F3',
+      action: () => {
+        hideModalAnimation();
+        setTimeout(() => handleCall('+256-700-123-456', 'Counselor'), 300);
+      },
+    },
+    {
+      id: 2,
+      icon: 'local-hospital',
+      label: 'Crisis\nLine',
+      color: '#FF5722',
+      action: () => {
+        hideModalAnimation();
+        setTimeout(() => handleCall('+256-800-567-890', 'Crisis Line'), 300);
+      },
+    },
+    {
+      id: 3,
+      icon: 'support-agent',
+      label: 'Emergency\nScreen',
+      color: '#9C27B0',
+      action: () => {
+        hideModalAnimation();
+        setTimeout(() => navigation.navigate('EmergencyLandingScreen' as never), 300);
+      },
+    },
+    {
+      id: 4,
+      icon: 'chat',
+      label: 'Quick\nChat',
+      color: '#4CAF50',
+      action: () => {
+        hideModalAnimation();
+        setTimeout(() => {
+          toast.show({
+            description: 'Opening crisis chat...',
+            duration: 2000,
+          });
+        }, 300);
+      },
+    },
+  ];
 
   const handleDirectCall = () => {
     Alert.alert(
@@ -207,43 +263,126 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
   const positionStyle = getPositionStyle();
 
   return (
-    <View style={[styles.container, positionStyle]}>
-      {showLabel && (
-        <View style={styles.labelContainer}>
-          <Text style={styles.labelText}>Emergency Help</Text>
-        </View>
-      )}
-      
-      <Animated.View
-        style={[
-          styles.pulseContainer,
-          buttonSize,
-          { transform: [{ scale: pulseAnim }] },
-        ]}
+    <>
+      {/* Panic Button */}
+      <View style={[styles.container, positionStyle]}>
+        {showLabel && (
+          <View style={styles.labelContainer}>
+            <Text style={styles.labelText}>Emergency Help</Text>
+          </View>
+        )}
+        
+        <Animated.View
+          style={[
+            styles.pulseContainer,
+            buttonSize,
+            { transform: [{ scale: pulseAnim }] },
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.button,
+              buttonSize,
+              isPressed && styles.buttonPressed,
+              { transform: [{ scale: scaleAnim }] },
+            ]}
+          >
+            <TouchableOpacity
+              style={[styles.touchable, buttonSize]}
+              onPress={handlePress}
+              activeOpacity={0.8}
+            >
+              <Icon
+                name="warning"
+                type="material"
+                color="#FFF"
+                size={iconSize}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        </Animated.View>
+      </View>
+
+      {/* Circular Overlay Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={handleCloseModal}
       >
         <Animated.View
           style={[
-            styles.button,
-            buttonSize,
-            isPressed && styles.buttonPressed,
-            { transform: [{ scale: scaleAnim }] },
+            styles.modalOverlay,
+            { opacity: modalOpacity },
           ]}
         >
           <TouchableOpacity
-            style={[styles.touchable, buttonSize]}
-            onPress={handlePress}
-            activeOpacity={0.8}
+            style={styles.modalBackground}
+            activeOpacity={1}
+            onPress={handleCloseModal}
+          />
+          
+          {/* Title on Overlay (Above Circle) */}
+          <View style={styles.modalHeaderOverlay}>
+            <Icon name="warning" type="material" color="#F44336" size={36} />
+            <Text style={styles.modalTitleOverlay}>Emergency Help</Text>
+            <Text style={styles.modalSubtitleOverlay}>Choose an action</Text>
+          </View>
+
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [{ scale: modalScale }],
+                opacity: modalOpacity,
+              },
+            ]}
           >
-            <Icon
-              name="warning"
-              type="material"
-              color="#FFF"
-              size={iconSize}
-            />
-          </TouchableOpacity>
+            {/* Circular Action Buttons */}
+            <View style={styles.actionsCircle}>
+              {emergencyActions.map((action, index) => {
+                const angle = (index * 90 - 45) * (Math.PI / 180);
+                const radius = 110;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+
+                return (
+                  <TouchableOpacity
+                    key={action.id}
+                    style={[
+                      styles.actionButton,
+                      {
+                        backgroundColor: action.color,
+                        transform: [{ translateX: x }, { translateY: y }],
+                      },
+                    ]}
+                    onPress={action.action}
+                    activeOpacity={0.8}
+                  >
+                    <Icon
+                      name={action.icon}
+                      type="material"
+                      color="#FFF"
+                      size={24}
+                    />
+                    <Text style={styles.actionLabel}>{action.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+
+              {/* Close Button - Absolutely Centered in Circle */}
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleCloseModal}
+                activeOpacity={0.8}
+              >
+                <Icon name="close" type="material" color="#666" size={32} />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
-    </View>
+      </Modal>
+    </>
   );
 };
 
@@ -285,6 +424,95 @@ const styles = StyleSheet.create({
   touchable: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  modalContent: {
+    width: width * 0.85,
+    aspectRatio: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 1000,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+  },
+  modalHeaderOverlay: {
+    position: 'absolute',
+    top: '10%',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  modalTitleOverlay: {
+    fontSize: 28,
+    fontFamily: appFonts.headerTextBold,
+    color: '#FFFFFF',
+    marginTop: 12,
+  },
+  modalSubtitleOverlay: {
+    fontSize: 15,
+    fontFamily: appFonts.headerTextRegular,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 6,
+  },
+  actionsCircle: {
+    width: 300,
+    height: 300,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  actionButton: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  actionLabel: {
+    fontSize: 11,
+    fontFamily: appFonts.headerTextBold,
+    color: '#FFF',
+    marginTop: 4,
+    textAlign: 'center',
+    lineHeight: 13,
+  },
+  closeButton: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    top: '50%',
+    left: '50%',
+    marginTop: -32,
+    marginLeft: -32,
   },
 });
 

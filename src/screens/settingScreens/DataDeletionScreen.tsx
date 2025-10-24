@@ -243,8 +243,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       <ISGenericHeader
         title="Delete My Data"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       <ScrollView 
         style={styles.scrollView}

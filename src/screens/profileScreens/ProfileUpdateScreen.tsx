@@ -3,8 +3,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { 
-  StatusBar,
+import {
   ScrollView,
   View, 
   Text, 
@@ -20,7 +19,8 @@ import { Icon, Avatar, Button, BottomSheet } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
-import LHGenericHeader from '../../components/LHGenericHeader';
+import ISGenericHeader from '../../components/ISGenericHeader';
+import ISStatusBar from '../../components/ISStatusBar';
 import { getFullname } from '../../global/LHShortcuts';
 
 // TypeScript interfaces
@@ -358,17 +358,11 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      <ISStatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       
-      <LHGenericHeader
+      <ISGenericHeader
         title="Edit Profile"
-        subtitle="Update your profile information"
-        showLeftIcon={true}
-        leftIconPressed={() => navigation.goBack()}
-        leftIconName="chevron-left"
-        leftIconType="material"
-        rightIcon="save"
-        rightIconPressed={() => handleSaveProfile()}
+        navigation={navigation}
       />
 
       <KeyboardAvoidingView 

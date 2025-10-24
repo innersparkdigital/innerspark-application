@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
@@ -38,6 +39,11 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
   // Sound & Vibration
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
+  
+  // Time Picker
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedHour, setSelectedHour] = useState(20); // 8 PM
+  const [selectedMinute, setSelectedMinute] = useState(0);
 
   const daysOfWeek = [
     { short: 'Sun', full: 'Sunday' },
@@ -65,10 +71,15 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
   };
 
   const handleTimePress = () => {
-    toast.show({
-      description: 'Time picker coming soon! Default is 8:00 PM',
-      duration: 2000,
-    });
+    setShowTimePicker(true);
+  };
+  
+  const handleTimeConfirm = () => {
+    const period = selectedHour >= 12 ? 'PM' : 'AM';
+    const displayHour = selectedHour > 12 ? selectedHour - 12 : selectedHour === 0 ? 12 : selectedHour;
+    const formattedTime = `${displayHour}:${selectedMinute.toString().padStart(2, '0')} ${period}`;
+    setReminderTime(formattedTime);
+    setShowTimePicker(false);
   };
 
   const handleSaveSettings = () => {
@@ -85,8 +96,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
       <ISGenericHeader
         title="Mood Reminders"
         navigation={navigation}
-        hasLightBackground={true}
-      />
+              />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         
@@ -273,6 +283,72 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Time Picker Modal */}
+      <Modal
+        visible={showTimePicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowTimePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.timePickerContainer}>
+            <View style={styles.timePickerHeader}>
+              <Text style={styles.timePickerTitle}>Select Time</Text>
+              <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                <Icon name="close" type="material" color={appColors.grey2} size={24} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.pickerRow}>
+              <ScrollView style={styles.pickerColumn} showsVerticalScrollIndicator={false}>
+                {Array.from({ length: 24 }, (_, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[styles.pickerItem, selectedHour === i && styles.pickerItemSelected]}
+                    onPress={() => setSelectedHour(i)}
+                  >
+                    <Text style={[styles.pickerText, selectedHour === i && styles.pickerTextSelected]}>
+                      {i.toString().padStart(2, '0')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              
+              <Text style={styles.pickerSeparator}>:</Text>
+              
+              <ScrollView style={styles.pickerColumn} showsVerticalScrollIndicator={false}>
+                {[0, 15, 30, 45].map((minute) => (
+                  <TouchableOpacity
+                    key={minute}
+                    style={[styles.pickerItem, selectedMinute === minute && styles.pickerItemSelected]}
+                    onPress={() => setSelectedMinute(minute)}
+                  >
+                    <Text style={[styles.pickerText, selectedMinute === minute && styles.pickerTextSelected]}>
+                      {minute.toString().padStart(2, '0')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+            
+            <View style={styles.timePickerActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowTimePicker(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={handleTimeConfirm}
+              >
+                <Text style={styles.confirmButtonText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
     </SafeAreaView>
   );
@@ -488,6 +564,98 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  timePickerContainer: {
+    backgroundColor: appColors.CardBackground,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 30,
+  },
+  timePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: appColors.grey6,
+  },
+  timePickerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    height: 200,
+  },
+  pickerColumn: {
+    width: 80,
+    height: 200,
+  },
+  pickerItem: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  pickerItemSelected: {
+    backgroundColor: appColors.AppBlue + '15',
+  },
+  pickerText: {
+    fontSize: 20,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextMedium,
+  },
+  pickerTextSelected: {
+    color: appColors.AppBlue,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
+  pickerSeparator: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: appColors.grey2,
+    marginHorizontal: 10,
+  },
+  timePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: appColors.grey6,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextBold,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: appColors.AppBlue,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
   },
 });
 

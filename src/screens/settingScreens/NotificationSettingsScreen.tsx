@@ -334,8 +334,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       <ISGenericHeader
         title="Notifications"
         navigation={navigation}
-        hasLightBackground={true}
-        hasRightIcon={true}
+                hasRightIcon={true}
         rightIconName="send"
         rightIconType="material"
         rightIconOnPress={() => {

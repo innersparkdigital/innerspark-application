@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   typeButtonActive: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.C,
   },
   typeLabel: {
     fontSize: 13,

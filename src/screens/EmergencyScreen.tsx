@@ -1,8 +1,7 @@
 /**
- * Emergency Screen - Crisis support and emergency contacts
+ * Emergency Screen - Comprehensive crisis support and emergency hub
  */
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -14,252 +13,90 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
+import ISStatusBar from '../components/ISStatusBar';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const EmergencyScreen = ({ navigation }) => {
-  const dispatch = useDispatch();
   const toast = useToast();
 
-  const emergencyContacts = [
+  // Quick emergency actions
+  const quickActions = [
     {
       id: 1,
-      name: 'Crisis Lifeline',
-      number: '988',
-      description: '24/7 suicide & crisis support',
-      type: 'crisis',
+      title: 'Call 988',
+      subtitle: 'Crisis Lifeline',
       icon: 'phone',
       color: '#E91E63',
-      urgent: true,
+      action: () => handleCall({ number: '988', name: 'Crisis Lifeline' }),
     },
     {
       id: 2,
-      name: 'Emergency Services',
-      number: '911',
-      description: 'Immediate medical emergency',
-      type: 'emergency',
+      title: 'Call 911',
+      subtitle: 'Emergency',
       icon: 'local-hospital',
       color: '#F44336',
-      urgent: true,
+      action: () => handleCall({ number: '911', name: 'Emergency Services' }),
     },
     {
       id: 3,
-      name: 'Crisis Text Line',
-      number: 'Text HOME to 741741',
-      description: 'Free 24/7 support via text',
-      type: 'text',
-      icon: 'message',
-      color: '#2196F3',
-      urgent: false,
-    },
-    {
-      id: 4,
-      name: 'SAMHSA Helpline',
-      number: '1-800-662-4357',
-      description: 'Treatment referral service',
-      type: 'support',
-      icon: 'support-agent',
-      color: '#4CAF50',
-      urgent: false,
-    },
-  ];
-
-  const copingTools = [
-    {
-      id: 1,
-      title: 'Deep Breathing',
-      description: '4-7-8 breathing technique',
-      icon: 'air',
-      color: '#4CAF50',
-      action: 'breathing',
-    },
-    {
-      id: 2,
-      title: '5-4-3-2-1 Grounding',
-      description: 'Focus on your senses',
+      title: 'Call Counselor',
+      subtitle: 'Talk to someone',
       icon: 'psychology',
       color: '#2196F3',
-      action: 'grounding',
-    },
-    {
-      id: 3,
-      title: 'Safe Space',
-      description: 'Visualize calm place',
-      icon: 'home',
-      color: '#FF9800',
-      action: 'safe_space',
+      action: () => {
+        Alert.alert(
+          'Crisis Counselor',
+          'Connect with a trained crisis counselor for immediate support.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Call Now', onPress: () => handleCall({ number: '+256-800-CRISIS', name: 'Crisis Counselor' }) },
+          ]
+        );
+      },
     },
     {
       id: 4,
-      title: 'Progressive Relaxation',
-      description: 'Muscle tension release',
-      icon: 'self-improvement',
-      color: '#9C27B0',
-      action: 'relaxation',
-    },
-  ];
-
-  const safetyResources = [
-    {
-      id: 1,
       title: 'Safety Plan',
-      description: 'Create your personal crisis plan',
+      subtitle: 'View your plan',
       icon: 'security',
-      action: 'safety_plan',
-    },
-    {
-      id: 2,
-      title: 'Find Therapist',
-      description: 'Connect with professionals',
-      icon: 'psychology',
-      action: 'therapists',
-    },
-    {
-      id: 3,
-      title: 'Support Groups',
-      description: 'Join peer support communities',
-      icon: 'groups',
-      action: 'support_groups',
+      color: '#4CAF50',
+      action: () => navigation.navigate('SafetyPlanScreen'),
     },
   ];
+
 
   const handleCall = (contact) => {
-    const phoneNumber = contact.number.replace(/[^0-9]/g, '');
+    const phoneNumber = contact.phone || contact.number;
+    const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
     
     Alert.alert(
       'Call ' + contact.name,
-      'Are you sure you want to call ' + contact.number + '?',
+      'Are you sure you want to call ' + phoneNumber + '?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Call',
           onPress: () => {
-            Linking.openURL(`tel:${phoneNumber}`);
+            Linking.openURL(`tel:${cleanNumber}`);
           },
         },
       ]
     );
   };
 
-  const handleQuickAction = (action) => {
-    switch (action) {
-      case 'breathing':
-        navigation.navigate('BreathingExercise');
-        break;
-      case 'grounding':
-        showGroundingTechnique();
-        break;
-      case 'safe_space':
-        showSafeSpaceVisualization();
-        break;
-      case 'contacts':
-        navigation.navigate('EmergencyContacts');
-        break;
-      default:
-        toast.show({
-          description: 'Feature coming soon!',
-          duration: 2000,
-        });
-    }
-  };
-
-  const showGroundingTechnique = () => {
-    Alert.alert(
-      '5-4-3-2-1 Grounding Technique',
-      'Take a deep breath and identify:\n\n' +
-      '• 5 things you can SEE\n' +
-      '• 4 things you can TOUCH\n' +
-      '• 3 things you can HEAR\n' +
-      '• 2 things you can SMELL\n' +
-      '• 1 thing you can TASTE\n\n' +
-      'This helps bring you back to the present moment.',
-      [{ text: 'OK' }]
-    );
-  };
-
-  const showSafeSpaceVisualization = () => {
-    Alert.alert(
-      'Safe Space Visualization',
-      'Close your eyes and imagine a place where you feel completely safe and calm.\n\n' +
-      'This could be:\n' +
-      '• A childhood bedroom\n' +
-      '• A peaceful beach\n' +
-      '• A cozy cabin\n' +
-      '• Anywhere you feel secure\n\n' +
-      'Focus on the details: colors, sounds, smells, and feelings of safety.',
-      [{ text: 'Start Visualization' }]
-    );
-  };
-
-  const notifyWithToast = (description) => {
-    toast.show({
-      description: description,
-      duration: 2000,
-    });
-  };
-
-  const EmergencyContactCard = ({ contact }) => (
-    <TouchableOpacity
-      style={[
-        styles.contactCard,
-        contact.type === 'emergency' && styles.emergencyCard
-      ]}
-      onPress={() => handleCall(contact)}
-    >
-      <View style={styles.contactHeader}>
-        <Icon
-          name={contact.icon}
-          type="material"
-          color={contact.type === 'emergency' ? '#F44336' : appColors.AppBlue}
-          size={30}
-        />
-        <View style={styles.contactInfo}>
-          <Text style={[
-            styles.contactName,
-            contact.type === 'emergency' && styles.emergencyText
-          ]}>
-            {contact.name}
-          </Text>
-          <Text style={styles.contactNumber}>{contact.number}</Text>
-          <Text style={styles.contactDescription}>{contact.description}</Text>
-        </View>
-        <Icon
-          name="phone"
-          type="material"
-          color={contact.type === 'emergency' ? '#F44336' : appColors.AppBlue}
-          size={25}
-        />
-      </View>
-    </TouchableOpacity>
-  );
-
-  const QuickActionCard = ({ action }) => (
-    <TouchableOpacity
-      style={styles.actionCard}
-      onPress={() => handleQuickAction(action.action)}
-    >
-      <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
-        <Icon
-          name={action.icon}
-          type="material"
-          color={action.color}
-          size={30}
-        />
-      </View>
-      <Text style={styles.actionTitle}>{action.title}</Text>
-      <Text style={styles.actionDescription}>{action.description}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#E91E63" barStyle="light-content" />
+      {/* <StatusBar backgroundColor="#E91E63" barStyle="light-content" /> */}
+      <ISStatusBar backgroundColor='#E91E63' />
       
       {/* Emergency Header */}
       <View style={styles.header}>
@@ -282,118 +119,34 @@ const EmergencyScreen = ({ navigation }) => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         
-        {/* Immediate Crisis Alert */}
-        <View style={styles.crisisSection}>
-          <View style={styles.crisisAlert}>
-            <Icon name="warning" type="material" color="#F44336" size={32} />
-            <View style={styles.crisisContent}>
-              <Text style={styles.crisisTitle}>In Immediate Danger?</Text>
-              <Text style={styles.crisisText}>
-                If you're having thoughts of self-harm or are in immediate danger, please reach out now.
-              </Text>
-            </View>
-          </View>
+        {/* Crisis Alert Banner */}
+        <View style={styles.crisisAlert}>
+          <Icon name="warning" type="material" color="#F44336" size={24} />
+          <Text style={styles.crisisText}>
+            If you're in immediate danger or having thoughts of self-harm, please reach out now.
+          </Text>
+        </View>
 
-          {/* Urgent Contacts */}
-          <View style={styles.urgentContacts}>
-            {emergencyContacts.filter(contact => contact.urgent).map((contact) => (
+        {/* Quick Emergency Actions */}
+        <View style={styles.quickActionsCard}>
+          <Text style={styles.quickActionsTitle}>Quick Emergency Actions</Text>
+          <View style={styles.quickActionsGrid}>
+            {quickActions.map((action) => (
               <TouchableOpacity
-                key={contact.id}
-                style={[styles.urgentContactCard, { borderLeftColor: contact.color }]}
-                onPress={() => handleCall(contact)}
+                key={action.id}
+                style={styles.quickActionButton}
+                onPress={action.action}
               >
-                <View style={[styles.urgentIconContainer, { backgroundColor: contact.color + '15' }]}>
-                  <Icon name={contact.icon} type="material" color={contact.color} size={24} />
+                <View style={[styles.quickActionIcon, { backgroundColor: action.color }]}>
+                  <Icon name={action.icon} type="material" color="#FFF" size={24} />
                 </View>
-                <View style={styles.urgentContactInfo}>
-                  <Text style={styles.urgentContactName}>{contact.name}</Text>
-                  <Text style={styles.urgentContactNumber}>{contact.number}</Text>
-                </View>
-                <View style={[styles.callButton, { backgroundColor: contact.color }]}>
-                  <Icon name="phone" type="material" color={appColors.CardBackground} size={20} />
-                </View>
+                <Text style={styles.quickActionTitle}>{action.title}</Text>
+                <Text style={styles.quickActionSubtitle}>{action.subtitle}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Immediate Coping Tools */}
-        <View style={styles.copingSection}>
-          <Text style={styles.sectionTitle}>Immediate Coping Tools</Text>
-          
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.copingScrollContainer}
-          >
-            {copingTools.map((tool) => (
-              <TouchableOpacity
-                key={tool.id}
-                style={styles.copingCard}
-                onPress={() => handleQuickAction(tool.action)}
-              >
-                <View style={[styles.copingIconContainer, { backgroundColor: tool.color + '15' }]}>
-                  <Icon name={tool.icon} type="material" color={tool.color} size={28} />
-                </View>
-                <Text style={styles.copingTitle}>{tool.title}</Text>
-                <Text style={styles.copingDescription}>{tool.description}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Additional Support Contacts */}
-        {/* <View style={styles.supportSection}>
-          <Text style={styles.sectionTitle}>Additional Support</Text>
-          
-          <View style={styles.supportContainer}>
-            {emergencyContacts.filter(contact => !contact.urgent).map((contact) => (
-              <TouchableOpacity
-                key={contact.id}
-                style={styles.supportContactCard}
-                onPress={() => handleCall(contact)}
-              >
-                <View style={[styles.supportIconContainer, { backgroundColor: contact.color + '15' }]}>
-                  <Icon name={contact.icon} type="material" color={contact.color} size={22} />
-                </View>
-                <View style={styles.supportContactInfo}>
-                  <Text style={styles.supportContactName}>{contact.name}</Text>
-                  <Text style={styles.supportContactDescription}>{contact.description}</Text>
-                  <Text style={styles.supportContactNumber}>{contact.number}</Text>
-                </View>
-                <Icon name="phone" type="material" color={appColors.grey3} size={20} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View> */}
-
-        {/* Safety & Resources */}
-        <View style={styles.resourcesSection}>
-          <Text style={styles.sectionTitle}>Safety & Resources</Text>
-          
-          {safetyResources.map((resource) => (
-            <TouchableOpacity
-              key={resource.id}
-              style={styles.resourceCard}
-              onPress={() => {
-                if (resource.action === 'therapists') {
-                  navigation.navigate('TherapistsScreen');
-                } else {
-                  notifyWithToast(`${resource.title} feature coming soon!`);
-                }
-              }}
-            >
-              <View style={styles.resourceIconContainer}>
-                <Icon name={resource.icon} type="material" color={appColors.AppBlue} size={24} />
-              </View>
-              <View style={styles.resourceContent}>
-                <Text style={styles.resourceTitle}>{resource.title}</Text>
-                <Text style={styles.resourceDescription}>{resource.description}</Text>
-              </View>
-              <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
-            </TouchableOpacity>
-          ))}
-        </View>
 
         {/* Encouraging Message */}
         <View style={styles.encouragementSection}>
@@ -446,14 +199,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
     marginBottom: 3,
   },
   headerSubtitle: {
     fontSize: 14,
     color: appColors.CardBackground,
     opacity: 0.9,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
   },
   emergencyIndicator: {
@@ -462,237 +215,81 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  crisisSection: {
-    backgroundColor: appColors.CardBackground,
-    margin: 20,
-    borderRadius: 20,
-    padding: 25,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
   crisisAlert: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFEBEE',
-    borderRadius: 15,
-    padding: 20,
+    marginHorizontal: 20,
+    marginTop: 20,
     marginBottom: 20,
-    borderLeftWidth: 5,
+    borderRadius: 12,
+    padding: 15,
+    borderLeftWidth: 4,
     borderLeftColor: '#F44336',
-  },
-  crisisContent: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  crisisTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#F44336',
-    marginBottom: 5,
-    fontFamily: appFonts.appTextBold,
   },
   crisisText: {
     fontSize: 14,
     color: '#D32F2F',
     lineHeight: 20,
-    fontFamily: appFonts.appTextRegular,
-  },
-  urgentContacts: {
-    gap: 12,
-  },
-  urgentContactCard: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  urgentIconContainer: {
-    borderRadius: 25,
-    width: 50,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
-  },
-  urgentContactInfo: {
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: 12,
     flex: 1,
   },
-  urgentContactName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
-    marginBottom: 3,
+  quickActionsCard: {
+    backgroundColor: appColors.CardBackground,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 20,
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  urgentContactNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E91E63',
-    fontFamily: appFonts.appTextBold,
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  callButton: {
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+  quickActionButton: {
+    width: '48%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  quickActionIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 8,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
-  copingSection: {
-    marginBottom: 25,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    marginBottom: 15,
-    marginHorizontal: 20,
-    fontFamily: appFonts.appTextBold,
-  },
-  copingScrollContainer: {
-    paddingHorizontal: 20,
-  },
-  copingCard: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    alignItems: 'center',
-    width: 160,
-    marginRight: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  copingIconContainer: {
-    borderRadius: 30,
-    width: 60,
-    height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  copingTitle: {
+  quickActionTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
-    marginBottom: 5,
-  },
-  copingDescription: {
-    fontSize: 12,
-    color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  supportSection: {
-    marginHorizontal: 20,
-    marginBottom: 25,
-  },
-  supportContainer: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  supportContactCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 15,
-    borderBottomWidth: 0.5,
-    borderBottomColor: appColors.grey4,
-  },
-  supportIconContainer: {
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
-  },
-  supportContactInfo: {
-    flex: 1,
-  },
-  supportContactName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
     marginBottom: 2,
   },
-  supportContactDescription: {
-    fontSize: 13,
-    color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
-    marginBottom: 3,
+  quickActionSubtitle: {
+    fontSize: 11,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    textAlign: 'center',
   },
-  supportContactNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: appColors.AppBlue,
-    fontFamily: appFonts.appTextMedium,
-  },
-  resourcesSection: {
-    marginHorizontal: 20,
-    marginBottom: 25,
-  },
-  resourceCard: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  resourceIconContainer: {
-    backgroundColor: appColors.AppLightGray,
-    borderRadius: 25,
-    width: 45,
-    height: 45,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
-  },
-  resourceContent: {
-    flex: 1,
-  },
-  resourceTitle: {
-    fontSize: 16,
+  quickActionsTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
-    marginBottom: 3,
-  },
-  resourceDescription: {
-    fontSize: 13,
-    color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
-    lineHeight: 18,
+    marginBottom: 16,
+    fontFamily: appFonts.headerTextBold,
   },
   encouragementSection: {
     marginHorizontal: 20,
@@ -715,19 +312,102 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#E91E63',
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
     marginTop: 15,
     marginBottom: 15,
   },
   encouragementText: {
     fontSize: 15,
     color: appColors.grey1,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
     lineHeight: 22,
   },
   bottomSpacing: {
     height: 30,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: appColors.CardBackground,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    flex: 1,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalText: {
+    fontSize: 15,
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: 15,
+    lineHeight: 22,
+  },
+  modalSteps: {
+    backgroundColor: appColors.AppLightGray,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+  },
+  modalStep: {
+    fontSize: 14,
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  modalFooter: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
+  modalActions: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  modalButton: {
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
   },
 });
 

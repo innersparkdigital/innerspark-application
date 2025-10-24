@@ -25,6 +25,7 @@ import { appImages, appLinks } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
 import { storeItemLS, removeItemLS, retrieveItemLS } from '../global/StorageActions';
 import { getFullname } from '../global/LHShortcuts';
+import ISStatusBar from '../components/ISStatusBar';
 
 // Returns a touchable opacity button that opens a url on press
 const OpenURLButton = ({ url, title }) => {
@@ -98,7 +99,7 @@ export default function AccountScreen({ navigation }){
 
     return(
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" translucent={false} animated={true} />
+        <ISStatusBar />
         
         {/* Curved Header with Profile */}
         <View style={styles.curvedHeader}>
@@ -111,9 +112,6 @@ export default function AccountScreen({ navigation }){
                 containerStyle={styles.avatarStyle}
                 avatarStyle={styles.avatarImageStyle}
               />
-              <TouchableOpacity style={styles.editAvatarButton} onPress={() => notifyWithToast('Edit profile photo coming soon!')}>
-                <Icon name="camera-alt" type="material" color="#FFF" size={16} />
-              </TouchableOpacity>
             </View>
             <Text style={styles.userName}>
               {getFullname(userDetails?.firstName, userDetails?.lastName) || 'Jane Doe'}
@@ -136,7 +134,7 @@ export default function AccountScreen({ navigation }){
               <View style={styles.shortcutsGrid}>
                 <TouchableOpacity 
                   style={styles.shortcutCard}
-                  onPress={() => notifyWithToast('Goals feature coming soon!')}
+                  onPress={() => navigation.navigate('GoalsScreen')}
                   activeOpacity={0.8}
                 >
                   <View style={[styles.shortcutIconContainer, { backgroundColor: '#FFC107' + '15' }]}>

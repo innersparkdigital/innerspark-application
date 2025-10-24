@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar } from '@rneui/base';
@@ -23,6 +24,8 @@ import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import { appImages } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
+import ISStatusBar from '../components/ISStatusBar';
+import PanicButtonComponent from '../components/PanicButtonComponent';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -40,6 +43,7 @@ const TherapistsScreen = ({ navigation, route }) => {
   const [recentSearches, setRecentSearches] = useState(['Anxiety therapy', 'Dr. Sarah', 'Couples counseling']);
   const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
   const [showFilters, setShowFilters] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Mock therapist data with complete information
   const therapists = [
@@ -161,6 +165,21 @@ const TherapistsScreen = ({ navigation, route }) => {
 
   const handleStartMatchingQuiz = () => {
     navigation.navigate('TherapistMatchingQuizScreen');
+  };
+
+  // Pull to refresh handler
+  const onRefresh = async () => {
+    setRefreshing(true);
+    
+    // Simulate API call to refresh therapist list
+    // In production, this would fetch fresh data from the server
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setRefreshing(false);
+    toast.show({
+      description: 'Therapist list refreshed',
+      duration: 2000,
+    });
   };
 
   const renderStars = (rating) => {
@@ -287,7 +306,7 @@ const TherapistsScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      <ISStatusBar backgroundColor={appColors.AppBlue} />
       
       {showBackButton ? (
         <LHGenericHeader
@@ -440,6 +459,14 @@ const TherapistsScreen = ({ navigation, route }) => {
             renderItem={({ item }) => <TherapistCard therapist={item} />}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[appColors.AppBlue]}
+                tintColor={appColors.AppBlue}
+              />
+            }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Icon
@@ -460,6 +487,13 @@ const TherapistsScreen = ({ navigation, route }) => {
         <Icon name="psychology" type="material" color={appColors.CardBackground} size={26} />
         <Text style={styles.fabText}>Match</Text>
       </TouchableOpacity>
+
+      {/* Panic Button */}
+      <PanicButtonComponent 
+        position="bottom-left" 
+        size="medium" 
+        quickAction="modal" 
+      />
     </SafeAreaView>
   );
 };

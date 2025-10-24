@@ -9,6 +9,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import ISStatusBar from '../components/ISStatusBar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },

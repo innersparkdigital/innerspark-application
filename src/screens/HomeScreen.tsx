@@ -145,14 +145,10 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   const quickActions = [
-    { id: 1, title: 'My Goals', icon: 'flag', color: '#4CAF50', screen: 'GoalsScreen' },
-    { id: 2, title: 'Therapy Groups', icon: 'people', color: '#2196F3', screen: 'GroupsScreen' },
-    { id: 3, title: 'Events', icon: 'event', color: '#FF9800', screen: 'EventsScreen' },
-    { id: 4, title: 'Sessions', icon: 'psychology', color: '#9C27B0', screen: 'AppointmentsScreen' },
-    { id: 5, title: 'Services', icon: 'shopping-cart', color: '#00BCD4', screen: 'ServicesCatalogScreen' },
-    { id: 6, title: 'Mood Tracker', icon: 'mood', color: '#E91E63', screen: 'MoodScreen' },
-    { id: 7, title: 'Emergency', icon: 'emergency', color: '#F44336', screen: 'EmergencyScreen' },
-    { id: 8, title: 'Meditation', icon: 'self-improvement', color: '#673AB7', screen: 'MeditationScreen' },
+    { id: 1, title: 'Therapy Groups', icon: 'people', color: '#2196F3', screen: 'GroupsScreen' },
+    { id: 2, title: 'Events', icon: 'event', color: '#FF9800', screen: 'EventsScreen' },
+    { id: 3, title: 'Services', icon: 'shopping-cart', color: '#00BCD4', screen: 'ServicesCatalogScreen' },
+    { id: 4, title: 'Meditation', icon: 'self-improvement', color: '#673AB7', screen: 'MeditationScreen' },
   ];
 
   // Initialize notification system on component mount
@@ -201,7 +197,7 @@ const HomeScreen = ({ navigation }) => {
 
   const handleQuickAction = (action) => {
     const bottomTabScreens = ['TherapistsScreen', 'MoodScreen', 'EmergencyScreen']; // Tabs screens available
-    const stackScreens = ['AppointmentsScreen', 'GoalsScreen', 'EventsScreen', 'GroupsScreen', 'ServicesCatalogScreen']; // Available screens that can be navigated to directly
+    const stackScreens = ['AppointmentsScreen', 'GoalsScreen', 'EventsScreen', 'GroupsScreen', 'ServicesCatalogScreen', 'MeditationScreen']; // Available screens that can be navigated to directly
     
     if (bottomTabScreens.includes(action.screen)) {
       // Navigate to the bottom tab screen

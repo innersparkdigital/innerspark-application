@@ -17,6 +17,8 @@ import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import ISStatusBar from '../../components/ISStatusBar';
+import ISGenericHeader from '../../components/ISGenericHeader';
 
 interface SecuritySettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -317,17 +319,11 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Security & Password</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ISStatusBar backgroundColor={appColors.AppBlue} />
+      <ISGenericHeader
+        title="Security Settings"
+        navigation={navigation}
+      />
 
       {/* Security Status */}
       <View style={styles.statusCard}>
