@@ -23,11 +23,8 @@ const WellnessVaultScreen = ({ navigation }) => {
   const toast = useToast();
   const userDetails = useSelector(state => state.userData.userDetails);
 
-  // Mock data - in real app this would come from API/Redux
-  const vaultData = {
-    balance: 350000,
-    currency: 'UGX'
-  };
+  // Conversion rate: 100 points = 1000 UGX (10 UGX per point)
+  const POINTS_TO_UGX_RATE = 10;
 
   const fundingChannels = [
     {
@@ -40,52 +37,77 @@ const WellnessVaultScreen = ({ navigation }) => {
     },
     {
       id: 2,
-      name: 'Rewards',
+      name: 'Reward Points',
       amount: 1500,
       currency: 'Points',
       icon: 'stars',
       color: '#4CAF50',
+      cashEquivalent: 15000, // 1500 points * 10 UGX
     },
     {
       id: 3,
       name: 'Wellness Credits',
       amount: 20000,
       currency: 'UGX',
-      icon: 'health-and-safety',
+      icon: 'volunteer-activism',
       color: '#2196F3',
+      description: 'Platform donation funds',
     },
   ];
+
+  // Calculate total balance: MoMo + Rewards (converted) + Wellness Credits
+  const calculateTotalBalance = () => {
+    const momoFunds = fundingChannels[0].amount;
+    const rewardsInCash = fundingChannels[1].cashEquivalent;
+    const wellnessCredits = fundingChannels[2].amount;
+    return momoFunds + rewardsInCash + wellnessCredits;
+  };
+
+  const vaultData = {
+    balance: calculateTotalBalance(),
+    currency: 'UGX'
+  };
 
   const recentActivities = [
     {
       id: 1,
-      description: 'Wellness Vault credited with 50,000 UGX...',
-      time: '10:00 AM',
+      description: 'MoMo Top-up',
+      amount: '+50,000 UGX',
+      time: '2 hours ago',
       type: 'credit',
+      icon: 'add-circle',
     },
     {
       id: 2,
-      description: 'Wellness Vault credited with 30,000 UGX...',
-      time: '10:00 AM',
-      type: 'credit',
+      description: 'Therapy Session Payment',
+      amount: '-30,000 UGX',
+      time: 'Yesterday',
+      type: 'debit',
+      icon: 'remove-circle',
     },
     {
       id: 3,
-      description: 'Wellness Vault credited with 30,000 UGX...',
-      time: '10:00 AM',
+      description: 'Wellness Credits Received',
+      amount: '+20,000 UGX',
+      time: '2 days ago',
       type: 'credit',
+      icon: 'volunteer-activism',
     },
     {
       id: 4,
-      description: 'Wellness Vault credited with 50,000 UGX...',
-      time: '10:00 AM',
-      type: 'credit',
+      description: 'Event Registration',
+      amount: '-15,000 UGX',
+      time: '3 days ago',
+      type: 'debit',
+      icon: 'remove-circle',
     },
     {
       id: 5,
-      description: 'Wellness Vault credited with 50,000 UGX...',
-      time: '10:00 AM',
+      description: 'Reward Points Redeemed',
+      amount: '+5,000 UGX',
+      time: '5 days ago',
       type: 'credit',
+      icon: 'stars',
     },
   ];
 
@@ -95,10 +117,7 @@ const WellnessVaultScreen = ({ navigation }) => {
   };
 
   const handleViewAll = () => {
-    toast.show({
-      description: 'View all activities feature coming soon!',
-      duration: 2000,
-    });
+    navigation.navigate('TransactionHistoryScreen');
   };
 
   const formatCurrency = (amount, currency) => {
@@ -110,32 +129,45 @@ const WellnessVaultScreen = ({ navigation }) => {
 
   const FundingChannelCard = ({ channel }) => (
     <View style={styles.fundingCard}>
-      <Icon
-        name={channel.icon}
-        type="material"
-        color={channel.color}
-        size={24}
-      />
+      <View style={[styles.fundingIconContainer, { backgroundColor: channel.color + '20' }]}>
+        <Icon
+          name={channel.icon}
+          type="material"
+          color={channel.color}
+          size={24}
+        />
+      </View>
       <Text style={styles.fundingName}>{channel.name}</Text>
       <Text style={styles.fundingAmount}>
         {formatCurrency(channel.amount, channel.currency)}
       </Text>
       <Text style={styles.fundingCurrency}>{channel.currency}</Text>
+      {channel.cashEquivalent && (
+        <Text style={styles.fundingEquivalent}>
+          ≈ {formatCurrency(channel.cashEquivalent, 'UGX')} UGX
+        </Text>
+      )}
     </View>
   );
 
   const ActivityItem = ({ activity }) => (
     <View style={styles.activityItem}>
       <Icon
-        name="trending-up"
+        name={activity.icon}
         type="material"
-        color={appColors.AppBlue}
+        color={activity.type === 'credit' ? '#4CAF50' : '#F44336'}
         size={20}
       />
       <View style={styles.activityContent}>
         <Text style={styles.activityDescription}>{activity.description}</Text>
+        <Text style={styles.activityTime}>{activity.time}</Text>
       </View>
-      <Text style={styles.activityTime}>{activity.time}</Text>
+      <Text style={[
+        styles.activityAmount,
+        activity.type === 'credit' ? styles.creditAmount : styles.debitAmount
+      ]}>
+        {activity.amount}
+      </Text>
     </View>
   );
 
@@ -145,22 +177,9 @@ const WellnessVaultScreen = ({ navigation }) => {
       
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.moodButton}>
-            <Icon name="mood" type="material" color={appColors.CardBackground} size={28} />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.headerBottomRow}>
-          <Text style={styles.headerTitle}>WellnessVault</Text>
-          <Text style={styles.headerSubtitle}>View your points, top-ups, and rewards</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Wellness Vault</Text>
+          <Text style={styles.headerSubtitle}>Your wellness funding hub</Text>
         </View>
       </View>
 
@@ -228,17 +247,8 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
     paddingHorizontal: 20,
   },
-  headerTopRow: {
-    flexDirection: 'row',
+  headerContent: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  headerBottomRow: {
-    alignItems: 'center',
-  },
-  backButton: {
-    padding: 8,
   },
   headerTitle: {
     fontSize: 24,
@@ -254,9 +264,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     fontFamily: appFonts.appTextRegular,
     textAlign: 'center',
-  },
-  moodButton: {
-    padding: 8,
   },
   scrollView: {
     flex: 1,
@@ -345,7 +352,7 @@ const styles = StyleSheet.create({
   fundingCard: {
     width: '32%',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 15,
     paddingHorizontal: 8,
     alignItems: 'center',
@@ -354,6 +361,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+  },
+  fundingIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   fundingName: {
     fontSize: 12,
@@ -377,6 +392,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: appFonts.appTextRegular,
   },
+  fundingEquivalent: {
+    fontSize: 9,
+    color: appColors.grey3,
+    textAlign: 'center',
+    fontFamily: appFonts.appTextRegular,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
   activitiesContainer: {
     backgroundColor: appColors.CardBackground,
     borderRadius: 10,
@@ -392,21 +415,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: appColors.grey4,
+    borderBottomColor: appColors.grey6,
   },
   activityContent: {
     flex: 1,
     marginLeft: 12,
   },
   activityDescription: {
-    fontSize: 12,
+    fontSize: 13,
     color: appColors.grey1,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.appTextMedium,
+    marginBottom: 2,
   },
   activityTime: {
-    fontSize: 10,
+    fontSize: 11,
     color: appColors.grey3,
     fontFamily: appFonts.appTextRegular,
+  },
+  activityAmount: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: appFonts.appTextMedium,
+  },
+  creditAmount: {
+    color: '#4CAF50',
+  },
+  debitAmount: {
+    color: '#F44336',
   },
 });
 

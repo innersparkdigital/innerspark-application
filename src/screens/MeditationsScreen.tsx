@@ -8,6 +8,7 @@ import {
   Image,
   Dimensions,
   FlatList,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
@@ -51,6 +52,7 @@ interface Quote {
 const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<'articles' | 'sounds' | 'quotes'>('articles');
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const quoteFlatListRef = useRef<FlatList>(null);
 
   const articles: Article[] = [
@@ -271,6 +273,14 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
     </View>
   );
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // Simulate API call to refresh data
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    // In real app, fetch fresh data here
+    setRefreshing(false);
+  };
+
   const handleShareQuote = async (quote: Quote) => {
     try {
       const { Share } = await import('react-native');
@@ -407,7 +417,18 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
       {activeTab === 'quotes' ? (
         renderQuotes()
       ) : (
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[appColors.AppBlue]}
+              tintColor={appColors.AppBlue}
+            />
+          }
+        >
           {activeTab === 'articles' && renderArticles()}
           {activeTab === 'sounds' && renderSounds()}
           <View style={styles.bottomSpacing} />

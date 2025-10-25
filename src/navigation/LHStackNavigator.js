@@ -10,6 +10,8 @@ import LHBottomTabs from './LHBottomTabs';
 // Wellness Vault Screens
 import WellnessVaultScreen from '../screens/vaultScreens/WellnessVaultScreen';
 import MoMoTopupScreen from '../screens/vaultScreens/MoMoTopupScreen';
+import TransactionHistoryScreen from '../screens/vaultScreens/TransactionHistoryScreen';
+import TransactionDetailScreen from '../screens/vaultScreens/TransactionDetailScreen';
 
 import AboutAppScreen from '../screens/AboutAppScreen';
 import ProfileScreen from '../screens/profileScreens/ProfileScreen';
@@ -95,6 +97,7 @@ import ArticleDetailScreen from '../screens/meditationScreens/ArticleDetailScree
 import SoundPlayerScreen from '../screens/meditationScreens/SoundPlayerScreen';
 
 // Emergency Screens
+import EmergencyScreen from '../screens/EmergencyScreen';
 import EmergencyLandingScreen from '../screens/emergencyScreens/EmergencyLandingScreen';
 import PanicButtonScreen from '../screens/emergencyScreens/PanicButtonScreen';
 import SafetyPlanScreen from '../screens/emergencyScreens/SafetyPlanScreen';
@@ -143,8 +146,9 @@ export default function LHStackNavigator(){
                 }}
             />
 
-            {/* Note: Bottom Tab screens (HomeScreen, MoodScreen, TherapistsScreen, AccountScreen, EmergencyScreen) 
-                 are now only defined in LHBottomTabs to avoid navigation conflicts */}
+            {/* Note: Bottom Tab screens (HomeScreen, MoodScreen, TherapistsScreen, WellnessVaultScreen, AccountScreen) 
+                 are now only defined in LHBottomTabs to avoid navigation conflicts.
+                 EmergencyScreen was moved from bottom tabs to stack navigator. */}
 
             <LHStack.Screen
                 name="AboutAppScreen"
@@ -174,6 +178,28 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: '',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Transaction History Screen */}
+            <LHStack.Screen
+                name="TransactionHistoryScreen"
+                component={TransactionHistoryScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Transaction History',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            {/* Transaction Detail Screen */}
+            <LHStack.Screen
+                name="TransactionDetailScreen"
+                component={TransactionDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Transaction Details',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />
@@ -766,6 +792,16 @@ export default function LHStackNavigator(){
             />
 
             {/* Emergency Screens */}
+            <LHStack.Screen
+                name="EmergencyScreen"
+                component={EmergencyScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Emergency',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
             <LHStack.Screen
                 name="EmergencyLandingScreen"
                 component={EmergencyLandingScreen}

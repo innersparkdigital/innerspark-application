@@ -141,7 +141,7 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
             
             <View style={styles.metaRow}>
               <View style={styles.typeChip}>
-                <Text style={styles.typeText}>{notification.type.toUpperCase()}</Text>
+                <Text style={styles.typeText}>{notification.type?.toUpperCase() || 'NOTIFICATION'}</Text>
               </View>
               <Text style={styles.timestamp}>
                 {formatFullTimestamp(notification.timestamp)}

@@ -305,7 +305,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
             color={appColors.CardBackground} 
             size={14} 
           />
-          <Text style={styles.statusText}>{invoice.status.toUpperCase()}</Text>
+          <Text style={styles.statusText}>{invoice.status?.toUpperCase() || 'UNKNOWN'}</Text>
         </View>
       </View>
       

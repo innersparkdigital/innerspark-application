@@ -23,7 +23,7 @@ const WellnessTipCard: React.FC<WellnessTipCardProps> = ({
   onRefresh,
 }) => {
   const getCategoryColor = (cat: string) => {
-    switch(cat.toLowerCase()) {
+    switch(cat?.toLowerCase()) {
       case 'mindfulness': return '#9C27B0';
       case 'exercise': return '#4CAF50';
       case 'social': return '#2196F3';

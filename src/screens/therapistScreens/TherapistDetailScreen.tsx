@@ -47,6 +47,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
   const [selectedTab, setSelectedTab] = useState('About');
   const [selectedSessionType, setSelectedSessionType] = useState('individual');
   const [isDMEnabled, setIsDMEnabled] = useState(false); // DM enabled after booking
+  const [selectedSlot, setSelectedSlot] = useState<any>(null); // Track selected slot
 
   const tabs = ['About', 'Reviews', 'Availability'];
   
@@ -92,25 +93,33 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
   ];
 
   const handleBookNow = () => {
-    if (therapist.available) {
-      const selectedSession = sessionTypes.find(st => st.id === selectedSessionType);
-      navigation.navigate('BookingCheckoutScreen', { 
-        therapist, 
-        selectedSlot: {
-          date: 'Select Date',
-          time: 'Select Time',
-        },
-        sessionType: selectedSession?.name || 'Individual Therapy',
-        location: therapist.location || 'Virtual Session',
-      });
-      // Enable DM after booking
-      setIsDMEnabled(true);
-    } else {
+    if (!therapist.available) {
       toast.show({
         description: 'This therapist is currently unavailable',
         duration: 3000,
       });
+      return;
     }
+
+    if (!selectedSlot) {
+      toast.show({
+        description: 'Please select an available time slot from the Availability tab',
+        duration: 3000,
+      });
+      // Switch to Availability tab to help user
+      setSelectedTab('Availability');
+      return;
+    }
+
+    const selectedSession = sessionTypes.find(st => st.id === selectedSessionType);
+    navigation.navigate('BookingCheckoutScreen', { 
+      therapist, 
+      selectedSlot: selectedSlot,
+      sessionType: selectedSession?.name || 'Individual Therapy',
+      location: therapist.location || 'Virtual Session',
+    });
+    // Enable DM after booking
+    setIsDMEnabled(true);
   };
 
   const handleDM = () => {
@@ -131,9 +140,10 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
 
   const handleSlotSelect = (slot: any) => {
     if (slot.available) {
-      navigation.navigate('BookingCheckoutScreen', { 
-        therapist, 
-        selectedSlot: slot 
+      setSelectedSlot(slot);
+      toast.show({
+        description: `Selected: ${slot.date} at ${slot.time}`,
+        duration: 2000,
       });
     }
   };
@@ -221,7 +231,8 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
                   key={slot.id}
                   style={[
                     styles.slotItem,
-                    !slot.available && styles.slotUnavailable
+                    !slot.available && styles.slotUnavailable,
+                    selectedSlot?.id === slot.id && styles.slotSelected
                   ]}
                   onPress={() => handleSlotSelect(slot)}
                   disabled={!slot.available}
@@ -748,6 +759,11 @@ const styles = StyleSheet.create({
   slotUnavailable: {
     backgroundColor: '#F5F5F5',
     opacity: 0.6,
+  },
+  slotSelected: {
+    backgroundColor: appColors.AppBlue + '20',
+    borderColor: appColors.AppBlue,
+    borderWidth: 2,
   },
   slotDate: {
     fontSize: 14,

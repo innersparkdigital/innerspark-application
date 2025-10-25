@@ -201,13 +201,13 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
             <View style={styles.statusRow}>
               <View style={[styles.statusChip, { backgroundColor: statusColor + '20' }]}>
                 <Text style={[styles.statusText, { color: statusColor }]}>
-                  {currentGoal.status.toUpperCase()}
+                  {currentGoal.status?.toUpperCase() || 'UNKNOWN'}
                 </Text>
               </View>
               <View style={styles.priorityContainer}>
                 <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
                 <Text style={[styles.priorityText, { color: priorityColor }]}>
-                  {currentGoal.priority.toUpperCase()} PRIORITY
+                  {currentGoal.priority?.toUpperCase() || 'UNKNOWN'} PRIORITY
                 </Text>
               </View>
             </View>

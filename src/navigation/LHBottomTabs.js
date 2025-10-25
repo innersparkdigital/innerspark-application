@@ -7,8 +7,8 @@ import { appColors, appImages } from '../global/Styles';
 import HomeScreen from '../screens/HomeScreen';
 import MoodScreen from '../screens/MoodScreen';
 import TherapistsScreen from '../screens/TherapistsScreen';
+import WellnessVaultScreen from '../screens/vaultScreens/WellnessVaultScreen';
 import AccountScreen from '../screens/AccountScreen';
-import EmergencyScreen from '../screens/EmergencyScreen';
 
 const BottomTab = createBottomTabNavigator();
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -24,8 +24,8 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
       HomeScreen: { icon: 'home', type: 'material' },
       MoodScreen: { icon: 'mood', type: 'material' },
       TherapistsScreen: { icon: 'people', type: 'material' },
+      WellnessVaultScreen: { icon: 'account-balance-wallet', type: 'material' },
       AccountScreen: { icon: 'person', type: 'material' },
-      EmergencyScreen: { icon: 'emergency', type: 'material' },
     };
 
     const iconConfig = iconMap[name];
@@ -74,8 +74,8 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
         <TabButton name="HomeScreen" label="Home" />
         <TabButton name="MoodScreen" label="Mood" />
         <TabButton name="TherapistsScreen" label="Therapists" />
+        <TabButton name="WellnessVaultScreen" label="Wallet" />
         <TabButton name="AccountScreen" label="Account" />
-        <TabButton name="EmergencyScreen" label="Emergency" />
       </View>
     </View>
   );
@@ -92,8 +92,8 @@ const LHBottomTabs = () => {
       <BottomTab.Screen name="HomeScreen" component={HomeScreen} />
       <BottomTab.Screen name="MoodScreen" component={MoodScreen} />
       <BottomTab.Screen name="TherapistsScreen" component={TherapistsScreen} />
+      <BottomTab.Screen name="WellnessVaultScreen" component={WellnessVaultScreen} />
       <BottomTab.Screen name="AccountScreen" component={AccountScreen} />
-      <BottomTab.Screen name="EmergencyScreen" component={EmergencyScreen} />
     </BottomTab.Navigator>
   );
 };

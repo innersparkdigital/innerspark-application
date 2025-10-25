@@ -138,7 +138,7 @@ export default function AccountScreen({ navigation }){
                   activeOpacity={0.8}
                 >
                   <View style={[styles.shortcutIconContainer, { backgroundColor: '#FFC107' + '15' }]}>
-                    <Icon name="flag" type="material" color="#FFC107" size={26} />
+                    <Icon name="flag" type="material" color="#FFC107" size={24} />
                   </View>
                   <Text style={styles.shortcutText}>Goals</Text>
                 </TouchableOpacity>
@@ -149,25 +149,46 @@ export default function AccountScreen({ navigation }){
                   activeOpacity={0.8}
                 >
                   <View style={[styles.shortcutIconContainer, { backgroundColor: '#2196F3' + '15' }]}>
-                    <Icon name="event" type="material" color="#2196F3" size={26} />
+                    <Icon name="event" type="material" color="#2196F3" size={24} />
                   </View>
                   <Text style={styles.shortcutText}>Appointments</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.shortcutCard}
-                  onPress={() => navigation.navigate('WellnessVaultScreen')}
+                  onPress={() => navigation.navigate('EventsScreen')}
                   activeOpacity={0.8}
                 >
-                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#4CAF50' + '15' }]}>
-                    <Icon name="health-and-safety" type="material" color="#4CAF50" size={26} />
+                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#E91E63' + '15' }]}>
+                    <Icon name="celebration" type="material" color="#E91E63" size={24} />
                   </View>
-                  <Text style={styles.shortcutText}>Wellness Vault</Text>
+                  <Text style={styles.shortcutText}>Events</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Menu Section */}
+            {/* My Services Section */}
+            <View style={styles.menuSection}>
+                <Text style={styles.menuSectionTitle}>My Services</Text>
+                <MenuRow
+                    icon="card-membership"
+                    title="My Subscription"
+                    subtitle="Manage your plan and billing"
+                    onPress={() => navigation.navigate('ServicesScreen', { initialTab: 'subscription' })}
+                    iconColor="#FF9800"
+                />
+                
+                <MenuRow
+                    icon="event-available"
+                    title="My Events"
+                    subtitle="View registered events and workshops"
+                    onPress={() => navigation.navigate('EventsScreen')}
+                    iconColor="#E91E63"
+                    isLast={true}
+                />
+            </View>
+
+            {/* Account Section */}
             <View style={styles.menuSection}>
                 <Text style={styles.menuSectionTitle}>Account</Text>
                 <MenuRow
@@ -192,12 +213,21 @@ export default function AccountScreen({ navigation }){
                     subtitle="View your wellness progress"
                     onPress={() => navigation.navigate('WeeklyReportScreen')}
                     iconColor="#FF5722"
+                    isLast={true}
                 />
             </View>
 
             {/* Support Section */}
             <View style={styles.menuSection}>
                 <Text style={styles.menuSectionTitle}>Support</Text>
+                <MenuRow
+                    icon="emergency"
+                    title="Emergency"
+                    subtitle="Crisis support and hotlines"
+                    onPress={() => navigation.navigate('EmergencyScreen')}
+                    iconColor="#F44336"
+                />
+                
                 <MenuRow
                     icon="help"
                     title="Help Center"
@@ -212,62 +242,9 @@ export default function AccountScreen({ navigation }){
                     subtitle="Version, terms, and privacy"
                     onPress={() => navigation.navigate('AboutAppScreen')}
                     iconColor="#607D8B"
-                />
-                
-                {/* <MenuRow
-                    icon="logout"
-                    title="Logout"
-                    onPress={() => setIsLogoutModalVisible(true)}
                     isLast={true}
-                    iconColor="#F44336"
-                /> */}
-            
+                />
             </View>
-
-            {/* Mental Health Section */}
-            {/* <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Mental Health</Text>
-                
-                <MenuRow
-                    icon="mood"
-                    title="Mood History"
-                    onPress={() => navigation.navigate("MoodScreen")}
-                />
-                
-                <MenuRow
-                    icon="people"
-                    title="My Therapists"
-                    onPress={() => navigation.navigate("TherapistsScreen")}
-                />
-                
-                <MenuRow
-                    icon="event"
-                    title="Appointments"
-                    onPress={() => navigation.navigate("BookingsScreen")}
-                />
-                
-                <MenuRow
-                    icon="emergency"
-                    title="Emergency Contacts"
-                    onPress={() => navigation.navigate("EmergencyScreen")}
-                />
-            </View> */}
-
-
-            {/* App Section */}
-            {/* <View style={styles.section}>
-                <Text style={styles.sectionTitle}>App</Text>
-                <MenuRow
-                    icon="privacy-tip"
-                    title="Privacy Policy"
-                    onPress={() => navigation.navigate("PrivacyPolicyScreen")}
-                />
-                <MenuRow
-                    icon="description"
-                    title="Terms of Service"
-                    onPress={() => navigation.navigate("TermsOfServiceScreen")}
-                />
-            </View> */}
 
             {/* Logout Section */}
             <View style={styles.logoutSection}>
@@ -460,36 +437,36 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     shortcutCard: {
-        width: '30%',
+        flex: 1,
         backgroundColor: appColors.CardBackground,
-        borderRadius: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 8,
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 6,
         alignItems: 'center',
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
-        marginBottom: 10,
-        minHeight: 100,
+        marginHorizontal: 4,
+        minHeight: 80,
         justifyContent: 'center',
     },
     shortcutIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     shortcutText: {
-        fontSize: 12,
+        fontSize: 11,
         color: appColors.grey1,
         fontWeight: '600',
         textAlign: 'center',
         fontFamily: appFonts.headerTextMedium,
-        lineHeight: 16,
+        lineHeight: 14,
     },
     menuSection: {
         backgroundColor: appColors.CardBackground,
@@ -513,55 +490,6 @@ const styles = StyleSheet.create({
         borderBottomColor: appColors.AppLightGray,
     },
 
-    profileAvatarContainer: {
-        width: 100, 
-        height: 100, 
-        borderRadius: 50, 
-        backgroundColor: appColors.AppLightBlue,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 15,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-    },
-
-    profileAvatarUserName: {
-        fontSize: 22, 
-        color: appColors.AppBlue,
-        fontFamily: appFonts.appTextBold,
-        marginBottom: 5,
-    },
-
-    profileEmail: {
-        fontSize: 16, 
-        color: appColors.AppGray,
-        fontFamily: appFonts.appTextRegular,
-    },
-
-    section: {
-        marginTop: 20,
-        backgroundColor: appColors.CardBackground,
-        borderRadius: 15,
-        marginHorizontal: 20,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-    },
-
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: appColors.AppBlue,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 10,
-        fontFamily: appFonts.appTextBold,
-    },
 
     menuSectionTitle: {
         fontSize: 14,

@@ -251,7 +251,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
         <View style={styles.subscriptionHeader}>
           <Text style={styles.subscriptionTitle}>Current Subscription</Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(currentSubscription.status) }]}>
-            <Text style={styles.statusText}>{currentSubscription.status.toUpperCase()}</Text>
+            <Text style={styles.statusText}>{currentSubscription.status?.toUpperCase() || 'UNKNOWN'}</Text>
           </View>
         </View>
         
