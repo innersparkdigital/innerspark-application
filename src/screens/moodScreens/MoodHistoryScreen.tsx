@@ -348,8 +348,8 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
       </View>
 
       <View style={styles.historyPoints}>
-        <Icon name="stars" type="material" color="#FFD700" size={16} />
-        <Text style={styles.historyPointsText}>+{item.pointsEarned}</Text>
+        <Icon name="stars" type="material" color="#FFD700" size={12} />
+        <Text style={styles.historyPointsText}>+{item.pointsEarned} pts</Text>
       </View>
     </TouchableOpacity>
   );
@@ -395,14 +395,14 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mood History</Text>
         <TouchableOpacity 
           style={styles.todayButton}
           onPress={() => navigation.navigate('TodayMoodScreen')}
         >
-          <Icon name="today" type="material" color={appColors.AppBlue} size={24} />
+          <Icon name="today" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -479,18 +479,18 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   backButton: {
     padding: 8,
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   todayButton: {

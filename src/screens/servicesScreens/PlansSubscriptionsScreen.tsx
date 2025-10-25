@@ -1,12 +1,13 @@
 /**
- * Plans & Subscriptions Screen - Manage subscription plans and billing
+ * My Subscription Screen - Manage current subscription and view usage
+ * Focus: Support Groups usage tracking + Direct Chat status
  */
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
   RefreshControl,
   Alert,
@@ -15,22 +16,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import ISStatusBar from '../../components/ISStatusBar';
 import { useToast } from 'native-base';
-import LHGenericHeader from '../../components/LHGenericHeader';
 
-interface SubscriptionPlan {
+interface CurrentPlan {
   id: string;
   name: string;
-  description: string;
   price: number;
   currency: string;
-  billingCycle: 'monthly' | 'yearly';
-  features: string[];
-  isPopular: boolean;
-  isCurrentPlan: boolean;
-  maxSessions: number | 'unlimited';
-  supportLevel: 'basic' | 'premium' | 'priority';
-  trialDays?: number;
+  billingCycle: 'monthly' | 'annual';
+  supportGroupsLimit: number | 'unlimited';
+  directChatAccess: boolean;
 }
 
 interface UserSubscription {
@@ -42,25 +38,52 @@ interface UserSubscription {
   endDate: string;
   nextBillingDate: string;
   autoRenew: boolean;
-  sessionsUsed: number;
-  sessionsLimit: number | 'unlimited';
+  groupsJoined: number;
+  groupsLimit: number | 'unlimited';
+  directChatActive: boolean;
 }
 
-interface PlansSubscriptionsScreenProps {
+interface MySubscriptionScreenProps {
   navigation: any;
+  onSwitchTab?: (tab: 'plans' | 'subscription') => void;
 }
 
-const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ navigation }) => {
+const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation, onSwitchTab }) => {
   const toast = useToast();
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [currentPlan, setCurrentPlan] = useState<CurrentPlan | null>(null);
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
 
-  // Mock subscription plans
-  const mockPlans: SubscriptionPlan[] = [
+  // Mock current plan
+  const mockCurrentPlan: CurrentPlan = {
+    id: 'premium',
+    name: 'Premium Plan',
+    price: 120000,
+    currency: 'UGX',
+    billingCycle: 'monthly',
+    supportGroupsLimit: 4,
+    directChatAccess: true,
+  };
+
+  // Mock current subscription
+  const mockSubscription: UserSubscription = {
+    id: 'sub_001',
+    planId: 'premium',
+    planName: 'Premium Plan',
+    status: 'active',
+    startDate: '2025-01-01',
+    endDate: '2026-01-01',
+    nextBillingDate: '2025-02-01',
+    autoRenew: true,
+    groupsJoined: 3,
+    groupsLimit: 4,
+    directChatActive: true,
+  };
+
+  // Old mock plans (remove)
+  const _oldMockPlans = [
     {
       id: 'basic',
       name: 'Basic Plan',
@@ -103,82 +126,19 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
       maxSessions: 'unlimited',
       supportLevel: 'premium',
       trialDays: 14,
-    },
-    {
-      id: 'family',
-      name: 'Family Plan',
-      description: 'Mental health support for the whole family',
-      price: 180000,
-      currency: 'UGX',
-      billingCycle: 'monthly',
-      features: [
-        'Up to 5 family members',
-        'Unlimited individual sessions',
-        'Family therapy sessions',
-        'Child & teen counseling',
-        'Parenting support',
-        'Crisis support for all members',
-        'Educational resources',
-        'Dedicated family coordinator'
-      ],
-      isPopular: false,
-      isCurrentPlan: false,
-      maxSessions: 'unlimited',
-      supportLevel: 'priority',
-    },
-    {
-      id: 'annual-premium',
-      name: 'Premium Annual',
-      description: 'Premium plan with annual billing (2 months free)',
-      price: 1200000,
-      currency: 'UGX',
-      billingCycle: 'yearly',
-      features: [
-        'All Premium Plan features',
-        '2 months free (annual billing)',
-        'Priority booking',
-        'Exclusive workshops',
-        'Annual wellness assessment',
-        'Personalized treatment plans'
-      ],
-      isPopular: false,
-      isCurrentPlan: false,
-      maxSessions: 'unlimited',
-      supportLevel: 'priority',
-    },
-  ];
-
-  // Mock current subscription
-  const mockSubscription: UserSubscription = {
-    id: 'sub_001',
-    planId: 'premium',
-    planName: 'Premium Plan',
-    status: 'active',
-    startDate: '2025-01-01',
-    endDate: '2025-02-01',
-    nextBillingDate: '2025-02-01',
-    autoRenew: true,
-    sessionsUsed: 8,
-    sessionsLimit: 'unlimited',
-  };
+    }];
 
   useEffect(() => {
-    loadPlansAndSubscription();
+    loadSubscriptionData();
   }, []);
 
-  const loadPlansAndSubscription = async () => {
+  const loadSubscriptionData = async () => {
     setIsLoading(true);
     try {
       // Simulate API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
       
-      // Mark current plan
-      const updatedPlans = mockPlans.map(plan => ({
-        ...plan,
-        isCurrentPlan: plan.id === mockSubscription.planId
-      }));
-      
-      setPlans(updatedPlans);
+      setCurrentPlan(mockCurrentPlan);
       setCurrentSubscription(mockSubscription);
     } catch (error) {
       toast.show({
@@ -192,58 +152,17 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await loadPlansAndSubscription();
+    await loadSubscriptionData();
     setIsRefreshing(false);
   };
 
-  const handlePlanSelect = (plan: SubscriptionPlan) => {
-    if (plan.isCurrentPlan) {
-      toast.show({
-        description: 'This is your current plan',
-        duration: 2000,
-      });
-      return;
-    }
-
-    setSelectedPlan(plan);
-    Alert.alert(
-      'Change Subscription Plan',
-      `Switch to ${plan.name} for ${plan.currency} ${plan.price.toLocaleString()}/${plan.billingCycle}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: () => handlePlanChange(plan) }
-      ]
-    );
-  };
-
-  const handlePlanChange = async (plan: SubscriptionPlan) => {
-    try {
-      // Simulate API call
-      toast.show({
-        description: `Switching to ${plan.name}...`,
-        duration: 2000,
-      });
-      
-      // Update plans to reflect new current plan
-      const updatedPlans = plans.map(p => ({
-        ...p,
-        isCurrentPlan: p.id === plan.id
-      }));
-      setPlans(updatedPlans);
-      
-      // Update current subscription
-      if (currentSubscription) {
-        setCurrentSubscription({
-          ...currentSubscription,
-          planId: plan.id,
-          planName: plan.name,
-        });
-      }
-    } catch (error) {
-      toast.show({
-        description: 'Failed to change plan',
-        duration: 3000,
-      });
+  const handleUpgradePlan = () => {
+    // Switch to Browse Plans tab if callback is available
+    if (onSwitchTab) {
+      onSwitchTab('plans');
+    } else {
+      // Fallback: Navigate to ServicesScreen
+      navigation.navigate('ServicesScreen', { initialTab: 'plans' });
     }
   };
 
@@ -319,105 +238,10 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
     }
   };
 
-  const getSupportLevelColor = (level: string) => {
-    switch (level) {
-      case 'basic':
-        return '#9E9E9E';
-      case 'premium':
-        return '#2196F3';
-      case 'priority':
-        return '#FF9800';
-      default:
-        return appColors.grey3;
-    }
+  const getUsagePercentage = () => {
+    if (!currentSubscription || currentSubscription.groupsLimit === 'unlimited') return 100;
+    return (currentSubscription.groupsJoined / currentSubscription.groupsLimit) * 100;
   };
-
-  const PlanCard: React.FC<{ plan: SubscriptionPlan }> = ({ plan }) => (
-    <TouchableOpacity
-      style={[
-        styles.planCard,
-        plan.isCurrentPlan && styles.currentPlanCard,
-        plan.isPopular && styles.popularPlanCard
-      ]}
-      onPress={() => handlePlanSelect(plan)}
-      activeOpacity={0.7}
-    >
-      {plan.isPopular && (
-        <View style={styles.popularBadge}>
-          <Text style={styles.popularText}>Most Popular</Text>
-        </View>
-      )}
-      
-      {plan.isCurrentPlan && (
-        <View style={styles.currentBadge}>
-          <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
-          <Text style={styles.currentText}>Current Plan</Text>
-        </View>
-      )}
-      
-      <View style={styles.planHeader}>
-        <Text style={styles.planName}>{plan.name}</Text>
-        <View style={[styles.supportBadge, { backgroundColor: getSupportLevelColor(plan.supportLevel) }]}>
-          <Text style={styles.supportText}>{plan.supportLevel.toUpperCase()}</Text>
-        </View>
-      </View>
-      
-      <Text style={styles.planDescription}>{plan.description}</Text>
-      
-      <View style={styles.priceContainer}>
-        <Text style={styles.price}>
-          {plan.currency} {plan.price.toLocaleString()}
-        </Text>
-        <Text style={styles.billingCycle}>/{plan.billingCycle}</Text>
-      </View>
-      
-      {plan.trialDays && !plan.isCurrentPlan && (
-        <Text style={styles.trialText}>
-          {plan.trialDays}-day free trial
-        </Text>
-      )}
-      
-      <View style={styles.featuresContainer}>
-        {plan.features.slice(0, 4).map((feature, index) => (
-          <View key={index} style={styles.featureItem}>
-            <Icon name="check" type="material" color="#4CAF50" size={16} />
-            <Text style={styles.featureText}>{feature}</Text>
-          </View>
-        ))}
-        {plan.features.length > 4 && (
-          <Text style={styles.moreFeatures}>
-            +{plan.features.length - 4} more features
-          </Text>
-        )}
-      </View>
-      
-      <TouchableOpacity
-        style={[
-          styles.selectButton,
-          plan.isCurrentPlan && styles.currentPlanButton
-        ]}
-        onPress={() => handlePlanSelect(plan)}
-        disabled={plan.isCurrentPlan}
-      >
-        <Text style={[
-          styles.selectButtonText,
-          plan.isCurrentPlan && styles.currentPlanButtonText
-        ]}>
-          {plan.isCurrentPlan ? 'Current Plan' : 'Select Plan'}
-        </Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
-
-  const PlanSkeleton: React.FC = () => (
-    <View style={styles.planCard}>
-      <Skeleton animation="pulse" width="60%" height={20} style={{ marginBottom: 8 }} />
-      <Skeleton animation="pulse" width="100%" height={16} style={{ marginBottom: 12 }} />
-      <Skeleton animation="pulse" width="40%" height={24} style={{ marginBottom: 16 }} />
-      <Skeleton animation="pulse" width="100%" height={80} style={{ marginBottom: 16 }} />
-      <Skeleton animation="pulse" width="100%" height={40} />
-    </View>
-  );
 
   const CurrentSubscriptionCard: React.FC = () => {
     if (!currentSubscription) return null;
@@ -440,10 +264,18 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
           </View>
           
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Sessions Used:</Text>
+            <Text style={styles.detailLabel}>Support Groups:</Text>
             <Text style={styles.detailValue}>
-              {currentSubscription.sessionsUsed}
-              {currentSubscription.sessionsLimit !== 'unlimited' && ` / ${currentSubscription.sessionsLimit}`}
+              {currentSubscription.groupsJoined}
+              {currentSubscription.groupsLimit !== 'unlimited' && ` / ${currentSubscription.groupsLimit}`}
+              {currentSubscription.groupsLimit === 'unlimited' && ' (Unlimited)'}
+            </Text>
+          </View>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Direct Chat:</Text>
+            <Text style={[styles.detailValue, { color: currentSubscription.directChatActive ? '#4CAF50' : appColors.grey4 }]}>
+              {currentSubscription.directChatActive ? 'Active' : 'Not Available'}
             </Text>
           </View>
           
@@ -457,19 +289,52 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
           </View>
         </View>
         
+        {/* Usage Progress Bar for Groups */}
+        {currentSubscription.groupsLimit !== 'unlimited' && (
+          <View style={styles.usageProgressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${getUsagePercentage()}%` }]} />
+            </View>
+            <Text style={styles.usageText}>
+              {currentSubscription.groupsJoined} of {currentSubscription.groupsLimit} groups joined
+            </Text>
+          </View>
+        )}
+
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('GroupsScreen')}
+          >
+            <Icon name="groups" type="material" color={appColors.AppBlue} size={20} />
+            <Text style={styles.actionButtonText}>Browse Groups</Text>
+          </TouchableOpacity>
+          
+          {currentSubscription.directChatActive && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('ChatScreen')}
+            >
+              <Icon name="chat" type="material" color={appColors.AppBlue} size={20} />
+              <Text style={styles.actionButtonText}>Message Therapist</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <View style={styles.subscriptionActions}>
           <TouchableOpacity
-            style={styles.manageButton}
-            onPress={() => navigation.navigate('BillingHistoryScreen')}
+            style={styles.upgradeButton}
+            onPress={handleUpgradePlan}
           >
-            <Text style={styles.manageButtonText}>View Billing</Text>
+            <Text style={styles.upgradeButtonText}>Change Plan</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={handleCancelSubscription}
           >
-            <Text style={styles.cancelButtonText}>Cancel Plan</Text>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -477,20 +342,10 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <LHGenericHeader
-        title="Plans & Subscriptions"
-        subtitle="Manage your subscription and billing"
-      />
-
-      <FlatList
-        data={isLoading ? Array(3).fill({}) : plans}
-        keyExtractor={(item, index) => isLoading ? index.toString() : item.id}
-        renderItem={({ item }) => 
-          isLoading ? <PlanSkeleton /> : <PlanCard plan={item} />
-        }
+    <View style={styles.container}>
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={styles.scrollContainer}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -498,8 +353,28 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
             colors={[appColors.AppBlue]}
           />
         }
-        ListHeaderComponent={!isLoading ? <CurrentSubscriptionCard /> : null}
-      />
+      >
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <Skeleton animation="pulse" width="100%" height={300} style={{ borderRadius: 16 }} />
+          </View>
+        ) : (
+          <CurrentSubscriptionCard />
+        )}
+
+        {/* Billing History Link */}
+        <TouchableOpacity
+          style={styles.billingLink}
+          onPress={() => navigation.navigate('BillingHistoryScreen')}
+        >
+          <Icon name="receipt" type="material" color={appColors.AppBlue} size={24} />
+          <View style={styles.billingLinkContent}>
+            <Text style={styles.billingLinkTitle}>Billing History</Text>
+            <Text style={styles.billingLinkSubtitle}>View invoices and payments</Text>
+          </View>
+          <Icon name="chevron-right" type="material" color={appColors.grey3} size={24} />
+        </TouchableOpacity>
+      </ScrollView>
 
       {/* Cancel Subscription Modal */}
       <Modal
@@ -533,7 +408,7 @@ const PlansSubscriptionsScreen: React.FC<PlansSubscriptionsScreenProps> = ({ nav
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -542,9 +417,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: appColors.AppLightGray,
   },
-  listContainer: {
+  header: {
+    backgroundColor: appColors.AppBlue,
+    paddingTop: parameters.headerHeightS,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: appColors.CardBackground,
+    opacity: 0.9,
+    marginTop: 4,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  scrollContainer: {
     padding: 20,
     paddingBottom: 40,
+  },
+  loadingContainer: {
+    padding: 20,
   },
   subscriptionCard: {
     backgroundColor: appColors.CardBackground,
@@ -609,7 +523,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  manageButton: {
+  // Usage Progress
+  usageProgressContainer: {
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: appColors.grey6,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: appColors.AppBlue,
+    borderRadius: 4,
+  },
+  usageText: {
+    fontSize: 13,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    textAlign: 'center',
+  },
+  // Quick Actions
+  quickActions: {
+    flexDirection: 'row',
+    marginTop: 16,
+    marginBottom: 16,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: appColors.AppBlue + '15',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    color: appColors.AppBlue,
+    fontWeight: '600',
+    fontFamily: appFonts.headerTextBold,
+    marginLeft: 8,
+  },
+  upgradeButton: {
     flex: 1,
     borderWidth: 1,
     borderColor: appColors.AppBlue,
@@ -618,7 +579,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     alignItems: 'center',
   },
-  manageButtonText: {
+  upgradeButtonText: {
     fontSize: 14,
     color: appColors.AppBlue,
     fontWeight: '600',
@@ -783,6 +744,36 @@ const styles = StyleSheet.create({
   currentPlanButtonText: {
     color: appColors.grey3,
   },
+  // Billing Link
+  billingLink: {
+    backgroundColor: appColors.CardBackground,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  billingLinkContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  billingLinkTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  billingLinkSubtitle: {
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 2,
+  },
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -854,4 +845,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PlansSubscriptionsScreen;
+export default MySubscriptionScreen;

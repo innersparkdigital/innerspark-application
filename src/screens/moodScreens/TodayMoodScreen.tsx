@@ -2,6 +2,7 @@
  * Today Mood Screen - Daily mood check-in with loyalty points
  */
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -16,6 +17,9 @@ import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import MoodCheckInCard from '../../components/MoodCheckInCard';
+import { moodOptions as globalMoodOptions } from '../../global/Data';
+import { setTodayCheckIn, addPoints, incrementStreak, selectHasCheckedInToday, selectTodayMoodData, selectMoodStats } from '../../features/mood/moodSlice';
 
 interface MoodEntry {
   id: string;
@@ -30,38 +34,67 @@ interface MoodEntry {
 
 interface TodayMoodScreenProps {
   navigation: NavigationProp<any>;
+  route?: any;
 }
 
-const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
+const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) => {
+  const dispatch = useDispatch();
   const toast = useToast();
-  const [selectedMood, setSelectedMood] = useState<number | null>(null);
+  const preSelectedMood = route?.params?.preSelectedMood;
+  const [selectedMood, setSelectedMood] = useState<number | null>(preSelectedMood?.id || null);
   const [moodNote, setMoodNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [todayEntry, setTodayEntry] = useState<MoodEntry | null>(null);
-  const [currentStreak, setCurrentStreak] = useState(0);
-  const [totalPoints, setTotalPoints] = useState(0);
+  const [selectedMoodObj, setSelectedMoodObj] = useState<any>(preSelectedMood || null);
+  
+  // Get mood data from Redux
+  const hasCheckedInToday = useSelector(selectHasCheckedInToday);
+  const todayEntry = useSelector(selectTodayMoodData);
+  const { currentStreak, totalPoints } = useSelector(selectMoodStats);
 
-  const moodOptions = [
-    { id: 1, emoji: '😢', label: 'Terrible', color: '#F44336', description: 'Very difficult day' },
-    { id: 2, emoji: '😔', label: 'Bad', color: '#FF9800', description: 'Challenging moments' },
-    { id: 3, emoji: '😐', label: 'Okay', color: '#FFC107', description: 'Neutral feelings' },
-    { id: 4, emoji: '🙂', label: 'Good', color: '#8BC34A', description: 'Positive moments' },
-    { id: 5, emoji: '😊', label: 'Great', color: '#4CAF50', description: 'Wonderful day' },
-  ];
+  // Mood-specific reflection prompts
+  const reflectionPromptsByMood: { [key: number]: string[] } = {
+    1: [ // Great
+      "What made today so wonderful?",
+      "What are you most grateful for right now?",
+      "How can you carry this positive energy forward?",
+      "What accomplishment are you proud of today?",
+    ],
+    2: [ // Good
+      "What positive moments stood out today?",
+      "What brought a smile to your face?",
+      "How did you take care of yourself today?",
+      "What are you looking forward to?",
+    ],
+    3: [ // Okay
+      "What's on your mind right now?",
+      "What would make today feel better?",
+      "How are you taking care of yourself?",
+      "What small win can you celebrate today?",
+    ],
+    4: [ // Bad
+      "What's been challenging for you today?",
+      "What support do you need right now?",
+      "How can you be kind to yourself today?",
+      "What's one thing that might help you feel better?",
+    ],
+    5: [ // Terrible
+      "What's weighing on you right now?",
+      "Who can you reach out to for support?",
+      "What do you need most in this moment?",
+      "Remember: This feeling is temporary. What helps you cope?",
+    ],
+  };
 
-  const reflectionPrompts = [
-    "What made you feel this way today?",
-    "What are you grateful for right now?",
-    "How did you take care of yourself today?",
-    "What challenged you today and how did you handle it?",
-    "What's one thing you learned about yourself today?",
-    "How did your interactions with others affect your mood?",
-    "What would make tomorrow better?",
-  ];
+  const [currentPrompt, setCurrentPrompt] = useState("What's on your mind today?");
 
-  const [currentPrompt] = useState(
-    reflectionPrompts[Math.floor(Math.random() * reflectionPrompts.length)]
-  );
+  // Update prompt when mood changes
+  useEffect(() => {
+    if (selectedMood) {
+      const prompts = reflectionPromptsByMood[selectedMood] || [];
+      const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+      setCurrentPrompt(randomPrompt || "What's on your mind today?");
+    }
+  }, [selectedMood]);
 
   useEffect(() => {
     loadTodayMood();
@@ -69,27 +102,18 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
   }, []);
 
   const loadTodayMood = async () => {
-    try {
-      // Check if user already logged mood today
-      const today = new Date().toDateString();
-      
-      // Mock check for existing entry
-      const mockTodayEntry: MoodEntry | null = null; // Would come from API
-      
-      setTodayEntry(mockTodayEntry);
-    } catch (error) {
-      console.error('Error loading today mood:', error);
-    }
+    // Redux now handles this - data comes from global state
+    // No need to load here, already loaded in HomeScreen/MoodScreen
   };
 
   const loadUserStats = async () => {
-    try {
-      // Mock user stats - would come from API
-      setCurrentStreak(7); // 7-day streak
-      setTotalPoints(3500); // Total loyalty points
-    } catch (error) {
-      console.error('Error loading user stats:', error);
-    }
+    // Redux now handles this - data comes from global state
+    // No need to load here, already loaded in HomeScreen/MoodScreen
+  };
+
+  const handleMoodSelect = (mood: any) => {
+    setSelectedMood(mood.id);
+    setSelectedMoodObj(mood);
   };
 
   const handleMoodSubmit = async () => {
@@ -111,15 +135,15 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
 
     setIsSubmitting(true);
     try {
-      const selectedMoodData = moodOptions.find(mood => mood.id === selectedMood)!;
-      const pointsEarned = 500; // UGX 500 per check-in
+      const selectedMoodData = globalMoodOptions.find(mood => mood.id === selectedMood)!;
+      const pointsEarned = 500; // 500 points per check-in
       
       const newEntry: MoodEntry = {
         id: Date.now().toString(),
         date: new Date().toDateString(),
         moodValue: selectedMood,
         moodEmoji: selectedMoodData.emoji,
-        moodLabel: selectedMoodData.label,
+        moodLabel: selectedMoodData.name,
         note: moodNote.trim(),
         timestamp: new Date().toISOString(),
         pointsEarned,
@@ -128,15 +152,24 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Update local state
-      setTodayEntry(newEntry);
-      setCurrentStreak(prev => prev + 1);
-      setTotalPoints(prev => prev + pointsEarned);
+      // Update Redux state
+      dispatch(setTodayCheckIn({
+        id: newEntry.id,
+        mood: newEntry.moodLabel,
+        emoji: newEntry.moodEmoji,
+        moodValue: newEntry.moodValue,
+        note: newEntry.note,
+        pointsEarned: newEntry.pointsEarned,
+        timestamp: newEntry.timestamp,
+        date: newEntry.date,
+      }));
+      dispatch(addPoints(pointsEarned));
+      dispatch(incrementStreak());
 
       // Show success with points earned
       Alert.alert(
         '🎉 Mood Logged Successfully!',
-        `You earned UGX ${pointsEarned} loyalty points!\n\nCurrent streak: ${currentStreak + 1} days\nTotal points: UGX ${totalPoints + pointsEarned}`,
+        `You earned ${pointsEarned} loyalty points!\n\nCurrent streak: ${currentStreak + 1} days\nTotal points: ${totalPoints + pointsEarned}`,
         [
           { text: 'View History', onPress: () => navigation.navigate('MoodHistoryScreen') },
           { text: 'Great!', style: 'default' }
@@ -176,41 +209,30 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
         </View>
         
         <View style={styles.todayMoodDisplay}>
-          <Text style={styles.todayEmoji}>{todayEntry.moodEmoji}</Text>
+          <Text style={styles.todayEmoji}>{todayEntry.emoji}</Text>
           <View style={styles.todayMoodInfo}>
-            <Text style={styles.todayMoodLabel}>{todayEntry.moodLabel}</Text>
+            <Text style={styles.todayMoodLabel}>{todayEntry.mood}</Text>
             <Text style={styles.todayMoodNote}>"{todayEntry.note}"</Text>
           </View>
         </View>
 
         <View style={styles.todayPoints}>
           <Icon name="stars" type="material" color="#FFD700" size={20} />
-          <Text style={styles.pointsText}>+UGX {todayEntry.pointsEarned} earned</Text>
+          <Text style={styles.pointsText}>+{todayEntry.pointsEarned} points earned</Text>
         </View>
       </View>
     );
   };
 
   const MoodSelector: React.FC = () => (
-    <View style={styles.moodSelector}>
-      <Text style={styles.selectorTitle}>How are you feeling today?</Text>
-      <View style={styles.moodOptions}>
-        {moodOptions.map((mood) => (
-          <TouchableOpacity
-            key={mood.id}
-            style={[
-              styles.moodOption,
-              selectedMood === mood.id && styles.selectedMoodOption,
-              { borderColor: mood.color }
-            ]}
-            onPress={() => setSelectedMood(mood.id)}
-          >
-            <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-            <Text style={[styles.moodLabel, { color: mood.color }]}>{mood.label}</Text>
-            <Text style={styles.moodDescription}>{mood.description}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+    <View style={styles.moodSelectorContainer}>
+      <MoodCheckInCard
+        title="How are you feeling today?"
+        moodOptions={globalMoodOptions}
+        selectedMood={selectedMoodObj}
+        onMoodSelect={handleMoodSelect}
+        centerTitle={true}
+      />
     </View>
   );
 
@@ -231,7 +253,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
         <Text style={styles.characterCount}>{moodNote.length}/300</Text>
         <View style={styles.pointsIndicator}>
           <Icon name="stars" type="material" color="#FFD700" size={16} />
-          <Text style={styles.pointsIndicatorText}>+UGX 500</Text>
+          <Text style={styles.pointsIndicatorText}>+500 points</Text>
         </View>
       </View>
     </View>
@@ -247,7 +269,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
       
       <View style={styles.statCard}>
         <Icon name="stars" type="material" color="#FFD700" size={24} />
-        <Text style={styles.statValue}>UGX {totalPoints.toLocaleString()}</Text>
+        <Text style={styles.statValue}>{totalPoints}</Text>
         <Text style={styles.statLabel}>Total Points</Text>
       </View>
 
@@ -270,21 +292,18 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daily Mood Check-in</Text>
         <TouchableOpacity 
           style={styles.historyButton}
           onPress={() => navigation.navigate('MoodHistoryScreen')}
         >
-          <Icon name="history" type="material" color={appColors.AppBlue} size={24} />
+          <Icon name="history" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Stats Header */}
-        <StatsHeader />
-
         {/* Today's Mood Card or Selector */}
         {todayEntry ? (
           <TodayMoodCard />
@@ -307,10 +326,13 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
               titleStyle={styles.submitButtonText}
             />
             <Text style={styles.submitNote}>
-              Complete your daily check-in to earn UGX 500 loyalty points!
+              Complete your daily check-in to earn 500 points!
             </Text>
           </View>
         )}
+
+        {/* Compact Stats Row - Moved to Bottom */}
+        {!todayEntry && <StatsHeader />}
 
         {/* Already Logged Message */}
         {todayEntry && (
@@ -318,7 +340,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation }) => {
             <Icon name="check-circle" type="material" color="#4CAF50" size={48} />
             <Text style={styles.completedTitle}>Today's Check-in Complete!</Text>
             <Text style={styles.completedMessage}>
-              Come back tomorrow for your next daily check-in and earn more loyalty points.
+              Come back tomorrow for your next daily check-in and earn more points.
             </Text>
             <TouchableOpacity
               style={styles.viewHistoryButton}
@@ -339,71 +361,73 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
+    paddingBottom: 20,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   backButton: {
-    padding: 8,
+    padding: 5,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   historyButton: {
-    padding: 8,
+    padding: 5,
   },
   scrollView: {
     flex: 1,
   },
   statsHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  statCard: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
+    justifyContent: 'space-around',
     alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 4,
-    elevation: 2,
+    backgroundColor: appColors.CardBackground,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 30,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
   },
+  statCard: {
+    alignItems: 'center',
+    flex: 1,
+  },
   statValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 8,
+    marginTop: 4,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 4,
+    marginTop: 2,
     textAlign: 'center',
   },
   todayCard: {
     backgroundColor: appColors.CardBackground,
     margin: 20,
-    marginTop: 0,
+    marginTop: 15,
     padding: 20,
     borderRadius: 16,
     elevation: 2,
@@ -468,57 +492,9 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
     marginLeft: 8,
   },
-  moodSelector: {
-    backgroundColor: appColors.CardBackground,
+  moodSelectorContainer: {
     margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  selectorTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.headerTextBold,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  moodOptions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  moodOption: {
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: appColors.grey5,
-    flex: 1,
-    marginHorizontal: 2,
-  },
-  selectedMoodOption: {
-    backgroundColor: appColors.AppLightGray,
-  },
-  moodEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  moodLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
-  },
-  moodDescription: {
-    fontSize: 10,
-    color: appColors.grey3,
-    fontFamily: appFonts.headerTextRegular,
-    textAlign: 'center',
+    marginTop: 15,
   },
   reflectionSection: {
     backgroundColor: appColors.CardBackground,
@@ -547,6 +523,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   reflectionInput: {
+    width: '100%',
     borderWidth: 1,
     borderColor: appColors.grey5,
     borderRadius: 8,

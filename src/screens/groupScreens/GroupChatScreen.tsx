@@ -1,5 +1,15 @@
 /**
- * Group Chat Screen - Real-time group chat with typing indicators and message management
+ * Unified Group Chat Screen - Consolidated from 3 implementations
+ * Features:
+ * - Privacy mode with anonymous member names
+ * - Typing indicators
+ * - Message delivery status
+ * - Announcements
+ * - Date separators
+ * - Role-based UI (therapist/moderator/member)
+ * - Offline support
+ * - Rich group info header
+ * - Cross-platform keyboard handling
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -12,17 +22,21 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import ISGenericHeader from '../../components/ISGenericHeader';
+import ISStatusBar from '../../components/ISStatusBar';
 
 interface GroupMessage {
   id: string;
   senderId: string;
   senderName: string;
   senderRole: 'therapist' | 'moderator' | 'member';
+  anonymousId?: number; // For privacy mode
   content: string;
   createdAt: string;
   isDelivered: boolean;
@@ -34,6 +48,7 @@ interface GroupMessage {
 interface TypingUser {
   id: string;
   name: string;
+  anonymousId?: number;
 }
 
 interface GroupChatScreenProps {
@@ -44,17 +59,29 @@ interface GroupChatScreenProps {
 const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const flatListRef = useRef<FlatList>(null);
-  const { groupId, groupName, groupIcon, memberCount, userRole } = route.params;
+  
+  // Route params with defaults
+  const { 
+    groupId, 
+    groupName, 
+    groupIcon = 'groups',
+    groupDescription,
+    memberCount, 
+    userRole = 'member',
+    privacyMode = true, // Default to privacy ON
+    showModeration = false,
+  } = route.params || {};
 
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [messageText, setMessageText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [isTyping, setIsTyping] = useState(false);
 
-  // Mock messages data
+  // Mock messages data with anonymous IDs for privacy
   const mockMessages: GroupMessage[] = [
     {
       id: '1',
@@ -71,8 +98,9 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     {
       id: '2',
       senderId: 'member_1',
-      senderName: 'Michael',
+      senderName: 'Michael Thompson',
       senderRole: 'member',
+      anonymousId: 1,
       content: 'Hi everyone! I\'ve been practicing the breathing exercises we learned last week and they\'ve really helped with my anxiety.',
       createdAt: '2025-01-27T19:02:00Z',
       isDelivered: true,
@@ -85,7 +113,8 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       senderId: 'current_user',
       senderName: 'You',
       senderRole: 'member',
-      content: 'That\'s great to hear, Michael! I\'ve been struggling a bit this week but I\'m trying to stay positive.',
+      anonymousId: 2,
+      content: 'That\'s great to hear! I\'ve been struggling a bit this week but I\'m trying to stay positive.',
       createdAt: '2025-01-27T19:03:00Z',
       isDelivered: true,
       isSeen: false,
@@ -95,8 +124,9 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     {
       id: '4',
       senderId: 'moderator_1',
-      senderName: 'Lisa (Moderator)',
+      senderName: 'Lisa Anderson',
       senderRole: 'moderator',
+      anonymousId: 3,
       content: 'Remember, it\'s okay to have difficult days. What matters is that you\'re here and you\'re trying. That takes courage.',
       createdAt: '2025-01-27T19:05:00Z',
       isDelivered: true,
@@ -107,9 +137,10 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     {
       id: '5',
       senderId: 'member_2',
-      senderName: 'Emma',
+      senderName: 'Emma Wilson',
       senderRole: 'member',
-      content: 'I agree with Lisa. We\'re all here to support each other. @You, you\'re doing great by being here and sharing.',
+      anonymousId: 4,
+      content: 'I agree. We\'re all here to support each other. You\'re doing great by being here and sharing.',
       createdAt: '2025-01-27T19:06:00Z',
       isDelivered: true,
       isSeen: true,
@@ -132,11 +163,9 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
   useEffect(() => {
     loadMessages();
-    // Simulate socket connection
     simulateSocketEvents();
     
     return () => {
-      // Cleanup socket connection
       handleSocketLeave();
     };
   }, []);
@@ -144,7 +173,6 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   const loadMessages = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
       setTimeout(() => {
         setMessages(mockMessages);
         setIsLoading(false);
@@ -160,20 +188,25 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     }
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadMessages();
+    setIsRefreshing(false);
+  };
+
   const simulateSocketEvents = () => {
-    // Simulate typing indicators
     setTimeout(() => {
-      setTypingUsers([{ id: 'member_3', name: 'James' }]);
+      setTypingUsers([{ id: 'member_3', name: 'James', anonymousId: 5 }]);
     }, 3000);
 
     setTimeout(() => {
       setTypingUsers([]);
-      // Simulate new message received
       const newMessage: GroupMessage = {
         id: Date.now().toString(),
         senderId: 'member_3',
-        senderName: 'James',
+        senderName: 'James Carter',
         senderRole: 'member',
+        anonymousId: 5,
         content: 'Thank you Dr. Johnson, that breathing exercise really helps!',
         createdAt: new Date().toISOString(),
         isDelivered: true,
@@ -187,12 +220,10 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   };
 
   const handleSocketJoin = () => {
-    // Simulate joining socket room
     console.log(`Joined group chat: ${groupId}`);
   };
 
   const handleSocketLeave = () => {
-    // Simulate leaving socket room
     console.log(`Left group chat: ${groupId}`);
   };
 
@@ -213,7 +244,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || isSending) return;
+    if (!messageText.trim() || isSending || !isOnline) return;
 
     const newMessage: GroupMessage = {
       id: Date.now().toString(),
@@ -234,7 +265,6 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     scrollToBottom();
 
     try {
-      // Simulate API call
       setTimeout(() => {
         setMessages(prev => 
           prev.map(msg => 
@@ -263,10 +293,8 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     
     if (text.length > 0 && !isTyping) {
       setIsTyping(true);
-      // Simulate socket emit typing start
     } else if (text.length === 0 && isTyping) {
       setIsTyping(false);
-      // Simulate socket emit typing stop
     }
   };
 
@@ -341,11 +369,82 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     }
   };
 
+  // Get display name based on privacy mode
+  const getDisplayName = (message: GroupMessage) => {
+    // Always show therapist names
+    if (message.senderRole === 'therapist') {
+      return message.senderName;
+    }
+    
+    // Show own name
+    if (message.isOwn) {
+      return 'You';
+    }
+    
+    // Privacy mode: show anonymous names for members
+    if (privacyMode && message.senderRole === 'member') {
+      return `Member ${message.anonymousId || '?'}`;
+    }
+    
+    // Moderators: show name with badge
+    if (message.senderRole === 'moderator') {
+      return privacyMode ? `Member ${message.anonymousId || '?'}` : message.senderName;
+    }
+    
+    // Default: show real name
+    return message.senderName;
+  };
+
+  const renderGroupInfoHeader = () => (
+    <View style={styles.groupInfoCard}>
+      <View style={styles.groupIconContainer}>
+        <Icon name={groupIcon} type="material" color={appColors.AppBlue} size={40} />
+      </View>
+      <View style={styles.groupInfo}>
+        <Text style={styles.groupInfoName}>{groupName}</Text>
+        {groupDescription && (
+          <Text style={styles.groupInfoDescription}>{groupDescription}</Text>
+        )}
+        {privacyMode && (
+          <View style={styles.privacyNotice}>
+            <Icon name="lock" type="material" size={14} color={appColors.grey3} />
+            <Text style={styles.privacyText}>Member identities are protected for privacy</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
   const renderMessage = ({ item, index }: { item: GroupMessage; index: number }) => {
     const previousMessage = index > 0 ? messages[index - 1] : undefined;
     const showDateSeparator = shouldShowDateSeparator(item, previousMessage);
+    const displayName = getDisplayName(item);
 
-    if (item.type === 'system' || item.type === 'announcement') {
+    // Announcement messages
+    if (item.type === 'announcement') {
+      return (
+        <View>
+          {showDateSeparator && (
+            <View style={styles.dateSeparator}>
+              <Text style={styles.dateSeparatorText}>
+                {formatDate(item.createdAt)}
+              </Text>
+            </View>
+          )}
+          <View style={styles.announcementContainer}>
+            <View style={styles.announcementBadge}>
+              <Icon name="campaign" type="material" size={14} color={appColors.CardBackground} />
+              <Text style={styles.announcementBadgeText}>Announcement</Text>
+            </View>
+            <Text style={styles.announcementText}>{item.content}</Text>
+            <Text style={styles.announcementTime}>{formatTime(item.createdAt)}</Text>
+          </View>
+        </View>
+      );
+    }
+
+    // System messages
+    if (item.type === 'system') {
       return (
         <View>
           {showDateSeparator && (
@@ -362,6 +461,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       );
     }
 
+    // Regular messages
     return (
       <View>
         {showDateSeparator && (
@@ -378,7 +478,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
         ]}>
           {!item.isOwn && (
             <Avatar
-              title={item.senderName.charAt(0)}
+              title={displayName.charAt(0)}
               size={32}
               rounded
               backgroundColor={getRoleColor(item.senderRole)}
@@ -399,7 +499,9 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
                 styles.senderName,
                 { color: getRoleColor(item.senderRole) }
               ]}>
-                {item.senderName}
+                {displayName}
+                {item.senderRole === 'therapist' && ' (Therapist)'}
+                {item.senderRole === 'moderator' && !privacyMode && ' (Moderator)'}
               </Text>
             )}
             
@@ -439,56 +541,68 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   const renderTypingIndicator = () => {
     if (typingUsers.length === 0) return null;
 
+    const typingNames = typingUsers.map(user => {
+      if (privacyMode && user.anonymousId) {
+        return `Member ${user.anonymousId}`;
+      }
+      return user.name;
+    }).join(', ');
+
     return (
       <View style={styles.typingContainer}>
         <Text style={styles.typingText}>
-          {typingUsers.map(user => user.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+          {typingNames} {typingUsers.length === 1 ? 'is' : 'are'} typing...
         </Text>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
-        </TouchableOpacity>
-        
-        <View style={styles.headerInfo}>
-          <Icon name={groupIcon} type="material" color={appColors.AppBlue} size={32} />
-          <View style={styles.headerText}>
-            <Text style={styles.headerName}>{groupName}</Text>
-            <Text style={styles.headerStatus}>
-              {memberCount} members • {isOnline ? 'Connected' : 'Offline'}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.headerButton}
-          onPress={() => navigation.navigate('GroupDetailScreen', { group: { id: groupId, name: groupName, icon: groupIcon } })}
-        >
-          <Icon name="info" type="material" color={appColors.grey1} size={24} />
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ISStatusBar />
+      <ISGenericHeader
+        title={groupName || 'Group Chat'}
+        hasLightBackground={false}
+        navigation={navigation}
+        hasRightIcon={true}
+        rightIconName="info"
+        rightIconOnPress={() => {
+          navigation.navigate('GroupDetailScreen', { 
+            group: { 
+              id: groupId, 
+              name: groupName, 
+              icon: groupIcon,
+              description: groupDescription,
+              memberCount: memberCount,
+              // Pass therapist info from route params or use defaults
+              therapistName: route.params?.therapistName || 'Dr. Sarah Johnson',
+              therapistAvatar: route.params?.therapistAvatar,
+              therapistEmail: route.params?.therapistEmail || 'sarah.johnson@innerspark.com',
+              category: route.params?.category || 'Mental Health',
+              isPrivate: route.params?.isPrivate || false,
+              maxMembers: route.params?.maxMembers || 20,
+              meetingSchedule: route.params?.meetingSchedule,
+              isJoined: true, // User is in chat, so they've joined
+            } 
+          });
+        }}
+      />
 
       {/* Offline Banner */}
       {!isOnline && (
         <View style={styles.offlineBanner}>
           <Icon name="wifi-off" type="material" color={appColors.CardBackground} size={16} />
-          <Text style={styles.offlineBannerText}>You're offline. Messages will be sent when connection is restored.</Text>
+          <Text style={styles.offlineBannerText}>
+            You're offline. Messages will be sent when connection is restored.
+          </Text>
         </View>
       )}
 
       {/* Messages */}
       <KeyboardAvoidingView 
         style={styles.chatContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <FlatList
           ref={flatListRef}
@@ -499,6 +613,14 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
+          ListHeaderComponent={renderGroupInfoHeader}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isRefreshing} 
+              onRefresh={handleRefresh} 
+              colors={[appColors.AppBlue]} 
+            />
+          }
         />
 
         {renderTypingIndicator()}
@@ -518,7 +640,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
             <TouchableOpacity 
               style={[
                 styles.sendButton,
-                messageText.trim() ? styles.sendButtonActive : styles.sendButtonInactive
+                messageText.trim() && isOnline ? styles.sendButtonActive : styles.sendButtonInactive
               ]}
               onPress={handleSendMessage}
               disabled={!messageText.trim() || isSending || !isOnline}
@@ -542,46 +664,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: appColors.AppLightGray,
   },
-  header: {
-    backgroundColor: appColors.CardBackground,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  headerInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerText: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.headerTextBold,
-  },
-  headerStatus: {
-    fontSize: 14,
-    color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-  },
-  headerButton: {
-    padding: 8,
-  },
   offlineBanner: {
     backgroundColor: '#F44336',
     flexDirection: 'row',
@@ -593,7 +675,7 @@ const styles = StyleSheet.create({
   offlineBannerText: {
     color: appColors.CardBackground,
     fontSize: 12,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     marginLeft: 8,
   },
   chatContainer: {
@@ -603,7 +685,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  groupInfoCard: {
+    flexDirection: 'row',
+    backgroundColor: appColors.CardBackground,
+    padding: 16,
+    borderRadius: 12,
+    marginVertical: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  groupIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: appColors.AppBlue + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  groupInfo: {
+    flex: 1,
+  },
+  groupInfoName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: 4,
+  },
+  groupInfoDescription: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: 8,
+  },
+  privacyNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  privacyText: {
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    fontStyle: 'italic',
   },
   dateSeparator: {
     alignItems: 'center',
@@ -616,7 +747,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
+  },
+  announcementContainer: {
+    backgroundColor: appColors.AppBlue + '15',
+    padding: 12,
+    borderRadius: 12,
+    marginVertical: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: appColors.AppBlue,
+  },
+  announcementBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: appColors.AppBlue,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 8,
+    gap: 4,
+  },
+  announcementBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+  },
+  announcementText: {
+    fontSize: 14,
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextRegular,
+    lineHeight: 20,
+  },
+  announcementTime: {
+    fontSize: 11,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    marginTop: 4,
   },
   systemMessage: {
     alignItems: 'center',
@@ -631,12 +799,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 16,
     textAlign: 'center',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   messageContainer: {
     flexDirection: 'row',
     marginVertical: 2,
-    paddingHorizontal: 16,
+    alignItems: 'flex-end',
   },
   ownMessageContainer: {
     justifyContent: 'flex-end',
@@ -646,7 +814,7 @@ const styles = StyleSheet.create({
   },
   messageAvatar: {
     marginRight: 8,
-    alignSelf: 'flex-end',
+    marginBottom: 4,
   },
   avatarText: {
     fontSize: 12,
@@ -682,7 +850,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 20,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   ownMessageText: {
     color: appColors.CardBackground,
@@ -698,7 +866,7 @@ const styles = StyleSheet.create({
   },
   messageTime: {
     fontSize: 12,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   ownMessageTime: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -717,7 +885,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: appColors.grey3,
     fontStyle: 'italic',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   composer: {
     backgroundColor: appColors.CardBackground,
@@ -741,7 +909,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     maxHeight: 100,
     paddingVertical: 8,
   },

@@ -1,7 +1,7 @@
 /**
  * Groups List Screen - Directory of all available support groups
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
+  InteractionManager,
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { getMembershipInfo, validateGroupJoin } from '../../services/MembershipService';
+import MembershipLimitModal from '../../components/MembershipLimitModal';
 
 interface SupportGroup {
   id: string;
@@ -38,12 +41,18 @@ interface GroupsListScreenProps {
 
 const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const groupsListRef = useRef<FlatList>(null);
+  const isInitialMountRef = useRef<boolean>(true);
   const [groups, setGroups] = useState<SupportGroup[]>([]);
   const [filteredGroups, setFilteredGroups] = useState<SupportGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  
+  // Get membership info
+  const membershipInfo = getMembershipInfo(groups);
 
   // Mock groups data
   const mockGroups: SupportGroup[] = [
@@ -161,6 +170,17 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     filterGroups();
   }, [searchQuery, selectedCategory, groups]);
 
+  // Scroll to top reliably whenever filteredGroups changes (skip initial mount)
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    requestAnimationFrame(() => {
+      groupsListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    });
+  }, [filteredGroups]);
+
   const loadGroups = async () => {
     setIsLoading(true);
     try {
@@ -209,17 +229,37 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     const group = groups.find(g => g.id === groupId);
     if (!group) return;
 
+    // Validate membership limits
+    const validation = validateGroupJoin(groups, groupId);
+    
+    if (!validation.canJoin) {
+      if (validation.reason === 'membership_limit') {
+        // Show upgrade modal
+        setShowLimitModal(true);
+        return;
+      }
+      
+      if (validation.reason === 'already_joined') {
+        toast.show({
+          description: 'You are already a member of this group',
+          duration: 3000,
+        });
+        return;
+      }
+      
+      if (validation.reason === 'group_full') {
+        toast.show({
+          description: 'Group is full. You\'ve been added to the waiting list.',
+          duration: 3000,
+        });
+        return;
+      }
+    }
+
+    // Handle private groups
     if (group.isPrivate) {
       toast.show({
         description: 'Join request sent to group therapist',
-        duration: 3000,
-      });
-      return;
-    }
-
-    if (group.memberCount >= group.maxMembers) {
-      toast.show({
-        description: 'Group is full. You\'ve been added to the waiting list.',
         duration: 3000,
       });
       return;
@@ -334,22 +374,28 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderCategoryFilter = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={[
-        styles.categoryChip,
-        selectedCategory === item.id && { backgroundColor: item.color + '20' }
-      ]}
-      onPress={() => setSelectedCategory(item.id)}
-    >
-      <Text style={[
-        styles.categoryText,
-        selectedCategory === item.id && { color: item.color }
-      ]}>
-        {item.name}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderCategoryFilter = ({ item }: { item: any }) => {
+    const isActive = selectedCategory === item.id;
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.categoryChip,
+          isActive && styles.categoryChipActive,
+          isActive && { backgroundColor: item.color + '20', borderColor: item.color }
+        ]}
+        onPress={() => setSelectedCategory(item.id)}
+        activeOpacity={0.7}
+      >
+        <Text style={[
+          styles.categoryText,
+          isActive && { color: item.color, fontWeight: 'bold' }
+        ]}>
+          {item.name}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -383,8 +429,25 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     );
   }
 
-  return (
-    <View style={styles.container}>
+  const renderListHeader = () => (
+    <View>
+      {/* Plan Indicator */}
+      <View style={styles.planIndicator}>
+        <Icon name="groups" type="material" color={appColors.AppBlue} size={20} />
+        <Text style={styles.planText}>
+          Groups: {membershipInfo.joinedGroupsCount}/{membershipInfo.groupLimit === -1 ? '∞' : membershipInfo.groupLimit}
+        </Text>
+        {!membershipInfo.canJoinMore && membershipInfo.groupLimit !== -1 && (
+          <TouchableOpacity 
+            style={styles.upgradeLink}
+            onPress={() => setShowLimitModal(true)}
+          >
+            <Text style={styles.upgradeLinkText}>Upgrade Plan</Text>
+            <Icon name="arrow-forward" type="material" color={appColors.AppBlue} size={16} />
+          </TouchableOpacity>
+        )}
+      </View>
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Icon name="search" type="material" color={appColors.grey3} size={20} />
@@ -407,16 +470,25 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         data={categories}
         renderItem={renderCategoryFilter}
         keyExtractor={(item) => item.id}
+        extraData={selectedCategory}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoriesContainer}
+        removeClippedSubviews={false}
       />
+    </View>
+  );
 
-      {/* Groups List */}
+  return (
+    <View style={styles.container}>
+      {/* Groups List (header included to own the entire scroll area) */}
       <FlatList
+        ref={groupsListRef}
         data={filteredGroups}
         renderItem={renderGroupCard}
         keyExtractor={(item) => item.id}
+        extraData={filteredGroups}
+        ListHeaderComponent={renderListHeader}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -427,6 +499,21 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={filteredGroups.length === 0 ? styles.emptyContainer : styles.listContainer}
+        removeClippedSubviews={false}
+      />
+
+      {/* Membership Limit Modal */}
+      <MembershipLimitModal
+        visible={showLimitModal}
+        currentPlan={membershipInfo.plan}
+        currentGroupCount={membershipInfo.joinedGroupsCount}
+        maxAllowed={membershipInfo.groupLimit}
+        onUpgrade={() => {
+          setShowLimitModal(false);
+          // Navigate to subscription screen
+          navigation.navigate('SubscriptionScreen');
+        }}
+        onClose={() => setShowLimitModal(false)}
       />
     </View>
   );
@@ -456,27 +543,37 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     marginLeft: 12,
   },
   categoriesContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   categoryChip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: appColors.grey6,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    height: 40,
+    justifyContent: 'center',
+  },
+  categoryChipActive: {
+    borderWidth: 1,
   },
   categoryText: {
     fontSize: 14,
-    color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextRegular,
+    fontWeight: '500',
   },
   listContainer: {
     paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   groupCard: {
     backgroundColor: appColors.CardBackground,
@@ -544,7 +641,7 @@ const styles = StyleSheet.create({
   groupDescription: {
     fontSize: 14,
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     lineHeight: 20,
   },
   therapistSection: {
@@ -570,7 +667,7 @@ const styles = StyleSheet.create({
   therapistEmail: {
     fontSize: 12,
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   groupMeta: {
     flexDirection: 'row',
@@ -585,13 +682,13 @@ const styles = StyleSheet.create({
   memberCount: {
     fontSize: 12,
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     marginLeft: 4,
   },
   schedule: {
     fontSize: 12,
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   groupFooter: {
     flexDirection: 'row',
@@ -612,7 +709,7 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 10,
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   joinButton: {
     paddingHorizontal: 20,
@@ -625,10 +722,10 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
   },
   emptyContainer: {
-    flex: 1,
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   emptyState: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
@@ -645,7 +742,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: appColors.grey3,
     textAlign: 'center',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   // Skeleton loading styles
   skeletonCard: {
@@ -676,6 +773,45 @@ const styles = StyleSheet.create({
   },
   skeletonLineShort: {
     width: '60%',
+  },
+  // Plan Indicator Styles
+  planIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: appColors.CardBackground,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  planText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextSemiBold,
+    marginLeft: 10,
+    flex: 1,
+  },
+  upgradeLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: appColors.AppBlue + '15',
+    borderRadius: 8,
+  },
+  upgradeLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextSemiBold,
+    marginRight: 4,
   },
 });
 

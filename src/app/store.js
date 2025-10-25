@@ -5,6 +5,12 @@ import signupFlowReducer from '../features/flow/signupFlowSlice';
 import appSessionReducer from '../features/app/appSessionSlice';
 import appStartReducer from '../features/app/appStartSlice';
 
+// Mood tracking slice
+import moodReducer from '../features/mood/moodSlice';
+
+// Subscription slice
+import subscriptionReducer from '../features/subscription/subscriptionSlice';
+
 // Therapist-specific slices
 import therapistDashboardReducer from '../features/therapist/dashboardSlice';
 import therapistAppointmentsReducer from '../features/therapist/appointmentsSlice';
@@ -22,6 +28,12 @@ export default configureStore({
         //recycleFlow: recycleFlowReducer,
         appSession: appSessionReducer,
         appStart: appStartReducer,
+        
+        // Mood tracking reducer
+        mood: moodReducer,
+        
+        // Subscription reducer
+        subscription: subscriptionReducer,
         
         // Therapist-specific reducers
         therapistDashboard: therapistDashboardReducer,

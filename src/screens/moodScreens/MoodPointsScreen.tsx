@@ -95,7 +95,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           type: 'redeemed',
           amount: -2000,
           source: 'therapy_discount',
-          description: 'UGX 10,000 therapy session discount',
+          description: '10,000 UGX therapy session discount',
           date: new Date(Date.now() - 172800000).toDateString(),
           timestamp: new Date(Date.now() - 172800000).toISOString(),
         },
@@ -114,8 +114,8 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
       const mockRedemptions: RedemptionOption[] = [
         {
           id: '1',
-          title: 'UGX 5,000 Therapy Discount',
-          description: 'Get UGX 5,000 off your next therapy session',
+          title: '5,000 UGX Therapy Discount',
+          description: 'Get 5,000 UGX off your next therapy session',
           pointsRequired: 1000,
           discountAmount: 5000,
           category: 'therapy',
@@ -124,8 +124,8 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
         },
         {
           id: '2',
-          title: 'UGX 10,000 Therapy Discount',
-          description: 'Get UGX 10,000 off your next therapy session',
+          title: '10,000 UGX Therapy Discount',
+          description: 'Get 10,000 UGX off your next therapy session',
           pointsRequired: 2000,
           discountAmount: 10000,
           category: 'therapy',
@@ -144,8 +144,8 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
         },
         {
           id: '4',
-          title: 'UGX 20,000 Therapy Discount',
-          description: 'Get UGX 20,000 off your next therapy session',
+          title: '20,000 UGX Therapy Discount',
+          description: 'Get 20,000 UGX off your next therapy session',
           pointsRequired: 4000,
           discountAmount: 20000,
           category: 'therapy',
@@ -204,7 +204,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
 
     Alert.alert(
       'Redeem Points',
-      `Redeem ${option.pointsRequired} points for "${option.title}"?\n\nThis will give you UGX ${option.discountAmount.toLocaleString()} discount on your next purchase.`,
+      `Redeem ${option.pointsRequired} points for "${option.title}"?\n\nThis will give you ${option.discountAmount.toLocaleString()} UGX discount on your next purchase.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Redeem', onPress: () => processRedemption(option) }
@@ -269,9 +269,9 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
         <Icon name="stars" type="material" color="#FFD700" size={32} />
         <Text style={styles.balanceTitle}>Loyalty Points</Text>
       </View>
-      <Text style={styles.balanceAmount}>UGX {pointsBalance.toLocaleString()}</Text>
+      <Text style={styles.balanceAmount}>{pointsBalance.toLocaleString()}</Text>
       <Text style={styles.balanceSubtitle}>
-        Earned from daily mood check-ins • UGX 500 per check-in
+        Earned from daily mood check-ins • 500 points per check-in
       </Text>
       
       <View style={styles.balanceActions}>
@@ -342,7 +342,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
         <View style={styles.redemptionMeta}>
           <Text style={styles.redemptionPoints}>{item.pointsRequired} points</Text>
           <Text style={styles.redemptionValue}>
-            Worth UGX {item.discountAmount.toLocaleString()}
+            Worth {item.discountAmount.toLocaleString()} UGX
           </Text>
         </View>
       </View>
@@ -484,14 +484,14 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Loyalty Points</Text>
         <TouchableOpacity 
           style={styles.refreshButton}
           onPress={handleRefresh}
         >
-          <Icon name="refresh" type="material" color={appColors.AppBlue} size={24} />
+          <Icon name="refresh" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -522,18 +522,18 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   backButton: {
     padding: 8,
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   refreshButton: {

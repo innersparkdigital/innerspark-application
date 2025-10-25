@@ -20,9 +20,17 @@ import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
 import PanicButtonComponent from '../components/PanicButtonComponent';
-import { appImages } from '../global/Data';
-import { getFirstName } from '../global/LHShortcuts';
+import MoodCheckInCard, { MoodOption } from '../components/MoodCheckInCard';
+import TodayMoodSummaryCard from '../components/TodayMoodSummaryCard';
+import { appImages, moodOptions } from '../global/Data';
+import { getFirstName, getGreeting, getLastName, getFullname } from '../global/LHShortcuts';
 import { baseUrlRoot, baseUrlV1, APIGlobaltHeaders } from '../api/LHAPI';
+import { loadTodayCheckInStatus, loadMoodStats, formatRelativeTime } from '../utils/moodCheckInManager';
+import { selectHasCheckedInToday, selectTodayMoodData } from '../features/mood/moodSlice';
+import EmptySessionsCard from '../components/EmptySessionsCard';
+import SessionCard from '../components/SessionCard';
+import TimelineEvent from '../components/TimelineEvent';
+import WellnessTipCard from '../components/WellnessTipCard';
 
 // test notification trigger
 import { 
@@ -45,6 +53,10 @@ const HomeScreen = ({ navigation }) => {
 
   const userDetails = useSelector(state => state.userData.userDetails);
   const [selectedMood, setSelectedMood] = useState(null);
+  
+  // Get mood check-in status from Redux
+  const hasCheckedInToday = useSelector(selectHasCheckedInToday);
+  const todayMoodData = useSelector(selectTodayMoodData);
 
   // Mock data for upcoming sessions
   const [upcomingSessions, setUpcomingSessions] = useState([
@@ -115,6 +127,44 @@ const HomeScreen = ({ navigation }) => {
   const [currentPromptIndex, setCurrentPromptIndex] = useState(() => 
     Math.floor(Math.random() * wellnessPrompts.length)
   );
+  const [completedTips, setCompletedTips] = useState(new Set());
+
+  // Helper: Get session urgency level
+  const getSessionUrgency = (session: any) => {
+    if (!session || !session.date || !session.time) return 'upcoming';
+    
+    // For demo, check if it's "Today"
+    if (session.date === 'Today') {
+      // Parse time and check if within 30 minutes
+      // In production, use actual datetime comparison
+      return 'soon';
+    }
+    return 'upcoming';
+  };
+
+  // Helper: Get session status color
+  const getSessionStatusColor = (status: string) => {
+    switch(status) {
+      case 'confirmed': return '#4CAF50';
+      case 'pending': return '#FF9800';
+      case 'cancelled': return '#F44336';
+      default: return appColors.grey3;
+    }
+  };
+
+  // Helper: Mark wellness tip as completed
+  const markTipAsCompleted = (tipIndex: number) => {
+    setCompletedTips(prev => new Set([...prev, tipIndex]));
+    toast.show({
+      description: '✓ Great job! Tip marked as completed',
+      duration: 2000,
+    });
+  };
+
+  // Helper: Get next wellness tip
+  const handleNextTip = () => {
+    setCurrentPromptIndex(prevIndex => (prevIndex + 1) % wellnessPrompts.length);
+  };
 
   // Rotate through events and prompts every 4 minutes
   useEffect(() => {
@@ -136,18 +186,27 @@ const HomeScreen = ({ navigation }) => {
     color: '#FF9800'
   };
 
-  const moodOptions = [
-    { id: 1, name: 'Great', emoji: '😊', color: '#4CAF50' },
-    { id: 2, name: 'Good', emoji: '🙂', color: '#8BC34A' },
-    { id: 3, name: 'Okay', emoji: '😐', color: '#FFC107' },
-    { id: 4, name: 'Bad', emoji: '😔', color: '#FF9800' },
-    { id: 5, name: 'Terrible', emoji: '😢', color: '#F44336' },
+  const wellnessSubtitles = [
+    "Let's make today amazing!",
+    "Your wellness journey starts here",
+    "Take a moment for yourself today",
+    "You're doing great, keep going!",
+    "Small steps lead to big changes",
+    "Your mental health matters",
+    "Embrace today with positivity",
+    "Progress, not perfection",
+    "You've got this!",
+    "Every day is a fresh start",
   ];
 
+  const [currentSubtitle] = useState(
+    wellnessSubtitles[Math.floor(Math.random() * wellnessSubtitles.length)]
+  );
+
   const quickActions = [
-    { id: 1, title: 'Therapy Groups', icon: 'people', color: '#2196F3', screen: 'GroupsScreen' },
+    { id: 1, title: 'Groups', icon: 'people', color: '#2196F3', screen: 'GroupsScreen' },
     { id: 2, title: 'Events', icon: 'event', color: '#FF9800', screen: 'EventsScreen' },
-    { id: 3, title: 'Services', icon: 'shopping-cart', color: '#00BCD4', screen: 'ServicesCatalogScreen' },
+    { id: 3, title: 'Services', icon: 'shopping-cart', color: '#00BCD4', screen: 'ServicesScreen' },
     { id: 4, title: 'Meditation', icon: 'self-improvement', color: '#673AB7', screen: 'MeditationScreen' },
   ];
 
@@ -185,19 +244,18 @@ const HomeScreen = ({ navigation }) => {
     };
 
     initializeNotifications();
+    loadTodayCheckInStatus(); // Load from API and update Redux
+    loadMoodStats(); // Load user stats
   }, []);
 
-  const handleMoodSelect = (mood) => {
-    setSelectedMood(mood);
-    toast.show({
-      description: `Mood "${mood.name}" recorded!`,
-      duration: 2000,
-    });
+  const handleMoodSelect = (mood: any) => {
+    // Navigate to TodayMoodScreen with pre-selected mood
+    navigation.navigate('TodayMoodScreen', { preSelectedMood: mood });
   };
 
   const handleQuickAction = (action) => {
     const bottomTabScreens = ['TherapistsScreen', 'MoodScreen', 'EmergencyScreen']; // Tabs screens available
-    const stackScreens = ['AppointmentsScreen', 'GoalsScreen', 'EventsScreen', 'GroupsScreen', 'ServicesCatalogScreen', 'MeditationScreen']; // Available screens that can be navigated to directly
+    const stackScreens = ['AppointmentsScreen', 'GoalsScreen', 'EventsScreen', 'GroupsScreen', 'ServicesScreen', 'MeditationScreen']; // Available screens that can be navigated to directly
     
     if (bottomTabScreens.includes(action.screen)) {
       // Navigate to the bottom tab screen
@@ -302,46 +360,38 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
         
-        {/* Bottom row with greeting */}
+        {/* Header Greeting Section */}
         <View style={styles.headerBottomRow}>
           <Text style={styles.greeting}>
-            Hello {getFirstName(userDetails?.firstName) || 'User'},
+            {getGreeting()} {getLastName(getFullname(userDetails?.firstName, userDetails?.lastName)) || 'User'},
           </Text>
-          <Text style={styles.subtitle}>Track your wellness today</Text>
+          <Text style={styles.subtitle}>{currentSubtitle}</Text>
         </View>
       </View>
 
       {/* Mood Check-in Section - Fixed below header */}
       <View style={styles.moodSection}>
-        <View style={styles.moodCard}>
-          <Text style={styles.sectionTitle}>How are you feeling today?</Text>
-          <View style={styles.moodContainer}>
-            {moodOptions.map((mood) => (
-              <View key={mood.id} style={styles.moodButtonContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.moodButton,
-                    selectedMood?.id === mood.id && { 
-                      borderColor: mood.color, 
-                      borderWidth: 3,
-                      backgroundColor: mood.color + '20'
-                    }
-                  ]}
-                  onPress={() => handleMoodSelect(mood)}
-                >
-                  <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-                </TouchableOpacity>
-                <Text style={[
-                  styles.moodText,
-                  { color: mood.color },
-                  selectedMood?.id === mood.id && { fontWeight: 'bold' }
-                ]}>
-                  {mood.name}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
+        {!hasCheckedInToday ? (
+          <MoodCheckInCard
+            moodOptions={moodOptions}
+            selectedMood={selectedMood}
+            onMoodSelect={handleMoodSelect}
+            showNavigationHint={true}
+          />
+        ) : todayMoodData ? (
+          <TodayMoodSummaryCard
+            mood={todayMoodData.mood}
+            emoji={todayMoodData.emoji}
+            note={todayMoodData.note}
+            pointsEarned={todayMoodData.pointsEarned}
+            timestamp={formatRelativeTime(todayMoodData.timestamp)}
+            onPress={() => navigation.navigate('TodayMoodScreen')}
+            showReflection={false}
+            showPoints={false}
+            showDetailsButton={false}
+            compact={true}
+          />
+        ) : null}
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -349,15 +399,11 @@ const HomeScreen = ({ navigation }) => {
         {/* Quick Actions Section */}
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>Quick Actions</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.actionsScrollContainer}
-          >
+          <View style={styles.actionsGrid}>
             {quickActions.map((action) => (
               <QuickActionCard key={action.id} action={action} />
             ))}
-          </ScrollView>
+          </View>
         </View>
 
         {/* Commented out - Original Upcoming Sessions Section (No Sessions State) */}
@@ -393,7 +439,7 @@ const HomeScreen = ({ navigation }) => {
         </View>
         */}
 
-        {/* New Upcoming Sessions Section - With Sessions Present */}
+        {/* Upcoming Sessions - Dynamic with Components */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionHeader}>Upcoming Sessions</Text>
@@ -402,141 +448,93 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => navigation.navigate('AppointmentsScreen')}
                 style={styles.viewAllButton}
               >
-                <Text style={styles.viewAllText}>View All</Text>
+                <Text style={styles.viewAllText}>View All ({upcomingSessions.length})</Text>
               </TouchableOpacity>
             )}
           </View>
           
-          {upcomingSessions.length > 0 && (
-            <View style={styles.sessionCard}>
-              <View style={styles.sessionHeader}>
-                <View style={styles.therapistAvatar}>
-                  {upcomingSessions[0].avatar ? (
-                    <Image 
-                      source={upcomingSessions[0].avatar} 
-                      style={styles.avatarImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <Text style={styles.avatarText}>
-                      {upcomingSessions[0].therapistName.split(' ').map(n => n[0]).join('')}
-                    </Text>
-                  )}
-                </View>
-                <View style={styles.sessionInfo}>
-                  <Text style={styles.therapistName}>{upcomingSessions[0].therapistName}</Text>
-                  <Text style={styles.sessionSpecialty}>{upcomingSessions[0].specialty}</Text>
-                </View>
-                <View style={styles.sessionType}>
-                  <Icon
-                    name={upcomingSessions[0].type === 'Video Call' ? 'videocam' : 'location-on'}
-                    type="material"
-                    color={upcomingSessions[0].type === 'Video Call' ? '#4CAF50' : '#FF9800'}
-                    size={20}
-                  />
-                </View>
-              </View>
-              
-              <View style={styles.sessionDetails}>
-                <View style={styles.sessionTimeInfo}>
-                  <View style={styles.timeRow}>
-                    <Icon name="schedule" type="material" color={appColors.AppGray} size={16} />
-                    <Text style={styles.sessionDateTime}>
-                      {upcomingSessions[0].date} at {upcomingSessions[0].time}
-                    </Text>
-                  </View>
-                  <View style={styles.timeRow}>
-                    <Icon name="timer" type="material" color={appColors.AppGray} size={16} />
-                    <Text style={styles.sessionDuration}>{upcomingSessions[0].duration}</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.sessionActions}>
-                  <TouchableOpacity 
-                    style={styles.joinButton}
-                    onPress={() => {
-                      toast.show({
-                        description: 'Joining session...',
-                        duration: 2000,
-                      });
-                    }}
-                  >
-                    <Text style={styles.joinButtonText}>
-                      {upcomingSessions[0].date === 'Today' ? 'Join Now' : 'View Details'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+          {upcomingSessions.length === 0 ? (
+            <EmptySessionsCard 
+              onBookSession={() => navigation.navigate('TherapistsScreen')}
+            />
+          ) : upcomingSessions.length === 1 ? (
+            <SessionCard 
+              session={{
+                ...upcomingSessions[0],
+                status: 'confirmed',
+                urgent: getSessionUrgency(upcomingSessions[0]) === 'soon'
+              }}
+              onPress={() => navigation.navigate('AppointmentsScreen')}
+              onJoin={() => {
+                toast.show({
+                  description: 'Joining session...',
+                  duration: 2000,
+                });
+              }}
+            />
+          ) : (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.sessionsScroll}
+            >
+              {upcomingSessions.map((session) => (
+                <SessionCard 
+                  key={session.id}
+                  session={{
+                    ...session,
+                    status: 'confirmed',
+                    urgent: getSessionUrgency(session) === 'soon'
+                  }}
+                  onPress={() => navigation.navigate('AppointmentsScreen')}
+                  compact={true}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* Today's Schedule - Timeline View */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Today's Schedule</Text>
+          
+          {todaysEvents.length === 0 ? (
+            <View style={styles.emptyEventsCard}>
+              <Icon name="event-note" type="material" color={appColors.grey3} size={40} />
+              <Text style={styles.emptyEventsText}>No events scheduled for today</Text>
+            </View>
+          ) : (
+            <View style={styles.timelineContainer}>
+              {todaysEvents.map((event, index) => (
+                <TimelineEvent
+                  key={event.id}
+                  id={event.id}
+                  title={event.title}
+                  time={event.time}
+                  icon={event.icon}
+                  color={event.color}
+                  isLast={index === todaysEvents.length - 1}
+                  onPress={() => {
+                    toast.show({
+                      description: `Event: ${event.title}`,
+                      duration: 2000,
+                    });
+                  }}
+                />
+              ))}
             </View>
           )}
         </View>
 
-        {/* Today's Events or Prompts Section - Rotating Display */}
+        {/* Wellness Tip of the Day */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Today's Events & Wellness Tips</Text>
-          <View style={styles.eventsContainer}>
-            {/* Current Event */}
-            <TouchableOpacity 
-              style={[
-                styles.eventItem,
-                { borderLeftColor: currentEvent.color }
-              ]}
-              onPress={() => {
-                toast.show({
-                  description: `Event: ${currentEvent.title} at ${currentEvent.time}`,
-                  duration: 2000,
-                });
-              }}
-            >
-              <View style={[styles.eventIcon, { backgroundColor: currentEvent.color + '20' }]}>
-                <Icon
-                  name={currentEvent.icon}
-                  type="material"
-                  color={currentEvent.color}
-                  size={18}
-                />
-              </View>
-              <View style={styles.eventContent}>
-                <Text style={styles.eventTitle}>{currentEvent.title}</Text>
-                <Text style={styles.eventTime}>{currentEvent.time}</Text>
-              </View>
-              <View style={styles.eventAction}>
-                <Icon
-                  name="chevron-right"
-                  type="material"
-                  color={appColors.AppGray}
-                  size={18}
-                />
-              </View>
-            </TouchableOpacity>
-            
-            {/* Current Wellness Prompt */}
-            <TouchableOpacity 
-              style={[
-                styles.promptItem,
-                { borderLeftColor: currentPrompt.color }
-              ]}
-              onPress={() => {
-                toast.show({
-                  description: "Great! Take a moment to try this wellness activity.",
-                  duration: 2000,
-                });
-              }}
-            >
-              <View style={[styles.promptIcon, { backgroundColor: currentPrompt.color + '20' }]}>
-                <Icon
-                  name={currentPrompt.icon}
-                  type="material"
-                  color={currentPrompt.color}
-                  size={18}
-                />
-              </View>
-              <View style={styles.promptContent}>
-                <Text style={styles.promptLabel}>Wellness Prompt</Text>
-                <Text style={styles.promptTitle}>{currentPrompt.title}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <WellnessTipCard
+            tip={wellnessPrompts[currentPromptIndex]}
+            category="Mindfulness"
+            isCompleted={completedTips.has(currentPromptIndex)}
+            onComplete={() => markTipAsCompleted(currentPromptIndex)}
+            onRefresh={handleNextTip}
+          />
         </View>
 
         {/* Commented out Recent Activities Section for future use */}
@@ -586,7 +584,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 40,
+    paddingBottom: 60,
     paddingHorizontal: 20,
   },
   headerTopRow: {
@@ -629,7 +627,7 @@ const styles = StyleSheet.create({
   },
   moodSection: {
     paddingHorizontal: 20,
-    marginTop: -15,
+    marginTop: -40,
     zIndex: 1,
   },
   scrollView: {
@@ -655,63 +653,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontFamily: appFonts.headerTextBold,
   },
-  moodCard: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  moodContainer: {
+  actionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  moodButtonContainer: {
-    alignItems: 'center',
-  },
-  moodButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 55,
-    height: 55,
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 27.5,
-    borderWidth: 2,
-    borderColor: appColors.AppLightGray,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  moodEmoji: {
-    fontSize: 20,
-  },
-  moodText: {
-    fontSize: 10,
-    fontWeight: '600',
-    fontFamily: appFonts.bodyTextMedium,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  actionsScrollContainer: {
-    paddingRight: 20,
-    paddingVertical: 10,
   },
   actionCard: {
-    minWidth: 80,
-    height: 100,
+    width: '48%',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: appColors.CardBackground,
     borderRadius: 15,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginRight: 15,
+    paddingVertical: 20,
+    marginBottom: 15,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -719,20 +673,20 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   actionIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   actionTitle: {
-    fontSize: 11,
+    fontSize: 13,
     color: appColors.AppBlue,
     fontWeight: '600',
     textAlign: 'center',
     fontFamily: appFonts.appTextMedium,
-    lineHeight: 14,
+    lineHeight: 16,
     marginTop: 5,
   },
   sessionsCard: {
@@ -1045,6 +999,31 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 30,
+  },
+  // New Component Styles
+  sessionsScroll: {
+    paddingRight: 20,
+  },
+  emptyEventsCard: {
+    backgroundColor: appColors.CardBackground,
+    borderRadius: 12,
+    padding: 32,
+    alignItems: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  emptyEventsText: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  timelineContainer: {
+    paddingVertical: 8,
   },
 });
 

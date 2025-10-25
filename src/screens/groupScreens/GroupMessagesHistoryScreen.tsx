@@ -1,5 +1,12 @@
 /**
  * Group Messages History Screen - Searchable message history with export and moderation
+ * 
+ * Purpose:
+ * - Allow members to catch up on missed conversations
+ * - Search through past messages
+ * - Export chat history (PDF/TXT/CSV) for personal records
+ * - Moderators can review and moderate past messages
+ * - Privacy: Member names are anonymized (Member 1, Member 2) except therapists
  */
 import React, { useState, useEffect } from 'react';
 import {
@@ -45,7 +52,7 @@ interface GroupMessagesHistoryScreenProps {
 
 const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
-  const { groupId, groupName, userRole } = route.params;
+  const { groupId, groupName, userRole, privacyMode = true } = route.params;
 
   const [messages, setMessages] = useState<HistoryMessage[]>([]);
   const [filteredMessages, setFilteredMessages] = useState<HistoryMessage[]>([]);
@@ -352,7 +359,30 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
     }
   };
 
-  const renderMessage = ({ item }: { item: HistoryMessage }) => {
+  // Get display name based on privacy mode
+  const getDisplayName = (message: HistoryMessage, index: number) => {
+    // Always show therapist names
+    if (message.senderRole === 'therapist') {
+      return message.senderName;
+    }
+    
+    // Privacy mode: show anonymous names for members
+    if (privacyMode && message.senderRole === 'member') {
+      // Use index + 1 as anonymous ID (simple approach)
+      return `Member ${(index % 20) + 1}`;
+    }
+    
+    // Moderators: show name with badge
+    if (message.senderRole === 'moderator') {
+      return privacyMode ? `Member ${(index % 20) + 1}` : message.senderName;
+    }
+    
+    // Default: show real name
+    return message.senderName;
+  };
+
+  const renderMessage = ({ item, index }: { item: HistoryMessage; index: number }) => {
+    const displayName = getDisplayName(item, index);
     if (item.type === 'system') {
       return (
         <View style={styles.systemMessage}>
@@ -378,7 +408,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
       >
         <View style={styles.messageHeader}>
           <Avatar
-            title={item.senderName.charAt(0)}
+            title={displayName.charAt(0)}
             size={32}
             rounded
             backgroundColor={getRoleColor(item.senderRole)}
@@ -387,7 +417,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
           <View style={styles.messageInfo}>
             <View style={styles.senderInfo}>
               <Text style={[styles.senderName, { color: getRoleColor(item.senderRole) }]}>
-                {item.senderName}
+                {displayName}
               </Text>
               {item.senderRole === 'therapist' && (
                 <View style={styles.roleBadge}>
@@ -450,7 +480,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         
         <View style={styles.headerText}>
@@ -462,7 +492,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
           style={styles.headerButton}
           onPress={() => setShowExportModal(true)}
         >
-          <Icon name="file-download" type="material" color={appColors.grey1} size={24} />
+          <Icon name="file-download" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -510,7 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 16,
@@ -532,13 +562,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: appFonts.bodyTextRegular,
   },
   headerButton: {
     padding: 8,
@@ -556,7 +586,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     marginLeft: 12,
     marginRight: 8,
   },
@@ -614,19 +644,19 @@ const styles = StyleSheet.create({
   roleBadgeText: {
     fontSize: 10,
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
   messageTime: {
     fontSize: 12,
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     marginTop: 2,
   },
   messageContent: {
     fontSize: 14,
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     lineHeight: 20,
   },
   deletedMessageContent: {
@@ -644,7 +674,7 @@ const styles = StyleSheet.create({
   announcementText: {
     fontSize: 12,
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     marginLeft: 4,
     fontWeight: 'bold',
   },
@@ -661,12 +691,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     textAlign: 'center',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   systemMessageTime: {
     fontSize: 10,
     color: appColors.grey4,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     marginTop: 4,
   },
   avatarText: {
@@ -692,7 +722,7 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 14,
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -706,7 +736,7 @@ const styles = StyleSheet.create({
   clearSearchButtonText: {
     fontSize: 14,
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
 });

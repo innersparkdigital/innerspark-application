@@ -40,8 +40,6 @@ import ChatScreen from '../screens/ChatScreen';
 import ConversationsListScreen from '../screens/chatScreens/ConversationsListScreen';
 import DMThreadScreen from '../screens/chatScreens/DMThreadScreen';
 import NewMessageScreen from '../screens/chatScreens/NewMessageScreen';
-import GroupMessagesViewScreen from '../screens/chatScreens/GroupMessagesViewScreen';
-import ClientGroupChatScreen from '../screens/chatScreens/ClientGroupChatScreen';
 import TherapistProfileViewScreen from '../screens/chatScreens/TherapistProfileViewScreen';
 import GroupInfoScreen from '../screens/chatScreens/GroupInfoScreen';
 
@@ -56,6 +54,7 @@ import GroupMessagesHistoryScreen from '../screens/groupScreens/GroupMessagesHis
 // Event Screens
 import EventDetailScreen from '../screens/eventScreens/EventDetailScreen';
 import EventsScreen from '../screens/EventsScreen';
+import MyEventDetailScreen from '../screens/eventScreens/MyEventDetailScreen';
 
 // Support Screens
 import HelpCenterScreen from '../screens/HelpCenterScreen';
@@ -75,8 +74,10 @@ import AppointmentsScreen from '../screens/therapistScreens/AppointmentsScreen';
 import AppointmentDetailsScreen from '../screens/therapistScreens/AppointmentDetailsScreen';
 
 // Services Screens
+import ServicesScreen from '../screens/ServicesScreen';
 import ServicesCatalogScreen from '../screens/servicesScreens/ServicesCatalogScreen';
 import PlansSubscriptionsScreen from '../screens/servicesScreens/PlansSubscriptionsScreen';
+import SubscriptionCheckoutScreen from '../screens/servicesScreens/SubscriptionCheckoutScreen';
 import BillingHistoryScreen from '../screens/servicesScreens/BillingHistoryScreen';
 
 // Mood Screens
@@ -480,26 +481,6 @@ export default function LHStackNavigator(){
             />
 
             <LHStack.Screen
-                name="GroupMessagesViewScreen"
-                component={GroupMessagesViewScreen}
-                options={{
-                    headerShown: false,
-                    title: 'Group Messages',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
-            <LHStack.Screen
-                name="ClientGroupChatScreen"
-                component={ClientGroupChatScreen}
-                options={{
-                    headerShown: false,
-                    title: 'Group Chat',
-                    ...TransitionPresets.RevealFromBottomAndroid
-                }}
-            />
-
-            <LHStack.Screen
                 name="TherapistProfileViewScreen"
                 component={TherapistProfileViewScreen}
                 options={{
@@ -601,6 +582,16 @@ export default function LHStackNavigator(){
                 }}
             />
 
+            <LHStack.Screen
+                name="MyEventDetailScreen"
+                component={MyEventDetailScreen}
+                options={{
+                    headerShown: false,
+                    title: 'My Event',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
             {/* Meditation Screens */}
             <LHStack.Screen
                 name="MeditationScreen"
@@ -675,6 +666,14 @@ export default function LHStackNavigator(){
 
             {/* Services Screens */}
             <LHStack.Screen
+                name="ServicesScreen"
+                component={ServicesScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Services',
+                }}
+            />
+            <LHStack.Screen
                 name="ServicesCatalogScreen"
                 component={ServicesCatalogScreen}
                 options={{
@@ -690,6 +689,26 @@ export default function LHStackNavigator(){
                 options={{
                     headerShown: false,
                     title: 'Plans & Subscriptions',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="SubscriptionCheckoutScreen"
+                component={SubscriptionCheckoutScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Checkout',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="BillingHistoryScreen"
+                component={BillingHistoryScreen}
+                options={{
+                    headerShown: false,
+                    title: 'Billing History',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

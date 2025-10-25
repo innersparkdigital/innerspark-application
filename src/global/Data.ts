@@ -1,4 +1,5 @@
 import { appColors } from "./Styles";
+import { MoodOption } from "../components/MoodCheckInCard";
 
 /* App Assets, Images,logos, etc. */
 export const appImages = { 
@@ -24,6 +25,17 @@ export const appImages = {
 
 };
 
+/**
+ * Mood Options for Mood Check-in
+ * Used across the app for mood tracking
+ */
+export const moodOptions: MoodOption[] = [
+    { id: 1, name: 'Great', emoji: '😊', color: '#4CAF50' },
+    { id: 2, name: 'Good', emoji: '🙂', color: '#8BC34A' },
+    { id: 3, name: 'Okay', emoji: '😐', color: '#FFC107' },
+    { id: 4, name: 'Bad', emoji: '😔', color: '#FF9800' },
+    { id: 5, name: 'Terrible', emoji: '😢', color: '#F44336' },
+];
 
 /* App Useful External Links */
 export const appLinks = { 

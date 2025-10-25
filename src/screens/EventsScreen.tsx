@@ -1,7 +1,7 @@
 /**
  * Events Screen - Mental Health Events and Workshops
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StatusBar,
   StyleSheet,
@@ -17,9 +17,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Skeleton } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
+import PanicButtonComponent from '../components/PanicButtonComponent';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
-import { NavigationProp } from '@react-navigation/native';
+import EventCard from '../components/events/EventCard';
+import EventFilterBar from '../components/events/EventFilterBar';
+import { NavigationProp, RouteProp } from '@react-navigation/native';
 
 interface Event {
   id: number;
@@ -42,9 +45,10 @@ interface Event {
 
 interface EventsScreenProps {
   navigation: NavigationProp<any>;
+  route: RouteProp<any>;
 }
 
-const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
+const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'events' | 'my-events'>('events');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -52,6 +56,7 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [events, setEvents] = useState<Event[]>([]);
+  const eventsListRef = useRef<FlatList>(null);
 
   // Mock events data
   const mockEvents: Event[] = [
@@ -114,13 +119,19 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
   const categories = ['All', 'Workshop', 'Training', 'Seminar', 'Summit'];
 
   useEffect(() => {
+    // Respect initialTab when navigated with params
+    const init = (route?.params as any)?.initialTab as 'events' | 'my-events' | undefined;
+    if (init === 'events' || init === 'my-events') {
+      setActiveTab(init);
+    }
     loadEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadEvents = async () => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
       setEvents(mockEvents);
     } catch (error) {
       toast.show({
@@ -140,13 +151,20 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          event.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
+    const matchesCategory = activeTab === 'events'
+      ? (selectedCategory === 'All' || event.category === selectedCategory)
+      : true;
     const matchesTab = activeTab === 'events' ? true : event.isRegistered;
     return matchesSearch && matchesCategory && matchesTab;
   });
 
   const handleEventPress = (event: Event) => {
-    navigation.navigate('EventDetailScreen', { event });
+    const fromMyEvents = activeTab === 'my-events';
+    if (fromMyEvents) {
+      navigation.navigate('MyEventDetailScreen', { event, registrationId: `R-${event.id}` });
+    } else {
+      navigation.navigate('EventDetailScreen', { event });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -168,74 +186,12 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
     }
   };
 
-  const EventCard: React.FC<{ event: Event }> = ({ event }) => {
-    const seatsStatus = getSeatsStatus(event);
-    
-    return (
-      <TouchableOpacity
-        style={styles.eventCard}
-        onPress={() => handleEventPress(event)}
-        activeOpacity={0.7}
-      >
-        <Image source={event.coverImage} style={styles.eventImage} />
-        
-        <View style={styles.eventContent}>
-          <View style={styles.eventHeader}>
-            <View style={styles.eventDateContainer}>
-              <Text style={styles.eventDate}>{formatDate(event.date)}</Text>
-              <Text style={styles.eventTime}>{event.time}</Text>
-            </View>
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{event.category}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.eventTitle} numberOfLines={2}>{event.title}</Text>
-          <Text style={styles.eventDescription} numberOfLines={2}>{event.shortDescription}</Text>
-
-          <View style={styles.eventFooter}>
-            <View style={styles.locationContainer}>
-              <Icon
-                name={event.isOnline ? 'videocam' : 'location-on'}
-                type="material"
-                color={appColors.grey2}
-                size={16}
-              />
-              <Text style={styles.locationText} numberOfLines={1}>
-                {event.isOnline ? 'Online Event' : event.location}
-              </Text>
-            </View>
-
-            <Text style={[styles.seatsText, { color: seatsStatus.color }]}>
-              {seatsStatus.text}
-            </Text>
-          </View>
-
-          <View style={styles.eventMeta}>
-            <View style={styles.organizerContainer}>
-              <Avatar source={event.organizerImage} size={24} rounded />
-              <Text style={styles.organizerText}>{event.organizer}</Text>
-            </View>
-
-            <View style={styles.priceContainer}>
-              {event.price === 0 ? (
-                <Text style={styles.freeText}>FREE</Text>
-              ) : (
-                <Text style={styles.priceText}>{event.currency} {event.price.toLocaleString()}</Text>
-              )}
-            </View>
-          </View>
-
-          {event.isRegistered && (
-            <View style={styles.registeredBadge}>
-              <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
-              <Text style={styles.registeredText}>Registered</Text>
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  // Scroll to top whenever filters/search/tab change and the filtered data updates
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      eventsListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    });
+  }, [searchQuery, selectedCategory, activeTab, events.length]);
 
   const EventSkeleton: React.FC = () => (
     <View style={styles.eventCard}>
@@ -251,26 +207,43 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
   const EmptyState: React.FC = () => (
     <View style={styles.emptyContainer}>
       <Icon name="event-busy" type="material" color={appColors.AppGray} size={80} />
-      <Text style={styles.emptyTitle}>No Events Found</Text>
-      <Text style={styles.emptySubtitle}>
-        {searchQuery || selectedCategory !== 'All'
-          ? 'Try adjusting your search or filters'
-          : 'Check back later for upcoming events'}
+      <Text style={styles.emptyTitle}>
+        {activeTab === 'my-events' ? 'No Registered Events' : 'No Events Found'}
       </Text>
-      <TouchableOpacity style={styles.retryButton} onPress={loadEvents}>
-        <Text style={styles.retryButtonText}>Refresh</Text>
-      </TouchableOpacity>
+      <Text style={styles.emptySubtitle}>
+        {activeTab === 'my-events'
+          ? 'Browse events and register to see them here.'
+          : (searchQuery || selectedCategory !== 'All' ? 'Try adjusting your search or filters' : 'Check back later for upcoming events')}
+      </Text>
+      {activeTab === 'events' && (
+        <TouchableOpacity style={styles.retryButton} onPress={loadEvents}>
+          <Text style={styles.retryButtonText}>Refresh</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      <PanicButtonComponent position="bottom-right" size="medium" quickAction="screen" />
       
-      <LHGenericHeader
-        title="Mental Health Events"
-        subtitle="Workshops, seminars & community gatherings"
-      />
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          {navigation.canGoBack && navigation.canGoBack() ? (
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.backButton} />
+          )}
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Mental Health Events</Text>
+            <Text style={styles.headerSubtitle}>Workshops, seminars & community gatherings</Text>
+          </View>
+          <View style={styles.headerRightPlaceholder} />
+        </View>
+      </View>
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
@@ -312,52 +285,35 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.content}>
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Icon name="search" type="material" color={appColors.AppGray} size={20} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search events..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={appColors.AppGray}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Icon name="close" type="material" color={appColors.AppGray} size={20} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Category Filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryChip,
-                selectedCategory === category && styles.selectedCategoryChip
-              ]}
-              onPress={() => setSelectedCategory(category)}
-            >
-              <Text style={[
-                styles.categoryChipText,
-                selectedCategory === category && styles.selectedCategoryText
-              ]}>
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Events List */}
+        {/* Events List with header to own entire scroll area */}
         <FlatList
+          ref={eventsListRef}
           data={isLoading ? Array(3).fill({}) : filteredEvents}
-          keyExtractor={(item, index) => isLoading ? index.toString() : item.id?.toString()}
-          renderItem={({ item }) => 
-            isLoading ? <EventSkeleton /> : <EventCard event={item} />
-          }
+          keyExtractor={(item, index) => (isLoading ? index.toString() : item.id?.toString())}
+          renderItem={({ item }) => (
+            isLoading ? (
+              <EventSkeleton />
+            ) : (
+              <EventCard
+                event={item}
+                variant={activeTab === 'my-events' ? 'my' : 'public'}
+                onPress={() => handleEventPress(item)}
+                onViewTicket={activeTab === 'my-events' ? () => navigation.navigate('MyEventDetailScreen', { event: item, registrationId: `R-${item.id}` }) : undefined}
+                onAddToCalendar={activeTab === 'my-events' ? () => toast.show({ description: 'Added to calendar (placeholder)', duration: 2000 }) : undefined}
+              />
+            )
+          )}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={() => (
+            <EventFilterBar
+              searchQuery={searchQuery}
+              onChangeSearch={setSearchQuery}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              showCategories={activeTab === 'events'}
+            />
+          )}
           contentContainerStyle={styles.listContainer}
           refreshControl={
             <RefreshControl
@@ -377,6 +333,42 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: appColors.AppLightGray,
+  },
+  header: {
+    backgroundColor: appColors.AppBlue,
+    paddingTop: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: appColors.CardBackground,
+    opacity: 0.9,
+    marginTop: 4,
+    fontFamily: appFonts.headerTextRegular,
   },
   content: {
     flex: 1,

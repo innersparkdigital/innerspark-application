@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import ConversationsListScreen from './chatScreens/ConversationsListScreen';
-import GroupMessagesViewScreen from './chatScreens/GroupMessagesViewScreen';
+import MyGroupChatsListScreen from './chatScreens/MyGroupChatsListScreen';
 
 interface ChatScreenProps {
   navigation: any;
@@ -27,7 +27,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
       case 'chats':
         return <ConversationsListScreen navigation={navigation} />;
       case 'groups':
-        return <GroupMessagesViewScreen navigation={navigation} />;
+        return <MyGroupChatsListScreen navigation={navigation} />;
       default:
         return <ConversationsListScreen navigation={navigation} />;
     }

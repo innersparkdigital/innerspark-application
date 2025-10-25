@@ -1,7 +1,7 @@
 /**
  * Therapists Screen - Find and connect with therapists
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -304,6 +304,14 @@ const TherapistsScreen = ({ navigation, route }) => {
       <DetailedTherapistCard therapist={therapist} />;
   };
 
+  const therapistsListRef = useRef<FlatList>(null);
+  useEffect(() => {
+    // Scroll to top whenever specialty or search changes
+    requestAnimationFrame(() => {
+      therapistsListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    });
+  }, [selectedSpecialty, searchQuery]);
+
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} />
@@ -404,61 +412,62 @@ const TherapistsScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Filter Section - Hidden when search is focused */}
-        {!isSearchFocused && (
-          <View style={styles.filterSection}>
-            <Text style={styles.filterText}>All Specialities</Text>
-            <View style={styles.filterActions}>
-              <TouchableOpacity style={styles.viewToggleButton} onPress={toggleViewType}>
-                <Icon 
-                  name={viewType === 'compact' ? 'view-list' : 'view-module'} 
-                  type="material" 
-                  color={appColors.grey2} 
-                  size={24} 
-                />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.filterButton} onPress={toggleFilters}>
-                <Icon name="tune" type="material" color={appColors.grey2} size={24} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Specialty Filter Chips - Show when filters are toggled */}
-        {!isSearchFocused && showFilters && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.specialtyContainer}
-          >
-            {specialties.map((specialty) => (
-              <TouchableOpacity
-                key={specialty}
-                style={[
-                  styles.specialtyChip,
-                  selectedSpecialty === specialty && styles.selectedSpecialtyChip
-                ]}
-                onPress={() => setSelectedSpecialty(specialty)}
-              >
-                <Text style={[
-                  styles.specialtyText,
-                  selectedSpecialty === specialty && styles.selectedSpecialtyText
-                ]}>
-                  {specialty}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
         {/* Therapists List - Hidden when search is focused */}
         {!isSearchFocused && (
           <FlatList
+            ref={therapistsListRef}
             data={filteredTherapists}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => <TherapistCard therapist={item} />}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
+            ListHeaderComponent={() => (
+              <View>
+                {/* Filter Section */}
+                <View style={styles.filterSection}>
+                  <Text style={styles.filterText}>All Specialities</Text>
+                  <View style={styles.filterActions}>
+                    <TouchableOpacity style={styles.viewToggleButton} onPress={toggleViewType}>
+                      <Icon 
+                        name={viewType === 'compact' ? 'view-list' : 'view-module'} 
+                        type="material" 
+                        color={appColors.grey2} 
+                        size={24} 
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.filterButton} onPress={toggleFilters}>
+                      <Icon name="tune" type="material" color={appColors.grey2} size={24} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {/* Specialty Filter Chips */}
+                {showFilters && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.specialtyContainer}
+                  >
+                    {specialties.map((specialty) => (
+                      <TouchableOpacity
+                        key={specialty}
+                        style={[
+                          styles.specialtyChip,
+                          selectedSpecialty === specialty && styles.selectedSpecialtyChip
+                        ]}
+                        onPress={() => setSelectedSpecialty(specialty)}
+                      >
+                        <Text style={[
+                          styles.specialtyText,
+                          selectedSpecialty === specialty && styles.selectedSpecialtyText
+                        ]}>
+                          {specialty}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            )}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

@@ -153,23 +153,23 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
     {
       id: 3,
       icon: 'support-agent',
-      label: 'Emergency\nScreen',
+      label: 'Crisis\nSupport',
       color: '#9C27B0',
       action: () => {
         hideModalAnimation();
-        setTimeout(() => navigation.navigate('EmergencyLandingScreen' as never), 300);
+        setTimeout(() => navigation.navigate('EmergencyScreen' as never), 300);
       },
     },
     {
       id: 4,
-      icon: 'chat',
-      label: 'Quick\nChat',
+      icon: 'contacts',
+      label: 'Notify\nContacts',
       color: '#4CAF50',
       action: () => {
         hideModalAnimation();
         setTimeout(() => {
           toast.show({
-            description: 'Opening crisis chat...',
+            description: 'Notifying emergency contacts...',
             duration: 2000,
           });
         }, 300);
@@ -326,7 +326,7 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
           <View style={styles.modalHeaderOverlay}>
             <Icon name="warning" type="material" color="#F44336" size={36} />
             <Text style={styles.modalTitleOverlay}>Emergency Help</Text>
-            <Text style={styles.modalSubtitleOverlay}>Choose an action</Text>
+            <Text style={styles.modalSubtitleOverlay}>Choose your emergency response</Text>
           </View>
 
           <Animated.View
@@ -459,6 +459,7 @@ const styles = StyleSheet.create({
   modalTitleOverlay: {
     fontSize: 28,
     fontFamily: appFonts.headerTextBold,
+    fontWeight: 'bold',
     color: '#FFFFFF',
     marginTop: 12,
   },

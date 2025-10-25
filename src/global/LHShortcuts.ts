@@ -33,6 +33,13 @@ export const getFirstName = ( fullName: string) => {
    return fullName.split(' ')[0];
 }
 
+/** Get Lastname of the name string which is separated by space */
+export const getLastName = ( fullName: string) => {
+    // handle case where fullname is null or undefined
+    if (!fullName) { return ''; }
+   return fullName.split(' ')[1];
+}
+
 /**
  * Returns Fullname, by concantenating Firstname and Lastname
  * @param {string} firstName - The user firstname
@@ -46,6 +53,7 @@ export const getFullname = (firstName: string, lastName: string) => {
 
 /**
  * Returns the Greeting based on current user time
+ * It can be 'Hi', 'Good Morning', 'Good Afternoon', 'Good Evening'
  * @returns A string containing The greeting based on current time
  */
 export const getGreeting = () => {
@@ -55,7 +63,7 @@ export const getGreeting = () => {
     let greeting;
   
     if (currentHour >= 0 && currentHour < 12) {
-        greeting = 'Good Morning';
+        greeting = ['Hi', 'Hello', 'Good Morning'][Math.floor(Math.random() * 3)];
     } else if (currentHour >= 12 && currentHour < 17) {
         greeting = 'Good Afternoon';
     } else {
@@ -63,7 +71,6 @@ export const getGreeting = () => {
     }
   
       return greeting;
-
  }; 
 
 

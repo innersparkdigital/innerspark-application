@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
+import PanicButtonComponent from '../components/PanicButtonComponent';
 import GroupsListScreen from './groupScreens/GroupsListScreen';
 import MyGroupsScreen from './groupScreens/MyGroupsScreen';
 
@@ -25,17 +26,18 @@ const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'directory':
-        return <GroupsListScreen navigation={navigation} />;
+        return <GroupsListScreen key="directory" navigation={navigation} />;
       case 'mygroups':
-        return <MyGroupsScreen navigation={navigation} />;
+        return <MyGroupsScreen key="mygroups" navigation={navigation} />;
       default:
-        return <GroupsListScreen navigation={navigation} />;
+        return <GroupsListScreen key="directory" navigation={navigation} />;
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      <PanicButtonComponent position="bottom-right" size="medium" quickAction="screen" />
       
       {/* Header */}
       <View style={styles.header}>
@@ -46,12 +48,7 @@ const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Support Groups</Text>
-        <TouchableOpacity 
-          style={styles.headerButton}
-          onPress={() => navigation.navigate('GroupMessagesHistoryScreen')}
-        >
-          <Icon name="history" type="material" color={appColors.CardBackground} size={24} />
-        </TouchableOpacity>
+        <View style={styles.headerButton} />
       </View>
 
       {/* Tab Navigation */}
@@ -164,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: appColors.grey3,
     marginLeft: 6,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.headerTextRegular,
   },
   activeTabText: {
     color: appColors.AppBlue,

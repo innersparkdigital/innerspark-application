@@ -1,7 +1,7 @@
 /**
  * Event Detail Screen - Detailed view of mental health events
  */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StatusBar,
   StyleSheet,
@@ -13,12 +13,19 @@ import {
   Alert,
   Linking,
   Modal,
+  ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
+import PaymentModal from '../../components/payments/PaymentModal';
+import PaymentSuccessModal from '../../components/payments/PaymentSuccessModal';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { isValidPhoneNumber } from '../../global/LHValidators';
+import { getPhoneNumberOperator } from '../../global/LHShortcuts';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
+import PaymentStatusPoller from '../../services/PaymentStatusPoller';
 
 interface Event {
   id: number;
@@ -63,6 +70,39 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
   const [isLoading, setIsLoading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wellnessvault');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const walletBalance = 350000;
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [mmStep, setMmStep] = useState<'phone' | 'otp' | 'processing'>('phone');
+  const [mmPhone, setMmPhone] = useState('');
+  const [mmFormattedPhone, setMmFormattedPhone] = useState('');
+  const [mmCountrySupported, setMmCountrySupported] = useState(true);
+  const [mmOtp, setMmOtp] = useState('');
+  const [mmPaymentRef, setMmPaymentRef] = useState<string | null>(null);
+  const [mmError, setMmError] = useState<string>('');
+  const [mmOtpAttempts, setMmOtpAttempts] = useState(0);
+  const [mmOtpExpiry, setMmOtpExpiry] = useState<number | null>(null);
+
+  const resetToMyEvents = () => {
+    // Clear stack and land on EventsScreen (My Events), with LHBottomTabs beneath for back navigation
+    navigation.reset({
+      index: 1,
+      routes: [
+        { name: 'LHBottomTabs' } as any,
+        { name: 'EventsScreen', params: { initialTab: 'my-events' } } as any,
+      ],
+    });
+  };
+
+  const resetMmState = () => {
+    setMmStep('phone');
+    setMmPhone('');
+    setMmOtp('');
+    setMmPaymentRef(null);
+    setMmError('');
+    setMmOtpAttempts(0);
+    setMmOtpExpiry(null);
+  };
 
   const handleRegistration = async () => {
     if (!isRegistered && event.availableSeats === 0) {
@@ -77,7 +117,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     if (isRegistered) {
       setIsLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise<void>((resolve) => globalThis.setTimeout(() => resolve(), 1500));
         setIsRegistered(false);
         toast.show({
           description: 'Successfully unregistered from event',
@@ -107,13 +147,9 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1500));
       
       setIsRegistered(true);
-      toast.show({
-        description: 'Successfully registered for event!',
-        duration: 3000,
-      });
     } catch (error) {
       toast.show({
         description: 'Registration failed. Please try again.',
@@ -125,8 +161,93 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
   };
 
   const handlePaymentConfirm = async () => {
-    setShowPaymentModal(false);
-    await processRegistration();
+    if (isProcessingPayment) return;
+    if (selectedPaymentMethod === 'wellnessvault') {
+      if (event.price > walletBalance) {
+        toast.show({ description: 'Insufficient WellnessVault balance', duration: 3000 });
+        return;
+      }
+      try {
+        setIsProcessingPayment(true);
+        await new Promise<void>((resolve) => setTimeout(() => resolve(), 1500));
+        await processRegistration();
+        setShowPaymentModal(false);
+        setShowSuccessModal(true);
+      } finally {
+        setIsProcessingPayment(false);
+      }
+      return;
+    }
+    // Mobile Money flow
+    if (selectedPaymentMethod === 'mobile_money') {
+      if (mmStep === 'phone') {
+        if (!mmCountrySupported) {
+          setMmError('Your selected country is not supported for Mobile Money');
+          return;
+        }
+        if (!mmFormattedPhone || !isValidPhoneNumber(mmFormattedPhone)) {
+          setMmError('Please enter a valid phone number');
+          return;
+        }
+        const operator = getPhoneNumberOperator(mmFormattedPhone);
+        if (operator === 'OTHER') {
+          setMmError('Please enter a valid MTN or AIRTEL phone number');
+          return;
+        }
+        setMmError('');
+        await new Promise<void>((resolve) => setTimeout(() => resolve(), 800));
+        setMmStep('otp');
+        setMmOtp('');
+        setMmOtpAttempts(0);
+        setMmOtpExpiry(Date.now() + 2 * 60 * 1000);
+        return;
+      }
+      if (mmStep === 'otp') {
+        const now = Date.now();
+        if (mmOtpExpiry && now > mmOtpExpiry) {
+          setMmError('Code expired. Tap Resend to get a new code');
+          return;
+        }
+        if (mmOtp.trim().length < 6) {
+          setMmError('Enter the 6-digit OTP sent to your phone');
+          return;
+        }
+        if (mmOtpAttempts >= 3) {
+          setMmError('Too many attempts. Tap Resend to get a new code');
+          return;
+        }
+        // Mock verify: accept only '123456' as correct OTP
+        if (mmOtp.trim() !== '123456') {
+          const next = mmOtpAttempts + 1;
+          setMmOtpAttempts(next);
+          setMmError(next >= 3 ? 'Too many attempts. Tap Resend to get a new code' : 'Incorrect code. Try again');
+          return;
+        }
+        setMmError('');
+        setIsProcessingPayment(true);
+        await new Promise<void>((resolve) => setTimeout(() => resolve(), 900));
+        setIsProcessingPayment(false);
+        setMmStep('processing');
+        const ref = `MM-${Date.now()}`;
+        setMmPaymentRef(ref);
+        PaymentStatusPoller.start(ref, async () => {
+          await processRegistration();
+          const handledInApp = showPaymentModal;
+          if (handledInApp) {
+            setShowPaymentModal(false);
+            setShowSuccessModal(true);
+          }
+          return handledInApp;
+        });
+        return;
+      }
+      if (mmStep === 'processing') {
+        setShowPaymentModal(false);
+        resetMmState();
+        resetToMyEvents();
+        return;
+      }
+    }
   };
 
   const handleAddToCalendar = () => {
@@ -202,19 +323,19 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
+      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       
-      {/* Header */}
+      {/* Header (Blue) */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Event Details</Text>
         <TouchableOpacity style={styles.shareButton}>
-          <Icon name="share" type="material" color={appColors.grey1} size={24} />
+          <Icon name="share" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
       </View>
 
@@ -305,15 +426,17 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
           )}
 
           {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity 
-              style={styles.calendarButton}
-              onPress={handleAddToCalendar}
-            >
-              <Icon name="event-available" type="material" color={appColors.AppBlue} size={20} />
-              <Text style={styles.calendarButtonText}>Add to Calendar</Text>
-            </TouchableOpacity>
-          </View>
+          {isRegistered && (
+            <View style={styles.actionButtons}>
+              <TouchableOpacity 
+                style={styles.calendarButton}
+                onPress={handleAddToCalendar}
+              >
+                <Icon name="event-available" type="material" color={appColors.AppBlue} size={20} />
+                <Text style={styles.calendarButtonText}>Add to Calendar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -330,107 +453,59 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
       </View>
 
       {/* Payment Modal */}
-      <Modal
+      <PaymentModal
         visible={showPaymentModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowPaymentModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Complete Payment</Text>
-              <TouchableOpacity 
-                style={styles.modalCloseButton}
-                onPress={() => setShowPaymentModal(false)}
-              >
-                <Icon name="close" type="material" color={appColors.grey2} size={24} />
-              </TouchableOpacity>
-            </View>
+        title="Complete Payment"
+        summaryTitle={event.title}
+        summarySubtitle={`${formatDate(event.date)} at ${event.time}`}
+        currency={event.currency}
+        amount={event.price}
+        selectedPaymentMethod={selectedPaymentMethod as any}
+        onSelectPaymentMethod={(m) => {
+          if (isProcessingPayment || (selectedPaymentMethod === 'mobile_money' && mmStep !== 'phone')) return;
+          setSelectedPaymentMethod(m);
+          setMmStep('phone');
+        }}
+        isProcessing={isProcessingPayment}
+        onRequestClose={() => {
+          if (isProcessingPayment || (selectedPaymentMethod === 'mobile_money' && mmStep === 'processing')) return;
+          setShowPaymentModal(false);
+          if (!(selectedPaymentMethod === 'mobile_money' && mmStep === 'processing')) { resetMmState(); }
+        }}
+        onCancel={() => {
+          if (isProcessingPayment || (selectedPaymentMethod === 'mobile_money' && mmStep === 'processing')) return;
+          setShowPaymentModal(false);
+          if (!(selectedPaymentMethod === 'mobile_money' && mmStep === 'processing')) { resetMmState(); }
+        }}
+        onConfirm={handlePaymentConfirm}
+        mmStep={mmStep}
+        mmPhone={mmPhone}
+        mmOtp={mmOtp}
+        mmError={mmError}
+        mmOtpAttempts={mmOtpAttempts}
+        mmOtpExpiry={mmOtpExpiry}
+        onChangeMmPhone={(t) => { setMmPhone(t); if (mmError) setMmError(''); }}
+        onChangeMmFormattedPhone={(v) => setMmFormattedPhone(v || '')}
+        onChangeMmCountrySupport={(supported) => setMmCountrySupported(!!supported)}
+        onChangeMmOtp={(t) => { setMmOtp(t); if (mmError) setMmError(''); }}
+        onChangeMmStep={(s) => setMmStep(s)}
+        onResendOtp={async () => {
+          await new Promise<void>((resolve)=> setTimeout(()=> resolve(), 700));
+          setMmOtp('');
+          setMmError('');
+          setMmOtpAttempts(0);
+          setMmOtpExpiry(Date.now() + 2 * 60 * 1000);
+          toast.show({ description: 'OTP resent', duration: 1500 });
+        }}
+      />
 
-            <View style={styles.eventSummary}>
-              <Text style={styles.eventSummaryTitle}>{event.title}</Text>
-              <Text style={styles.eventSummaryDate}>{formatDate(event.date)} at {event.time}</Text>
-              <View style={styles.priceContainer}>
-                <Text style={styles.totalLabel}>Total Amount:</Text>
-                <Text style={styles.totalAmount}>
-                  {event.currency} {event.price.toLocaleString()}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.paymentMethodsSection}>
-              <Text style={styles.sectionTitle}>Payment Method</Text>
-              
-              <TouchableOpacity
-                style={[
-                  styles.paymentMethodOption,
-                  selectedPaymentMethod === 'wellnessvault' && styles.selectedPaymentMethod
-                ]}
-                onPress={() => setSelectedPaymentMethod('wellnessvault')}
-              >
-                <View style={styles.paymentMethodInfo}>
-                  <Icon name="account-balance-wallet" type="material" color={appColors.AppBlue} size={24} />
-                  <View style={styles.paymentMethodDetails}>
-                    <Text style={styles.paymentMethodName}>WellnessVault</Text>
-                    <Text style={styles.paymentMethodBalance}>UGX 350,000 available</Text>
-                  </View>
-                </View>
-                <View style={[
-                  styles.radioButton,
-                  selectedPaymentMethod === 'wellnessvault' && styles.radioButtonSelected
-                ]}>
-                  {selectedPaymentMethod === 'wellnessvault' && (
-                    <View style={styles.radioButtonInner} />
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.paymentMethodOption,
-                  selectedPaymentMethod === 'mobile_money' && styles.selectedPaymentMethod
-                ]}
-                onPress={() => setSelectedPaymentMethod('mobile_money')}
-              >
-                <View style={styles.paymentMethodInfo}>
-                  <Icon name="phone-android" type="material" color={appColors.AppBlue} size={24} />
-                  <View style={styles.paymentMethodDetails}>
-                    <Text style={styles.paymentMethodName}>Mobile Money</Text>
-                    <Text style={styles.paymentMethodBalance}>MTN, Airtel Money</Text>
-                  </View>
-                </View>
-                <View style={[
-                  styles.radioButton,
-                  selectedPaymentMethod === 'mobile_money' && styles.radioButtonSelected
-                ]}>
-                  {selectedPaymentMethod === 'mobile_money' && (
-                    <View style={styles.radioButtonInner} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowPaymentModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.payButton}
-                onPress={handlePaymentConfirm}
-              >
-                <Text style={styles.payButtonText}>
-                  Pay {event.currency} {event.price.toLocaleString()}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <PaymentSuccessModal
+        visible={showSuccessModal}
+        title="Payment Successful"
+        subtitle="You are registered for this event."
+        buttonText="Close"
+        onClose={() => { setShowSuccessModal(false); resetToMyEvents(); }}
+      />
     </SafeAreaView>
   );
 };
@@ -441,7 +516,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -456,7 +531,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   shareButton: {
@@ -713,13 +788,6 @@ const styles = StyleSheet.create({
   paymentMethodsSection: {
     marginBottom: 30,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
-  },
   paymentMethodOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -777,6 +845,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  processingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  processingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextRegular,
+  },
   cancelButton: {
     flex: 1,
     borderWidth: 1,
@@ -805,6 +884,95 @@ const styles = StyleSheet.create({
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
+  },
+  // Success Modal styles
+  successCheckCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#4CAF50',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  successSubtitle: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextRegular,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  successButton: {
+    backgroundColor: appColors.AppBlue,
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    marginTop: 4,
+  },
+  successButtonText: {
+    fontSize: 16,
+    color: appColors.CardBackground,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+    textAlign: 'center',
+  },
+  // Mobile Money styles
+  mmSection: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: appColors.AppLightGray,
+  },
+  mmLabel: {
+    fontSize: 14,
+    color: appColors.grey1,
+    marginBottom: 8,
+    fontFamily: appFonts.headerTextMedium,
+  },
+  mmInput: {
+    backgroundColor: appColors.CardBackground,
+    borderWidth: 1,
+    borderColor: appColors.grey5,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  mmHelp: {
+    marginTop: 8,
+    fontSize: 12,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  mmRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  mmLink: {
+    color: appColors.AppBlue,
+    fontWeight: '600',
+    fontFamily: appFonts.headerTextBold,
+  },
+  mmChangeLink: {
+    marginTop: 10,
+    color: appColors.AppBlue,
+    textDecorationLine: 'underline',
+    fontFamily: appFonts.headerTextRegular,
+  },
+  disabledOption: {
+    opacity: 0.5,
   },
 });
 

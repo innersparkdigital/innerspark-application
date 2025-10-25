@@ -9,6 +9,9 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
@@ -130,6 +133,63 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
     navigation.navigate('GroupDetailScreen', { group });
   };
 
+  const handleLeaveGroup = (group: MyGroup) => {
+    Alert.alert(
+      'Leave Group',
+      `Are you sure you want to leave "${group.name}"? You can rejoin later if there's space.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Leave', 
+          style: 'destructive',
+          onPress: async () => {
+            // Remove group from list
+            setMyGroups(prev => prev.filter(g => g.id !== group.id));
+            
+            toast.show({
+              description: `You have left ${group.name}`,
+              duration: 3000,
+            });
+          }
+        },
+      ]
+    );
+  };
+
+  const handleGroupMenu = (group: MyGroup) => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'View Details', 'Leave Group'],
+          destructiveButtonIndex: 2,
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            handleGroupDetails(group);
+          } else if (buttonIndex === 2) {
+            handleLeaveGroup(group);
+          }
+        }
+      );
+    } else {
+      // Android - use Alert
+      Alert.alert(
+        group.name,
+        'Choose an action',
+        [
+          { text: 'View Details', onPress: () => handleGroupDetails(group) },
+          { 
+            text: 'Leave Group', 
+            style: 'destructive',
+            onPress: () => handleLeaveGroup(group) 
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+    }
+  };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'anxiety':
@@ -196,7 +256,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
 
         <TouchableOpacity 
           style={styles.moreButton}
-          onPress={() => handleGroupDetails(item)}
+          onPress={() => handleGroupMenu(item)}
         >
           <Icon name="more-vert" type="material" color={appColors.grey3} size={20} />
         </TouchableOpacity>

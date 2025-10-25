@@ -270,15 +270,21 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Group Details</Text>
-        <TouchableOpacity 
-          style={styles.headerButton}
-          onPress={() => navigation.navigate('GroupMessagesHistoryScreen', { groupId: group.id })}
-        >
-          <Icon name="history" type="material" color={appColors.grey1} size={24} />
-        </TouchableOpacity>
+        {group?.id && (
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => navigation.navigate('GroupMessagesHistoryScreen', { 
+              groupId: group.id,
+              groupName: group.name,
+              userRole: userRole
+            })}
+          >
+            <Icon name="history" type="material" color={appColors.CardBackground} size={24} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -343,8 +349,8 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
                 Specializes in {group.category} support
               </Text>
             </View>
-            <TouchableOpacity style={styles.contactButton}>
-              <Icon name="message" type="material" color={appColors.AppBlue} size={20} />
+            <TouchableOpacity style={styles.contactButtonDisabled} disabled>
+              <Icon name="message" type="material" color={appColors.grey4} size={20} />
             </TouchableOpacity>
           </View>
         </View>
@@ -444,9 +450,9 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   header: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
+    paddingBottom: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -463,7 +469,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
     flex: 1,
   },
@@ -582,6 +588,10 @@ const styles = StyleSheet.create({
   },
   contactButton: {
     padding: 8,
+  },
+  contactButtonDisabled: {
+    padding: 8,
+    opacity: 0.3,
   },
   scheduleSection: {
     backgroundColor: appColors.CardBackground,
