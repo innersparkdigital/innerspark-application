@@ -190,6 +190,18 @@ Update/reschedule an appointment.
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Appointment updated successfully",
+  "data": {
+    "appointmentId": "apt_001",
+    "updatedAt": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
 ### DELETE `/api/v1/th/appointments/:appointmentId`
 Cancel an appointment.
 
@@ -211,7 +223,9 @@ Mark appointment as started.
   "message": "Session started",
   "data": {
     "sessionId": "session_001",
-    "startTime": "2025-10-24T10:00:00Z"
+    "startTime": "2025-10-24T10:00:00Z",
+    "clientId": "client_123",
+    "duration": 60
   }
 }
 ```
@@ -268,8 +282,37 @@ Create a new note for a client.
 ### PUT `/api/v1/th/notes/:noteId`
 Update an existing note.
 
+**Request Body:**
+```json
+{
+  "title": "Session Summary - Updated",
+  "content": "Updated notes content...",
+  "type": "session"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Note updated successfully",
+  "data": {
+    "noteId": "note_001",
+    "updatedAt": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
 ### DELETE `/api/v1/th/notes/:noteId`
 Delete a note.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Note deleted successfully"
+}
+```
 
 ---
 
@@ -389,8 +432,12 @@ Accept a client request.
   "success": true,
   "message": "Request accepted successfully",
   "data": {
+    "requestId": "req_001",
     "appointmentId": "apt_001",
-    "clientId": "client_123"
+    "clientId": "client_123",
+    "clientName": "John Doe",
+    "scheduledDate": "2025-10-24",
+    "scheduledTime": "10:00"
   }
 }
 ```
@@ -508,6 +555,298 @@ Send a message to a client.
 
 ### PUT `/api/v1/th/chats/:chatId/read`
 Mark conversation as read.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Conversation marked as read"
+}
+```
+
+---
+
+## 📅 Events Management
+
+### GET `/api/v1/th/events`
+Get list of events created by therapist.
+
+**Query Parameters:**
+- `status`: `upcoming` | `ongoing` | `completed` | `cancelled`
+- `category`: `Workshop` | `Training` | `Seminar` | `Summit`
+- `page`: number
+- `limit`: number
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "events": [
+      {
+        "id": "event_001",
+        "title": "Mental Health First Aid Training",
+        "description": "Learn essential skills to support someone experiencing a mental health crisis",
+        "category": "Training",
+        "date": "2025-11-15",
+        "startTime": "09:00",
+        "endTime": "17:00",
+        "duration": 480,
+        "location": "Virtual",
+        "meetingLink": "https://meet.innerspark.com/event/001",
+        "maxAttendees": 50,
+        "registeredCount": 32,
+        "price": 25000,
+        "currency": "UGX",
+        "status": "upcoming",
+        "image": "https://...",
+        "createdAt": "2025-10-20T10:00:00Z"
+      }
+    ],
+    "stats": {
+      "totalEvents": 12,
+      "upcomingEvents": 5,
+      "totalRegistrations": 245
+    },
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 3,
+      "totalItems": 12
+    }
+  }
+}
+```
+
+### GET `/api/v1/th/events/:eventId`
+Get detailed event information.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "event_001",
+    "title": "Mental Health First Aid Training",
+    "description": "Learn essential skills to support someone experiencing a mental health crisis",
+    "category": "Training",
+    "date": "2025-11-15",
+    "startTime": "09:00",
+    "endTime": "17:00",
+    "duration": 480,
+    "location": "Virtual",
+    "meetingLink": "https://meet.innerspark.com/event/001",
+    "maxAttendees": 50,
+    "registeredCount": 32,
+    "availableSeats": 18,
+    "price": 25000,
+    "currency": "UGX",
+    "status": "upcoming",
+    "image": "https://...",
+    "agenda": [
+      {
+        "time": "09:00",
+        "title": "Introduction to Mental Health",
+        "duration": 60
+      },
+      {
+        "time": "10:00",
+        "title": "Recognizing Crisis Signs",
+        "duration": 90
+      }
+    ],
+    "speakers": [
+      {
+        "id": "therapist_123",
+        "name": "Dr. Sarah Johnson",
+        "title": "Clinical Psychologist",
+        "image": "https://..."
+      }
+    ],
+    "attendees": [
+      {
+        "id": "user_001",
+        "name": "John Doe",
+        "registeredAt": "2025-10-22T14:00:00Z",
+        "paymentStatus": "completed"
+      }
+    ],
+    "createdAt": "2025-10-20T10:00:00Z"
+  }
+}
+```
+
+### POST `/api/v1/th/events`
+Create a new event.
+
+**Request Body:**
+```json
+{
+  "title": "Mental Health First Aid Training",
+  "description": "Learn essential skills to support someone experiencing a mental health crisis",
+  "category": "Training",
+  "date": "2025-11-15",
+  "startTime": "09:00",
+  "endTime": "17:00",
+  "location": "Virtual",
+  "maxAttendees": 50,
+  "price": 25000,
+  "currency": "UGX",
+  "agenda": [
+    {
+      "time": "09:00",
+      "title": "Introduction to Mental Health",
+      "duration": 60
+    }
+  ],
+  "image": "https://..."
+}
+```
+
+**Validation:**
+- title: max 100 chars
+- description: max 1000 chars
+- category: Workshop | Training | Seminar | Summit
+- date: future date
+- maxAttendees: min 1, max 500
+- price: min 0
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Event created successfully",
+  "data": {
+    "eventId": "event_001",
+    "meetingLink": "https://meet.innerspark.com/event/001",
+    "createdAt": "2025-10-20T10:00:00Z"
+  }
+}
+```
+
+### PUT `/api/v1/th/events/:eventId`
+Update event details.
+
+**Request Body:**
+```json
+{
+  "title": "Updated Title",
+  "description": "Updated description",
+  "date": "2025-11-16",
+  "maxAttendees": 60
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Event updated successfully",
+  "data": {
+    "eventId": "event_001",
+    "updatedAt": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
+### DELETE `/api/v1/th/events/:eventId`
+Cancel/delete an event.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Event cancelled successfully. All attendees will be notified and refunded."
+}
+```
+
+### POST `/api/v1/th/events/:eventId/start`
+Start an event (mark as ongoing).
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Event started",
+  "data": {
+    "eventId": "event_001",
+    "startTime": "2025-11-15T09:00:00Z",
+    "attendeesPresent": 28
+  }
+}
+```
+
+### POST `/api/v1/th/events/:eventId/complete`
+Mark event as completed.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Event marked as completed",
+  "data": {
+    "eventId": "event_001",
+    "completedAt": "2025-11-15T17:00:00Z",
+    "totalAttendees": 32,
+    "attendeesPresent": 28,
+    "completionRate": "87.5%"
+  }
+}
+```
+
+### GET `/api/v1/th/events/:eventId/attendees`
+Get list of event attendees.
+
+**Query Parameters:**
+- `paymentStatus`: `completed` | `pending` | `refunded`
+- `page`: number
+- `limit`: number
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "attendees": [
+      {
+        "id": "user_001",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "phoneNumber": "+256784740145",
+        "registeredAt": "2025-10-22T14:00:00Z",
+        "paymentStatus": "completed",
+        "paymentAmount": 25000,
+        "attended": false
+      }
+    ],
+    "stats": {
+      "totalRegistered": 32,
+      "paidCount": 30,
+      "pendingPayment": 2,
+      "totalRevenue": 750000
+    },
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 2,
+      "totalItems": 32
+    }
+  }
+}
+```
+
+### POST `/api/v1/th/events/:eventId/attendees/:userId/check-in`
+Mark attendee as present.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Attendee checked in successfully",
+  "data": {
+    "userId": "user_001",
+    "checkedInAt": "2025-11-15T09:05:00Z"
+  }
+}
+```
 
 ---
 
@@ -643,8 +982,39 @@ Create a new support group.
 ### PUT `/api/v1/th/groups/:groupId`
 Update group details.
 
+**Request Body:**
+```json
+{
+  "name": "Anxiety Support Circle - Updated",
+  "description": "Updated description",
+  "maxMembers": 25,
+  "privacy": "private",
+  "guidelines": ["Updated guidelines"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Group updated successfully",
+  "data": {
+    "groupId": "group_001",
+    "updatedAt": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
 ### DELETE `/api/v1/th/groups/:groupId`
 Archive/delete a group.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Group archived successfully"
+}
+```
 
 ---
 
@@ -697,6 +1067,17 @@ Send a message to the group.
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "messageId": "gmsg_003",
+    "timestamp": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
 ### POST `/api/v1/th/groups/:groupId/announcements`
 Send an announcement to the group.
 
@@ -707,8 +1088,29 @@ Send an announcement to the group.
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Announcement sent successfully",
+  "data": {
+    "messageId": "gmsg_004",
+    "type": "announcement",
+    "timestamp": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
 ### DELETE `/api/v1/th/groups/:groupId/messages/:messageId`
 Delete a message (moderation).
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Message deleted successfully"
+}
+```
 
 ---
 
@@ -778,6 +1180,18 @@ Update member role (make/remove moderator).
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Member role updated successfully",
+  "data": {
+    "memberId": "member_001",
+    "newRole": "moderator"
+  }
+}
+```
+
 ### POST `/api/v1/th/groups/:groupId/members/:memberId/mute`
 Mute a member temporarily.
 
@@ -799,8 +1213,24 @@ Mute a member temporarily.
 ### POST `/api/v1/th/groups/:groupId/members/:memberId/unmute`
 Unmute a member.
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Member unmuted successfully"
+}
+```
+
 ### DELETE `/api/v1/th/groups/:groupId/members/:memberId`
 Remove a member from the group.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Member removed from group successfully"
+}
+```
 
 ---
 
@@ -820,14 +1250,71 @@ Schedule a new group session.
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Group session scheduled successfully",
+  "data": {
+    "sessionId": "session_001",
+    "groupId": "group_001",
+    "date": "2025-10-24",
+    "time": "15:00",
+    "meetingLink": "https://meet.innerspark.com/group/123"
+  }
+}
+```
+
 ### POST `/api/v1/th/groups/:groupId/sessions/:sessionId/start`
 Start a group session.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Group session started",
+  "data": {
+    "sessionId": "session_001",
+    "startTime": "2025-10-24T15:00:00Z",
+    "attendees": 12
+  }
+}
+```
 
 ### PUT `/api/v1/th/groups/:groupId/sessions/:sessionId`
 Update session details.
 
+**Request Body:**
+```json
+{
+  "date": "2025-10-25",
+  "time": "16:00",
+  "topic": "Updated Topic"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Session updated successfully",
+  "data": {
+    "sessionId": "session_001",
+    "updatedAt": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
 ### DELETE `/api/v1/th/groups/:groupId/sessions/:sessionId`
 Cancel a session.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Session cancelled successfully"
+}
+```
 
 ---
 
@@ -867,8 +1354,27 @@ Get therapist notifications.
 ### PUT `/api/v1/th/notifications/:notificationId/read`
 Mark notification as read.
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Notification marked as read"
+}
+```
+
 ### PUT `/api/v1/th/notifications/read-all`
 Mark all notifications as read.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "All notifications marked as read",
+  "data": {
+    "markedCount": 3
+  }
+}
+```
 
 ---
 
@@ -914,8 +1420,54 @@ Get analytics overview.
 ### GET `/api/v1/th/analytics/sessions`
 Get session analytics.
 
+**Query Parameters:**
+- `period`: `week` | `month` | `year`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "period": "month",
+    "totalSessions": 96,
+    "completedSessions": 88,
+    "cancelledSessions": 8,
+    "averageDuration": 58,
+    "sessionsByType": {
+      "individual": 70,
+      "couple": 15,
+      "group": 11
+    },
+    "trend": "+12%"
+  }
+}
+```
+
 ### GET `/api/v1/th/analytics/revenue`
 Get revenue analytics.
+
+**Query Parameters:**
+- `period`: `week` | `month` | `year`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "period": "month",
+    "totalRevenue": 4800000,
+    "currency": "UGX",
+    "completedPayments": 4500000,
+    "pendingPayments": 300000,
+    "revenueByType": {
+      "individual": 3500000,
+      "couple": 1125000,
+      "group": 175000
+    },
+    "trend": "+15%"
+  }
+}
+```
 
 ---
 
@@ -958,6 +1510,17 @@ Update availability schedule.
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Availability updated successfully",
+  "data": {
+    "updatedAt": "2025-10-23T16:00:00Z"
+  }
+}
+```
+
 ### GET `/api/v1/th/pricing`
 Get therapist pricing information.
 
@@ -986,6 +1549,31 @@ Get therapist pricing information.
 
 ### PUT `/api/v1/th/pricing`
 Update pricing.
+
+**Request Body:**
+```json
+{
+  "sessionTypes": [
+    {
+      "type": "Individual Session",
+      "duration": 60,
+      "price": 55000,
+      "currency": "UGX"
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Pricing updated successfully",
+  "data": {
+    "updatedAt": "2025-10-23T16:00:00Z"
+  }
+}
+```
 
 ---
 
@@ -1152,8 +1740,34 @@ Therapist login (separate from client login).
 ### POST `/api/v1/th/auth/refresh`
 Refresh authentication token.
 
+**Request Body:**
+```json
+{
+  "refreshToken": "refresh_token_here"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "new_jwt_token_here",
+    "refreshToken": "new_refresh_token_here"
+  }
+}
+```
+
 ### POST `/api/v1/th/auth/logout`
 Logout therapist.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
 
 ---
 

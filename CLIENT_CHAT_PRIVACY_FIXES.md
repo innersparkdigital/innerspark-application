@@ -86,15 +86,7 @@ Fixed critical privacy violations in client chat screens to align with therapist
 - ✅ Updated navigation to use ClientGroupChatScreen instead of inline chat
 - ✅ Clients tap group → navigate to ClientGroupChatScreen
 
-**Before:**
-```javascript
-isAdmin: true, // ❌ Clients had admin powers
-```
 
-**After:**
-```javascript
-isAdmin: false, // ✅ Clients are never admins
-```
 
 ---
 
