@@ -93,9 +93,14 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
         const date = new Date();
         date.setDate(date.getDate() - i);
         
-        // Skip some days to simulate missing entries
-        if (Math.random() > 0.2) {
-          const moodValue = Math.floor(Math.random() * 5) + 1;
+        // Skip occasional days to simulate realistic missing entries (skip ~15% of days)
+        if (Math.random() > 0.15) {
+          // Generate varied mood values with slight trend upward for realism
+          const baseValue = 3; // Start around "Okay"
+          const variation = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+          const trendBonus = i < days / 2 ? 0 : Math.random() > 0.7 ? 1 : 0; // Slight improvement over time
+          const moodValue = Math.max(1, Math.min(5, baseValue + variation + trendBonus));
+          
           const notes = [
             "Had a productive day at work",
             "Spent time with family",
@@ -105,6 +110,10 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
             "Challenging day but managed well",
             "Feeling grateful for small things",
             "Had some anxiety but used coping strategies",
+            "Took a walk and felt better",
+            "Connected with a friend",
+            "Focused on self-care today",
+            "Managed stress well",
           ];
           
           mockData.push({
@@ -115,7 +124,7 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
             moodLabel: moodLabels[moodValue as keyof typeof moodLabels],
             note: notes[Math.floor(Math.random() * notes.length)],
             timestamp: date.toISOString(),
-            pointsEarned: 500,
+            pointsEarned: 0, // MVP: Points deferred
           });
         }
       }
@@ -205,57 +214,88 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
   };
 
   const SimpleChart: React.FC = () => {
-    if (moodHistory.length === 0) return null;
+    if (moodHistory.length === 0) {
+      return (
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Mood Trend</Text>
+          <View style={styles.emptyChart}>
+            <Icon name="show-chart" type="material" color={appColors.grey3} size={48} />
+            <Text style={styles.emptyChartText}>No mood data yet</Text>
+            <Text style={styles.emptyChartSubtext}>Start tracking your mood to see trends</Text>
+          </View>
+        </View>
+      );
+    }
 
-    const maxValue = 5;
-    const chartHeight = 200;
-    const pointRadius = 4;
-    const lineWidth = 2;
+    const chartHeight = 160;
+    const chartPadding = 20;
+    const pointSize = 12;
+    const minWidth = CHART_WIDTH - 60;
+    const chartWidth = Math.max(minWidth, moodHistory.length * 60);
 
     return (
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Mood Trend</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={[styles.chart, { width: Math.max(CHART_WIDTH, moodHistory.length * 40) }]}>
-            {/* Y-axis labels */}
-            <View style={styles.yAxisLabels}>
-              {[5, 4, 3, 2, 1].map(value => (
-                <View key={value} style={styles.yAxisLabel}>
-                  <Text style={styles.yAxisText}>{moodEmojis[value as keyof typeof moodEmojis]}</Text>
-                </View>
-              ))}
-            </View>
+        <Text style={styles.chartTitle}>Mood Trend - Last {selectedPeriod} Days</Text>
+        
+        <View style={styles.chartWrapper}>
+          {/* Y-axis emojis */}
+          <View style={styles.yAxis}>
+            {[5, 4, 3, 2, 1].map(value => (
+              <Text key={value} style={styles.yAxisEmoji}>
+                {moodEmojis[value as keyof typeof moodEmojis]}
+              </Text>
+            ))}
+          </View>
 
-            {/* Chart area */}
-            <View style={styles.chartArea}>
+          {/* Scrollable chart */}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.chartScrollView}
+          >
+            <View style={[styles.chartCanvas, { width: chartWidth, height: chartHeight }]}>
               {/* Grid lines */}
-              {[1, 2, 3, 4, 5].map(value => (
-                <View
-                  key={value}
-                  style={[
-                    styles.gridLine,
-                    { bottom: ((value - 1) / (maxValue - 1)) * (chartHeight - 40) }
-                  ]}
-                />
-              ))}
+              {[1, 2, 3, 4, 5].map(value => {
+                const y = chartHeight - ((value - 1) / 4) * (chartHeight - chartPadding * 2) - chartPadding;
+                return (
+                  <View
+                    key={`grid-${value}`}
+                    style={[styles.gridLine, { top: y }]}
+                  />
+                );
+              })}
 
               {/* Data points and lines */}
               {moodHistory.map((entry, index) => {
-                const x = (index / (moodHistory.length - 1)) * (CHART_WIDTH - 80);
-                const y = ((entry.moodValue - 1) / (maxValue - 1)) * (chartHeight - 40);
+                const x = moodHistory.length > 1
+                  ? (index / (moodHistory.length - 1)) * (chartWidth - 40) + 20
+                  : chartWidth / 2;
+                const y = chartHeight - ((entry.moodValue - 1) / 4) * (chartHeight - chartPadding * 2) - chartPadding;
+
+                const nextEntry = moodHistory[index + 1];
+                let lineWidth = 0;
+                let lineAngle = 0;
+
+                if (nextEntry) {
+                  const nextX = (index + 1) / (moodHistory.length - 1) * (chartWidth - 40) + 20;
+                  const nextY = chartHeight - ((nextEntry.moodValue - 1) / 4) * (chartHeight - chartPadding * 2) - chartPadding;
+                  lineWidth = Math.sqrt(Math.pow(nextX - x, 2) + Math.pow(nextY - y, 2));
+                  lineAngle = Math.atan2(nextY - y, nextX - x) * (180 / Math.PI);
+                }
 
                 return (
                   <View key={entry.id}>
-                    {/* Line to next point */}
-                    {index < moodHistory.length - 1 && (
+                    {/* Connecting line */}
+                    {nextEntry && (
                       <View
                         style={[
-                          styles.chartLine,
+                          styles.connectingLine,
                           {
-                            left: x + pointRadius,
-                            bottom: y + pointRadius,
-                            width: (CHART_WIDTH - 80) / (moodHistory.length - 1) - pointRadius,
+                            left: x,
+                            top: y,
+                            width: lineWidth,
                             backgroundColor: moodColors[entry.moodValue as keyof typeof moodColors],
+                            transform: [{ rotate: `${lineAngle}deg` }],
                           }
                         ]}
                       />
@@ -264,10 +304,13 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
                     {/* Data point */}
                     <TouchableOpacity
                       style={[
-                        styles.chartPoint,
+                        styles.dataPoint,
                         {
-                          left: x,
-                          bottom: y,
+                          left: x - pointSize / 2,
+                          top: y - pointSize / 2,
+                          width: pointSize,
+                          height: pointSize,
+                          borderRadius: pointSize / 2,
                           backgroundColor: moodColors[entry.moodValue as keyof typeof moodColors],
                         }
                       ]}
@@ -281,18 +324,9 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
                   </View>
                 );
               })}
-
-              {/* X-axis labels */}
-              <View style={styles.xAxisLabels}>
-                {moodHistory.map((entry, index) => (
-                  <Text key={entry.id} style={styles.xAxisText}>
-                    {formatDate(entry.date)}
-                  </Text>
-                ))}
-              </View>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </View>
     );
   };
@@ -347,10 +381,7 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
         </View>
       </View>
 
-      <View style={styles.historyPoints}>
-        <Icon name="stars" type="material" color="#FFD700" size={12} />
-        <Text style={styles.historyPointsText}>+{item.pointsEarned} pts</Text>
-      </View>
+      {/* MVP: Points hidden */}
     </TouchableOpacity>
   );
 
@@ -560,25 +591,46 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
     marginBottom: 20,
   },
-  chart: {
-    height: 200,
-    flexDirection: 'row',
+  emptyChart: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
   },
-  yAxisLabels: {
+  emptyChartText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextSemiBold,
+    marginTop: 12,
+  },
+  emptyChartSubtext: {
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  chartWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  yAxis: {
     width: 40,
     height: 160,
     justifyContent: 'space-between',
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
-  yAxisLabel: {
-    alignItems: 'center',
+  yAxisEmoji: {
+    fontSize: 20,
+    textAlign: 'center',
   },
-  yAxisText: {
-    fontSize: 16,
-  },
-  chartArea: {
+  chartScrollView: {
     flex: 1,
+  },
+  chartCanvas: {
     position: 'relative',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 8,
     marginLeft: 10,
   },
   gridLine: {
@@ -586,32 +638,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: appColors.grey6,
+    backgroundColor: '#E0E0E0',
   },
-  chartPoint: {
+  dataPoint: {
     position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: appColors.CardBackground,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
   },
-  chartLine: {
+  connectingLine: {
     position: 'absolute',
-    height: 2,
-  },
-  xAxisLabels: {
-    position: 'absolute',
-    bottom: -30,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  xAxisText: {
-    fontSize: 10,
-    color: appColors.grey3,
-    fontFamily: appFonts.headerTextRegular,
+    height: 3,
+    opacity: 0.7,
+    transformOrigin: 'left center',
   },
   statsContainer: {
     paddingHorizontal: 20,

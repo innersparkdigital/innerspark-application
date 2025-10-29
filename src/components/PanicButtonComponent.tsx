@@ -438,12 +438,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   modalContent: {
-    width: width * 0.85,
+    width: Math.min(width * 0.85, 380), // Max 380px for large screens
     aspectRatio: 1,
     backgroundColor: '#FFF',
     borderRadius: 1000,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 20,
     elevation: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -470,17 +471,20 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   actionsCircle: {
-    width: 300,
-    height: 300,
+    width: '80%',
+    aspectRatio: 1,
+    maxWidth: 300,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   actionButton: {
     position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: width * 0.22, // 22% of screen width
+    height: width * 0.22,
+    maxWidth: 90,
+    maxHeight: 90,
+    borderRadius: width * 0.11, // Half of width for perfect circle
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 8,

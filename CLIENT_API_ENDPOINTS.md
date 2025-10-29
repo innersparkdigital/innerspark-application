@@ -5,8 +5,8 @@ This document outlines all API endpoints required for the Client/User functional
 **Base URL:** `/api/v1/client/`
 
 **Document Status:** Complete  
-**Last Updated:** October 25, 2025  
-**Version:** 1.0
+**Last Updated:** October 29, 2025 <!-- UPDATED: Added user settings endpoints -->  
+**Version:** 1.1 <!-- UPDATED: Version bump for new endpoints -->
 
 ---
 
@@ -25,6 +25,7 @@ This document outlines all API endpoints required for the Client/User functional
 11. [Meditations](#meditations)
 12. [Wellness Vault](#wellness-vault)
 13. [Notifications](#notifications)
+14. [User Settings](#user-settings) <!-- ADDED: Theme & appearance settings -->
 
 ---
 
@@ -99,15 +100,17 @@ Get mood tracking history.
         "moodLabel": "Good",
         "note": "Had a great therapy session today. Feeling much better about managing my anxiety.",
         "timestamp": "2025-10-23T14:30:00Z",
-        "pointsEarned": 500
+        "pointsEarned": 0  // CHANGED: MVP uses streak milestones, not daily points
       }
     ],
     "stats": {
       "currentStreak": 7,
-      "totalPoints": 3500,
+      "totalPoints": 0,  // CHANGED: Points awarded only at milestones (7, 14, 30 days)
       "totalCheckIns": 45,
       "averageMood": 3.8,
-      "mostCommonMood": "Good"
+      "mostCommonMood": "Good",
+      "milestonesReached": 1,  // ADDED: Track milestone progress (0-3)
+      "nextMilestone": 14  // ADDED: Next milestone at 14 days
     },
     "insights": [
       {
@@ -146,14 +149,16 @@ Get today's mood check-in status.
       "emoji": "😊",
       "moodValue": 2,
       "note": "Feeling great today!",
-      "pointsEarned": 500,
+      "pointsEarned": 0,  // CHANGED: No daily points in MVP
       "timestamp": "2025-10-23T08:30:00Z",
       "date": "2025-10-23"
     },
     "stats": {
       "currentStreak": 7,
-      "totalPoints": 3500,
-      "totalCheckIns": 45
+      "totalPoints": 0,  // CHANGED: Points only at milestones
+      "totalCheckIns": 45,
+      "milestonesReached": 1,  // ADDED: 1 of 3 milestones reached
+      "nextMilestone": 14  // ADDED: Next reward at 14 days
     }
   }
 }
@@ -190,10 +195,13 @@ Log a new mood entry.
     "moodId": "1730123456789",
     "moodLabel": "Good",
     "moodEmoji": "😊",
-    "pointsEarned": 500,
+    "pointsEarned": 0,  // CHANGED: No daily points
     "currentStreak": 8,
-    "totalPoints": 4000,
-    "timestamp": "2025-10-23T14:30:00Z"
+    "totalPoints": 0,  // CHANGED: Points awarded at milestones only
+    "timestamp": "2025-10-23T14:30:00Z",
+    "isMilestone": false,  // ADDED: True if streak hits 7, 14, or 30
+    "nextMilestone": 14,  // ADDED: Days until next reward
+    "milestonesReached": 1  // ADDED: Progress (0-3)
   }
 }
 ```
@@ -228,39 +236,58 @@ Get AI-powered mood insights and patterns.
 }
 ```
 
-### GET `/api/v1/client/mood/points`
-Get mood loyalty points information.
+### GET `/api/v1/client/mood/milestones`
+<!-- CHANGED: Renamed from /points to /milestones for MVP -->
+Get mood streak milestones and rewards information.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "totalPoints": 3500,
-    "availablePoints": 2000,
-    "usedPoints": 1500,
-    "pointsPerCheckIn": 500,
     "currentStreak": 7,
     "longestStreak": 15,
-    "recentEarnings": [
+    "milestonesReached": 1,  // ADDED: 0-3 milestones completed
+    "totalPoints": 500,  // CHANGED: Only from milestones (7 days = 500 pts)
+    "availablePoints": 500,
+    "usedPoints": 0,
+    "milestones": [  // ADDED: Milestone tracking
       {
-        "date": "2025-10-23",
-        "points": 500,
-        "activity": "Daily mood check-in"
+        "days": 7,
+        "reward": 500,
+        "reached": true,
+        "reachedDate": "2025-10-23"
+      },
+      {
+        "days": 14,
+        "reward": 1000,
+        "reached": false,
+        "daysRemaining": 7
+      },
+      {
+        "days": 30,
+        "reward": 2000,
+        "reached": false,
+        "daysRemaining": 23
       }
     ],
+    "nextMilestone": {  // ADDED: Next reward info
+      "days": 14,
+      "reward": 1000,
+      "daysRemaining": 7
+    },
     "redeemOptions": [
       {
         "id": 1,
         "title": "10% Off Therapy Session",
         "pointsCost": 1000,
-        "available": true
+        "available": false  // CHANGED: Not enough points yet
       },
       {
         "id": 2,
         "title": "Free Event Ticket",
         "pointsCost": 2000,
-        "available": true
+        "available": false
       }
     ]
   }
@@ -2601,11 +2628,125 @@ Response includes:
 
 ---
 
+## 🎨 User Settings
+
+<!-- ADDED: New section for user preferences and appearance settings -->
+
+### GET `/api/v1/client/settings`
+Get all user settings and preferences.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "appearance": {
+      "theme": "light",
+      "useSystemTheme": false,
+      "highContrast": false,
+      "reducedMotion": false,
+      "largeText": false,
+      "accentColor": "#5D7BF5",
+      "fontStyle": "system"
+    },
+    "privacy": {
+      "walletBalanceVisibility": true
+      // REMOVED: wastecoinBalanceVisibility (not used in app)
+    },
+    "notifications": {
+      "pushEnabled": true,
+      "emailEnabled": true,
+      "moodReminders": true
+    }
+  }
+}
+```
+
+### GET `/api/v1/client/settings/appearance`
+Get appearance settings only.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "theme": "light",
+    "useSystemTheme": false,
+    "highContrast": false,
+    "reducedMotion": false,
+    "largeText": false,
+    "accentColor": "#5D7BF5",
+    "fontStyle": "system"
+  }
+}
+```
+
+### PUT `/api/v1/client/settings/appearance`
+Update appearance settings.
+
+**Request Body:**
+```json
+{
+  "theme": "dark",
+  "useSystemTheme": false,
+  "highContrast": false,
+  "reducedMotion": false,
+  "largeText": false
+}
+```
+
+**Validation:**
+- `theme`: Required, one of: `light` | `dark` | `auto`
+- `useSystemTheme`: Boolean
+- `highContrast`: Boolean
+- `reducedMotion`: Boolean
+- `largeText`: Boolean
+- `accentColor`: Optional, valid hex color
+- `fontStyle`: Optional, one of: `system` | `custom`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Appearance settings updated successfully",
+  "data": {
+    "theme": "dark",
+    "useSystemTheme": false,
+    "updatedAt": "2025-10-29T03:00:00Z"
+  }
+}
+```
+
+### PUT `/api/v1/client/settings/privacy`
+Update privacy settings.
+
+**Request Body:**
+```json
+{
+  "walletBalanceVisibility": true
+  // REMOVED: wastecoinBalanceVisibility (not used in app)
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Privacy settings updated successfully",
+  "data": {
+    "walletBalanceVisibility": true,
+    "updatedAt": "2025-10-29T03:00:00Z"
+  }
+}
+```
+
+---
+
 **Document Status:** ✅ Complete  
-**Last Updated:** October 25, 2025  
-**Version:** 1.0  
-**Total Lines:** 1,900+  
-**Coverage:** All client-side features  
+**Last Updated:** October 29, 2025 <!-- UPDATED -->  
+**Version:** 1.1 <!-- UPDATED: Added user settings endpoints -->  
+**Total Lines:** 2,100+ <!-- UPDATED: Increased line count -->  
+**Coverage:** All client-side features + User Settings <!-- UPDATED -->  
 **Contact:** Backend Team
 
 ---

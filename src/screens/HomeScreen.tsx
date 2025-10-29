@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/base';
-import { appColors, parameters, appFonts } from '../global/Styles';
+import { appColors as staticAppColors, parameters, appFonts } from '../global/Styles';
+import { useThemedColors } from '../hooks/useThemedColors';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
@@ -50,6 +51,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const toast = useToast();
+  const appColors = useThemedColors(); // ✅ Themed colors
 
   const userDetails = useSelector(state => state.userData.userDetails);
   const [selectedMood, setSelectedMood] = useState(null);
@@ -148,7 +150,7 @@ const HomeScreen = ({ navigation }) => {
       case 'confirmed': return '#4CAF50';
       case 'pending': return '#FF9800';
       case 'cancelled': return '#F44336';
-      default: return appColors.grey3;
+      default: return staticAppColors.grey3;
     }
   };
 
@@ -311,10 +313,10 @@ const HomeScreen = ({ navigation }) => {
   
   const TestNotificationButton = () => (
     <TouchableOpacity
-      style={{ backgroundColor: appColors.AppBlue, padding: 10, borderRadius: 5 }}
+      style={{ backgroundColor: staticAppColors.AppBlue, padding: 10, borderRadius: 5 }}
       onPress={handleTestNotification}
     >
-      <Text style={{ color: appColors.CardBackground, fontSize: 16 }}>Test Notification</Text>
+      <Text style={{ color: staticAppColors.CardBackground, fontSize: 16 }}>Test Notification</Text>
     </TouchableOpacity>
   );
 
@@ -322,7 +324,8 @@ const HomeScreen = ({ navigation }) => {
 
 
   return (
-    <SafeAreaView style={styles.container}>
+    // THEMED: Background adapts to light (#F6F6F6) / dark (#121212)
+    <SafeAreaView style={[styles.container, { backgroundColor: appColors.background }]}>
       <ISStatusBar />
       
       {/* Always-visible Panic Button */}
@@ -333,6 +336,7 @@ const HomeScreen = ({ navigation }) => {
       />
       
       {/* Header Section */}
+      {/* THEMED: Header stays blue in both themes for brand consistency */}
       <View style={styles.header}>
         {/* Top row with icons */}
         <View style={styles.headerTopRow}>
@@ -394,11 +398,13 @@ const HomeScreen = ({ navigation }) => {
         ) : null}
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      {/* THEMED: ScrollView background adapts to light (#F6F6F6) / dark (#121212) */}
+      <ScrollView style={[styles.scrollView, { backgroundColor: appColors.background }]} showsVerticalScrollIndicator={false}>
 
         {/* Quick Actions Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Quick Actions</Text>
+          {/* THEMED: Section header text adapts - light (#5170FF) / dark (#6B8AFF) */}
+          <Text style={[styles.sectionHeader, { color: appColors.AppBlue }]}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
             {quickActions.map((action) => (
               <QuickActionCard key={action.id} action={action} />
@@ -494,9 +500,10 @@ const HomeScreen = ({ navigation }) => {
           )}
         </View>
 
-        {/* Today's Schedule - Timeline View */}
+        {/* Today's Schedule Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Today's Schedule</Text>
+          {/* THEMED: Section header text adapts - light (#5170FF) / dark (#6B8AFF) */}
+          <Text style={[styles.sectionHeader, { color: appColors.AppBlue }]}>Today's Schedule</Text>
           
           {todaysEvents.length === 0 ? (
             <View style={styles.emptyEventsCard}>
@@ -576,13 +583,14 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
+// Note: Styles use staticAppColors. Dynamic theming applied via useThemedColors() hook in component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: staticAppColors.CardBackground,
   },
   header: {
-    backgroundColor: appColors.AppBlue,
+    backgroundColor: staticAppColors.AppBlue,
     paddingTop: parameters.headerHeightS,
     paddingBottom: 60,
     paddingHorizontal: 20,
@@ -599,13 +607,13 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: appColors.CardBackground,
+    color: staticAppColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: appColors.CardBackground,
+    color: staticAppColors.CardBackground,
     fontFamily: appFonts.bodyTextRegular,
     opacity: 0.9,
   },
@@ -632,7 +640,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    backgroundColor: appColors.AppLightGray,
+    backgroundColor: staticAppColors.AppLightGray,
     paddingTop: 10,
   },
   section: {
@@ -642,14 +650,14 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     marginBottom: 15,
     fontFamily: appFonts.headerTextBold,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     marginBottom: 20,
     fontFamily: appFonts.headerTextBold,
   },
@@ -661,7 +669,7 @@ const styles = StyleSheet.create({
   actionCard: {
     width: '48%',
     alignItems: 'center',
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: staticAppColors.CardBackground,
     borderRadius: 15,
     paddingHorizontal: 12,
     paddingVertical: 20,
@@ -682,7 +690,7 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     fontSize: 13,
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     fontWeight: '600',
     textAlign: 'center',
     fontFamily: appFonts.appTextMedium,
@@ -711,26 +719,26 @@ const styles = StyleSheet.create({
   sessionsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     marginBottom: 8,
     fontFamily: appFonts.headerTextBold,
   },
   sessionsSubtitle: {
     fontSize: 14,
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     marginBottom: 15,
     lineHeight: 20,
     fontFamily: appFonts.bodyTextRegular,
   },
   bookButton: {
-    backgroundColor: appColors.AppBlue,
+    backgroundColor: staticAppColors.AppBlue,
     borderRadius: 25,
     paddingVertical: 12,
     paddingHorizontal: 20,
     alignSelf: 'flex-start',
   },
   bookButtonText: {
-    color: appColors.CardBackground,
+    color: staticAppColors.CardBackground,
     fontSize: 14,
     fontWeight: '600',
     fontFamily: appFonts.appTextMedium,
@@ -753,12 +761,12 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
   },
   sessionCard: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: staticAppColors.CardBackground,
     borderRadius: 12,
     padding: 15,
     elevation: 2,
@@ -778,7 +786,7 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: appColors.AppBlue,
+    backgroundColor: staticAppColors.AppBlue,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -786,7 +794,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: appColors.CardBackground,
+    color: staticAppColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   avatarImage: {
@@ -800,13 +808,13 @@ const styles = StyleSheet.create({
   therapistName: {
     fontSize: 16,
     fontWeight: '600',
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     marginBottom: 2,
     fontFamily: appFonts.headerTextMedium,
   },
   sessionSpecialty: {
     fontSize: 13,
-    color: appColors.AppGray,
+    color: staticAppColors.AppGray,
     fontFamily: appFonts.bodyTextRegular,
   },
   sessionType: {
@@ -827,14 +835,14 @@ const styles = StyleSheet.create({
   },
   sessionDateTime: {
     fontSize: 14,
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     fontWeight: '500',
     marginLeft: 6,
     fontFamily: appFonts.bodyTextMedium,
   },
   sessionDuration: {
     fontSize: 13,
-    color: appColors.AppGray,
+    color: staticAppColors.AppGray,
     marginLeft: 6,
     fontFamily: appFonts.bodyTextRegular,
   },
@@ -842,7 +850,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   joinButton: {
-    backgroundColor: appColors.AppBlue,
+    backgroundColor: staticAppColors.AppBlue,
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -850,12 +858,12 @@ const styles = StyleSheet.create({
   joinButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: appColors.CardBackground,
+    color: staticAppColors.CardBackground,
     fontFamily: appFonts.bodyTextMedium,
   },
   // Events and Prompts Styles - Compact Design
   eventsContainer: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: staticAppColors.CardBackground,
     borderRadius: 12,
     padding: 8,
     elevation: 2,
@@ -870,7 +878,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     marginBottom: 6,
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: staticAppColors.CardBackground,
     borderRadius: 10,
     borderLeftWidth: 3,
     elevation: 1,
@@ -893,13 +901,13 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     marginBottom: 1,
     fontFamily: appFonts.headerTextMedium,
   },
   eventTime: {
     fontSize: 13,
-    color: appColors.AppGray,
+    color: staticAppColors.AppGray,
     fontFamily: appFonts.bodyTextRegular,
   },
   eventAction: {
@@ -939,14 +947,14 @@ const styles = StyleSheet.create({
   promptTitle: {
     fontSize: 14,
     fontWeight: '500',
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     lineHeight: 20,
     fontFamily: appFonts.bodyTextRegular,
   },
   
   // Commented out - Original Activities Styles (kept for future use)
   activitiesContainer: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: staticAppColors.CardBackground,
     borderRadius: 15,
     padding: 15,
     elevation: 2,
@@ -960,7 +968,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: appColors.AppLightGray,
+    borderBottomColor: staticAppColors.AppLightGray,
   },
   activityItemLast: {
     borderBottomWidth: 0,
@@ -969,7 +977,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: appColors.AppLightBlue,
+    backgroundColor: staticAppColors.AppLightBlue,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -980,18 +988,18 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: appColors.AppBlue,
+    color: staticAppColors.AppBlue,
     marginBottom: 2,
     fontFamily: appFonts.bodyTextMedium,
   },
   activityTime: {
     fontSize: 13,
-    color: appColors.grey2,
+    color: staticAppColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
   },
 
   emergencyText: {
-    color: appColors.CardBackground,
+    color: staticAppColors.CardBackground,
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
@@ -1005,7 +1013,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   emptyEventsCard: {
-    backgroundColor: appColors.CardBackground,
+    backgroundColor: staticAppColors.CardBackground,
     borderRadius: 12,
     padding: 32,
     alignItems: 'center',
@@ -1017,7 +1025,7 @@ const styles = StyleSheet.create({
   },
   emptyEventsText: {
     fontSize: 14,
-    color: appColors.grey2,
+    color: staticAppColors.grey2,
     fontFamily: appFonts.headerTextRegular,
     marginTop: 12,
     textAlign: 'center',

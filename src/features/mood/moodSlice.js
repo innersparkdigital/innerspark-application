@@ -1,6 +1,7 @@
 /**
  * Mood Slice - Redux state management for mood tracking
- * Manages check-in status, mood data, and points
+ * Manages check-in status, mood data, streaks, and milestone rewards
+ * MVP: Points deferred until milestones (7, 14, 30 days)
  */
 import { createSlice } from '@reduxjs/toolkit';
 
@@ -51,7 +52,7 @@ const moodSlice = createSlice({
       state.totalCheckIns = totalCheckIns || state.totalCheckIns;
     },
     
-    // Add points after check-in
+    // Add points after check-in (MVP: Called only at milestones)
     addPoints: (state, action) => {
       state.totalPoints += action.payload;
     },

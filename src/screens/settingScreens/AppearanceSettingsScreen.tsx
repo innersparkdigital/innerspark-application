@@ -1,7 +1,8 @@
 /**
  * Appearance Settings Screen - Theme and display customization
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -9,6 +10,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Appearance,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
@@ -16,6 +18,14 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import {
+  setTheme,
+  setUseSystemTheme,
+  setHighContrast,
+  setReducedMotion,
+  setLargeText,
+  selectAppearanceSettings,
+} from '../../features/settings/userSettingsSlice';
 
 interface AppearanceSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -23,15 +33,43 @@ interface AppearanceSettingsScreenProps {
 
 const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
   
-  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'auto'>('light');
-  const [useSystemTheme, setUseSystemTheme] = useState(false);
-  const [highContrast, setHighContrast] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [largeText, setLargeText] = useState(false);
+  // Get settings from Redux
+  const appearanceSettings = useSelector(selectAppearanceSettings);
+  
+  // Local state synced with Redux
+  const [selectedTheme, setSelectedThemeLocal] = useState<'light' | 'dark' | 'auto'>(appearanceSettings.theme);
+  const [useSystemThemeLocal, setUseSystemThemeLocal] = useState(appearanceSettings.useSystemTheme);
+  const [highContrastLocal, setHighContrastLocal] = useState(appearanceSettings.highContrast);
+  const [reducedMotionLocal, setReducedMotionLocal] = useState(appearanceSettings.reducedMotion);
+  const [largeTextLocal, setLargeTextLocal] = useState(appearanceSettings.largeText);
+  
+  // Sync local state with Redux on mount
+  useEffect(() => {
+    setSelectedThemeLocal(appearanceSettings.theme);
+    setUseSystemThemeLocal(appearanceSettings.useSystemTheme);
+    setHighContrastLocal(appearanceSettings.highContrast);
+    setReducedMotionLocal(appearanceSettings.reducedMotion);
+    setLargeTextLocal(appearanceSettings.largeText);
+  }, [appearanceSettings]);
+  
+  // Listen to system theme changes when auto mode is enabled
+  useEffect(() => {
+    if (useSystemThemeLocal) {
+      const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+        toast.show({
+          description: `System theme changed to ${colorScheme}`,
+          duration: 2000,
+        });
+      });
+      return () => subscription.remove();
+    }
+  }, [useSystemThemeLocal]);
 
   const handleThemeChange = (theme: 'light' | 'dark' | 'auto') => {
-    setSelectedTheme(theme);
+    setSelectedThemeLocal(theme);
+    dispatch(setTheme(theme));
     toast.show({
       description: `${theme === 'auto' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'} theme selected`,
       duration: 2000,
@@ -39,14 +77,43 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   };
 
   const handleSystemThemeToggle = (value: boolean) => {
-    setUseSystemTheme(value);
+    setUseSystemThemeLocal(value);
+    dispatch(setUseSystemTheme(value));
     if (value) {
-      setSelectedTheme('auto');
+      setSelectedThemeLocal('auto');
+      const systemTheme = Appearance.getColorScheme();
       toast.show({
-        description: 'Using system theme settings',
+        description: `Using system theme (${systemTheme || 'light'})`,
         duration: 2000,
       });
     }
+  };
+  
+  const handleHighContrastToggle = (value: boolean) => {
+    setHighContrastLocal(value);
+    dispatch(setHighContrast(value));
+    toast.show({
+      description: `High contrast ${value ? 'enabled' : 'disabled'}`,
+      duration: 2000,
+    });
+  };
+  
+  const handleReducedMotionToggle = (value: boolean) => {
+    setReducedMotionLocal(value);
+    dispatch(setReducedMotion(value));
+    toast.show({
+      description: `Reduced motion ${value ? 'enabled' : 'disabled'}`,
+      duration: 2000,
+    });
+  };
+  
+  const handleLargeTextToggle = (value: boolean) => {
+    setLargeTextLocal(value);
+    dispatch(setLargeText(value));
+    toast.show({
+      description: `Large text ${value ? 'enabled' : 'disabled'}`,
+      duration: 2000,
+    });
   };
 
   const ThemeOption = ({ 
@@ -68,7 +135,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
         selectedTheme === theme && styles.themeCardSelected
       ]}
       onPress={() => handleThemeChange(theme)}
-      disabled={useSystemTheme && theme !== 'auto'}
+      disabled={useSystemThemeLocal && theme !== 'auto'}
     >
       <View style={[styles.themeIconContainer, { backgroundColor: iconColor + '15' }]}>
         <Icon
@@ -169,10 +236,10 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
                 </View>
               </View>
               <Switch
-                value={useSystemTheme}
+                value={useSystemThemeLocal}
                 onValueChange={handleSystemThemeToggle}
                 trackColor={{ false: appColors.grey5, true: appColors.AppBlue + '40' }}
-                thumbColor={useSystemTheme ? appColors.AppBlue : appColors.grey4}
+                thumbColor={useSystemThemeLocal ? appColors.AppBlue : appColors.grey4}
               />
             </View>
           </View>
@@ -200,10 +267,10 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
                 </View>
               </View>
               <Switch
-                value={highContrast}
-                onValueChange={setHighContrast}
+                value={highContrastLocal}
+                onValueChange={handleHighContrastToggle}
                 trackColor={{ false: appColors.grey5, true: appColors.AppBlue + '40' }}
-                thumbColor={highContrast ? appColors.AppBlue : appColors.grey4}
+                thumbColor={highContrastLocal ? appColors.AppBlue : appColors.grey4}
               />
             </View>
 
@@ -227,10 +294,10 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
                 </View>
               </View>
               <Switch
-                value={reducedMotion}
-                onValueChange={setReducedMotion}
+                value={reducedMotionLocal}
+                onValueChange={handleReducedMotionToggle}
                 trackColor={{ false: appColors.grey5, true: appColors.AppBlue + '40' }}
-                thumbColor={reducedMotion ? appColors.AppBlue : appColors.grey4}
+                thumbColor={reducedMotionLocal ? appColors.AppBlue : appColors.grey4}
               />
             </View>
 
@@ -254,10 +321,10 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
                 </View>
               </View>
               <Switch
-                value={largeText}
-                onValueChange={setLargeText}
+                value={largeTextLocal}
+                onValueChange={handleLargeTextToggle}
                 trackColor={{ false: appColors.grey5, true: appColors.AppBlue + '40' }}
-                thumbColor={largeText ? appColors.AppBlue : appColors.grey4}
+                thumbColor={largeTextLocal ? appColors.AppBlue : appColors.grey4}
               />
             </View>
           </View>

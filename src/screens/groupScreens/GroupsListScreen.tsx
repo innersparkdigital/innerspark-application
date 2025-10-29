@@ -366,7 +366,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
               { backgroundColor: getCategoryColor(item.category) }
             ]}
             titleStyle={styles.joinButtonText}
-            onPress={() => handleJoinGroup(item.id)}
+            onPress={() => navigation.navigate('GroupDetailScreen', { group: item })}
             disabled={item.memberCount >= item.maxMembers && !item.isPrivate}
           />
         )}
@@ -510,8 +510,8 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         maxAllowed={membershipInfo.groupLimit}
         onUpgrade={() => {
           setShowLimitModal(false);
-          // Navigate to subscription screen
-          navigation.navigate('SubscriptionScreen');
+          // Navigate to services screen (subscription plans)
+          navigation.navigate('ServicesScreen');
         }}
         onClose={() => setShowLimitModal(false)}
       />

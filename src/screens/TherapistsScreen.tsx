@@ -501,7 +501,8 @@ const TherapistsScreen = ({ navigation, route }) => {
               onPress={() => navigation.navigate('DonationFundScreen')}
               activeOpacity={0.7}
             >
-              <Icon name="favorite" type="material" color={appColors.CardBackground} size={24} />
+              <Icon name="favorite" type="material" color={appColors.CardBackground} size={20} />
+              <Text style={styles.donateText}>Donate</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1008,9 +1009,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   donateButton: {
-    padding: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  donateText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextMedium,
   },
   headerTitle: {
     fontSize: 24,

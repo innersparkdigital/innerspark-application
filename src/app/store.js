@@ -19,6 +19,9 @@ import therapistRequestsReducer from '../features/therapist/requestsSlice';
 import therapistGroupsReducer from '../features/therapist/groupsSlice';
 import therapistAnalyticsReducer from '../features/therapist/analyticsSlice';
 
+// User settings slice
+import userSettingsReducer from '../features/settings/userSettingsSlice';
+
 
 export default configureStore({
     reducer: {
@@ -34,6 +37,9 @@ export default configureStore({
         
         // Subscription reducer
         subscription: subscriptionReducer,
+        
+        // User settings reducer (appearance, accessibility, etc.)
+        userSettings: userSettingsReducer,
         
         // Therapist-specific reducers
         therapistDashboard: therapistDashboardReducer,

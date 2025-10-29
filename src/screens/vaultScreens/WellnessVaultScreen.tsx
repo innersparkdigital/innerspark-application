@@ -192,15 +192,22 @@ const WellnessVaultScreen = ({ navigation }) => {
               <Text style={styles.balanceAmount}>
                 {vaultData.currency} {formatCurrency(vaultData.balance, vaultData.currency)}
               </Text>
-              <View style={styles.verifiedBadge}>
-                <Icon name="check" type="material" color={appColors.CardBackground} size={16} />
-              </View>
+              <TouchableOpacity 
+                style={styles.plusButton}
+                onPress={handleTopUp}
+                activeOpacity={0.7}
+              >
+                <Icon name="add" type="material" color={appColors.CardBackground} size={28} />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        {/* Vault Funding Channels */}
-        <View style={styles.section}>
+        {/* Vault Funding Channels - HIDDEN FOR MVP */}
+        {/* Reason: Reward points system still being studied, not giving points in MVP */}
+        {/* Wellness credits not yet automated */}
+        {/* TODO: Uncomment when reward points and wellness credits are ready */}
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Vault Funding Channels</Text>
             <TouchableOpacity style={styles.topUpButton} onPress={handleTopUp}>
@@ -214,7 +221,7 @@ const WellnessVaultScreen = ({ navigation }) => {
               <FundingChannelCard key={channel.id} channel={channel} />
             ))}
           </View>
-        </View>
+        </View> */}
 
         {/* Recent Activities */}
         <View style={styles.section}>
@@ -300,13 +307,18 @@ const styles = StyleSheet.create({
     color: appColors.grey1,
     fontFamily: appFonts.appTextBold,
   },
-  verifiedBadge: {
+  plusButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    borderRadius: 25,
+    width: 50,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   section: {
     paddingHorizontal: 20,

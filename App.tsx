@@ -23,6 +23,9 @@ import SplashScreen from 'react-native-splash-screen';
 // Import Screen Security Manager
 import { enableScreenSecurity, getSecurityStatus } from './src/utils/ScreenSecurityManager';
 
+// Import Theme Provider
+import { ThemeProvider } from './src/context/ThemeContext';
+
 
 const App = () => {
 
@@ -56,6 +59,7 @@ const App = () => {
     <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaView style={{ flex: 1 }}>
         <Provider store={store}>
+          <ThemeProvider>
             <NativeBaseProvider> 
               <KeyboardAvoidingView
                   behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -63,6 +67,7 @@ const App = () => {
                 <LHRootNavigator />
               </KeyboardAvoidingView>
             </NativeBaseProvider>
+          </ThemeProvider>
         </Provider>
       </SafeAreaView>
     </GestureHandlerRootView>

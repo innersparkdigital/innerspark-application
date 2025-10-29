@@ -49,7 +49,7 @@ const MoodScreen = ({ navigation }) => {
     "Let's track your emotional journey",
     "Start your daily mood check-in",
     "Monitor your emotional well-being",
-    "Track your feelings and earn points",
+    "Build your wellness streak",
   ];
 
   const subtitlesAfterCheckIn = [
@@ -216,7 +216,7 @@ const MoodScreen = ({ navigation }) => {
               timestamp={formatRelativeTime(todayMoodData.timestamp)}
               onPress={() => navigation.navigate('TodayMoodScreen')}
               showReflection={false}
-              showPoints={true}
+              showPoints={false}
               showDetailsButton={true}
             />
           ) : null}
@@ -233,14 +233,15 @@ const MoodScreen = ({ navigation }) => {
             <Text style={styles.statLabel}>Day Streak</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity 
+          {/* MVP: Points card hidden - will show milestone rewards later */}
+          {/* <TouchableOpacity 
             style={styles.statCard}
             onPress={() => navigation.navigate('MoodPointsScreen')}
           >
             <Icon name="stars" type="material" color="#FFD700" size={28} />
             <Text style={styles.statValue}>{totalPoints}</Text>
             <Text style={styles.statLabel}>Points</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           
           <TouchableOpacity 
             style={styles.statCard}
@@ -256,7 +257,8 @@ const MoodScreen = ({ navigation }) => {
             <View style={styles.actionsSection}>
               <Text style={styles.sectionTitle}>Wellness Resources</Text>
               
-              <TouchableOpacity 
+              {/* MVP: Points action hidden - will show milestone rewards later */}
+              {/* <TouchableOpacity 
                 style={styles.actionCard}
                 onPress={() => navigation.navigate('MoodPointsScreen')}
               >
@@ -268,7 +270,7 @@ const MoodScreen = ({ navigation }) => {
                   <Text style={styles.actionSubtitle}>Redeem points for therapy discounts</Text>
                 </View>
                 <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               
               <TouchableOpacity 
                 style={styles.actionCard}

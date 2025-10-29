@@ -1,5 +1,5 @@
 /**
- * Today Mood Screen - Daily mood check-in with loyalty points
+ * Today Mood Screen - Daily mood check-in with streak milestones
  */
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -45,6 +45,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
   const [moodNote, setMoodNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMoodObj, setSelectedMoodObj] = useState<any>(preSelectedMood || null);
+  const [isTypingReflection, setIsTypingReflection] = useState(false);
   
   // Get mood data from Redux
   const hasCheckedInToday = useSelector(selectHasCheckedInToday);
@@ -86,6 +87,11 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
   };
 
   const [currentPrompt, setCurrentPrompt] = useState("What's on your mind today?");
+
+  // MVP: Streak milestones (7, 14, 30 days)
+  const MILESTONES = [7, 14, 30];
+  const nextMilestone = MILESTONES.find(m => m > currentStreak) || 30;
+  const streakProgressPercent = Math.max(0, Math.min(100, Math.floor((currentStreak / nextMilestone) * 100)));
 
   // Update prompt when mood changes
   useEffect(() => {
@@ -136,7 +142,6 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
     setIsSubmitting(true);
     try {
       const selectedMoodData = globalMoodOptions.find(mood => mood.id === selectedMood)!;
-      const pointsEarned = 500; // 500 points per check-in
       
       const newEntry: MoodEntry = {
         id: Date.now().toString(),
@@ -146,11 +151,11 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         moodLabel: selectedMoodData.name,
         note: moodNote.trim(),
         timestamp: new Date().toISOString(),
-        pointsEarned,
+        pointsEarned: 0, // MVP: Points deferred until milestones
       };
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1500));
 
       // Update Redux state
       dispatch(setTodayCheckIn({
@@ -163,13 +168,14 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         timestamp: newEntry.timestamp,
         date: newEntry.date,
       }));
-      dispatch(addPoints(pointsEarned));
+      // MVP: Don't add points immediately
+      // dispatch(addPoints(pointsEarned));
       dispatch(incrementStreak());
 
-      // Show success with points earned
+      // Show success message focused on streak
       Alert.alert(
         '🎉 Mood Logged Successfully!',
-        `You earned ${pointsEarned} loyalty points!\n\nCurrent streak: ${currentStreak + 1} days\nTotal points: ${totalPoints + pointsEarned}`,
+        `Current streak: ${currentStreak + 1} day${currentStreak + 1 === 1 ? '' : 's'}${currentStreak + 1 === 7 || currentStreak + 1 === 14 || currentStreak + 1 === 30 ? '\n\n🎁 Milestone reached! Check your rewards.' : ''}`,
         [
           { text: 'View History', onPress: () => navigation.navigate('MoodHistoryScreen') },
           { text: 'Great!', style: 'default' }
@@ -216,10 +222,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
           </View>
         </View>
 
-        <View style={styles.todayPoints}>
-          <Icon name="stars" type="material" color="#FFD700" size={20} />
-          <Text style={styles.pointsText}>+{todayEntry.pointsEarned} points earned</Text>
-        </View>
+        {/* MVP: Points removed - will show milestone rewards later */}
       </View>
     );
   };
@@ -236,28 +239,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
     </View>
   );
 
-  const ReflectionSection: React.FC = () => (
-    <View style={styles.reflectionSection}>
-      <Text style={styles.reflectionTitle}>Daily Reflection</Text>
-      <Text style={styles.reflectionPrompt}>{currentPrompt}</Text>
-      <TextInput
-        style={styles.reflectionInput}
-        multiline
-        numberOfLines={4}
-        placeholder="Share your thoughts... (minimum 5 characters)"
-        value={moodNote}
-        onChangeText={setMoodNote}
-        maxLength={300}
-      />
-      <View style={styles.inputFooter}>
-        <Text style={styles.characterCount}>{moodNote.length}/300</Text>
-        <View style={styles.pointsIndicator}>
-          <Icon name="stars" type="material" color="#FFD700" size={16} />
-          <Text style={styles.pointsIndicatorText}>+500 points</Text>
-        </View>
-      </View>
-    </View>
-  );
+  // Note: Reflection section inlined in render to avoid remounts that blur the TextInput
 
   const StatsHeader: React.FC = () => (
     <View style={styles.statsHeader}>
@@ -268,18 +250,18 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
       </View>
       
       <View style={styles.statCard}>
-        <Icon name="stars" type="material" color="#FFD700" size={24} />
-        <Text style={styles.statValue}>{totalPoints}</Text>
-        <Text style={styles.statLabel}>Total Points</Text>
+        <Icon name="emoji-events" type="material" color="#FFD700" size={24} />
+        <Text style={styles.statValue}>{currentStreak >= 30 ? '3/3' : currentStreak >= 14 ? '2/3' : currentStreak >= 7 ? '1/3' : '0/3'}</Text>
+        <Text style={styles.statLabel}>Milestones</Text>
       </View>
 
       <TouchableOpacity 
         style={styles.statCard}
-        onPress={() => navigation.navigate('MoodPointsScreen')}
+        onPress={() => navigation.navigate('MoodHistoryScreen')}
       >
-        <Icon name="redeem" type="material" color={appColors.AppBlue} size={24} />
-        <Text style={styles.statValue}>Redeem</Text>
-        <Text style={styles.statLabel}>Loyalty Points</Text>
+        <Icon name="history" type="material" color={appColors.AppBlue} size={24} />
+        <Text style={styles.statValue}>View</Text>
+        <Text style={styles.statLabel}>History</Text>
       </TouchableOpacity>
     </View>
   );
@@ -303,14 +285,47 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="none"
+        scrollEnabled={!isTypingReflection}
+      >
         {/* Today's Mood Card or Selector */}
         {todayEntry ? (
           <TodayMoodCard />
         ) : (
           <>
             <MoodSelector />
-            {selectedMood && <ReflectionSection />}
+            {selectedMood && (
+              <View style={styles.reflectionSection}>
+                <Text style={styles.reflectionTitle}>Daily Reflection</Text>
+                <Text style={styles.reflectionPrompt}>{currentPrompt}</Text>
+                <TextInput
+                  style={styles.reflectionInput}
+                  multiline
+                  numberOfLines={4}
+                  placeholder="Share your thoughts... (minimum 5 characters)"
+                  value={moodNote}
+                  onChangeText={setMoodNote}
+                  maxLength={300}
+                  textAlignVertical="top"
+                  blurOnSubmit={false}
+                  onFocus={() => setIsTypingReflection(true)}
+                  onBlur={() => setIsTypingReflection(false)}
+                />
+                <View style={styles.inputFooter}>
+                  <Text style={styles.characterCount}>{moodNote.length}/300</Text>
+                  <View style={styles.streakProgressContainer}>
+                    <View style={styles.streakProgressTrack}>
+                      <View style={[styles.streakProgressFill, { width: `${streakProgressPercent}%` }]} />
+                    </View>
+                    <Text style={styles.nextMilestoneText}>Next reward: {nextMilestone} days</Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </>
         )}
 
@@ -318,7 +333,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         {!todayEntry && selectedMood && (
           <View style={styles.submitSection}>
             <Button
-              title="Log My Mood & Earn Points"
+              title="Log My Mood"
               onPress={handleMoodSubmit}
               loading={isSubmitting}
               disabled={isSubmitting || selectedMood === null}
@@ -326,7 +341,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
               titleStyle={styles.submitButtonText}
             />
             <Text style={styles.submitNote}>
-              Complete your daily check-in to earn 500 points!
+              Keep your streak going! Rewards unlock at 7, 14, and 30 days.
             </Text>
           </View>
         )}
@@ -340,7 +355,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
             <Icon name="check-circle" type="material" color="#4CAF50" size={48} />
             <Text style={styles.completedTitle}>Today's Check-in Complete!</Text>
             <Text style={styles.completedMessage}>
-              Come back tomorrow for your next daily check-in and earn more points.
+              Come back tomorrow to continue your streak!
             </Text>
             <TouchableOpacity
               style={styles.viewHistoryButton}
@@ -545,16 +560,28 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
-  pointsIndicator: {
+  streakProgressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    flex: 1,
   },
-  pointsIndicatorText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#E65100',
-    fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+  streakProgressTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: appColors.AppLightGray,
+    overflow: 'hidden',
+  },
+  streakProgressFill: {
+    height: '100%',
+    backgroundColor: appColors.AppBlue,
+    borderRadius: 3,
+  },
+  nextMilestoneText: {
+    fontSize: 11,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
   },
   submitSection: {
     margin: 20,
