@@ -64,7 +64,7 @@ export const getAppHomeData = async ({ dispatch, userID, loadingSetter=null }) =
  */
 export const getDashboardData = async (userId) => {
     const response = await APIInstance.get('/client/dashboard', {
-        params: { userId }
+        params: { user_id: userId }
     });
     return response.data;
 }

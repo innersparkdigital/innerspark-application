@@ -8,16 +8,22 @@
 // Dashboard & Home
 export * from './dashboard';
 
+// Profile
+export * from './profile';
+
 // Mood Tracking
 export * from './mood';
 
-// Goals
+// Journal
+export * from './journal';
+
+// Goals (Placeholder - Backend will add later)
 export * from './goals';
 
-// Therapists
+// Therapists (Placeholder - Backend will add later)
 export * from './therapists';
 
-// Appointments
+// Appointments (Placeholder - Backend will add later)
 export * from './appointments';
 
 // Events
@@ -35,8 +41,20 @@ export * from './meditations';
 // Settings
 export * from './settings';
 
-// File Uploads
-export * from './uploads';
-
 // Notifications
 export * from './notifications';
+
+// Emergency
+export * from './emergency';
+
+// Wallet
+export * from './wallet';
+
+// Subscriptions & Billing
+export * from './subscriptions';
+
+// Account & Data Management
+export * from './account';
+
+// File Uploads (Utility)
+export * from './uploads';

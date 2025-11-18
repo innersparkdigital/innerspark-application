@@ -19,18 +19,24 @@ export const getNotifications = async (page = 1) => {
 /**
  * Mark notification as read
  * @param {string} notificationId - Notification ID
+ * @param {string} userId - User ID
  * @returns {Promise} Success message
  */
-export const markNotificationAsRead = async (notificationId) => {
-    const response = await APIInstance.put(`/client/notifications/${notificationId}/read`);
+export const markNotificationAsRead = async (notificationId, userId) => {
+    const response = await APIInstance.put(`/client/notifications/${notificationId}/read`, {
+        user_id: userId
+    });
     return response.data;
 };
 
 /**
  * Mark all notifications as read
+ * @param {string} userId - User ID
  * @returns {Promise} Success message
  */
-export const markAllNotificationsAsRead = async () => {
-    const response = await APIInstance.put('/client/notifications/read-all');
+export const markAllNotificationsAsRead = async (userId) => {
+    const response = await APIInstance.put('/client/notifications/read-all', {
+        user_id: userId
+    });
     return response.data;
 };
