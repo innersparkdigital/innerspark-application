@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { signin } from '../../features/user/userSlice';
@@ -24,7 +23,7 @@ import { Button, Icon} from '@rneui/base';
 import { useToast } from 'native-base';
 import { storeItemLS } from '../../global/StorageActions';
 import { appImages } from '../../global/Data';
-import { APIGlobaltHeaders, APIInstance, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
+import { APIInstance } from '../../api/LHAPI';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
@@ -32,10 +31,6 @@ import { isValidEmailAddress, isValidPhoneNumber, isValidEmailOrPhone } from '..
 import { normalizePhone } from '../../global/LHShortcuts';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 import { isEmailVerified, isPhoneVerified } from '../../global/LHValidators';
-
-
-const baseUrl = baseUrlRoot + baseUrlV1; // Base URL for API requests
-APIGlobaltHeaders(); // API Global headers
 
 export default function SigninScreen({navigation}){
 

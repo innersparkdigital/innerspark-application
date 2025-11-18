@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
@@ -21,11 +20,7 @@ import { Icon, Tab, TabView } from '@rneui/themed';
 import { appColors, parameters } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
-
-// GLOBAL AXIOS DEFAULTS
-const baseUrl = baseUrlRoot + baseUrlV1;
-APIGlobaltHeaders(); // API Global headers
+import { APIInstance } from '../../api/LHAPI';
 
 export default function PasswordResetScreen( { navigation } ){
 
@@ -61,7 +56,7 @@ export default function PasswordResetScreen( { navigation } ){
         // making a request to the API
         try {
 
-            const response = await axios.post(`${baseUrl}/forgot-pwd`, {
+            const response = await APIInstance.post('/forgot-pwd', {
                 email : emailOrPhone,
                 phone : '',
             });
@@ -119,7 +114,7 @@ export default function PasswordResetScreen( { navigation } ){
         // making a request to the API
         try {
 
-            const response = await axios.post(`${baseUrl}/forgot-pwd`, {
+            const response = await APIInstance.post('/forgot-pwd', {
                 email : '',
                 phone : emailOrPhone,  // Calling Code + phone:sliced
             });

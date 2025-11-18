@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateGender } from '../../features/flow/signupFlowSlice';
@@ -21,7 +20,7 @@ import { Button, Icon, BottomSheet} from '@rneui/base';
 import { useToast } from 'native-base';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
+import { APIInstance } from '../../api/LHAPI';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
 import { 
     isValidPhoneNumber, 
@@ -32,9 +31,6 @@ import {
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 import { API_BASE_URL, API_VERSION, AUTH_TOKEN } from '../../config/env';
-
-const baseUrl = baseUrlRoot + baseUrlV1; // Base URL for API requests
-APIGlobaltHeaders(); // API Global headers
 
 export default function SignupScreen({navigation}){
     
@@ -284,7 +280,7 @@ export default function SignupScreen({navigation}){
         // making a request to the API for signup
         try {
 
-            const response = await axios.post( `${baseUrl}/auth/register`, {
+            const response = await APIInstance.post('/auth/register', {
                 firstName : firstName.trim(),
                 lastName : lastName.trim(),
                 email : email.trim(),

@@ -1,7 +1,6 @@
 /**
  * App - Profile Info Screen
  */
-import axios from 'axios';
 import React, { useState, useEffect, useCallback }  from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUserDetails } from '../../features/user/userDataSlice';
@@ -30,14 +29,12 @@ import { appImages, appLinks } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import { appFonts } from '../../global/Styles';
 import { createFormData, notifyWithToast } from '../../global/LHShortcuts';
-import { profileInstance, APIGlobaltHeaders, baseUrl } from '../../api/LHAPI';
+import { FileUploadInstance } from '../../api/LHAPI';
+import { updateProfile, updatePhone, updateEmail } from '../../api/shared';
 import { launchCamera , launchImageLibrary} from 'react-native-image-picker';
 import { isValidPhoneNumber, isValidEmailAddress } from '../../global/LHValidators';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
-
-
-APIGlobaltHeaders(); // Call API Global Headers
 
 
 
@@ -229,7 +226,7 @@ export default function ProfileInfoScreen({ navigation }){
             // const userImageData = createFormData(tempAvatar, 7281899149016 ); // the form data
             const userImageData = createFormData(tempAvatar, userDetails.userId ); // the form data --- using current user Id
             // console.log(userImageData);
-            const response = await profileInstance.post(`/update-avatar`, userImageData );
+            const response = await FileUploadInstance.post(`/update-avatar`, userImageData );
 
             // check the response
             if ( response.status === 200 ) {
@@ -304,44 +301,25 @@ export default function ProfileInfoScreen({ navigation }){
             // set updating email state
             setIsLoadingPhone(true);
             
-            // making a request to the API
+            // making a request to the API using shared profile function
             try {
-    
-                const response = await axios.post( `${baseUrl}/update-phone`, {
-                    user : userDetails.userId,
-                    phone : formattedPhone,
-                });
+                const data = await updatePhone(userDetails.userId, formattedPhone);
                 
-                // checking the status
-                if (response.status === 200) {
-                    // IF status is successful
-                    if (response.data.status === "success"){
-                        // console.log(response.data); // ##DEVLOG
-    
-                        setIsLoadingPhone(false); // finish the loading state
-                        setIsEditPhoneModalVisible(false); // Hide the phone edit modal
-    
-                        // redirect to the verification screen
-                        navigation.navigate("VerifyPhoneScreen", { verificationPhone: response.data.phone });
-    
-    
-                    } else if (response.data.status === "failed"){
-                        notifyWithToast(toast, response.data.message, "top");    
-                        setIsLoadingPhone(false); // finish the loading state
-    
-                    } else {
-    
-                        notifyWithToast(toast, response.data.message, "top"); // display message from the API
-                        setIsLoadingPhone(false); // profile updating state
-                        // Hide the modal or something ?
-                        
-                    }
-                   
+                // IF status is successful
+                if (data.status === "success"){
+                    setIsLoadingPhone(false); // finish the loading state
+                    setIsEditPhoneModalVisible(false); // Hide the phone edit modal
+
+                    // redirect to the verification screen
+                    navigation.navigate("VerifyPhoneScreen", { verificationPhone: data.phone });
+
+                } else if (data.status === "failed"){
+                    notifyWithToast(toast, data.message, "top");    
+                    setIsLoadingPhone(false); // finish the loading state
+
                 } else {
-    
-                    // Can we find out what status code it is? 
-                    throw new Error("Oops! Something went wrong!");
-    
+                    notifyWithToast(toast, data.message, "top"); // display message from the API
+                    setIsLoadingPhone(false); // profile updating state
                 }
     
             } catch (error) {
@@ -376,41 +354,24 @@ export default function ProfileInfoScreen({ navigation }){
             setIsLoadingEmail(true);
             
     
-            // making a request to the API
+            // making a request to the API using shared profile function
             try {
-    
-                const response = await axios.post( `${baseUrl}/update-email`, {
-                    user : userDetails.userId,
-                    email : emailUpdate,
-                });
+                const data = await updateEmail(userDetails.userId, emailUpdate);
                 
-                // checking the status
-                if (response.status === 200) {
-                    // IF status is successful
-                    if (response.data.status === "success"){
-                        // console.log(response.data); // ##DEVLOG
-    
-                        setIsLoadingEmail(false); // finish the loading state
-                        setIsEditEmailModalVisible(false); // Hide the email edit modal
+                // IF status is successful
+                if (data.status === "success"){
+                    setIsLoadingEmail(false); // finish the loading state
+                    setIsEditEmailModalVisible(false); // Hide the email edit modal
 
-                        navigation.navigate("VerifyEmailScreen", { verificationEmail: response.data.email });
-                        
-                    } else if (response.data.status === "failed"){
-                        notifyWithToast(toast, response.data.message, "top");
-                        setIsLoadingEmail(false); // finish the loading state
-    
-                    } else {
-    
-                        notifyWithToast(toast, response.data.message, "top"); // message from the API
-                        setIsLoadingEmail(false); // profile updating state
-                        
-                    }
-                   
+                    navigation.navigate("VerifyEmailScreen", { verificationEmail: data.email });
+                    
+                } else if (data.status === "failed"){
+                    notifyWithToast(toast, data.message, "top");
+                    setIsLoadingEmail(false); // finish the loading state
+
                 } else {
-    
-                    // Can we find out what status code it is? 
-                    throw new Error("Oops! Something went wrong!");
-    
+                    notifyWithToast(toast, data.message, "top"); // message from the API
+                    setIsLoadingEmail(false); // profile updating state
                 }
     
             } catch (error) {
@@ -434,47 +395,31 @@ export default function ProfileInfoScreen({ navigation }){
 
             setIsUpdatingName(true); // updating state
 
-            // making a request to the API to update the Name
+            // making a request to the API using shared profile function
             try {
-                const response = await axios.post(`${baseUrl}/update-profile`, { 
-                    user: userDetails.userId, 
-                    name: nameUpdate.trim()
-                
-                });
+                const data = await updateProfile(userDetails.userId, { name: nameUpdate.trim() });
 
-                    // checking the status
-                    if (response.status === 200) {
-                        // If status is successful
-                        if (response.data.status === "success"){ 
+                // If status is successful
+                if (data.status === "success"){ 
 
-                            // Update or refresh the App State
-                            getAppHomeData({
-                                dispatch: dispatch,
-                                userID: userDetails.userId,
-                            });
+                    // Update or refresh the App State
+                    getAppHomeData({
+                        dispatch: dispatch,
+                        userID: userDetails.userId,
+                    });
 
-                            notifyWithToast(toast, "Name updated successfully!", "top"); // Notify with Toast
-                            setIsEditNameModalVisible(false);
-                            setIsUpdatingName(false); // reset updating state
-                            // setNameUpdate(""); // reset name update state
-                        } else {
-                            // console.log(response.data);
-                            console.log("Failed updating Name."); // what exactly went wrong?
-                            setIsUpdatingName(false); // reset updating state
-                            // setNameUpdate(""); // reset name update state
-                        }
-
-                    } else {
-
-                        throw new Error("error updating name.");
-
-                    }
+                    notifyWithToast(toast, "Name updated successfully!", "top"); // Notify with Toast
+                    setIsEditNameModalVisible(false);
+                    setIsUpdatingName(false); // reset updating state
+                } else {
+                    console.log("Failed updating Name."); // what exactly went wrong?
+                    setIsUpdatingName(false); // reset updating state
+                }
 
             } catch (error) {
                 console.log(error.message);
                 notifyWithToast(toast, "Oops? There's been an error!", "top");
                 setIsUpdatingName(false); // reset updating state
-                // setNameUpdate(""); // reset name update state
             }
 
         }

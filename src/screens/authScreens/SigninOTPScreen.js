@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { signin } from '../../features/user/userSlice';
@@ -29,7 +28,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
+import { APIInstance } from '../../api/LHAPI';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import RNOtpVerify from 'react-native-otp-verify';
 import { storeItemLS } from '../../global/StorageActions';
@@ -39,8 +38,6 @@ import { isEmailLoginType } from '../../global/LHValidators';
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore 'Log Notification Error by RNElement Timer
 // LogBox.ignoreAllLogs(); // Ignore all log notifications
 
-const baseUrl = baseUrlRoot + baseUrlV1;
-APIGlobaltHeaders(); // API Global headers
 
 
 export default function SigninOTPScreen( { navigation, route } ){
@@ -149,11 +146,11 @@ export default function SigninOTPScreen( { navigation, route } ){
 
             let response;
             if (isEmailLoginType(loginData.type)) {
-                response = await axios.post(`${baseUrl}/auth/resend-verification`, {
+                response = await APIInstance.post('/auth/resend-verification', {
                     email: loginData.email,
                 });
             } else {
-                response = await axios.post(`${baseUrl}/auth/resend-verification`, {
+                response = await APIInstance.post('/auth/resend-verification', {
                     phone: loginData.phone,
                 });
             }
@@ -293,12 +290,12 @@ export default function SigninOTPScreen( { navigation, route } ){
 
                 let response; // response variable initialized
                 if (isEmailLoginType(loginData.type)) {
-                    response = await axios.post(`${baseUrl}/auth/verify-email`, {
+                    response = await APIInstance.post('/auth/verify-email', {
                         email: loginData.email,
                         otpcode: OTP_Code,
                     });
                 } else {
-                    response = await axios.post(`${baseUrl}/auth/verify-phone`, {
+                    response = await APIInstance.post('/auth/verify-phone', {
                         phone: loginData.phone,
                         otpcode: OTP_Code,
                     });

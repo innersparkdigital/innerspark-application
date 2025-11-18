@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAppHomeData } from '../../api/LHFunctions';
@@ -19,7 +18,7 @@ import { Button, Icon, BottomSheet } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
-import { APIGlobaltHeaders, baseUrl } from '../../api/LHAPI';
+import { APIInstance } from '../../api/LHAPI';
 import { notifyWithToast } from '../../global/LHShortcuts';
 
 // import { Countdown } from "react-native-element-timer";
@@ -31,7 +30,6 @@ LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore 'Log Notification Error
 // LogBox.ignoreAllLogs(); // Ignore all log notifications
 
 
-APIGlobaltHeaders(); // API Global headers
 
 export default function VerifyPhoneScreen( { navigation, route } ){
 
@@ -65,7 +63,7 @@ export default function VerifyPhoneScreen( { navigation, route } ){
 
         // Making a request to the API
         try {
-            const response = await axios.post( `${baseUrl}/update-phone`, {
+            const response = await APIInstance.post('/update-phone', {
                 user : userDetails.userId,
                 phone : verificationPhone,
             });
@@ -127,7 +125,7 @@ export default function VerifyPhoneScreen( { navigation, route } ){
             // making API request to verify OTP Code
              try {
     
-                const response = await axios.post(`${baseUrl}/phone-otp`, {
+                const response = await APIInstance.post('/phone-otp', {
                     "user": userDetails.userId,
                     "phone" : verificationPhone,
                     "otp" : OTP_Code,

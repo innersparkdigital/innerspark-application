@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateSessionUserId } from '../../features/user/userDataSlice';
@@ -21,11 +20,9 @@ import { appColors, parameters } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
+import { APIInstance } from '../../api/LHAPI';
 
 
-const baseUrl = baseUrlRoot + baseUrlV1;
-APIGlobaltHeaders(); // API Global headers
 
 
 export default function PasswordResetOTPScreen( { navigation } ){
@@ -69,7 +66,7 @@ export default function PasswordResetOTPScreen( { navigation } ){
             // making API request to verify OTP Code
              try {
     
-                const response = await axios.post(`${baseUrl}/reset-code`, {
+                const response = await APIInstance.post('/reset-code', {
                     "code" : OTP_Code
                 });
     

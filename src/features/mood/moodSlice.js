@@ -4,6 +4,7 @@
  * MVP: Points deferred until milestones (7, 14, 30 days)
  */
 import { createSlice } from '@reduxjs/toolkit';
+import { createSelector } from '@reduxjs/toolkit';
 
 const initialState = {
   // Today's check-in status
@@ -119,11 +120,20 @@ export const {
 // Selectors
 export const selectHasCheckedInToday = (state) => state.mood.hasCheckedInToday;
 export const selectTodayMoodData = (state) => state.mood.todayMoodData;
-export const selectMoodStats = (state) => ({
-  currentStreak: state.mood.currentStreak,
-  totalPoints: state.mood.totalPoints,
-  totalCheckIns: state.mood.totalCheckIns,
-});
+
+// Memoized selector to prevent unnecessary re-renders
+// Returns the same object reference if values haven't changed
+export const selectMoodStats = createSelector(
+  [(state) => state.mood.currentStreak, 
+   (state) => state.mood.totalPoints, 
+   (state) => state.mood.totalCheckIns],
+  (currentStreak, totalPoints, totalCheckIns) => ({
+    currentStreak,
+    totalPoints,
+    totalCheckIns,
+  })
+);
+
 export const selectMoodHistory = (state) => state.mood.moodHistory;
 export const selectMoodLoading = (state) => state.mood.isLoading;
 export const selectMoodSubmitting = (state) => state.mood.isSubmitting;

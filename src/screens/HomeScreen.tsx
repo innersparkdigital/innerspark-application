@@ -25,7 +25,6 @@ import MoodCheckInCard, { MoodOption } from '../components/MoodCheckInCard';
 import TodayMoodSummaryCard from '../components/TodayMoodSummaryCard';
 import { appImages, moodOptions } from '../global/Data';
 import { getFirstName, getGreeting, getLastName, getFullname } from '../global/LHShortcuts';
-import { baseUrlRoot, baseUrlV1, APIGlobaltHeaders } from '../api/LHAPI';
 import { loadTodayCheckInStatus, loadMoodStats, formatRelativeTime } from '../utils/moodCheckInManager';
 import { selectHasCheckedInToday, selectTodayMoodData } from '../features/mood/moodSlice';
 import EmptySessionsCard from '../components/EmptySessionsCard';
@@ -40,10 +39,6 @@ import {
   requestNotificationPermissions,
   setupNotificationEventListeners
 } from '../api/LHNotifications';
-
-
-const baseUrl = baseUrlRoot + baseUrlV1;
-APIGlobaltHeaders(); // API Global headers
 
 // get the screen Width
 const SCREEN_WIDTH = Dimensions.get('window').width;

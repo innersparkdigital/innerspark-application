@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { 
@@ -19,12 +18,9 @@ import { useToast } from 'native-base';
 import { appColors, parameters } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from '../../api/LHAPI';
+import { APIInstance } from '../../api/LHAPI';
 
 
-// GLOBAL AXIOS DEFAULTS
-const baseUrl = baseUrlRoot + baseUrlV1;
-APIGlobaltHeaders(); // API Global headers
 
 export default function NewPasswordScreen( { navigation } ){
 
@@ -73,7 +69,7 @@ export default function NewPasswordScreen( { navigation } ){
         // making a request to the API
         try {
 
-            const response = await axios.post( `${baseUrl}/reset-pwd-test`, {
+            const response = await APIInstance.post('/reset-pwd-test', {
                 user : storedSessionUserId,
                 password : password,
                 confirm : password1

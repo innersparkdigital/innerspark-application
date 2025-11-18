@@ -17,7 +17,7 @@ import notifee, {
   EventType
 } from '@notifee/react-native';
 import { Linking } from 'react-native';
-import { APIGlobaltHeaders, baseUrlRoot, baseUrlV1 } from './LHAPI';
+import { APIInstance } from './LHAPI';
 
 // ### NOTIFICATION CHANNELS ###
 const CHANNELS = {
@@ -610,9 +610,6 @@ export const clearBadge = async () => {
 
 // ### BACKEND API INTEGRATION ###
 
-// Base URL for notifications API
-const baseUrl = baseUrlRoot + baseUrlV1;
-
 // Interface for backend notification
 interface BackendNotification {
   id: string;
@@ -632,24 +629,12 @@ interface BackendNotification {
 // Fetch notifications from backend
 export const fetchNotificationsFromBackend = async (userId?: string, lastFetchTime?: string) => {
   try {
-    APIGlobaltHeaders();
+    const params: any = {};
+    if (userId) params.user_id = userId;
+    if (lastFetchTime) params.since = lastFetchTime;
     
-    const params = new URLSearchParams();
-    if (userId) params.append('user_id', userId);
-    if (lastFetchTime) params.append('since', lastFetchTime);
-    
-    const response = await fetch(`${baseUrl}/notifications?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const response = await APIInstance.get('/notifications', { params });
+    const data = response.data;
     console.log(`✅ Fetched ${data.notifications?.length || 0} notifications from backend`);
     
     return {
@@ -720,14 +705,7 @@ const getChannelForType = (type: string): string => {
 // Mark notification as delivered
 export const markNotificationAsDelivered = async (notificationId: string) => {
   try {
-    APIGlobaltHeaders();
-    
-    await fetch(`${baseUrl}/notifications/${notificationId}/delivered`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    await APIInstance.post(`/notifications/${notificationId}/delivered`);
     
     console.log(`✅ Marked notification ${notificationId} as delivered`);
   } catch (error) {
@@ -738,14 +716,7 @@ export const markNotificationAsDelivered = async (notificationId: string) => {
 // Mark notification as read
 export const markNotificationAsRead = async (notificationId: string) => {
   try {
-    APIGlobaltHeaders();
-    
-    await fetch(`${baseUrl}/notifications/${notificationId}/read`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    await APIInstance.post(`/notifications/${notificationId}/read`);
     
     console.log(`✅ Marked notification ${notificationId} as read`);
   } catch (error) {
@@ -786,19 +757,11 @@ export const syncNotificationsWithBackend = async (userId?: string) => {
 // Register device for push notifications (FCM token)
 export const registerDeviceForPushNotifications = async (userId: string, fcmToken: string) => {
   try {
-    APIGlobaltHeaders();
-    
-    await fetch(`${baseUrl}/notifications/register-device`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        fcm_token: fcmToken,
-        platform: 'android',
-        app_version: '1.0.0', // You can get this from your app config
-      }),
+    await APIInstance.post('/notifications/register-device', {
+      user_id: userId,
+      fcm_token: fcmToken,
+      platform: 'android',
+      app_version: '1.0.0', // You can get this from your app config
     });
     
     console.log('✅ Device registered for push notifications');

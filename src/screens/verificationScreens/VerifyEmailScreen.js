@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAppHomeData } from '../../api/LHFunctions';
@@ -19,7 +18,7 @@ import { Button, Icon, BottomSheet } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
-import { APIGlobaltHeaders, baseUrl } from '../../api/LHAPI';
+import { APIInstance } from '../../api/LHAPI';
 import { notifyWithToast } from '../../global/LHShortcuts';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import LHGenericHeader from '../../components/LHGenericHeader';
@@ -29,7 +28,6 @@ import LHGenericHeader from '../../components/LHGenericHeader';
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore 'Log Notification Error by RNElement Timer
 // LogBox.ignoreAllLogs(); // Ignore all log notifications
 
-APIGlobaltHeaders(); // API Global headers
 
 
 export default function VerifyEmailScreen( { navigation, route } ){
@@ -66,7 +64,7 @@ export default function VerifyEmailScreen( { navigation, route } ){
 
         // Making a request to the API
         try {
-            const response = await axios.post( `${baseUrl}/update-email`, {
+            const response = await APIInstance.post('/update-email', {
                 user : userDetails.userId,
                 email : verificationEmail,
             });
@@ -131,7 +129,7 @@ export default function VerifyEmailScreen( { navigation, route } ){
             // making API request to verify OTP Code
              try {
     
-                const response = await axios.post(`${baseUrl}/email-otp`, {
+                const response = await APIInstance.post('/email-otp', {
                     "user": userDetails.userId,
                     "otp" : OTP_Code,
                     "email" : verificationEmail,
