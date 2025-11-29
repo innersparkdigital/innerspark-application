@@ -127,6 +127,7 @@ import DeleteAccountScreen from '../screens/settingScreens/DeleteAccountScreen';
 
 // Yo Test Screen
 import TestScreen from '../screens/TestScreen';
+import DevTestScreen from '../screens/DevTestScreen';
 import VerifyAppVersionScreen from '../screens/verificationScreens/VerifyAppVersionScreen';
 
 
@@ -258,12 +259,23 @@ export default function LHStackNavigator(){
                 }}
             /> */}
 
+          {/* Test Screens */}
             <LHStack.Screen
                 name="TestScreen"
                 component={TestScreen}
                 options={{
                     headerShown: true,
                     title: 'Test Screen',
+                    ...TransitionPresets.RevealFromBottomAndroid
+                }}
+            />
+
+            <LHStack.Screen
+                name="DevTestScreen"
+                component={DevTestScreen}
+                options={{
+                    headerShown: true,
+                    title: 'Dev Test Screen',
                     ...TransitionPresets.RevealFromBottomAndroid
                 }}
             />

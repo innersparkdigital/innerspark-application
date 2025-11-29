@@ -58,3 +58,6 @@ export * from './account';
 
 // File Uploads (Utility)
 export * from './uploads';
+
+// Test Helper (Development/QA)
+export * from './clientApiTestHelper';

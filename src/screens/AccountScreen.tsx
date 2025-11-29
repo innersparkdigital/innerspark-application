@@ -246,6 +246,20 @@ export default function AccountScreen({ navigation }){
                 />
             </View>
 
+             {/* Test Section */}
+            <View style={styles.logoutSection}>
+                <TouchableOpacity 
+                    style={styles.logoutButton}
+                    onPress={() => navigation.navigate('DevTestScreen')}
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.logoutIconContainer}>
+                        <Icon name="settings" type="material" color="#197019ff" size={22} />
+                    </View>
+                    <Text style={styles.logoutText}>Test API Endpoints</Text>
+                </TouchableOpacity>
+            </View>
+
             {/* Logout Section */}
             <View style={styles.logoutSection}>
                 <TouchableOpacity 

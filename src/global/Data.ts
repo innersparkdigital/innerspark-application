@@ -39,12 +39,12 @@ export const moodOptions: MoodOption[] = [
 
 /* App Useful External Links */
 export const appLinks = { 
-    appTerms : "https://www.innersparkafrica.com/", // terms & conditions link
-    appPrivacy : "https://www.innersparkafrica.com/",  // Privacy policy link
-    appFacebook : "https://facebook.com/",  
-    appTwitter : "https://x.com/",  
-    appInstagram : "https://instagram.com/",  
-    appLinkedIn : "https://linkedin.com/",  
+    appTerms : "https://www.innersparkafrica.com/terms-of-service", // terms & conditions link
+    appPrivacy : "https://www.innersparkafrica.com/privacy-policy",  // Privacy policy link
+    appFacebook : "https://www.facebook.com/innersparkrecover",  
+    appTwitter : "https://x.com/innersparkrcv",  
+    appInstagram : "https://www.instagram.com/innersparkrecovery/",  
+    appLinkedIn : "https://www.linkedin.com/in/inner-spark-581014326/",  
     appWebsite : "https://www.innersparkafrica.com/",  
     appSupportEmail : "mailto:info@innersparkafrica.com",  
     appGooglePlayURL : "https://www.innersparkafrica.com/",  
@@ -186,25 +186,4 @@ export const faqData = [
 
 
 
-/**
- * Laundromats test data --- Remove Later
- * This is TEST Data
- */
-export const laundromatsData = [ 
-        {
-            name:"Shine Laundry & Dry Cleaning",
-            image : "https://laundryhouse.app/assets/images/About/About-1.jpg",
-            awayDistance: "O.3 Km",
-            awayTime: "2Hrs-48Hrs",
-            price: "4k",
-            priceUnit: "kg",
-            rating: "4.5",
-            description : "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod dolore magna consectetur adipisicing elit, sed do eiusmod dolore magna aliqua.",
-            cid : "25585",
-        },
-
-
-
-
-];
 

@@ -4,7 +4,10 @@ import { API_BASE_URL, API_VERSION, AUTH_TOKEN } from '../config/env';
 console.log('🔧 === LHAPI.js LOADED ===');
 console.log('  Imported API_BASE_URL:', API_BASE_URL);
 console.log('  Imported API_VERSION:', API_VERSION);
+console.log('  API_VERSION length:', API_VERSION?.length || 0);
+console.log('  API_VERSION is empty?', API_VERSION === '' || !API_VERSION);
 console.log('  Imported AUTH_TOKEN:', AUTH_TOKEN);
+console.log('  Final baseURL will be:', API_BASE_URL + API_VERSION);
 console.log('🔧 === END LHAPI.js ===');
 
 export const baseUrlRoot = API_BASE_URL;
