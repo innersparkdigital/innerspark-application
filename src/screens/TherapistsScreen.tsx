@@ -587,7 +587,7 @@ const TherapistsScreen = ({ navigation, route }) => {
             renderItem={({ item }) => <TherapistCard therapist={item} />}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContainer}
-            ListHeaderComponent={() => (
+            ListHeaderComponent={
               <View>
                 {/* Filter Section */}
                 <View style={styles.filterSection}>
@@ -633,7 +633,7 @@ const TherapistsScreen = ({ navigation, route }) => {
                   </ScrollView>
                 )}
               </View>
-            )}
+            }
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

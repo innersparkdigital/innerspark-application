@@ -15,6 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getGroupById, joinGroup, leaveGroup } from '../../api/client/groups';
+import { mockGroupDetailMembers } from '../../global/MockData';
 
 interface GroupMember {
   id: string;
@@ -33,55 +36,13 @@ interface GroupDetailScreenProps {
 
 const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const { group } = route.params;
+  const [groupDetails, setGroupDetails] = useState(group);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<'member' | 'moderator' | 'none'>('none');
 
-  // Mock members data
-  const mockMembers: GroupMember[] = [
-    {
-      id: 'therapist_1',
-      name: group.therapistName || 'Dr. Sarah Johnson',
-      avatar: group.therapistAvatar,
-      role: 'therapist',
-      joinedDate: '2024-01-15',
-      isOnline: true,
-    },
-    {
-      id: 'mod_1',
-      name: 'Michael Chen',
-      avatar: require('../../assets/images/dummy-people/d-person2.png'),
-      role: 'moderator',
-      joinedDate: '2024-02-01',
-      isOnline: true,
-    },
-    {
-      id: 'member_1',
-      name: 'Lisa Rodriguez',
-      avatar: require('../../assets/images/dummy-people/d-person3.png'),
-      role: 'member',
-      joinedDate: '2024-02-15',
-      isOnline: false,
-      lastSeen: '2 hours ago',
-    },
-    {
-      id: 'member_2',
-      name: 'James Wilson',
-      role: 'member',
-      joinedDate: '2024-03-01',
-      isOnline: true,
-    },
-    {
-      id: 'member_3',
-      name: 'Emma Thompson',
-      avatar: require('../../assets/images/dummy-people/d-person1.png'),
-      role: 'member',
-      joinedDate: '2024-03-10',
-      isOnline: false,
-      lastSeen: '1 day ago',
-    },
-  ];
 
   useEffect(() => {
     loadGroupDetails();
@@ -90,13 +51,57 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
   const loadGroupDetails = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setMembers(mockMembers);
-        setUserRole(group.isJoined ? 'member' : 'none');
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
+      console.log('📞 Calling getGroupById API...');
+      console.log('Group ID:', group.id);
+      console.log('User ID:', userId);
+
+      const response = await getGroupById(group.id, userId);
+      console.log('✅ Group details response:', response);
+
+      // Update group details from API
+      if (response.group) {
+        setGroupDetails(response.group);
+      }
+
+      // Set members from API or fallback to mock
+      if (response.members && response.members.length > 0) {
+        setMembers(response.members);
+      } else {
+        // Fallback to mock data
+        const membersWithTherapist = [
+          {
+            id: 'therapist_1',
+            name: groupDetails.therapistName || 'Dr. Sarah Johnson',
+            avatar: groupDetails.therapistAvatar,
+            role: 'therapist' as const,
+            joinedDate: '2024-01-15',
+            isOnline: true,
+          },
+          ...mockGroupDetailMembers.slice(1),
+        ];
+        setMembers(membersWithTherapist);
+      }
+
+      // Set user role from API
+      setUserRole(response.userRole || (groupDetails.isJoined ? 'member' : 'none'));
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error('❌ Error loading group details:', error);
+      
+      // Fallback to mock data on error
+      const membersWithTherapist = [
+        {
+          id: 'therapist_1',
+          name: groupDetails.therapistName || 'Dr. Sarah Johnson',
+          avatar: groupDetails.therapistAvatar,
+          role: 'therapist' as const,
+          joinedDate: '2024-01-15',
+          isOnline: true,
+        },
+        ...mockGroupDetailMembers.slice(1),
+      ];
+      setMembers(membersWithTherapist);
+      setUserRole(groupDetails.isJoined ? 'member' : 'none');
       setIsLoading(false);
       toast.show({
         description: 'Failed to load group details',
@@ -128,46 +133,69 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
   };
 
   const handleJoinGroup = async () => {
-    if (group.isPrivate) {
+    try {
+      console.log('📞 Calling joinGroup API from GroupDetailScreen...');
+      const response = await joinGroup(groupDetails.id, userId, '', true);
+      console.log('✅ Join group response:', response);
+
+      if (groupDetails.isPrivate) {
+        toast.show({
+          description: response.message || 'Join request sent to group therapist',
+          duration: 3000,
+        });
+        return;
+      }
+
       toast.show({
-        description: 'Join request sent to group therapist',
+        description: response.message || `Successfully joined ${groupDetails.name}`,
         duration: 3000,
       });
-      return;
-    }
 
-    if (group.memberCount >= group.maxMembers) {
+      // Update local state
+      setUserRole('member');
+      setGroupDetails({ ...groupDetails, isJoined: true });
+      
+      // Reload group details
+      await loadGroupDetails();
+    } catch (error: any) {
+      console.error('❌ Error joining group:', error);
       toast.show({
-        description: 'Group is full. You\'ve been added to the waiting list.',
+        description: error.response?.data?.error || 'Failed to join group. Please try again.',
         duration: 3000,
       });
-      return;
     }
-
-    setUserRole('member');
-    toast.show({
-      description: `Successfully joined ${group.name}`,
-      duration: 3000,
-    });
   };
 
   const handleLeaveGroup = () => {
     Alert.alert(
       'Leave Group',
-      `Are you sure you want to leave "${group.name}"?`,
+      `Are you sure you want to leave "${groupDetails.name}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Leave', 
+        {
+          text: 'Leave',
           style: 'destructive',
-          onPress: () => {
-            setUserRole('none');
-            toast.show({
-              description: 'You have left the group',
-              duration: 3000,
-            });
-            navigation.goBack();
-          }
+          onPress: async () => {
+            try {
+              console.log('📞 Calling leaveGroup API from GroupDetailScreen...');
+              const response = await leaveGroup(groupDetails.id, userId, '', '');
+              console.log('✅ Leave group response:', response);
+
+              toast.show({
+                description: response.message || `You have left ${groupDetails.name}`,
+                duration: 3000,
+              });
+              setUserRole('none');
+              setGroupDetails({ ...groupDetails, isJoined: false });
+              navigation.goBack();
+            } catch (error: any) {
+              console.error('❌ Error leaving group:', error);
+              toast.show({
+                description: error.response?.data?.error || 'Failed to leave group. Please try again.',
+                duration: 3000,
+              });
+            }
+          },
         },
       ]
     );

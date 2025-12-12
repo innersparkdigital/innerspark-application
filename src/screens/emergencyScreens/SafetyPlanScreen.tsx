@@ -14,14 +14,20 @@ import {
   Linking,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import { getSafetyPlan, updateSafetyPlan } from '../../api/client/emergency';
+import { mockSafetyPlan } from '../../global/MockData';
+import { setSafetyPlan as setSafetyPlanRedux } from '../../features/emergency/emergencySlice';
 
 interface SafetyPlanData {
   warningSignsPersonal: string[];
@@ -41,6 +47,9 @@ interface SafetyPlanScreenProps {
 
 const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails?.id);
+  
   const [safetyPlan, setSafetyPlan] = useState<SafetyPlanData>({
     warningSignsPersonal: [],
     warningSignsCrisis: [],
@@ -53,66 +62,84 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
     lastUpdated: '',
   });
   const [activeSection, setActiveSection] = useState<string>('warning_signs');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     loadSafetyPlan();
   }, []);
 
   const loadSafetyPlan = async () => {
+    setIsLoading(true);
     try {
-      // TODO: Load from server/cache
-      // Mock safety plan data (will be replaced with API call)
-      const mockPlan: SafetyPlanData = {
-        warningSignsPersonal: [
-          'Feeling overwhelmed or anxious',
-          'Difficulty sleeping',
-          'Loss of appetite',
-          'Withdrawing from friends and family',
-        ],
-        warningSignsCrisis: [
-          'Thoughts of self-harm',
-          'Feeling hopeless',
-          'Unable to cope with daily activities',
-          'Substance use as coping mechanism',
-        ],
-        copingStrategies: [
-          'Deep Breathing - 4-7-8 technique',
-          '5-4-3-2-1 Grounding - Focus on senses',
-          'Safe Space Visualization',
-          'Progressive Muscle Relaxation',
-          'Listen to calming music',
-          'Take a warm shower',
-          'Write in journal',
-          'Go for a walk',
-          'Practice mindfulness meditation',
-          'Engage in physical exercise',
-        ],
-        socialContacts: [],
-        professionalContacts: [],
-        environmentSafety: [
-          'Remove harmful objects from immediate environment',
-          'Go to a safe, public place',
-          'Avoid alcohol and substances',
-          'Stay in well-lit, populated areas',
-          'Keep emergency numbers accessible',
-        ],
-        reasonsToLive: [],
-        emergencyContacts: [
-          { name: 'Emergency Services', phone: '911', available24h: true },
-          { name: 'Crisis Lifeline', phone: '988', available24h: true },
-          { name: 'Crisis Text Line', phone: '741741', available24h: true },
-          { name: 'Mental Health Support', phone: '+256-800-567-890', available24h: true },
-        ],
-        lastUpdated: new Date().toISOString(),
+      console.log('📞 Calling getSafetyPlan API...');
+      console.log('User ID:', userId);
+
+      const response = await getSafetyPlan(userId);
+      console.log('✅ Safety plan response:', response);
+
+      // Handle response - could be nested in data or at root level
+      const planData = response.data?.safetyPlan || response.safetyPlan || response.data || {};
+
+      // Map API response to local format
+      const mappedPlan: SafetyPlanData = {
+        warningSignsPersonal: planData.warningSignsPersonal || planData.warning_signs_personal || [],
+        warningSignsCrisis: planData.warningSignsCrisis || planData.warning_signs_crisis || [],
+        copingStrategies: planData.copingStrategies || planData.coping_strategies || [],
+        socialContacts: (planData.socialContacts || planData.social_contacts || []).map((c: any) => ({
+          name: c.name,
+          phone: c.phone || c.phoneNumber || c.phone_number,
+          relationship: c.relationship,
+        })),
+        professionalContacts: (planData.professionalContacts || planData.professional_contacts || []).map((c: any) => ({
+          name: c.name,
+          phone: c.phone || c.phoneNumber || c.phone_number,
+          role: c.role,
+        })),
+        environmentSafety: planData.environmentSafety || planData.environment_safety || [],
+        reasonsToLive: planData.reasonsToLive || planData.reasons_to_live || [],
+        emergencyContacts: (planData.emergencyContacts || planData.emergency_contacts || []).map((c: any) => ({
+          name: c.name,
+          phone: c.phone || c.phoneNumber || c.phone_number,
+          available24h: c.available24h || c.available_24h || false,
+        })),
+        lastUpdated: planData.lastUpdated || planData.last_updated || new Date().toISOString(),
       };
 
-      setSafetyPlan(mockPlan);
-    } catch (error) {
+      // Check if plan has any data
+      const hasData = Object.values(mappedPlan).some(value => 
+        Array.isArray(value) ? value.length > 0 : value !== ''
+      );
+
+      if (hasData) {
+        setSafetyPlan(mappedPlan);
+        dispatch(setSafetyPlanRedux(mappedPlan)); // ✅ Redux dispatch
+      } else {
+        // Use mock data if API returns empty plan
+        console.log('ℹ️ No safety plan data found - using mock data');
+        setSafetyPlan(mockSafetyPlan);
+        dispatch(setSafetyPlanRedux(mockSafetyPlan)); // ✅ Redux dispatch
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading safety plan:', error);
+      
+      // Fallback to mock data on error
+      setSafetyPlan(mockSafetyPlan);
+      dispatch(setSafetyPlanRedux(mockSafetyPlan)); // ✅ Redux dispatch
+      
       toast.show({
-        description: 'Failed to load safety plan',
+        description: 'Using offline safety plan. Some features may be limited.',
         duration: 3000,
       });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadSafetyPlan();
+    setIsRefreshing(false);
   };
   
 
@@ -341,23 +368,42 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
         style={styles.content} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>
-              {sections.find(s => s.key === activeSection)?.label}
-            </Text>
-            {renderSectionContent()}
-          </View>
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[appColors.AppBlue]}
+            />
+          }
+        >
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={appColors.AppBlue} />
+              <Text style={styles.loadingText}>Loading safety plan...</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>
+                  {sections.find(s => s.key === activeSection)?.label}
+                </Text>
+                {renderSectionContent()}
+              </View>
 
-          {/* Last Updated */}
-          <View style={styles.lastUpdatedCard}>
-            <Icon name="update" type="material" color={appColors.grey3} size={16} />
-            <Text style={styles.lastUpdatedText}>
-              Last updated: {new Date(safetyPlan.lastUpdated).toLocaleDateString()}
-            </Text>
-          </View>
+              {/* Last Updated */}
+              <View style={styles.lastUpdatedCard}>
+                <Icon name="update" type="material" color={appColors.grey3} size={16} />
+                <Text style={styles.lastUpdatedText}>
+                  Last updated: {new Date(safetyPlan.lastUpdated).toLocaleDateString()}
+                </Text>
+              </View>
 
-          <View style={styles.bottomSpacing} />
+              <View style={styles.bottomSpacing} />
+            </>
+          )}
         </ScrollView>
 
       </KeyboardAvoidingView>
@@ -532,6 +578,24 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  loadingContainer: {
+    backgroundColor: appColors.CardBackground,
+    margin: 20,
+    padding: 40,
+    borderRadius: 16,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 12,
   },
 });
 

@@ -103,14 +103,6 @@ const initialState = {
   
   // Payment flow state
   checkoutData: null,
-  paymentInProgress: false,
-  paymentError: null,
-  
-  // Loading states
-  isLoadingPlans: false,
-  isLoadingSubscription: false,
-  isProcessingPayment: false,
-  error: null,
   
   // Last updated
   lastUpdated: null,
@@ -162,17 +154,13 @@ const subscriptionSlice = createSlice({
     
     clearCheckoutData: (state) => {
       state.checkoutData = null;
-      state.paymentError = null;
     },
     
     startPayment: (state) => {
-      state.paymentInProgress = true;
-      state.paymentError = null;
+      // Payment started - no state change needed (use local state in component)
     },
     
     paymentSuccess: (state, action) => {
-      state.paymentInProgress = false;
-      state.paymentError = null;
       state.currentSubscription = action.payload.subscription;
       
       if (action.payload.billingRecord) {
@@ -183,8 +171,7 @@ const subscriptionSlice = createSlice({
     },
     
     paymentFailure: (state, action) => {
-      state.paymentInProgress = false;
-      state.paymentError = action.payload;
+      // Payment failed - no state change needed (use local state in component)
     },
     
     cancelSubscription: (state) => {
@@ -199,26 +186,6 @@ const subscriptionSlice = createSlice({
         state.currentSubscription.status = 'active';
         state.currentSubscription.autoRenew = true;
       }
-    },
-    
-    setLoadingPlans: (state, action) => {
-      state.isLoadingPlans = action.payload;
-    },
-    
-    setLoadingSubscription: (state, action) => {
-      state.isLoadingSubscription = action.payload;
-    },
-    
-    setProcessingPayment: (state, action) => {
-      state.isProcessingPayment = action.payload;
-    },
-    
-    setError: (state, action) => {
-      state.error = action.payload;
-    },
-    
-    clearError: (state) => {
-      state.error = null;
     },
     
     resetSubscriptionState: () => initialState,
@@ -240,11 +207,6 @@ export const {
   paymentFailure,
   cancelSubscription,
   reactivateSubscription,
-  setLoadingPlans,
-  setLoadingSubscription,
-  setProcessingPayment,
-  setError,
-  clearError,
   resetSubscriptionState,
 } = subscriptionSlice.actions;
 

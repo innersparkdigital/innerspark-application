@@ -14,6 +14,9 @@ import {
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getChats } from '../../api/client/messages';
+import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 
 interface Conversation {
   id: string;
@@ -34,11 +37,12 @@ interface ConversationsListScreenProps {
 
 const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Mock conversations data - CLIENTS CAN ONLY MESSAGE THERAPISTS
+  // Mock conversations data moved to MockData.ts
   const mockConversations: Conversation[] = [
     {
       id: '1',
@@ -84,17 +88,35 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   const loadConversations = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setConversations(mockConversations);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+      console.log('📞 Calling getChats API...');
+      const response = await getChats(userId);
+      console.log('✅ Chats API Response:', JSON.stringify(response, null, 2));
+      
+      const apiChats = response.data?.chats || [];
+      const mappedConversations: Conversation[] = apiChats.map((chat: any) => ({
+        id: chat.id?.toString() || chat._id?.toString(),
+        partnerId: chat.partnerId || chat.partner_id || chat.therapistId || chat.therapist_id,
+        partnerName: chat.partnerName || chat.partner_name || chat.therapistName || chat.therapist_name || 'Unknown',
+        partnerEmail: chat.partnerEmail || chat.partner_email || chat.therapistEmail || chat.therapist_email || '',
+        partnerAvatar: getImageSource(chat.partnerAvatar || chat.partner_avatar || chat.therapistAvatar || chat.therapist_avatar, FALLBACK_IMAGES.user),
+        lastMessage: chat.lastMessage || chat.last_message || 'No messages yet',
+        lastMessageTime: chat.lastMessageTime || chat.last_message_time || '',
+        unreadCount: chat.unreadCount || chat.unread_count || 0,
+        isOnline: chat.isOnline || chat.is_online || false,
+        lastSeen: chat.lastSeen || chat.last_seen,
+      }));
+      
+      setConversations(mappedConversations);
+      console.log('✅ Mapped Conversations:', mappedConversations.length);
+    } catch (error: any) {
+      console.error('❌ Error loading conversations:', error);
       toast.show({
-        description: 'Failed to load conversations',
+        description: error.response?.data?.message || 'Failed to load conversations. Please try again.',
         duration: 3000,
       });
+      setConversations([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 

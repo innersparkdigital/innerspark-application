@@ -133,8 +133,23 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
 };
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: appColors.CardBackground, borderRadius: 15, marginBottom: 20, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-  image: { width: '100%', height: 180, borderTopLeftRadius: 15, borderTopRightRadius: 15, backgroundColor: appColors.AppLightGray },
+  card: { 
+    backgroundColor: appColors.CardBackground, 
+    borderRadius: 15, 
+    marginBottom: 20, 
+    elevation: 3, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.1, shadowRadius: 4 
+  },
+  image: { 
+    width: '100%', 
+    height: 180, 
+    borderTopLeftRadius: 15, 
+    borderTopRightRadius: 15, 
+    // backgroundColor: appColors.AppLightGray, 
+    backgroundColor: appColors.AppBlueOpacity, 
+  },
   content: { padding: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   date: { fontSize: 14, fontWeight: 'bold', color: appColors.AppBlue, fontFamily: appFonts.headerTextBold },

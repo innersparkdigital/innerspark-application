@@ -28,6 +28,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getGroupMessages, sendGroupMessage } from '../../api/client/groups';
+import { mockGroupChatMessages } from '../../global/MockData';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 
@@ -58,6 +61,7 @@ interface GroupChatScreenProps {
 
 const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const flatListRef = useRef<FlatList>(null);
   
   // Route params with defaults
@@ -81,85 +85,6 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [isTyping, setIsTyping] = useState(false);
 
-  // Mock messages data with anonymous IDs for privacy
-  const mockMessages: GroupMessage[] = [
-    {
-      id: '1',
-      senderId: 'therapist_1',
-      senderName: 'Dr. Sarah Johnson',
-      senderRole: 'therapist',
-      content: 'Welcome everyone to today\'s group session. Let\'s start by sharing how everyone is feeling today.',
-      createdAt: '2025-01-27T19:00:00Z',
-      isDelivered: true,
-      isSeen: true,
-      isOwn: false,
-      type: 'announcement',
-    },
-    {
-      id: '2',
-      senderId: 'member_1',
-      senderName: 'Michael Thompson',
-      senderRole: 'member',
-      anonymousId: 1,
-      content: 'Hi everyone! I\'ve been practicing the breathing exercises we learned last week and they\'ve really helped with my anxiety.',
-      createdAt: '2025-01-27T19:02:00Z',
-      isDelivered: true,
-      isSeen: true,
-      isOwn: false,
-      type: 'text',
-    },
-    {
-      id: '3',
-      senderId: 'current_user',
-      senderName: 'You',
-      senderRole: 'member',
-      anonymousId: 2,
-      content: 'That\'s great to hear! I\'ve been struggling a bit this week but I\'m trying to stay positive.',
-      createdAt: '2025-01-27T19:03:00Z',
-      isDelivered: true,
-      isSeen: false,
-      isOwn: true,
-      type: 'text',
-    },
-    {
-      id: '4',
-      senderId: 'moderator_1',
-      senderName: 'Lisa Anderson',
-      senderRole: 'moderator',
-      anonymousId: 3,
-      content: 'Remember, it\'s okay to have difficult days. What matters is that you\'re here and you\'re trying. That takes courage.',
-      createdAt: '2025-01-27T19:05:00Z',
-      isDelivered: true,
-      isSeen: true,
-      isOwn: false,
-      type: 'text',
-    },
-    {
-      id: '5',
-      senderId: 'member_2',
-      senderName: 'Emma Wilson',
-      senderRole: 'member',
-      anonymousId: 4,
-      content: 'I agree. We\'re all here to support each other. You\'re doing great by being here and sharing.',
-      createdAt: '2025-01-27T19:06:00Z',
-      isDelivered: true,
-      isSeen: true,
-      isOwn: false,
-      type: 'text',
-    },
-    {
-      id: '6',
-      senderId: 'therapist_1',
-      senderName: 'Dr. Sarah Johnson',
-      senderRole: 'therapist',
-      content: 'Let\'s try a quick mindfulness exercise together. Take a deep breath in for 4 counts, hold for 4, and exhale for 6.',
-      createdAt: '2025-01-27T19:08:00Z',
-      isDelivered: true,
-      isSeen: false,
-      isOwn: false,
-      type: 'text',
-    },
-  ];
 
   useEffect(() => {
     loadMessages();
@@ -173,13 +98,42 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   const loadMessages = async () => {
     setIsLoading(true);
     try {
-      setTimeout(() => {
-        setMessages(mockMessages);
-        setIsLoading(false);
-        scrollToBottom();
-        markMessagesAsSeen();
-      }, 1000);
-    } catch (error) {
+      console.log('📞 Calling getGroupMessages API...');
+      console.log('Group ID:', groupId);
+      console.log('User ID:', userId);
+
+      const response = await getGroupMessages(groupId, userId, 1, 50);
+      console.log('✅ Group messages response:', response);
+
+      // Map API response to local message format
+      if (response.messages && response.messages.length > 0) {
+        const mappedMessages = response.messages.map((msg: any) => ({
+          id: msg.id || msg.message_id,
+          senderId: msg.sender_id || msg.senderId,
+          senderName: msg.sender_name || msg.senderName || 'Unknown',
+          senderRole: msg.sender_role || msg.senderRole || 'member',
+          anonymousId: msg.anonymous_id || msg.anonymousId,
+          content: msg.content || msg.message || '',
+          createdAt: msg.created_at || msg.createdAt || new Date().toISOString(),
+          isDelivered: msg.is_delivered !== undefined ? msg.is_delivered : true,
+          isSeen: msg.is_seen !== undefined ? msg.is_seen : false,
+          isOwn: msg.sender_id === userId || msg.senderId === userId,
+          type: msg.type || 'text',
+        }));
+        setMessages(mappedMessages);
+      } else {
+        // Fallback to mock data
+        setMessages(mockGroupChatMessages);
+      }
+
+      setIsLoading(false);
+      scrollToBottom();
+      markMessagesAsSeen();
+    } catch (error: any) {
+      console.error('❌ Error loading messages:', error);
+      
+      // Fallback to mock data on error
+      setMessages(mockGroupChatMessages);
       setIsLoading(false);
       toast.show({
         description: 'Failed to load messages',
@@ -244,14 +198,20 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   };
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || isSending || !isOnline) return;
+    if (messageText.trim() === '' || isSending) return;
 
+    setIsSending(true);
+    const messageContent = messageText.trim();
+    const tempId = Date.now().toString();
+
+    // Optimistic UI update
     const newMessage: GroupMessage = {
-      id: Date.now().toString(),
-      senderId: 'current_user',
+      id: tempId,
+      senderId: userId,
       senderName: 'You',
-      senderRole: userRole || 'member',
-      content: messageText.trim(),
+      senderRole: userRole,
+      anonymousId: privacyMode ? messages.filter(m => m.isOwn).length + 1 : undefined,
+      content: messageContent,
       createdAt: new Date().toISOString(),
       isDelivered: false,
       isSeen: false,
@@ -261,30 +221,40 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
     setMessages(prev => [...prev, newMessage]);
     setMessageText('');
-    setIsSending(true);
     scrollToBottom();
 
     try {
-      setTimeout(() => {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === newMessage.id 
-              ? { ...msg, isDelivered: true }
-              : msg
-          )
-        );
-        setIsSending(false);
-      }, 1000);
-    } catch (error) {
-      setIsSending(false);
-      Alert.alert(
-        'Failed to send message',
-        'Please check your connection and try again.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => handleSendMessage() },
-        ]
+      console.log('📞 Calling sendGroupMessage API...');
+      const response = await sendGroupMessage(groupId, userId, messageContent);
+      console.log('✅ Send message response:', response);
+
+      // Update message with real ID from server
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === tempId
+            ? {
+                ...msg,
+                id: response.message?.id || response.id || tempId,
+                isDelivered: true,
+              }
+            : msg
+        )
       );
+      setIsSending(false);
+    } catch (error: any) {
+      console.error('❌ Error sending message:', error);
+      
+      // Remove failed message or mark as failed
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      
+      toast.show({
+        description: error.response?.data?.error || 'Failed to send message. Please try again.',
+        duration: 3000,
+      });
+      
+      // Restore message text so user can retry
+      setMessageText(messageContent);
+      setIsSending(false);
     }
   };
 

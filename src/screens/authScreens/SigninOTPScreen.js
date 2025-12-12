@@ -6,6 +6,7 @@ import {
     updateUserDetails, 
 } from '../../features/user/userDataSlice';
 import { getAppHomeData } from '../../api/LHFunctions';
+import { loadCriticalDataToRedux } from '../../api/shared';
 
 import { 
     View, 
@@ -28,7 +29,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
-import { APIInstance } from '../../api/LHAPI';
+import { AuthInstance } from '../../api/LHAPI';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import RNOtpVerify from 'react-native-otp-verify';
 import { storeItemLS } from '../../global/StorageActions';
@@ -37,7 +38,6 @@ import { isEmailLoginType } from '../../global/LHValidators';
 
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore 'Log Notification Error by RNElement Timer
 // LogBox.ignoreAllLogs(); // Ignore all log notifications
-
 
 
 export default function SigninOTPScreen( { navigation, route } ){
@@ -146,11 +146,11 @@ export default function SigninOTPScreen( { navigation, route } ){
 
             let response;
             if (isEmailLoginType(loginData.type)) {
-                response = await APIInstance.post('/auth/resend-verification', {
+                response = await AuthInstance.post('/auth/resend-verification', {
                     email: loginData.email,
                 });
             } else {
-                response = await APIInstance.post('/auth/resend-verification', {
+                response = await AuthInstance.post('/auth/resend-verification', {
                     phone: loginData.phone,
                 });
             }
@@ -253,6 +253,15 @@ export default function SigninOTPScreen( { navigation, route } ){
         //         loadingSetter:setIsLoadingAppData 
         //     }
         // );
+
+        // Load critical data into Redux in the background (non-blocking)
+        loadCriticalDataToRedux(loginPayload.userId, dispatch)
+            .then((results) => {
+                console.log('✅ Background data load completed:', results);
+            })
+            .catch((error) => {
+                console.error('❌ Background data load failed:', error);
+            });
         
     }
 
@@ -290,12 +299,12 @@ export default function SigninOTPScreen( { navigation, route } ){
 
                 let response; // response variable initialized
                 if (isEmailLoginType(loginData.type)) {
-                    response = await APIInstance.post('/auth/verify-email', {
+                    response = await AuthInstance.post('/auth/verify-email', {
                         email: loginData.email,
                         otpcode: OTP_Code,
                     });
                 } else {
-                    response = await APIInstance.post('/auth/verify-phone', {
+                    response = await AuthInstance.post('/auth/verify-phone', {
                         phone: loginData.phone,
                         otpcode: OTP_Code,
                     });

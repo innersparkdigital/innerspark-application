@@ -22,6 +22,12 @@ import therapistAnalyticsReducer from '../features/therapist/analyticsSlice';
 // User settings slice
 import userSettingsReducer from '../features/settings/userSettingsSlice';
 
+// Events slice
+import eventsReducer from '../features/events/eventsSlice';
+
+// Emergency slice
+import emergencyReducer from '../features/emergency/emergencySlice';
+
 
 export default configureStore({
     reducer: {
@@ -38,6 +44,9 @@ export default configureStore({
         // Subscription reducer
         subscription: subscriptionReducer,
         
+        // Emergency reducer (contacts, crisis lines, safety plan)
+        emergency: emergencyReducer,
+        
         // User settings reducer (appearance, accessibility, etc.)
         userSettings: userSettingsReducer,
         
@@ -48,6 +57,9 @@ export default configureStore({
         therapistRequests: therapistRequestsReducer,
         therapistGroups: therapistGroupsReducer,
         therapistAnalytics: therapistAnalyticsReducer,
+        
+        // Events reducer
+        events: eventsReducer,
 
        
     }

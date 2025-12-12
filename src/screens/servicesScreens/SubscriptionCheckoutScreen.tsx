@@ -11,9 +11,18 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { NavigationProp } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import ISGenericHeader from '../../components/ISGenericHeader';
+import ISStatusBar from '../../components/ISStatusBar';
+import { subscribe } from '../../api/client/subscriptions';
+import { 
+  startPayment, 
+  paymentSuccess, 
+  paymentFailure
+} from '../../features/subscription/subscriptionSlice';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
-import ISStatusBar from '../../components/ISStatusBar';
 import PaymentModal, { PaymentMethodKey, MmStep } from '../../components/payments/PaymentModal';
 import PaymentSuccessModal from '../../components/payments/PaymentSuccessModal';
 import { useToast } from 'native-base';
@@ -21,7 +30,7 @@ import { isValidPhoneNumber } from '../../global/LHValidators';
 import { getPhoneNumberOperator } from '../../global/LHShortcuts';
 
 interface SubscriptionCheckoutScreenProps {
-  navigation: any;
+  navigation: NavigationProp<any>;
   route: any;
 }
 
@@ -40,6 +49,8 @@ interface PlanData {
 
 const SubscriptionCheckoutScreen: React.FC<SubscriptionCheckoutScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const { plan } = route.params as { plan: PlanData };
 
   // Duration options based on billing cycle
@@ -80,56 +91,210 @@ const SubscriptionCheckoutScreen: React.FC<SubscriptionCheckoutScreenProps> = ({
     setShowPaymentModal(true);
   };
 
-  const handlePaymentConfirm = async () => {
-    if (selectedPaymentMethod === 'mobile_money') {
-      if (mmStep === 'phone') {
-        if (!mmCountrySupported) {
-          setMmError('Your selected country is not supported for Mobile Money');
-          return;
-        }
-        if (!mmFormattedPhone || !isValidPhoneNumber(mmFormattedPhone)) {
-          setMmError('Please enter a valid phone number');
-          return;
-        }
-        const operator = getPhoneNumberOperator(mmFormattedPhone);
-        if (operator === 'OTHER') {
-          setMmError('Please enter a valid MTN or AIRTEL phone number');
-          return;
-        }
-        
-        setMmError('');
-        setIsProcessing(true);
-        await new Promise<void>((resolve) => setTimeout(() => resolve(), 800));
-        setIsProcessing(false);
-        setMmStep('otp');
-        setMmOtp('');
-        setMmOtpAttempts(0);
-        setMmOtpExpiry(Date.now() + 2 * 60 * 1000);
-        return;
-      }
-
-      if (mmStep === 'otp') {
-        if (mmOtp.length !== 6) {
-          setMmError('Please enter the 6-digit OTP');
-          return;
-        }
-        setMmError('');
-        setMmStep('processing');
-        setIsProcessing(true);
-        await new Promise<void>((resolve) => setTimeout(() => resolve(), 2000));
-        setIsProcessing(false);
-        setShowPaymentModal(false);
-        setShowSuccessModal(true);
-        return;
-      }
+  const handleSubscribe = async () => {
+    if (!selectedPaymentMethod) {
+      toast.show({
+        description: 'Please select a payment method',
+        duration: 2000,
+      });
+      return;
     }
 
-    if (selectedPaymentMethod === 'wellnessvault') {
-      setIsProcessing(true);
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1500));
+    if (selectedPaymentMethod === 'mobile_money' && !mmPhone.trim()) {
+      toast.show({
+        description: 'Please enter your phone number',
+        duration: 2000,
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    dispatch(startPayment()); // Redux dispatch
+    try {
+      if (selectedPaymentMethod === 'mobile_money') {
+        if (mmStep === 'phone') {
+          if (!mmCountrySupported) {
+            setMmError('Your selected country is not supported for Mobile Money');
+            return;
+          }
+          if (!mmFormattedPhone || !isValidPhoneNumber(mmFormattedPhone)) {
+            setMmError('Please enter a valid phone number');
+            return;
+          }
+          const operator = getPhoneNumberOperator(mmFormattedPhone);
+          if (operator === 'OTHER') {
+            setMmError('Please enter a valid MTN or AIRTEL phone number');
+            return;
+          }
+          
+          setMmError('');
+          setIsProcessing(true);
+          await new Promise<void>((resolve) => setTimeout(() => resolve(), 800));
+          setIsProcessing(false);
+          setMmStep('otp');
+          setMmOtp('');
+          setMmOtpAttempts(0);
+          setMmOtpExpiry(Date.now() + 2 * 60 * 1000);
+          return;
+        }
+
+        if (mmStep === 'otp') {
+          if (mmOtp.length !== 6) {
+            setMmError('Please enter the 6-digit OTP');
+            return;
+          }
+          setMmError('');
+          setMmStep('processing');
+          setIsProcessing(true);
+          
+          try {
+            console.log('📞 Calling subscribe API with Mobile Money...');
+            console.log('User ID:', userId);
+            console.log('Plan ID:', plan.id);
+            console.log('Billing Cycle:', plan.billingCycle);
+            console.log('Phone:', mmFormattedPhone);
+
+            const response = await subscribe(
+              userId,
+              plan.id,
+              plan.billingCycle,
+              'mobile_money',
+              mmFormattedPhone
+            );
+            console.log('✅ Subscribe response:', response);
+
+            setIsProcessing(false);
+            setShowPaymentModal(false);
+            setShowSuccessModal(true);
+
+            // Dispatch success to Redux
+            const newSubscription = {
+              id: response.data?.subscription?.id || response.subscription?.id,
+              planId: plan.id,
+              planName: plan.name,
+              status: 'active',
+              startDate: new Date().toISOString(),
+              endDate: response.data?.subscription?.endDate || response.subscription?.end_date,
+              nextBillingDate: response.data?.subscription?.nextBillingDate || response.subscription?.next_billing_date,
+              billingCycle: selectedDuration,
+              amount: selectedDuration === 'weekly' ? plan.weeklyPrice : plan.monthlyPrice,
+              currency: plan.currency,
+              autoRenew: true,
+            };
+            
+            dispatch(paymentSuccess({ 
+              subscription: newSubscription,
+              billingRecord: {
+                id: response.data?.billing?.id || Date.now().toString(),
+                date: new Date().toISOString(),
+                amount: newSubscription.amount,
+                currency: plan.currency,
+                status: 'paid',
+                planName: plan.name,
+                billingCycle: selectedDuration,
+                paymentMethod: selectedPaymentMethod,
+              }
+            })); // Redux dispatch
+
+            toast.show({
+              description: 'Subscription activated successfully!',
+              duration: 3000,
+            });
+
+            // Navigate to success screen or back to subscriptions
+            navigation.navigate('PlansSubscriptionsScreen');
+          } catch (error: any) {
+            console.error('❌ Error subscribing:', error);
+            setIsProcessing(false);
+            setMmStep('phone');
+            setShowPaymentModal(false);
+            dispatch(paymentFailure(error.response?.data?.error || 'Payment failed'));
+            toast.show({
+              description: error.response?.data?.error || 'Subscription failed. Please try again.',
+              duration: 3000,
+            });
+          }
+          return;
+        }
+      }
+
+      if (selectedPaymentMethod === 'wellnessvault') {
+        try {
+          console.log('📞 Calling subscribe API...');
+          console.log('User ID:', userId);
+          console.log('Plan ID:', plan.id);
+          console.log('Billing Cycle:', plan.billingCycle);
+          console.log('Duration:', selectedDuration);
+
+          const response = await subscribe(
+            userId,
+            plan.id,
+            plan.billingCycle,
+            'wellnessvault',
+            '' // No phone number for wellnessvault
+          );
+          console.log('✅ Subscribe response:', response);
+
+          setIsProcessing(false);
+          setShowPaymentModal(false);
+          setShowSuccessModal(true);
+
+          // Dispatch success to Redux
+          const newSubscription = {
+            id: response.data?.subscription?.id || response.subscription?.id,
+            planId: plan.id,
+            planName: plan.name,
+            status: 'active',
+            startDate: new Date().toISOString(),
+            endDate: response.data?.subscription?.endDate || response.subscription?.end_date,
+            nextBillingDate: response.data?.subscription?.nextBillingDate || response.subscription?.next_billing_date,
+            billingCycle: selectedDuration,
+            amount: selectedDuration === 'weekly' ? plan.weeklyPrice : plan.monthlyPrice,
+            currency: plan.currency,
+            autoRenew: true,
+          };
+          
+          dispatch(paymentSuccess({ 
+            subscription: newSubscription,
+            billingRecord: {
+              id: response.data?.billing?.id || Date.now().toString(),
+              date: new Date().toISOString(),
+              amount: newSubscription.amount,
+              currency: plan.currency,
+              status: 'paid',
+              planName: plan.name,
+              billingCycle: selectedDuration,
+              paymentMethod: selectedPaymentMethod,
+            }
+          }));
+
+          toast.show({
+            description: 'Subscription activated successfully!',
+            duration: 3000,
+          });
+
+          navigation.navigate('PlansSubscriptionsScreen');
+        } catch (error: any) {
+          console.error('❌ Error subscribing:', error);
+          setIsProcessing(false);
+          setShowPaymentModal(false);
+          dispatch(paymentFailure(error.response?.data?.error || 'Payment failed'));
+          toast.show({
+            description: error.response?.data?.error || 'Failed to process subscription. Please try again.',
+            duration: 3000,
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error in payment flow:', error);
       setIsProcessing(false);
-      setShowPaymentModal(false);
-      setShowSuccessModal(true);
+      dispatch(paymentFailure(error.response?.data?.error || 'Payment failed'));
+      toast.show({
+        description: error.response?.data?.error || 'Failed to process subscription. Please try again.',
+        duration: 3000,
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 

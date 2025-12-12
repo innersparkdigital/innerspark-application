@@ -129,7 +129,20 @@ export const isPhoneVerified = (value: number | string): boolean => {
   return value === 1 || value === '1';
 };
 
-
-
-
+/**
+ * Relationship Validator - must be at least 2 characters, max 30 characters
+ * Can contain letters, spaces, hyphens, and apostrophes
+ * Cannot start with a space
+ * @param value - The relationship to validate.
+ * @returns Returns true if the relationship is valid, false if it is not.
+ * 
+ * Example: isValidRelationship('Mother') // Returns: true
+ * Example: isValidRelationship('Best Friend') // Returns: true
+ * Example: isValidRelationship('M') // Returns: false (too short)
+ */
+export const isValidRelationship = (value: string): boolean => {
+  if (!value || value.length < 2 || value.length > 30) return false;
+  if (value.startsWith(' ')) return false;
+  return /^[a-zA-Z\s\-']+$/.test(value);
+};
 

@@ -15,6 +15,9 @@ import {
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getGroups, joinGroup } from '../../api/client/groups';
+import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import { getMembershipInfo, validateGroupJoin } from '../../services/MembershipService';
 import MembershipLimitModal from '../../components/MembershipLimitModal';
 
@@ -41,6 +44,7 @@ interface GroupsListScreenProps {
 
 const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const groupsListRef = useRef<FlatList>(null);
   const isInitialMountRef = useRef<boolean>(true);
   const [groups, setGroups] = useState<SupportGroup[]>([]);
@@ -54,105 +58,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   // Get membership info
   const membershipInfo = getMembershipInfo(groups);
 
-  // Mock groups data
-  const mockGroups: SupportGroup[] = [
-    {
-      id: '1',
-      name: 'Anxiety Support Circle',
-      description: 'A safe space for individuals dealing with anxiety disorders to share experiences and coping strategies.',
-      therapistName: 'Dr. Sarah Johnson',
-      therapistEmail: 'sarah.johnson@innerspark.com',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person1.png'),
-      memberCount: 24,
-      maxMembers: 30,
-      icon: 'psychology',
-      category: 'anxiety',
-      isJoined: true,
-      isPrivate: false,
-      meetingSchedule: 'Tuesdays & Thursdays, 7:00 PM',
-      tags: ['anxiety', 'coping', 'mindfulness'],
-    },
-    {
-      id: '2',
-      name: 'Depression Recovery Group',
-      description: 'Supporting each other through the journey of depression recovery with professional guidance.',
-      therapistName: 'Dr. Michael Chen',
-      therapistEmail: 'michael.chen@innerspark.com',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person2.png'),
-      memberCount: 18,
-      maxMembers: 25,
-      icon: 'favorite',
-      category: 'depression',
-      isJoined: false,
-      isPrivate: false,
-      meetingSchedule: 'Mondays & Wednesdays, 6:30 PM',
-      tags: ['depression', 'recovery', 'support'],
-    },
-    {
-      id: '3',
-      name: 'Trauma Healing Circle',
-      description: 'A specialized group for trauma survivors focusing on healing and post-traumatic growth.',
-      therapistName: 'Dr. Lisa Rodriguez',
-      therapistEmail: 'lisa.rodriguez@innerspark.com',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person3.png'),
-      memberCount: 12,
-      maxMembers: 15,
-      icon: 'healing',
-      category: 'trauma',
-      isJoined: false,
-      isPrivate: true,
-      meetingSchedule: 'Saturdays, 10:00 AM',
-      tags: ['trauma', 'healing', 'ptsd'],
-    },
-    {
-      id: '4',
-      name: 'Addiction Recovery Support',
-      description: 'Peer support group for individuals in recovery from various forms of addiction.',
-      therapistName: 'Dr. James Wilson',
-      therapistEmail: 'james.wilson@innerspark.com',
-      memberCount: 31,
-      maxMembers: 35,
-      icon: 'self_improvement',
-      category: 'addiction',
-      isJoined: true,
-      isPrivate: false,
-      meetingSchedule: 'Daily, 8:00 PM',
-      tags: ['addiction', 'recovery', 'sobriety'],
-    },
-    {
-      id: '5',
-      name: 'General Wellness Circle',
-      description: 'Open discussion group for general mental health and wellness topics.',
-      therapistName: 'Dr. Clara Odding',
-      therapistEmail: 'clara.odding@innerspark.com',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person2.png'),
-      memberCount: 45,
-      maxMembers: 50,
-      icon: 'spa',
-      category: 'general',
-      isJoined: false,
-      isPrivate: false,
-      meetingSchedule: 'Fridays, 5:00 PM',
-      tags: ['wellness', 'general', 'community'],
-    },
-    {
-      id: '6',
-      name: 'Mindfulness & Meditation',
-      description: 'Practice mindfulness and meditation techniques together in a supportive environment.',
-      therapistName: 'Dr. Sarah Johnson',
-      therapistEmail: 'sarah.johnson@innerspark.com',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person1.png'),
-      memberCount: 28,
-      maxMembers: 30,
-      icon: 'self_improvement',
-      category: 'general',
-      isJoined: false,
-      isPrivate: false,
-      meetingSchedule: 'Sundays, 9:00 AM',
-      tags: ['mindfulness', 'meditation', 'peace'],
-    },
-  ];
-
+  // Groups categories
   const categories = [
     { id: 'all', name: 'All Groups', color: appColors.AppBlue },
     { id: 'anxiety', name: 'Anxiety', color: '#FF9800' },
@@ -184,20 +90,43 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   const loadGroups = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setGroups(mockGroups);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+      console.log('📞 Calling getGroups API...');
+      const response = await getGroups(userId, 1, 50);
+      console.log('✅ Groups API Response:', JSON.stringify(response, null, 2));
+      
+      const apiGroups = response.data?.groups || [];
+      const mappedGroups: SupportGroup[] = apiGroups.map((group: any) => ({
+        id: group.id?.toString() || group._id?.toString(),
+        name: group.name || group.groupName || group.group_name || 'Unnamed Group',
+        description: group.description || '',
+        therapistName: group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown',
+        therapistEmail: group.therapistEmail || group.therapist_email || group.facilitatorEmail || group.facilitator_email || '',
+        therapistAvatar: getImageSource(group.therapistAvatar || group.therapist_avatar || group.facilitatorAvatar || group.facilitator_avatar, FALLBACK_IMAGES.avatar),
+        memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
+        maxMembers: group.maxMembers || group.max_members || group.capacity || 50,
+        icon: group.icon || 'group',
+        category: group.category || 'general',
+        isJoined: group.isJoined || group.is_joined || group.isMember || group.is_member || false,
+        isPrivate: group.isPrivate || group.is_private || false,
+        meetingSchedule: group.meetingSchedule || group.meeting_schedule || group.schedule || 'Schedule TBD',
+        tags: group.tags || [],
+      }));
+      
+      setGroups(mappedGroups);
+      console.log('✅ Mapped Groups:', mappedGroups.length);
+    } catch (error: any) {
+      // console.error('❌ Error loading groups:', error);
       toast.show({
-        description: 'Failed to load groups',
+        description: error.response?.data?.message || 'Failed to load groups. Please try again.',
         duration: 3000,
       });
+      setGroups([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Filter groups
   const filterGroups = () => {
     let filtered = groups;
 
@@ -216,15 +145,17 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       );
     }
 
-    setFilteredGroups(filtered);
+    setFilteredGroups(filtered); // Set filtered groups
   };
 
+  // Handle refresh 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
+    setIsRefreshing(true); // Set refresh state
     await loadGroups();
-    setIsRefreshing(false);
+    setIsRefreshing(false); // Reset refresh state
   };
 
+  // Handle join group
   const handleJoinGroup = async (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
     if (!group) return;
@@ -256,39 +187,93 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       }
     }
 
-    // Handle private groups
-    if (group.isPrivate) {
+    try {
+      console.log('📞 Calling joinGroup API...');
+      console.log('Group ID:', groupId);
+      console.log('User ID:', userId);
+
+      // Call API to join group
+      const response = await joinGroup(groupId, userId, '', true);
+      console.log('✅ Join group response:', response);
+
+      // Handle private groups (request sent)
+      if (group.isPrivate) {
+        toast.show({
+          description: response.message || 'Join request sent to group therapist',
+          duration: 3000,
+        });
+        return;
+      }
+
+      // Update group membership in local state
+      setGroups(prev => 
+        prev.map(g => 
+          g.id === groupId 
+            ? { ...g, isJoined: true, memberCount: g.memberCount + 1 }
+            : g
+        )
+      );
+
       toast.show({
-        description: 'Join request sent to group therapist',
+        description: response.message || `Successfully joined ${group.name}`,
         duration: 3000,
       });
-      return;
+
+      // Reload groups to get fresh data
+      await loadGroups();
+    } catch (error: any) {
+      console.error('❌ Error joining group:', error);
+      
+      // Handle specific error cases
+      if (error.response?.data?.error) {
+        const errorMsg = error.response.data.error;
+        
+        if (errorMsg.includes('membership limit')) {
+          setShowLimitModal(true);
+          return;
+        }
+        
+        if (errorMsg.includes('already a member')) {
+          toast.show({
+            description: 'You are already a member of this group',
+            duration: 3000,
+          });
+          return;
+        }
+        
+        if (errorMsg.includes('full')) {
+          toast.show({
+            description: 'Group is full. You\'ve been added to the waiting list.',
+            duration: 3000,
+          });
+          return;
+        }
+        
+        toast.show({
+          description: errorMsg,
+          duration: 3000,
+        });
+      } else {
+        toast.show({
+          description: 'Failed to join group. Please try again.',
+          duration: 3000,
+        });
+      }
     }
-
-    // Update group membership
-    setGroups(prev => 
-      prev.map(g => 
-        g.id === groupId 
-          ? { ...g, isJoined: true, memberCount: g.memberCount + 1 }
-          : g
-      )
-    );
-
-    toast.show({
-      description: `Successfully joined ${group.name}`,
-      duration: 3000,
-    });
   };
 
+  // Handle group press
   const handleGroupPress = (group: SupportGroup) => {
     navigation.navigate('GroupDetailScreen', { group });
   };
 
+  // Get category color
   const getCategoryColor = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category?.color || appColors.AppBlue;
   };
 
+  // Render group card
   const renderGroupCard = ({ item }: { item: SupportGroup }) => (
     <TouchableOpacity 
       style={styles.groupCard}
@@ -374,6 +359,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  // Render category filter
   const renderCategoryFilter = ({ item }: { item: any }) => {
     const isActive = selectedCategory === item.id;
     
@@ -397,6 +383,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     );
   };
 
+  // Render empty state
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Icon name="group-add" type="material" color={appColors.grey3} size={80} />
@@ -407,6 +394,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     </View>
   );
 
+  // Render skeleton item 
   const renderSkeletonItem = () => (
     <View style={styles.skeletonCard}>
       <View style={styles.skeletonHeader}>
@@ -429,56 +417,6 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     );
   }
 
-  const renderListHeader = () => (
-    <View>
-      {/* Plan Indicator */}
-      <View style={styles.planIndicator}>
-        <Icon name="groups" type="material" color={appColors.AppBlue} size={20} />
-        <Text style={styles.planText}>
-          Groups: {membershipInfo.joinedGroupsCount}/{membershipInfo.groupLimit === -1 ? '∞' : membershipInfo.groupLimit}
-        </Text>
-        {!membershipInfo.canJoinMore && membershipInfo.groupLimit !== -1 && (
-          <TouchableOpacity 
-            style={styles.upgradeLink}
-            onPress={() => setShowLimitModal(true)}
-          >
-            <Text style={styles.upgradeLinkText}>Upgrade Plan</Text>
-            <Icon name="arrow-forward" type="material" color={appColors.AppBlue} size={16} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Icon name="search" type="material" color={appColors.grey3} size={20} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search groups..."
-          placeholderTextColor={appColors.grey3}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Icon name="clear" type="material" color={appColors.grey3} size={20} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Category Filters */}
-      <FlatList
-        data={categories}
-        renderItem={renderCategoryFilter}
-        keyExtractor={(item) => item.id}
-        extraData={selectedCategory}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContainer}
-        removeClippedSubviews={false}
-      />
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       {/* Groups List (header included to own the entire scroll area) */}
@@ -488,7 +426,57 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         renderItem={renderGroupCard}
         keyExtractor={(item) => item.id}
         extraData={filteredGroups}
-        ListHeaderComponent={renderListHeader}
+        ListHeaderComponent={
+          <>
+            {/* Combined Header: Plan Indicator + Search Bar */}
+            <View style={styles.combinedHeader}>
+              {/* Plan Indicator */}
+              <View style={styles.planIndicatorCompact}>
+                <Icon name="groups" type="material" color={appColors.AppBlue} size={18} />
+                <Text style={styles.planTextCompact}>
+                  {membershipInfo.joinedGroupsCount}/{membershipInfo.groupLimit === -1 ? '∞' : membershipInfo.groupLimit}
+                </Text>
+                {!membershipInfo.canJoinMore && membershipInfo.groupLimit !== -1 && (
+                  <TouchableOpacity 
+                    style={styles.upgradeLinkCompact}
+                    onPress={() => setShowLimitModal(true)}
+                  >
+                    <Icon name="arrow-upward" type="material" color={appColors.AppBlue} size={14} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Search Bar */}
+              <View style={styles.searchContainerCompact}>
+                <Icon name="search" type="material" color={appColors.grey3} size={18} />
+                <TextInput
+                  style={styles.searchInputCompact}
+                  placeholder="Search..."
+                  placeholderTextColor={appColors.grey3}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Icon name="clear" type="material" color={appColors.grey3} size={18} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Category Filters */}
+            <FlatList
+              data={categories}
+              renderItem={renderCategoryFilter}
+              keyExtractor={(item) => item.id}
+              extraData={selectedCategory}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoriesContainer}
+              removeClippedSubviews={false}
+            />
+          </>
+        }
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -499,6 +487,9 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={filteredGroups.length === 0 ? styles.emptyContainer : styles.listContainer}
+        contentInset={{ top: 0, bottom: 0, left: 0, right: 0 }}
+        contentOffset={{ x: 0, y: 0 }}
+        automaticallyAdjustContentInsets={false}
         removeClippedSubviews={false}
       />
 
@@ -528,11 +519,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 25,
+    marginHorizontal: 5,
+    marginTop: 0,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -548,8 +540,8 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
   categoryChip: {
     paddingHorizontal: 16,
@@ -573,6 +565,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16,
+    paddingTop: 0,
     paddingBottom: 16,
   },
   groupCard: {
@@ -722,13 +715,15 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
   },
   emptyContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    paddingBottom: 16,
   },
   emptyState: {
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    paddingVertical: 40,
   },
   emptyTitle: {
     fontSize: 20,
@@ -774,16 +769,71 @@ const styles = StyleSheet.create({
   skeletonLineShort: {
     width: '60%',
   },
-  // Plan Indicator Styles
+  // Combined Header Styles (Plan Indicator + Search Bar in one row)
+  combinedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: appColors.CardBackground,
+    marginHorizontal: 5,
+    marginTop: 8,
+    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    gap: 12,
+  },
+  planIndicatorCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  planTextCompact: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextSemiBold,
+  },
+  upgradeLinkCompact: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: appColors.AppBlue + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchContainerCompact: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: appColors.grey6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  searchInputCompact: {
+    flex: 1,
+    fontSize: 14,
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextRegular,
+    padding: 0,
+  },
+  // Old Plan Indicator Styles (kept for reference, can be removed)
   planIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
     marginHorizontal: 16,
-    marginTop: 16,
+    marginTop: 0,
     marginBottom: 8,
-    padding: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

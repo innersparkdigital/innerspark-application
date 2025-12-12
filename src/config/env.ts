@@ -41,3 +41,7 @@ console.log('🚀 === END ENVIRONMENT CONFIG ===');
 
 // Export the appropriate URL based on the environment
 export const API_BASE_URL = __DEV__ ? API_DEVELOPMENT_URL : API_PRODUCTION_URL;
+
+// Uploads base URL (different domain from API server)
+// Uploads are served from app.innersparkafrica.us, not server.innersparkafrica.us
+export const UPLOADS_BASE_URL = 'https://app.innersparkafrica.us';

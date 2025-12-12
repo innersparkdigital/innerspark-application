@@ -23,7 +23,7 @@ import { Button, Icon} from '@rneui/base';
 import { useToast } from 'native-base';
 import { storeItemLS } from '../../global/StorageActions';
 import { appImages } from '../../global/Data';
-import { APIInstance } from '../../api/LHAPI';
+import { AuthInstance } from '../../api/LHAPI';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
@@ -132,7 +132,7 @@ export default function SigninScreen({navigation}){
             console.log("Email: " + trimmedEmail);
             console.log("Password: " + trimmedPassword);
            
-            const response = await APIInstance.post( '/auth/login', {
+            const response = await AuthInstance.post( '/auth/login', {
                 email: trimmedEmail,
                 password: trimmedPassword,
             });
@@ -306,7 +306,7 @@ export default function SigninScreen({navigation}){
             let normalizedPhone = normalizePhone(trimmedPhone, countryCodes.ug);
             let trimmedPassword = password.trim(); // trimmed Password
 
-            const response = await APIInstance.post( '/auth/login', {
+            const response = await AuthInstance.post( '/auth/login', {
                 phone: normalizedPhone,
                 password: trimmedPassword,
             });

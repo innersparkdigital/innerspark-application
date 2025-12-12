@@ -16,8 +16,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { useToast } from 'native-base';
+import { useSelector, useDispatch } from 'react-redux';
+import { getCurrentSubscription } from '../../api/client/subscriptions';
+import { mockCurrentPlan, mockCurrentSubscription } from '../../global/MockData';
+import { 
+  setCurrentSubscription as setCurrentSubscriptionRedux,
+  toggleAutoRenew as toggleAutoRenewRedux,
+  cancelSubscription as cancelSubscriptionRedux
+} from '../../features/subscription/subscriptionSlice';
 
 interface CurrentPlan {
   id: string;
@@ -50,83 +59,13 @@ interface MySubscriptionScreenProps {
 
 const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation, onSwitchTab }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [currentPlan, setCurrentPlan] = useState<CurrentPlan | null>(null);
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-
-  // Mock current plan
-  const mockCurrentPlan: CurrentPlan = {
-    id: 'premium',
-    name: 'Premium Plan',
-    price: 120000,
-    currency: 'UGX',
-    billingCycle: 'monthly',
-    supportGroupsLimit: 4,
-    directChatAccess: true,
-  };
-
-  // Mock current subscription
-  const mockSubscription: UserSubscription = {
-    id: 'sub_001',
-    planId: 'premium',
-    planName: 'Premium Plan',
-    status: 'active',
-    startDate: '2025-01-01',
-    endDate: '2026-01-01',
-    nextBillingDate: '2025-02-01',
-    autoRenew: true,
-    groupsJoined: 3,
-    groupsLimit: 4,
-    directChatActive: true,
-  };
-
-  // Old mock plans (remove)
-  const _oldMockPlans = [
-    {
-      id: 'basic',
-      name: 'Basic Plan',
-      description: 'Essential mental health support for individuals',
-      price: 50000,
-      currency: 'UGX',
-      billingCycle: 'monthly',
-      features: [
-        '4 therapy sessions per month',
-        'Basic wellness resources',
-        'Email support',
-        'Progress tracking',
-        'Mobile app access'
-      ],
-      isPopular: false,
-      isCurrentPlan: false,
-      maxSessions: 4,
-      supportLevel: 'basic',
-      trialDays: 7,
-    },
-    {
-      id: 'premium',
-      name: 'Premium Plan',
-      description: 'Comprehensive mental health care with priority support',
-      price: 120000,
-      currency: 'UGX',
-      billingCycle: 'monthly',
-      features: [
-        'Unlimited therapy sessions',
-        'Group therapy access',
-        'Premium wellness resources',
-        'Priority support (24/7)',
-        'Crisis intervention',
-        'Family counseling sessions',
-        'Mindfulness programs',
-        'Progress analytics'
-      ],
-      isPopular: true,
-      isCurrentPlan: true,
-      maxSessions: 'unlimited',
-      supportLevel: 'premium',
-      trialDays: 14,
-    }];
 
   useEffect(() => {
     loadSubscriptionData();
@@ -135,14 +74,62 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
   const loadSubscriptionData = async () => {
     setIsLoading(true);
     try {
-      // Simulate API calls
-      await new Promise<void>(resolve => setTimeout(resolve, 1000));
+      console.log('📞 Calling getCurrentSubscription API...');
+      console.log('User ID:', userId);
+
+      const response = await getCurrentSubscription(userId);
+      console.log('✅ Subscription response:', response);
+
+      // Map API response to local format
+      if (response.subscription) {
+        const sub = response.subscription;
+        const mappedSubscription: UserSubscription = {
+          id: sub.id || sub.subscription_id,
+          planId: sub.plan_id || sub.planId,
+          planName: sub.plan_name || sub.planName,
+          status: sub.status || 'active',
+          startDate: sub.start_date || sub.startDate,
+          endDate: sub.end_date || sub.endDate,
+          nextBillingDate: sub.next_billing_date || sub.nextBillingDate,
+          autoRenew: sub.auto_renew !== undefined ? sub.auto_renew : sub.autoRenew !== undefined ? sub.autoRenew : true,
+          groupsJoined: sub.groups_joined || sub.groupsJoined || 0,
+          groupsLimit: sub.groups_limit || sub.groupsLimit || 0,
+          directChatActive: sub.direct_chat_active !== undefined ? sub.direct_chat_active : sub.directChatActive || false,
+        };
+        setCurrentSubscription(mappedSubscription);
+        dispatch(setCurrentSubscriptionRedux(mappedSubscription)); // ✅ Redux dispatch
+
+        // Set current plan from subscription data
+        if (response.plan) {
+          const plan = response.plan;
+          const mappedPlan: CurrentPlan = {
+            id: plan.id || plan.plan_id,
+            name: plan.name,
+            price: plan.price,
+            currency: plan.currency || 'UGX',
+            billingCycle: plan.billing_cycle || plan.billingCycle || 'monthly',
+            supportGroupsLimit: plan.support_groups_limit || plan.supportGroupsLimit || 0,
+            directChatAccess: plan.direct_chat_access || plan.directChatAccess || false,
+          };
+          setCurrentPlan(mappedPlan);
+        } else {
+          setCurrentPlan(mockCurrentPlan);
+        }
+      } else {
+        // No active subscription - user on free plan
+        console.log('⚠️ No active subscription, user is on free plan');
+        setCurrentSubscription(null);
+        setCurrentPlan(null);
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading subscription:', error);
       
+      // Fallback to mock data on error
       setCurrentPlan(mockCurrentPlan);
-      setCurrentSubscription(mockSubscription);
-    } catch (error) {
+      setCurrentSubscription(mockCurrentSubscription);
+      
       toast.show({
-        description: 'Failed to load subscription data',
+        description: 'Using offline data. Some features may be limited.',
         duration: 3000,
       });
     } finally {
@@ -173,8 +160,13 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
   const confirmCancelSubscription = async () => {
     try {
       setShowCancelModal(false);
+      
+      // ⚠️ MISSING ENDPOINT: cancelSubscription(userId, subscriptionId, reason)
+      // Using local state update only
+      console.log('⚠️ MISSING API: cancelSubscription - using mock behavior');
+      
       toast.show({
-        description: 'Subscription cancelled successfully',
+        description: 'Subscription cancelled successfully (offline mode)',
         duration: 3000,
       });
       
@@ -184,6 +176,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
           status: 'cancelled',
           autoRenew: false,
         });
+        dispatch(cancelSubscriptionRedux()); // ✅ Redux dispatch
       }
     } catch (error) {
       toast.show({
@@ -197,14 +190,14 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
     if (!currentSubscription) return;
 
     try {
-      const newAutoRenew = !currentSubscription.autoRenew;
-      setCurrentSubscription({
-        ...currentSubscription,
-        autoRenew: newAutoRenew,
-      });
+      // ⚠️ MISSING ENDPOINT: toggleAutoRenew(userId, subscriptionId)
+      console.log('⚠️ MISSING API: toggleAutoRenew - using local state only');
+
+      setCurrentSubscription(prev => prev ? { ...prev, autoRenew: !prev.autoRenew } : null);
+      dispatch(toggleAutoRenewRedux()); // ✅ Redux dispatch
       
       toast.show({
-        description: `Auto-renewal ${newAutoRenew ? 'enabled' : 'disabled'}`,
+        description: `Auto-renewal ${!currentSubscription.autoRenew ? 'enabled' : 'disabled'} (offline mode)`,
         duration: 2000,
       });
     } catch (error) {
@@ -243,8 +236,67 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
     return (currentSubscription.groupsJoined / currentSubscription.groupsLimit) * 100;
   };
 
+  const FreePlanCard: React.FC = () => (
+    <View style={styles.subscriptionCard}>
+      <View style={styles.subscriptionHeader}>
+        <Text style={styles.subscriptionTitle}>Current Plan</Text>
+        <View style={[styles.statusBadge, { backgroundColor: appColors.grey3 }]}>
+          <Text style={styles.statusText}>FREE</Text>
+        </View>
+      </View>
+      
+      <Text style={styles.subscriptionPlan}>Free Plan</Text>
+      <Text style={styles.freePlanDescription}>
+        You're currently on the free plan. Upgrade to unlock premium features like support groups and direct therapist chat.
+      </Text>
+      
+      <View style={styles.subscriptionDetails}>
+        <View style={styles.detailRow}>
+          <Icon name="groups" type="material" color={appColors.grey4} size={20} />
+          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Support Groups:</Text>
+          <Text style={[styles.detailValue, { color: appColors.grey4 }]}>Not Available</Text>
+        </View>
+        
+        <View style={styles.detailRow}>
+          <Icon name="chat" type="material" color={appColors.grey4} size={20} />
+          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Direct Chat:</Text>
+          <Text style={[styles.detailValue, { color: appColors.grey4 }]}>Not Available</Text>
+        </View>
+        
+        <View style={styles.detailRow}>
+          <Icon name="event" type="material" color={appColors.AppBlue} size={20} />
+          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Appointments:</Text>
+          <Text style={[styles.detailValue, { color: appColors.AppBlue }]}>Pay Per Use</Text>
+        </View>
+        
+        <View style={styles.detailRow}>
+          <Icon name="calendar-today" type="material" color={appColors.AppBlue} size={20} />
+          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Events:</Text>
+          <Text style={[styles.detailValue, { color: appColors.AppBlue }]}>Pay Per Use</Text>
+        </View>
+      </View>
+
+      {/* Upgrade CTA */}
+      <View style={styles.upgradeCtaContainer}>
+        <Icon name="star" type="material" color={appColors.AppBlue} size={24} />
+        <View style={styles.upgradeCtaContent}>
+          <Text style={styles.upgradeCtaTitle}>Unlock Premium Features</Text>
+          <Text style={styles.upgradeCtaText}>Join support groups, chat with therapists, and more</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={styles.upgradePrimaryButton}
+        onPress={handleUpgradePlan}
+      >
+        <Text style={styles.upgradePrimaryButtonText}>View Plans</Text>
+        <Icon name="arrow-forward" type="material" color={appColors.CardBackground} size={20} />
+      </TouchableOpacity>
+    </View>
+  );
+
   const CurrentSubscriptionCard: React.FC = () => {
-    if (!currentSubscription) return null;
+    if (!currentSubscription) return <FreePlanCard />;
 
     return (
       <View style={styles.subscriptionCard}>
@@ -362,19 +414,8 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
           <CurrentSubscriptionCard />
         )}
 
-        {/* Billing History Link */}
-        <TouchableOpacity
-          style={styles.billingLink}
-          onPress={() => navigation.navigate('BillingHistoryScreen')}
-        >
-          <Icon name="receipt" type="material" color={appColors.AppBlue} size={24} />
-          <View style={styles.billingLinkContent}>
-            <Text style={styles.billingLinkTitle}>Billing History</Text>
-            <Text style={styles.billingLinkSubtitle}>View invoices and payments</Text>
-          </View>
-          <Icon name="chevron-right" type="material" color={appColors.grey3} size={24} />
-        </TouchableOpacity>
       </ScrollView>
+
 
       {/* Cancel Subscription Modal */}
       <Modal
@@ -456,6 +497,54 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 20,
     paddingBottom: 40,
+  },
+  freePlanDescription: {
+    fontSize: 14,
+    color: appColors.grey2,
+    lineHeight: 20,
+    marginTop: 8,
+    marginBottom: 16,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  upgradeCtaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  upgradeCtaContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  upgradeCtaTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextBold,
+  },
+  upgradeCtaText: {
+    fontSize: 13,
+    color: appColors.grey2,
+    marginTop: 2,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  upgradePrimaryButton: {
+    backgroundColor: appColors.AppBlue,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  upgradePrimaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: appColors.CardBackground,
+    marginRight: 8,
+    fontFamily: appFonts.headerTextBold,
   },
   loadingContainer: {
     padding: 20,

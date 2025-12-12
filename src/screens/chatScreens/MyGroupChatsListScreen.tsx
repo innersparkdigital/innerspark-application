@@ -14,6 +14,8 @@ import {
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getMyGroups } from '../../api/client/groups';
 
 interface GroupChat {
   id: string;
@@ -33,11 +35,12 @@ interface MyGroupChatsListScreenProps {
 
 const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [groups, setGroups] = useState<GroupChat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Mock group data
+  // Mock group data moved to MockData.ts
   const mockGroups: GroupChat[] = [
     {
       id: '1',
@@ -81,16 +84,34 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
   const loadGroups = async () => {
     setIsLoading(true);
     try {
-      setTimeout(() => {
-        setGroups(mockGroups);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+      console.log('📞 Calling getMyGroups API...');
+      const response = await getMyGroups(userId);
+      console.log('✅ My Groups API Response:', JSON.stringify(response, null, 2));
+      
+      const apiGroups = response.data?.groups || [];
+      const mappedGroups: GroupChat[] = apiGroups.map((group: any) => ({
+        id: group.id?.toString() || group._id?.toString(),
+        name: group.name || group.groupName || group.group_name || 'Unnamed Group',
+        description: group.description || '',
+        icon: group.icon || 'group',
+        memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
+        lastMessage: group.lastMessage || group.last_message || 'No messages yet',
+        lastMessageTime: group.lastMessageTime || group.last_message_time || '',
+        unreadCount: group.unreadCount || group.unread_count || 0,
+        userRole: group.userRole || group.user_role || group.role || 'member',
+      }));
+      
+      setGroups(mappedGroups);
+      console.log('✅ Mapped Groups:', mappedGroups.length);
+    } catch (error: any) {
+      console.error('❌ Error loading groups:', error);
       toast.show({
-        description: 'Failed to load groups',
+        description: error.response?.data?.message || 'Failed to load groups. Please try again.',
         duration: 3000,
       });
+      setGroups([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -166,7 +187,7 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
       </Text>
       <TouchableOpacity 
         style={styles.browseButton}
-        onPress={() => navigation.navigate('SupportGroupsScreen')}
+        onPress={() => navigation.navigate('GroupsScreen')}
       >
         <Text style={styles.browseButtonText}>Browse Groups</Text>
       </TouchableOpacity>

@@ -16,6 +16,9 @@ import {
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getMyGroups, leaveGroup } from '../../api/client/groups';
+import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 
 interface MyGroup {
   id: string;
@@ -39,11 +42,12 @@ interface MyGroupsScreenProps {
 
 const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [myGroups, setMyGroups] = useState<MyGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Mock user's joined groups data
+  // Mock user's joined groups data moved to MockData.ts
   const mockMyGroups: MyGroup[] = [
     {
       id: '1',
@@ -96,29 +100,53 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
     loadMyGroups();
   }, []);
 
+  // Load my groups
   const loadMyGroups = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setMyGroups(mockMyGroups);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+      console.log('📞 Calling getMyGroups API (MyGroupsScreen)...');
+      const response = await getMyGroups(userId);
+      console.log('✅ My Groups API Response (MyGroupsScreen):', JSON.stringify(response, null, 2));
+      
+      const apiGroups = response.data?.groups || [];
+      const mappedGroups: MyGroup[] = apiGroups.map((group: any) => ({
+        id: group.id?.toString() || group._id?.toString(),
+        name: group.name || group.groupName || group.group_name || 'Unnamed Group',
+        description: group.description || '',
+        therapistName: group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown',
+        therapistAvatar: getImageSource(group.therapistAvatar || group.therapist_avatar || group.facilitatorAvatar || group.facilitator_avatar, FALLBACK_IMAGES.avatar),
+        memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
+        icon: group.icon || 'group',
+        category: group.category || 'general',
+        lastActivity: group.lastActivity || group.last_activity || 'Unknown',
+        unreadMessages: group.unreadMessages || group.unread_messages || group.unreadCount || group.unread_count || 0,
+        nextMeeting: group.nextMeeting || group.next_meeting || group.upcomingMeeting || group.upcoming_meeting || 'No upcoming meeting',
+        isActive: group.isActive || group.is_active !== false,
+        role: group.role || group.userRole || group.user_role || 'member',
+      }));
+      
+      setMyGroups(mappedGroups);
+      console.log('✅ Mapped My Groups:', mappedGroups.length);
+    } catch (error: any) {
+      console.error('❌ Error loading my groups:', error);
       toast.show({
-        description: 'Failed to load your groups',
+        description: error.response?.data?.message || 'Failed to load your groups. Please try again.',
         duration: 3000,
       });
+      setMyGroups([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadMyGroups();
     setIsRefreshing(false);
   };
 
+  // Handle open chat
   const handleOpenChat = (group: MyGroup) => {
     navigation.navigate('GroupChatScreen', { 
       groupId: group.id,
@@ -129,10 +157,12 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
     });
   };
 
+  // Handle group details
   const handleGroupDetails = (group: MyGroup) => {
     navigation.navigate('GroupDetailScreen', { group });
   };
 
+  // Handle leave group
   const handleLeaveGroup = (group: MyGroup) => {
     Alert.alert(
       'Leave Group',
@@ -143,19 +173,48 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
           text: 'Leave', 
           style: 'destructive',
           onPress: async () => {
-            // Remove group from list
-            setMyGroups(prev => prev.filter(g => g.id !== group.id));
-            
-            toast.show({
-              description: `You have left ${group.name}`,
-              duration: 3000,
-            });
+            try {
+              console.log('📞 Calling leaveGroup API...');
+              console.log('Group ID:', group.id);
+              console.log('User ID:', userId);
+
+              // Call API to leave group
+              const response = await leaveGroup(group.id, userId, '', '');
+              console.log('✅ Leave group response:', response);
+
+              // Remove group from list
+              setMyGroups(prev => prev.filter(g => g.id !== group.id));
+              
+              toast.show({
+                description: response.message || `You have left ${group.name}`,
+                duration: 3000,
+              });
+
+              // Reload groups to get fresh data
+              await loadMyGroups();
+            } catch (error: any) {
+              console.error('❌ Error leaving group:', error);
+              
+              // Handle specific error cases
+              if (error.response?.data?.error) {
+                toast.show({
+                  description: error.response.data.error,
+                  duration: 3000,
+                });
+              } else {
+                toast.show({
+                  description: 'Failed to leave group. Please try again.',
+                  duration: 3000,
+                });
+              }
+            }
           }
         },
       ]
     );
   };
 
+  // Handle group menu
   const handleGroupMenu = (group: MyGroup) => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -190,6 +249,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
     }
   };
 
+  // Get category color
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'anxiety':
@@ -211,6 +271,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
     return `Last activity: ${activity}`;
   };
 
+  // Render group card
   const renderGroupCard = ({ item }: { item: MyGroup }) => (
     <TouchableOpacity 
       style={[
@@ -407,7 +468,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
     marginHorizontal: 16,
-    marginVertical: 12,
+    marginTop: 8,
+    marginBottom: 12,
     borderRadius: 12,
     padding: 16,
     elevation: 2,

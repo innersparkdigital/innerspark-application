@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,19 @@ import {
   Dimensions,
   FlatList,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
+import { Skeleton } from '@rneui/themed';
+import { useToast } from 'native-base';
 import { appColors, appFonts } from '../global/Styles';
 import ISGenericHeader from '../components/ISGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
 import { NavigationProp } from '@react-navigation/native';
+import { getMeditationArticles, getMeditationSounds } from '../api/client/meditations';
+import { getImageSource, FALLBACK_IMAGES } from '../utils/imageHelpers';
+import { mockMeditationQuotes } from '../global/MockData';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,169 +56,141 @@ interface Quote {
 }
 
 const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'articles' | 'sounds' | 'quotes'>('articles');
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [sounds, setSounds] = useState<Sound[]>([]);
+  const quotes: Quote[] = mockMeditationQuotes; // Keep quotes as mock for now
   const quoteFlatListRef = useRef<FlatList>(null);
 
-  const articles: Article[] = [
-    {
-      id: '1',
-      title: 'The Power of Mindful Breathing',
-      excerpt: 'Discover how simple breathing exercises can transform your mental state and reduce anxiety in just minutes.',
-      readTime: '5 min read',
-      category: 'Mindfulness',
-      image: require('../assets/images/dummy-people/d-person1.png'),
-      content: 'Full article content here...',
-    },
-    {
-      id: '2',
-      title: 'Starting Your Meditation Journey',
-      excerpt: 'A beginner-friendly guide to establishing a daily meditation practice that fits your lifestyle.',
-      readTime: '7 min read',
-      category: 'Getting Started',
-      image: require('../assets/images/dummy-people/d-person2.png'),
-      content: 'Full article content here...',
-    },
-    {
-      id: '3',
-      title: 'Overcoming Meditation Challenges',
-      excerpt: 'Common obstacles in meditation and practical strategies to overcome them for a deeper practice.',
-      readTime: '6 min read',
-      category: 'Tips & Tricks',
-      image: require('../assets/images/dummy-people/d-person3.png'),
-      content: 'Full article content here...',
-    },
-    {
-      id: '4',
-      title: 'Body Scan Meditation Explained',
-      excerpt: 'Learn the technique of body scan meditation to release tension and connect with your physical self.',
-      readTime: '8 min read',
-      category: 'Techniques',
-      image: require('../assets/images/dummy-people/d-person4.png'),
-      content: 'Full article content here...',
-    },
-  ];
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
-  const sounds: Sound[] = [
-    {
-      id: '1',
-      title: 'Ocean Waves',
-      duration: '30 min',
-      category: 'Nature',
-      icon: 'waves',
-      color: '#2196F3',
-      description: 'Gentle ocean waves for deep relaxation',
-    },
-    {
-      id: '2',
-      title: 'Rain & Thunder',
-      duration: '45 min',
-      category: 'Nature',
-      icon: 'thunderstorm',
-      color: '#607D8B',
-      description: 'Soothing rain sounds with distant thunder',
-    },
-    {
-      id: '3',
-      title: 'Forest Sounds',
-      duration: '60 min',
-      category: 'Nature',
-      icon: 'park',
-      color: '#4CAF50',
-      description: 'Birds chirping in a peaceful forest',
-    },
-    {
-      id: '4',
-      title: 'Singing Bowls',
-      duration: '20 min',
-      category: 'Instrumental',
-      icon: 'music-note',
-      color: '#9C27B0',
-      description: 'Tibetan singing bowls for meditation',
-    },
-    {
-      id: '5',
-      title: 'Gentle Piano',
-      duration: '40 min',
-      category: 'Instrumental',
-      icon: 'piano',
-      color: '#FF9800',
-      description: 'Soft piano melodies for relaxation',
-    },
-    {
-      id: '6',
-      title: 'White Noise',
-      duration: '90 min',
-      category: 'Ambient',
-      icon: 'graphic-eq',
-      color: '#795548',
-      description: 'Pure white noise for focus and sleep',
-    },
-    {
-      id: '7',
-      title: 'Tibetan Chants',
-      duration: '25 min',
-      category: 'Spiritual',
-      icon: 'self-improvement',
-      color: '#E91E63',
-      description: 'Traditional Tibetan meditation chants',
-    },
-    {
-      id: '8',
-      title: 'Binaural Beats',
-      duration: '30 min',
-      category: 'Focus',
-      icon: 'headphones',
-      color: '#00BCD4',
-      description: 'Binaural beats for deep concentration',
-    },
-  ];
+  const loadData = async () => {
+    if (activeTab === 'quotes') return; // Quotes use mock data
+    
+    setIsLoading(true);
+    try {
+      if (activeTab === 'articles') {
+        await loadArticles();
+      } else if (activeTab === 'sounds') {
+        await loadSounds();
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading meditation data:', error);
+      toast.show({
+        description: error.response?.data?.message || 'Failed to load data. Please try again.',
+        duration: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const quotes: Quote[] = [
-    {
-      id: '1',
-      text: 'The present moment is the only time over which we have dominion.',
-      author: 'Thích Nhất Hạnh',
-    },
-    {
-      id: '2',
-      text: 'Meditation is not evasion; it is a serene encounter with reality.',
-      author: 'Thích Nhất Hạnh',
-    },
-    {
-      id: '3',
-      text: 'You should sit in meditation for 20 minutes a day, unless you\'re too busy; then you should sit for an hour.',
-      author: 'Old Zen Saying',
-    },
-    {
-      id: '4',
-      text: 'The thing about meditation is: You become more and more you.',
-      author: 'David Lynch',
-    },
-    {
-      id: '5',
-      text: 'Meditation is the tongue of the soul and the language of our spirit.',
-      author: 'Jeremy Taylor',
-    },
-    {
-      id: '6',
-      text: 'In the midst of movement and chaos, keep stillness inside of you.',
-      author: 'Deepak Chopra',
-    },
-    {
-      id: '7',
-      text: 'Meditation brings wisdom; lack of meditation leaves ignorance.',
-      author: 'Buddha',
-    },
-    {
-      id: '8',
-      text: 'The quieter you become, the more you can hear.',
-      author: 'Ram Dass',
-    },
-  ];
+  const loadArticles = async () => {
+    console.log('📞 Calling getMeditationArticles API...');
+    const response = await getMeditationArticles(1, 20);
+    console.log('✅ Articles API Response:', JSON.stringify(response, null, 2));
+    
+    const apiArticles = response.data?.articles || [];
+    const mappedArticles: Article[] = apiArticles.map((article: any) => ({
+      id: article.id?.toString() || article._id?.toString(),
+      title: article.title,
+      excerpt: article.excerpt || article.description || '',
+      readTime: article.readTime || article.read_time || '5 min read',
+      category: article.category || 'General',
+      image: getImageSource(article.image || article.coverImage, FALLBACK_IMAGES.event),
+      content: article.content || '',
+    }));
+    
+    setArticles(mappedArticles);
+    console.log('✅ Mapped Articles:', mappedArticles.length);
+  };
 
-  const renderArticles = () => (
+  const loadSounds = async () => {
+    console.log('📞 Calling getMeditationSounds API...');
+    const response = await getMeditationSounds(1, 20);
+    console.log('✅ Sounds API Response:', JSON.stringify(response, null, 2));
+    
+    const apiSounds = response.data?.sounds || [];
+    const mappedSounds: Sound[] = apiSounds.map((sound: any) => ({
+      id: sound.id?.toString() || sound._id?.toString(),
+      title: sound.title,
+      duration: sound.duration || '30 min',
+      category: sound.category || 'General',
+      icon: sound.icon || 'music-note',
+      color: sound.color || '#2196F3',
+      description: sound.description || '',
+    }));
+    
+    setSounds(mappedSounds);
+    console.log('✅ Mapped Sounds:', mappedSounds.length);
+  };
+
+
+  const ArticleSkeleton = () => (
+    <View style={styles.articleCard}>
+      <Skeleton animation="pulse" width="100%" height={180} />
+      <View style={styles.articleContent}>
+        <Skeleton animation="pulse" width="30%" height={20} style={{ marginBottom: 8 }} />
+        <Skeleton animation="pulse" width="90%" height={24} style={{ marginBottom: 8 }} />
+        <Skeleton animation="pulse" width="100%" height={16} />
+        <Skeleton animation="pulse" width="80%" height={16} style={{ marginTop: 4 }} />
+      </View>
+    </View>
+  );
+
+  const SoundSkeleton = () => (
+    <View style={styles.soundCard}>
+      <Skeleton animation="pulse" width={64} height={64} style={{ borderRadius: 32, marginBottom: 12 }} />
+      <Skeleton animation="pulse" width="80%" height={18} style={{ marginBottom: 4 }} />
+      <Skeleton animation="pulse" width="50%" height={14} />
+    </View>
+  );
+
+  const EmptyState = ({ type }: { type: 'articles' | 'sounds' }) => (
+    <View style={styles.emptyContainer}>
+      <Icon 
+        name={type === 'articles' ? 'article' : 'headphones'} 
+        type="material" 
+        color={appColors.AppGray} 
+        size={80} 
+      />
+      <Text style={styles.emptyTitle}>
+        {type === 'articles' ? 'No Articles Yet' : 'No Sounds Available'}
+      </Text>
+      <Text style={styles.emptySubtitle}>
+        {type === 'articles' 
+          ? 'Check back later for meditation articles and guides.' 
+          : 'Check back later for calming sounds and music.'}
+      </Text>
+      <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+        <Text style={styles.retryButtonText}>Refresh</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderArticles = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.contentContainer}>
+          <ArticleSkeleton />
+          <ArticleSkeleton />
+          <ArticleSkeleton />
+        </View>
+      );
+    }
+
+    if (articles.length === 0) {
+      return <EmptyState type="articles" />;
+    }
+
+    return (
     <View style={styles.contentContainer}>
       {articles.map((article) => (
         <TouchableOpacity
@@ -241,9 +219,28 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
         </TouchableOpacity>
       ))}
     </View>
-  );
+    );
+  };
 
-  const renderSounds = () => (
+  const renderSounds = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.contentContainer}>
+          <View style={styles.soundsGrid}>
+            <SoundSkeleton />
+            <SoundSkeleton />
+            <SoundSkeleton />
+            <SoundSkeleton />
+          </View>
+        </View>
+      );
+    }
+
+    if (sounds.length === 0) {
+      return <EmptyState type="sounds" />;
+    }
+
+    return (
     <View style={styles.contentContainer}>
       <View style={styles.soundsGrid}>
         {sounds.map((sound) => (
@@ -271,13 +268,12 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
         ))}
       </View>
     </View>
-  );
+    );
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call to refresh data
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    // In real app, fetch fresh data here
+    await loadData();
     setRefreshing(false);
   };
 
@@ -728,6 +724,39 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    marginTop: 16,
+    fontFamily: appFonts.headerTextBold,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: appColors.grey2,
+    textAlign: 'center',
+    marginTop: 8,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  retryButton: {
+    backgroundColor: appColors.AppBlue,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  retryButtonText: {
+    color: appColors.CardBackground,
+    fontSize: 14,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
 });
 

@@ -15,8 +15,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { NavigationProp } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { useToast } from 'native-base';
+import { getPlans } from '../../api/client/subscriptions';
+import { mockSubscriptionPlans } from '../../global/MockData';
+import { setAvailablePlans } from '../../features/subscription/subscriptionSlice';
 
 interface SubscriptionPlan {
   id: string;
@@ -39,92 +45,12 @@ interface SubscriptionPlansScreenProps {
 
 const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [billingCycle, setBillingCycle] = useState<'weekly' | 'monthly'>('weekly');
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Mock subscription plans - Focus on Support Groups + Direct Chat
-  const mockPlans: SubscriptionPlan[] = [
-    {
-      id: 'free',
-      name: 'Free',
-      description: 'Get started with basic features',
-      weeklyPrice: 0,
-      monthlyPrice: 0,
-      currency: 'UGX',
-      isPopular: false,
-      isCurrent: true,
-      supportGroupsLimit: 0,
-      directChatAccess: false,
-      features: [
-        'Browse support groups',
-        'Book appointments (pay-per-use)',
-        'Attend events (pay-per-use)',
-        'Access wellness resources',
-        'Community forum access',
-      ],
-      badge: 'FREE',
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      description: 'Join support groups and connect with peers',
-      weeklyPrice: 10000,
-      monthlyPrice: 35000,
-      currency: 'UGX',
-      isPopular: false,
-      isCurrent: false,
-      supportGroupsLimit: 3,
-      directChatAccess: false,
-      features: [
-        'Join up to 3 support groups',
-        'Group chat participation',
-        'Priority booking for appointments',
-        'All Free plan features',
-        'Weekly wellness tips',
-      ],
-    },
-    {
-      id: 'premium',
-      name: 'Premium',
-      description: 'Full access to groups plus direct therapist chat',
-      weeklyPrice: 25000,
-      monthlyPrice: 90000,
-      currency: 'UGX',
-      isPopular: true,
-      isCurrent: false,
-      supportGroupsLimit: 4,
-      directChatAccess: true,
-      features: [
-        'Join up to 4 support groups',
-        'Direct chat with therapist',
-        'Priority support 24/7',
-        'Crisis intervention access',
-        'All Basic plan features',
-      ],
-      badge: 'MOST POPULAR',
-    },
-    {
-      id: 'unlimited',
-      name: 'Unlimited',
-      description: 'Unlimited groups and premium support',
-      weeklyPrice: 40000,
-      monthlyPrice: 150000,
-      currency: 'UGX',
-      isPopular: false,
-      isCurrent: false,
-      supportGroupsLimit: 'unlimited',
-      directChatAccess: true,
-      features: [
-        'Unlimited support groups',
-        'Direct chat with therapist',
-        'Dedicated wellness coordinator',
-        'Priority crisis support',
-        'All Premium plan features',
-      ],
-    },
-  ];
 
   useEffect(() => {
     loadPlans();
@@ -133,12 +59,45 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
   const loadPlans = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise<void>(resolve => setTimeout(resolve, 1000));
-      setPlans(mockPlans);
-    } catch (error) {
+      console.log('📞 Calling getPlans API...');
+      console.log('User ID:', userId);
+
+      const response = await getPlans(userId);
+      console.log('✅ Plans response:', response);
+
+      // Map API response to local format
+      const plansData = response.plans;
+      if (plansData.length > 0) {
+        const mappedPlans = plansData.map((plan: any) => ({
+          id: plan.id || plan.plan_id,
+          name: plan.name,
+          description: plan.description,
+          weeklyPrice: plan.weeklyPrice || plan.weekly_price || 0,
+          monthlyPrice: plan.monthlyPrice || plan.monthly_price || 0,
+          currency: plan.currency || 'UGX',
+          isPopular: plan.isPopular || plan.is_popular || false,
+          supportGroupsLimit: plan.supportGroupsLimit || plan.support_groups_limit || 0,
+          directChatAccess: plan.directChatAccess || plan.direct_chat_access || false,
+          features: plan.features || [],
+          isCurrent: plan.isCurrent || plan.is_current || false,
+        }));
+        setPlans(mappedPlans);
+        dispatch(setAvailablePlans(mappedPlans)); // ✅ Redux dispatch
+      } else {
+        // Fallback to mock data
+        console.log('⚠️ No plans in API response, using mock data');
+        setPlans(mockSubscriptionPlans);
+        dispatch(setAvailablePlans(mockSubscriptionPlans)); // ✅ Redux dispatch
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading plans:', error);
+      
+      // Fallback to mock data on error
+      setPlans(mockSubscriptionPlans);
+      dispatch(setAvailablePlans(mockSubscriptionPlans)); // ✅ Redux dispatch
+      
       toast.show({
-        description: 'Failed to load plans',
+        description: 'Using offline data. Some features may be limited.',
         duration: 3000,
       });
     } finally {

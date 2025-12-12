@@ -14,8 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { NavigationProp } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { useToast } from 'native-base';
+import { getBillingHistory } from '../../api/client/subscriptions';
+import { mockPaymentMethods } from '../../global/MockData';
+import { setBillingHistory } from '../../features/subscription/subscriptionSlice';
 
 interface Invoice {
   id: string;
@@ -41,149 +47,87 @@ interface PaymentMethod {
 }
 
 interface BillingHistoryScreenProps {
-  navigation: any;
+  navigation: NavigationProp<any>;
 }
 
 const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'paid' | 'pending' | 'overdue'>('all');
-
-  // Mock invoices data
-  const mockInvoices: Invoice[] = [
-    {
-      id: '1',
-      invoiceNumber: 'INV-2025-001',
-      date: '2025-01-27',
-      dueDate: '2025-02-01',
-      amount: 120000,
-      currency: 'UGX',
-      status: 'paid',
-      paymentMethod: 'WellnessVault',
-      description: 'Premium Plan - Monthly Subscription',
-      planName: 'Premium Plan',
-      billingPeriod: 'Jan 2025',
-      downloadUrl: 'https://example.com/invoice-001.pdf',
-    },
-    {
-      id: '2',
-      invoiceNumber: 'INV-2024-012',
-      date: '2024-12-27',
-      dueDate: '2025-01-01',
-      amount: 120000,
-      currency: 'UGX',
-      status: 'paid',
-      paymentMethod: 'WellnessVault',
-      description: 'Premium Plan - Monthly Subscription',
-      planName: 'Premium Plan',
-      billingPeriod: 'Dec 2024',
-      downloadUrl: 'https://example.com/invoice-012.pdf',
-    },
-    {
-      id: '3',
-      invoiceNumber: 'INV-2024-011',
-      date: '2024-11-27',
-      dueDate: '2024-12-01',
-      amount: 55000,
-      currency: 'UGX',
-      status: 'paid',
-      paymentMethod: 'Mobile Money',
-      description: 'Individual Therapy Session',
-      planName: 'Pay Per Session',
-      billingPeriod: 'Nov 2024',
-      downloadUrl: 'https://example.com/invoice-011.pdf',
-    },
-    {
-      id: '4',
-      invoiceNumber: 'INV-2024-010',
-      date: '2024-10-27',
-      dueDate: '2024-11-01',
-      amount: 120000,
-      currency: 'UGX',
-      status: 'paid',
-      paymentMethod: 'WellnessVault',
-      description: 'Premium Plan - Monthly Subscription',
-      planName: 'Premium Plan',
-      billingPeriod: 'Oct 2024',
-      downloadUrl: 'https://example.com/invoice-010.pdf',
-    },
-    {
-      id: '5',
-      invoiceNumber: 'INV-2024-009',
-      date: '2024-09-27',
-      dueDate: '2024-10-01',
-      amount: 85000,
-      currency: 'UGX',
-      status: 'paid',
-      paymentMethod: 'WellnessVault',
-      description: 'Family Counseling Session',
-      planName: 'Pay Per Session',
-      billingPeriod: 'Sep 2024',
-      downloadUrl: 'https://example.com/invoice-009.pdf',
-    },
-    {
-      id: '6',
-      invoiceNumber: 'INV-2024-008',
-      date: '2024-08-27',
-      dueDate: '2024-09-01',
-      amount: 120000,
-      currency: 'UGX',
-      status: 'failed',
-      paymentMethod: 'Mobile Money',
-      description: 'Premium Plan - Monthly Subscription',
-      planName: 'Premium Plan',
-      billingPeriod: 'Aug 2024',
-    },
-    {
-      id: '7',
-      invoiceNumber: 'INV-2025-002',
-      date: '2025-01-28',
-      dueDate: '2025-02-02',
-      amount: 75000,
-      currency: 'UGX',
-      status: 'pending',
-      paymentMethod: 'WellnessVault',
-      description: 'Crisis Support Package',
-      planName: 'Crisis Support',
-      billingPeriod: 'Jan 2025',
-    },
-  ];
-
-  // Mock payment methods
-  const mockPaymentMethods: PaymentMethod[] = [
-    {
-      id: '1',
-      type: 'wellnessvault',
-      name: 'WellnessVault',
-      details: 'UGX 350,000 available',
-      isDefault: true,
-    },
-    {
-      id: '2',
-      type: 'mobile_money',
-      name: 'Mobile Money',
-      details: '**** **** 1234',
-      isDefault: false,
-    },
-  ];
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     loadBillingData();
   }, []);
 
-  const loadBillingData = async () => {
-    setIsLoading(true);
+  const loadBillingData = async (page: number = 1) => {
+    setIsLoading(page === 1);
     try {
-      // Simulate API call
-      await new Promise<void>(resolve => setTimeout(resolve, 1000));
-      setInvoices(mockInvoices);
+      console.log('📞 Calling getBillingHistory API...');
+      console.log('User ID:', userId, 'Page:', page);
+
+      const response = await getBillingHistory(userId, page, 20);
+      console.log('✅ Billing history response:', response);
+
+      // API returns: { data: { billings: [], pagination: {...} }, success: true }
+      const billings = response.data?.billings || response.billings || [];
+      const pagination = response.data?.pagination || response.pagination || {};
+
+      // Map API response to local format
+      if (billings.length > 0) {
+        const mappedInvoices = billings.map((invoice: any) => ({
+          id: invoice.id || invoice.invoice_id,
+          invoiceNumber: invoice.invoice_number || invoice.invoiceNumber,
+          date: invoice.date || invoice.created_at,
+          dueDate: invoice.due_date || invoice.dueDate,
+          amount: invoice.amount,
+          currency: invoice.currency || 'UGX',
+          status: invoice.status || 'pending',
+          paymentMethod: invoice.payment_method || invoice.paymentMethod,
+          description: invoice.description,
+          planName: invoice.plan_name || invoice.planName,
+          billingPeriod: invoice.billing_period || invoice.billingPeriod,
+          downloadUrl: invoice.download_url || invoice.downloadUrl,
+        }));
+        
+        if (page === 1) {
+          setInvoices(mappedInvoices);
+        } else {
+          setInvoices(prev => [...prev, ...mappedInvoices]);
+        }
+        
+        // Check if there are more pages
+        const currentPage = pagination.currentPage || page;
+        const totalPages = pagination.totalPages || 1;
+        setHasMore(currentPage < totalPages);
+        setCurrentPage(currentPage);
+      } else {
+        // Empty billings array - show empty state (not mock data)
+        console.log('ℹ️ No billing history found - showing empty state');
+        setInvoices([]);
+        setHasMore(false);
+      }
+
+      // ⚠️ MISSING ENDPOINT: getPaymentMethods(userId)
+      // Using mock data for payment methods
+      console.log('⚠️ MISSING API: getPaymentMethods - using mock data');
       setPaymentMethods(mockPaymentMethods);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Error loading billing history:', error);
+      
+      // On error, show empty state (not mock data)
+      setInvoices([]);
+      setPaymentMethods(mockPaymentMethods);
+      setHasMore(false);
+      
       toast.show({
-        description: 'Failed to load billing history',
+        description: 'Failed to load billing history. Please try again.',
         duration: 3000,
       });
     } finally {
@@ -206,8 +150,12 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       return;
     }
 
+    // ⚠️ MISSING ENDPOINT: downloadInvoice(userId, invoiceId)
+    // Using local behavior only
+    console.log('⚠️ MISSING API: downloadInvoice - using mock behavior');
+    
     toast.show({
-      description: `Downloading ${invoice.invoiceNumber}...`,
+      description: `Downloading ${invoice.invoiceNumber}... (offline mode)`,
       duration: 2000,
     });
   };
@@ -225,8 +173,12 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
 
   const processRetryPayment = async (invoice: Invoice) => {
     try {
+      // ⚠️ MISSING ENDPOINT: retryPayment(userId, invoiceId, paymentMethod)
+      // Using local state update only
+      console.log('⚠️ MISSING API: retryPayment - using mock behavior');
+      
       toast.show({
-        description: 'Processing payment...',
+        description: 'Processing payment... (offline mode)',
         duration: 2000,
       });
       
@@ -237,7 +189,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       setInvoices(updatedInvoices);
       
       toast.show({
-        description: 'Payment successful!',
+        description: 'Payment successful! (offline mode)',
         duration: 3000,
       });
     } catch (error) {

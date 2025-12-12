@@ -20,7 +20,7 @@ import { Button, Icon, BottomSheet} from '@rneui/base';
 import { useToast } from 'native-base';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
-import { APIInstance } from '../../api/LHAPI';
+import { AuthInstance } from '../../api/LHAPI';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
 import { 
     isValidPhoneNumber, 
@@ -78,11 +78,13 @@ export default function SignupScreen({navigation}){
         setGender("M"); 
         dispatch(updateGender("M")); 
         console.log("Gender: ", gender);
+        // console.log("Gender Formatted: ", getGender(gender));
     }
     const handleFemaleSelection = () => { 
         setGender("F"); 
         dispatch(updateGender("F")); 
         console.log("Gender: ", gender);
+        // console.log("Gender Formatted: ", getGender(gender));
     }
 
     // Name Handler
@@ -259,36 +261,36 @@ export default function SignupScreen({navigation}){
         }
 
         setIsLoading(true); // Set loading state
+
         // reset password and verify password toggles
         setShowPassword(false);
         setShowVerifyPassword(false);
 
+        // testing state variables
+        // console.log("--------- User Signup Data Before Submit ---------");
+        // console.log("Firstname: ", firstName);
+        // console.log("Lastname: ", lastName);
+        // console.log("Email: ", email);
+        // console.log("Password: ", password);
+        // console.log("Confirm Password: ", verifyPassword);
+        // console.log("Gender: ", getGender(gender));
+        // console.log("Formatted Phone: ", formattedPhone);
+        // console.log("--------- User Signup Data---------");
 
-
-           // testing state variables
-        //    console.log("--------- User Signup Data Before Submit ---------");
-        //    console.log("Firstname: ", firstName);
-        //    console.log("Lastname: ", lastName);
-        //    console.log("Email: ", email);
-        //    console.log("Password: ", password);
-        //    console.log("Confirm Password: ", verifyPassword);
-        //    console.log("Gender: ", getGender(gender));
-        //    console.log("Formatted Phone: ", formattedPhone);
-        //    console.log("--------- User Signup Data---------");
 
 
         // making a request to the API for signup
         try {
 
-            const response = await APIInstance.post('/auth/register', {
-                firstName : firstName.trim(),
-                lastName : lastName.trim(),
-                email : email.trim(),
+            const response = await AuthInstance.post('/auth/register', {
+                firstName : firstName.trim(), // first name
+                lastName : lastName.trim(), // last name
+                email : email.trim(), // email
                 phoneNumber : formattedPhone, // Formatted phone
-                password : password.trim(),
-                role : "user", // We are creating a new user
-                gender : getGender(gender) // Gender Extraction
-
+                gender : getGender(gender), // Gender Extraction
+                password : password.trim(), // password
+                // role : "user", // We are creating a new user
+                
             });
             
             // checking the status
@@ -330,9 +332,19 @@ export default function SignupScreen({navigation}){
             }
 
         } catch (error) {
-            console.log(error.message); // Customize error for proper user experience
+            console.error('Signup Error:', error.message);
+            
+            if (error.response) {
+                // Show backend error message if available
+                const errorMessage = error.response.data?.message || "Whoops! Something went wrong.";
+                notifyWithToast(errorMessage);
+            } else if (error.request) {
+                notifyWithToast("Network error. Please check your connection.");
+            } else {
+                notifyWithToast("Whoops! Something went wrong.");
+            }
+            
             setIsLoading(false); // Set loading state
-            notifyWithToast("Whoops! Something went wrong."); // Notify with Toasts
         }
 
 }

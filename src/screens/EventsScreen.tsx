@@ -23,6 +23,10 @@ import LHGenericHeader from '../components/LHGenericHeader';
 import EventCard from '../components/events/EventCard';
 import EventFilterBar from '../components/events/EventFilterBar';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import { getEvents, getMyEvents } from '../api/client/events';
+import { UPLOADS_BASE_URL } from '../config/env';
+import { setRegisteredEventIds } from '../features/events/eventsSlice';
 
 interface Event {
   id: number;
@@ -41,6 +45,13 @@ interface Event {
   organizer: string;
   organizerImage: any;
   isRegistered: boolean;
+  // Registration data (only for my-events)
+  registrationId?: string;
+  status?: string;
+  registeredAt?: string;
+  confirmationCode?: string;
+  meetingLink?: string;
+  paidAmount?: number;
 }
 
 interface EventsScreenProps {
@@ -50,6 +61,8 @@ interface EventsScreenProps {
 
 const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [activeTab, setActiveTab] = useState<'events' | 'my-events'>('events');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -57,64 +70,6 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [events, setEvents] = useState<Event[]>([]);
   const eventsListRef = useRef<FlatList>(null);
-
-  // Mock events data
-  const mockEvents: Event[] = [
-    {
-      id: 1,
-      title: 'Mindfulness & Meditation Workshop',
-      shortDescription: 'Learn mindfulness techniques to reduce stress and improve mental clarity.',
-      date: '2024-01-15',
-      time: '10:00 AM',
-      coverImage: require('../assets/images/dummy-people/d-person1.png'),
-      location: 'Wellness Center, Kampala',
-      isOnline: false,
-      totalSeats: 50,
-      availableSeats: 12,
-      price: 25000,
-      currency: 'UGX',
-      category: 'Workshop',
-      organizer: 'Dr. Sarah Nakato',
-      organizerImage: require('../assets/images/dummy-people/d-person1.png'),
-      isRegistered: false,
-    },
-    {
-      id: 2,
-      title: 'Mental Health First Aid Training',
-      shortDescription: 'Essential training for recognizing and responding to mental health crises.',
-      date: '2024-01-20',
-      time: '9:00 AM',
-      coverImage: require('../assets/images/dummy-people/d-person2.png'),
-      location: 'Online Event',
-      isOnline: true,
-      totalSeats: 100,
-      availableSeats: 45,
-      price: 0,
-      currency: 'UGX',
-      category: 'Training',
-      organizer: 'Mental Health Uganda',
-      organizerImage: require('../assets/images/dummy-people/d-person2.png'),
-      isRegistered: true,
-    },
-    {
-      id: 3,
-      title: 'Anxiety Management Seminar',
-      shortDescription: 'Learn practical strategies to manage anxiety and panic attacks.',
-      date: '2024-01-25',
-      time: '2:00 PM',
-      coverImage: require('../assets/images/dummy-people/d-person3.png'),
-      location: 'Makerere University, Kampala',
-      isOnline: false,
-      totalSeats: 75,
-      availableSeats: 0,
-      price: 15000,
-      currency: 'UGX',
-      category: 'Seminar',
-      organizer: 'Prof. Mary Kiconco',
-      organizerImage: require('../assets/images/dummy-people/d-person3.png'),
-      isRegistered: false,
-    },
-  ];
 
   const categories = ['All', 'Workshop', 'Training', 'Seminar', 'Summit'];
 
@@ -128,18 +83,126 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Reload events when tab changes
+  useEffect(() => {
+    loadEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const loadEvents = async () => {
     setIsLoading(true);
     try {
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
-      setEvents(mockEvents);
-    } catch (error) {
+      console.log('🔄 Loading events...');
+      console.log('📋 Active Tab:', activeTab);
+      console.log('👤 User ID:', userId);
+      
+      let apiResponse;
+      
+      if (activeTab === 'my-events') {
+        console.log('📞 Calling getMyEvents API...');
+        apiResponse = await getMyEvents(userId);
+      } else {
+        console.log('📞 Calling getEvents API...');
+        apiResponse = await getEvents(1, 20);
+      }
+      
+      console.log('✅ API Response:', JSON.stringify(apiResponse, null, 2));
+      
+      // Extract events from API response
+      const apiEvents = apiResponse?.data?.events || [];
+      console.log('📊 Events count:', apiEvents.length);
+      
+      // Map API events to our Event interface
+      const mappedEvents: Event[] = apiEvents
+        .filter((event: any) => {
+          // For my-events, filter out cancelled registrations
+          if (activeTab === 'my-events') {
+            return event.status !== 'cancelled';
+          }
+          return true;
+        })
+        .map((event: any) => ({
+          id: event.id,
+          title: event.title,
+          shortDescription: event.shortDescription || event.description || '',
+          date: event.date,
+          time: event.time,
+          // Handle cover image - prepend uploads base URL if it's a relative path, fallback to default
+          coverImage: event.coverImage && !event.coverImage.startsWith('http') 
+            ? { uri: `${UPLOADS_BASE_URL}/${event.coverImage}` }
+            : event.coverImage 
+              ? { uri: event.coverImage }
+              : require('../assets/images/is-default.png'),
+          location: event.location || 'Location TBD',
+          isOnline: event.isOnline || false,
+          totalSeats: event.totalSeats || 0,
+          availableSeats: event.availableSeats || 0,
+          price: event.price || 0,
+          currency: event.currency || 'UGX',
+          category: event.category || 'General',
+          organizer: event.organizer || 'InnerSpark',
+          // Handle organizer image - prepend uploads base URL if it's a relative path, fallback to avatar placeholder
+          organizerImage: event.organizerImage && !event.organizerImage.startsWith('http')
+            ? { uri: `${UPLOADS_BASE_URL}/${event.organizerImage}` }
+            : event.organizerImage
+              ? { uri: event.organizerImage }
+              : require('../assets/images/avatar-placeholder.png'),
+          isRegistered: event.isRegistered || false,
+          // Include registration data for my-events
+          ...(activeTab === 'my-events' && {
+            registrationId: event.registrationId,
+            status: event.status,
+            registeredAt: event.registeredAt,
+            confirmationCode: event.confirmationCode,
+            meetingLink: event.meetingLink,
+            paidAmount: event.paidAmount,
+          }),
+        }));
+      
+      console.log('✅ Mapped Events:', mappedEvents.length);
+      
+      // Use real API data
+      setEvents(mappedEvents);
+      
+      // Update Redux store with registered event IDs
+      if (activeTab === 'my-events') {
+        // If viewing my-events, these are all registered
+        const registeredIds = mappedEvents.map(e => e.id);
+        dispatch(setRegisteredEventIds(registeredIds));
+        console.log('✅ Updated registered event IDs in store:', registeredIds);
+      } else {
+        // If viewing all events, extract registered ones
+        const registeredIds = mappedEvents.filter(e => e.isRegistered).map(e => e.id);
+        dispatch(setRegisteredEventIds(registeredIds));
+        console.log('✅ Updated registered event IDs in store:', registeredIds);
+      }
+      
+      // toast.show({
+      //   description: `Loaded ${mappedEvents.length} event${mappedEvents.length !== 1 ? 's' : ''} successfully!`,
+      //   duration: 2000,
+      //   placement: 'top',
+      // });
+      
+    } catch (error: any) {
+      console.error('❌ Error loading events:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack,
+      });
+      
+      // Clear events on error
+      setEvents([]);
+      
+      // Only show user-friendly message in toast
+      const userMessage = error.response?.data?.message || 'Failed to load events. Please try again.';
       toast.show({
-        description: 'Failed to load events. Please try again.',
+        description: userMessage,
         duration: 3000,
       });
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -149,19 +212,31 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
   };
 
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
+    // Search filter - check title, description, location, organizer
+    const searchLower = searchQuery.toLowerCase().trim();
+    const matchesSearch = searchLower === '' || 
+      event.title.toLowerCase().includes(searchLower) ||
+      event.shortDescription.toLowerCase().includes(searchLower) ||
+      event.location.toLowerCase().includes(searchLower) ||
+      event.organizer.toLowerCase().includes(searchLower) ||
+      event.category.toLowerCase().includes(searchLower);
+    
+    // Category filter (only for events tab)
     const matchesCategory = activeTab === 'events'
       ? (selectedCategory === 'All' || event.category === selectedCategory)
       : true;
+    
+    // Tab filter
     const matchesTab = activeTab === 'events' ? true : event.isRegistered;
+    
     return matchesSearch && matchesCategory && matchesTab;
   });
 
   const handleEventPress = (event: Event) => {
     const fromMyEvents = activeTab === 'my-events';
     if (fromMyEvents) {
-      navigation.navigate('MyEventDetailScreen', { event, registrationId: `R-${event.id}` });
+      // Pass full event with registration data for instant loading
+      navigation.navigate('MyEventDetailScreen', { event });
     } else {
       navigation.navigate('EventDetailScreen', { event });
     }
@@ -304,16 +379,36 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
             )
           )}
           showsVerticalScrollIndicator={false}
-          ListHeaderComponent={() => (
-            <EventFilterBar
-              searchQuery={searchQuery}
-              onChangeSearch={setSearchQuery}
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-              showCategories={activeTab === 'events'}
-            />
-          )}
+          ListHeaderComponent={
+            <>
+              <EventFilterBar
+                searchQuery={searchQuery}
+                onChangeSearch={setSearchQuery}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+                showCategories={activeTab === 'events'}
+              />
+              {(searchQuery.trim() !== '' || selectedCategory !== 'All') && (
+                <View style={styles.searchResultsHeader}>
+                  <Text style={styles.searchResultsText}>
+                    {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'} found
+                  </Text>
+                  {(searchQuery.trim() !== '' || selectedCategory !== 'All') && (
+                    <TouchableOpacity 
+                      onPress={() => {
+                        setSearchQuery('');
+                        setSelectedCategory('All');
+                      }}
+                      style={styles.clearFiltersButton}
+                    >
+                      <Text style={styles.clearFiltersText}>Clear filters</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </>
+          }
           contentContainerStyle={styles.listContainer}
           refreshControl={
             <RefreshControl
@@ -624,6 +719,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
+  },
+  searchResultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  searchResultsText: {
+    fontSize: 14,
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextMedium,
+  },
+  clearFiltersButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  clearFiltersText: {
+    fontSize: 14,
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextMedium,
   },
 });
 

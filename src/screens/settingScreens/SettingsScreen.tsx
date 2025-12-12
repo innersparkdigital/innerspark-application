@@ -17,6 +17,7 @@ import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import ISStatusBar from '../../components/ISStatusBar';
 
 interface SettingsScreenProps {
@@ -47,6 +48,7 @@ interface SettingSection {
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const emergencyContacts = useSelector((state: any) => state.emergency?.emergencyContacts || []);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -174,7 +176,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         {
           id: 'crisis_contacts',
           title: 'Emergency Contacts',
-          subtitle: '3 contacts configured',
+          subtitle: emergencyContacts.length === 0 
+            ? 'No contacts configured' 
+            : emergencyContacts.length === 1 
+            ? '1 contact configured' 
+            : `${emergencyContacts.length} contacts configured`,
           icon: 'emergency',
           iconColor: '#F44336',
           hasChevron: true,

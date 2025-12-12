@@ -1,19 +1,21 @@
 import axios from 'axios';
 import { API_BASE_URL, API_VERSION, AUTH_TOKEN } from '../config/env';
 
-console.log('🔧 === LHAPI.js LOADED ===');
-console.log('  Imported API_BASE_URL:', API_BASE_URL);
-console.log('  Imported API_VERSION:', API_VERSION);
-console.log('  API_VERSION length:', API_VERSION?.length || 0);
-console.log('  API_VERSION is empty?', API_VERSION === '' || !API_VERSION);
-console.log('  Imported AUTH_TOKEN:', AUTH_TOKEN);
-console.log('  Final baseURL will be:', API_BASE_URL + API_VERSION);
+// API configuration loaded from environment variables
+console.log('🔧 === LHAPI.js LOADED ==='); // just for debugging #DEVLOG
+console.log('  Imported API_BASE_URL:', API_BASE_URL); // just for debugging #DEVLOG
+console.log('  Imported API_VERSION:', API_VERSION); //  just for debugging #DEVLOG
+console.log('  API_VERSION length:', API_VERSION?.length || 0); // just for debugging #DEVLOG
+console.log('  API_VERSION is empty?', API_VERSION === '' || !API_VERSION); // just for debugging #DEVLOG
+console.log('  Imported AUTH_TOKEN:', AUTH_TOKEN); // just for debugging #DEVLOG
+console.log('  Final baseURL will be:', API_BASE_URL + API_VERSION); // just for debugging #DEVLOG
 console.log('🔧 === END LHAPI.js ===');
 
-export const baseUrlRoot = API_BASE_URL;
-export const baseUrlV1 = API_VERSION;
-export const authToken = AUTH_TOKEN;
+export const baseUrlRoot = API_BASE_URL; // API Base URL
+export const baseUrlV1 = API_VERSION; // API Version
+export const authToken = AUTH_TOKEN; // API Auth Token
 
+// Main API instance for versioned endpoints (/api/v1/*)
 export const APIInstance = axios.create({ 
     baseURL: baseUrlRoot + baseUrlV1,
     timeout: 30000, // 30 second timeout to prevent 524 errors
@@ -22,6 +24,16 @@ export const APIInstance = axios.create({
         'Content-Type': 'application/json',
     }
 }); // Axios instance for API requests
+
+// Auth instance for non-versioned auth endpoints (/api/auth/*)
+export const AuthInstance = axios.create({
+    baseURL: baseUrlRoot, // No version suffix
+    timeout: 30000,
+    headers: {
+        'x-api-key': authToken,
+        'Content-Type': 'application/json',
+    }
+});
 
 export const baseUrl = baseUrlRoot + baseUrlV1; // Base URL for API requests
 
@@ -72,6 +84,40 @@ APIInstance.interceptors.response.use(
             if (status === 401) {
                 console.error('Unauthorized - Token may be invalid');
                 // TODO: Redirect to login or refresh token
+            } else if (status === 403) {
+                console.error('Forbidden - Access denied');
+            } else if (status === 500) {
+                console.error('Server Error - Please try again later');
+            }
+        } else if (error.request) {
+            console.error('Network Error - No response received');
+        }
+        
+        return Promise.reject(error);
+    }
+);
+
+// Add same interceptors to AuthInstance
+AuthInstance.interceptors.request.use(
+    (config) => {
+        // You can add dynamic token logic here if needed
+        return config;
+    },
+    (error) => {
+        console.error('Request Error:', error);
+        return Promise.reject(error);
+    }
+);
+
+AuthInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Handle common errors globally
+        if (error.response) {
+            const { status } = error.response;
+            
+            if (status === 401) {
+                console.error('Unauthorized - Token may be invalid');
             } else if (status === 403) {
                 console.error('Forbidden - Access denied');
             } else if (status === 500) {

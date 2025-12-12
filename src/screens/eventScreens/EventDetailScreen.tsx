@@ -1,7 +1,7 @@
 /**
  * Event Detail Screen - Detailed view of mental health events
  */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StatusBar,
   StyleSheet,
@@ -26,6 +26,11 @@ import { getPhoneNumberOperator } from '../../global/LHShortcuts';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import PaymentStatusPoller from '../../services/PaymentStatusPoller';
+import { getEventById, registerForEvent, unregisterFromEvent, getMyEvents } from '../../api/client/events';
+import { useSelector, useDispatch } from 'react-redux';
+import { addRegisteredEventId, removeRegisteredEventId, selectIsEventRegistered } from '../../features/events/eventsSlice';
+import { UPLOADS_BASE_URL } from '../../config/env';
+import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 
 interface Event {
   id: number;
@@ -60,13 +65,22 @@ interface Event {
 
 interface EventDetailScreenProps {
   navigation: NavigationProp<any>;
-  route: RouteProp<{ params: { event: Event } }, 'params'>;
+  route: RouteProp<{ params: { event?: Event; eventId?: number } }, 'params'>;
 }
 
 const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route }) => {
-  const { event } = route.params;
+  const { event: passedEvent, eventId } = route.params;
   const toast = useToast();
-  const [isRegistered, setIsRegistered] = useState(event.isRegistered);
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  
+  // State for event data
+  const [event, setEvent] = useState<Event | null>(passedEvent || null);
+  const [isLoadingEvent, setIsLoadingEvent] = useState(!passedEvent);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get registration status from Redux store (single source of truth)
+  const isRegistered = useSelector(selectIsEventRegistered(event?.id || 0));
   const [isLoading, setIsLoading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wellnessvault');
@@ -104,7 +118,107 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     setMmOtpExpiry(null);
   };
 
+  // Load event data on mount
+  useEffect(() => {
+    loadEventData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadEventData = async () => {
+    // If event was passed, use it; otherwise fetch by ID
+    if (passedEvent) {
+      setEvent(passedEvent);
+      // Update Redux store with registration status
+      if (passedEvent.isRegistered) {
+        dispatch(addRegisteredEventId(passedEvent.id));
+      }
+      setIsLoadingEvent(false);
+      return;
+    }
+
+    if (!eventId) {
+      toast.show({
+        description: 'Event not found',
+        duration: 3000,
+      });
+      navigation.goBack();
+      return;
+    }
+
+    setIsLoadingEvent(true);
+    try {
+      console.log('🔄 Loading event details for ID:', eventId);
+      const response = await getEventById(eventId.toString());
+      console.log('✅ Event data loaded:', response);
+      
+      const eventData = response.data;
+      
+      // Map API response to Event interface
+      const mappedEvent: Event = {
+        id: eventData.id,
+        title: eventData.title,
+        shortDescription: eventData.shortDescription || eventData.description || '',
+        description: eventData.description,
+        date: eventData.date,
+        time: eventData.time,
+        coverImage: getImageSource(eventData.coverImage, FALLBACK_IMAGES.event),
+        location: eventData.location || 'Location TBD',
+        locationLink: eventData.locationLink,
+        isOnline: eventData.isOnline || false,
+        totalSeats: eventData.totalSeats || 0,
+        availableSeats: eventData.availableSeats || 0,
+        price: eventData.price || 0,
+        currency: eventData.currency || 'UGX',
+        category: eventData.category || 'General',
+        organizer: eventData.organizer || 'InnerSpark',
+        organizerImage: getImageSource(eventData.organizerImage, FALLBACK_IMAGES.avatar),
+        isRegistered: eventData.isRegistered || false,
+        registrationDeadline: eventData.registrationDeadline,
+        schedule: eventData.schedule,
+      };
+      
+      setEvent(mappedEvent);
+      
+      // Update Redux store with registration status from API
+      if (mappedEvent.isRegistered) {
+        dispatch(addRegisteredEventId(mappedEvent.id));
+      } else {
+        dispatch(removeRegisteredEventId(mappedEvent.id));
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading event:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack,
+      });
+      
+      // Only show user-friendly message in toast
+      const userMessage = error.response?.data?.message || 'Failed to load event. Please try again.';
+      toast.show({
+        description: userMessage,
+        duration: 3000,
+      });
+      navigation.goBack();
+    } finally {
+      setIsLoadingEvent(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+    
+    setIsRefreshing(true);
+    try {
+      await loadEventData();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleRegistration = async () => {
+    if (!event) return;
+    
     if (!isRegistered && event.availableSeats === 0) {
       toast.show({
         description: 'Sorry, this event is sold out.',
@@ -117,15 +231,31 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     if (isRegistered) {
       setIsLoading(true);
       try {
-        await new Promise<void>((resolve) => globalThis.setTimeout(() => resolve(), 1500));
-        setIsRegistered(false);
+        console.log('🔄 Unregistering from event:', event.id);
+        await unregisterFromEvent(event.id.toString(), userId);
+        
+        // Update Redux store immediately
+        dispatch(removeRegisteredEventId(event.id));
+        
         toast.show({
           description: 'Successfully unregistered from event',
           duration: 3000,
         });
-      } catch (error) {
+        
+        // Reload event data to update seat count
+        await loadEventData();
+      } catch (error: any) {
+        console.error('❌ Unregistration error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          stack: error.stack,
+        });
+        
+        // Only show user-friendly message in toast
+        const userMessage = error.response?.data?.message || 'Unregistration failed. Please try again.';
         toast.show({
-          description: 'Unregistration failed. Please try again.',
+          description: userMessage,
           duration: 3000,
         });
       } finally {
@@ -143,18 +273,89 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     }
   };
 
-  const processRegistration = async () => {
+  const processRegistration = async (paymentMethod: string = 'free', phoneNumber?: string) => {
+    if (!event) return;
+    
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1500));
+      console.log('🔄 Registering for event:', event.id);
+      await registerForEvent(event.id.toString(), userId, paymentMethod, phoneNumber || '');
       
-      setIsRegistered(true);
-    } catch (error) {
+      // Update Redux store immediately
+      dispatch(addRegisteredEventId(event.id));
+      
       toast.show({
-        description: 'Registration failed. Please try again.',
+        description: 'Successfully registered for event!',
         duration: 3000,
       });
+      
+      // Reload event data to update seat count
+      await loadEventData();
+    } catch (error: any) {
+      console.error('❌ Registration error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack,
+      });
+      
+      // Check if this might be a duplicate registration error
+      const responseData = error.response?.data;
+      const isDuplicateRegistration = 
+        (responseData?.message?.toLowerCase().includes('already registered')) ||
+        (responseData?.details?.toLowerCase().includes('duplicate entry'));
+      
+      if (isDuplicateRegistration) {
+        // Verify actual registration status by checking myEvents
+        try {
+          console.log('🔍 Verifying registration status from myEvents...');
+          const myEventsResponse = await getMyEvents(userId);
+          const myEvents = myEventsResponse.data?.events || [];
+          
+          // Check if event exists AND is not cancelled
+          const registration = myEvents.find((e: any) => e.id === event.id);
+          const isActuallyRegistered = registration && registration.status !== 'cancelled';
+          
+          console.log('✅ Verification result:', isActuallyRegistered ? 'REGISTERED' : 'NOT REGISTERED');
+          if (registration) {
+            console.log('   Registration status:', registration.status);
+          }
+          
+          if (isActuallyRegistered) {
+            // User is actually registered (and not cancelled)
+            dispatch(addRegisteredEventId(event.id));
+            toast.show({
+              description: 'You are already registered for this event',
+              duration: 3000,
+            });
+          } else {
+            // User is NOT registered or registration was cancelled
+            dispatch(removeRegisteredEventId(event.id));
+            toast.show({
+              description: 'Registration failed. Please try again.',
+              duration: 3000,
+            });
+          }
+          
+          // Reload event data to sync seat count
+          await loadEventData();
+        } catch (verifyError) {
+          console.error('❌ Error verifying registration:', verifyError);
+          // Fallback: reload event data
+          await loadEventData();
+          toast.show({
+            description: 'Please check your registered events',
+            duration: 3000,
+          });
+        }
+      } else {
+        // Other errors - only show message field
+        const userMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+        toast.show({
+          description: userMessage,
+          duration: 3000,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -267,6 +468,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
   };
 
   const handleLocationPress = () => {
+    if (!event) return;
     if (event.isOnline) {
       toast.show({
         description: 'Online event link will be shared after registration.',
@@ -288,6 +490,14 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
   };
 
   const getRegistrationButtonConfig = () => {
+    if (!event) {
+      return {
+        title: 'Loading...',
+        disabled: true,
+        color: appColors.AppGray,
+      };
+    }
+    
     if (isLoading) {
       return {
         title: 'Processing...',
@@ -321,6 +531,33 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
 
   const buttonConfig = getRegistrationButtonConfig();
 
+  // Show loading state
+  if (isLoadingEvent || !event) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Event Details</Text>
+          <View style={styles.shareButton} />
+        </View>
+
+        {/* Loading Indicator */}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={appColors.AppBlue} />
+          <Text style={styles.loadingText}>Loading event details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
@@ -334,8 +571,18 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Event Details</Text>
-        <TouchableOpacity style={styles.shareButton}>
-          <Icon name="share" type="material" color={appColors.CardBackground} size={24} />
+        <TouchableOpacity 
+          style={styles.shareButton} 
+          onPress={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <Icon 
+            name="refresh" 
+            type="material" 
+            color={appColors.CardBackground} 
+            size={24}
+            style={isRefreshing ? { opacity: 0.5 } : {}}
+          />
         </TouchableOpacity>
       </View>
 
@@ -537,13 +784,25 @@ const styles = StyleSheet.create({
   shareButton: {
     padding: 8,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: appColors.AppGray,
+    fontFamily: appFonts.headerTextMedium,
+  },
   scrollView: {
     flex: 1,
   },
   eventImage: {
     width: '100%',
     height: 250,
-    backgroundColor: appColors.AppLightGray,
+    backgroundColor: appColors.AppBlueOpacity,
   },
   content: {
     backgroundColor: appColors.CardBackground,

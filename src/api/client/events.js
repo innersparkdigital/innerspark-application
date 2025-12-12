@@ -11,7 +11,6 @@ import { APIInstance } from '../LHAPI';
  * @returns {Promise} Events list
  */
 export const getEvents = async (page = 1, limit = 20) => {
-    console.log("Full API URL Requested: ", APIInstance.defaults.baseURL + '/client/events');
     const response = await APIInstance.get('/client/events', {
         params: { page, limit }
     });

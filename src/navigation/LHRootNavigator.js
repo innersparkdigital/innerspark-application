@@ -15,6 +15,7 @@ import { checkVersion } from 'react-native-check-version';
 import LHAuthNavigator from './LHAuthNavigator';
 import LHStackNavigator from './LHStackNavigator';
 import LHTherapistNavigator from './LHTherapistNavigator';
+import { loadCriticalDataToRedux } from '../api/shared';
 
 
 export default function LHRootNavigator() {
@@ -51,8 +52,21 @@ export default function LHRootNavigator() {
                     // Token is defined
                      console.log(userDetailsLS);
                      console.log('------------');
-                     console.log(JSON.parse(userDetailsLS));
-                     dispatch(updateUserDetails(JSON.parse(userDetailsLS)));
+                     const parsedUserDetails = JSON.parse(userDetailsLS);
+                     console.log(parsedUserDetails);
+                     dispatch(updateUserDetails(parsedUserDetails));
+
+                     // Load critical data into Redux in the background (non-blocking)
+                     // Only if user token exists (user is logged in)
+                     if (userToken && parsedUserDetails?.userId) {
+                         loadCriticalDataToRedux(parsedUserDetails.userId, dispatch)
+                             .then((results) => {
+                                 console.log('✅ Background data load on app startup:', results);
+                             })
+                             .catch((error) => {
+                                 console.error('❌ Background data load failed on startup:', error);
+                             });
+                     }
                 }
 
             
