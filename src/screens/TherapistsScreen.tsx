@@ -26,6 +26,7 @@ import { appImages } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
 import PanicButtonComponent from '../components/PanicButtonComponent';
+import LHGenericFeatureModal from '../components/LHGenericFeatureModal';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -44,6 +45,7 @@ const TherapistsScreen = ({ navigation, route }) => {
   const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showDonateModal, setShowDonateModal] = useState(false);
 
   // Mock therapist data with complete information - African-Ugandan names
   const therapists = [
@@ -299,35 +301,43 @@ const TherapistsScreen = ({ navigation, route }) => {
     }
   };
 
+  // Profile view
   const handleViewProfile = (therapist) => {
     navigation.navigate('TherapistDetailScreen', { therapist });
   };
 
+  // Search focus 
   const handleSearchFocus = () => {
     setIsSearchFocused(true);
   };
 
+  // Search blur
   const handleSearchBlur = () => {
     setIsSearchFocused(false);
   };
 
+  // Recent search press
   const handleRecentSearchPress = (searchTerm) => {
     setSearchQuery(searchTerm);
     setIsSearchFocused(false);
   };
 
+  // Clear search
   const clearSearch = () => {
     setSearchQuery('');
   };
 
+  // Toggle View type
   const toggleViewType = () => {
     setViewType(viewType === 'compact' ? 'detailed' : 'compact');
   };
 
+  // Toggle filters
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
 
+  // Start matching quiz
   const handleStartMatchingQuiz = () => {
     navigation.navigate('TherapistMatchingQuizScreen');
   };
@@ -347,6 +357,7 @@ const TherapistsScreen = ({ navigation, route }) => {
     });
   };
 
+  // Render stars
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Icon
@@ -359,6 +370,7 @@ const TherapistsScreen = ({ navigation, route }) => {
     ));
   };
 
+  // Compact therapist card
   const CompactTherapistCard = ({ therapist }) => (
     <TouchableOpacity 
       style={styles.therapistCard}
@@ -393,6 +405,7 @@ const TherapistsScreen = ({ navigation, route }) => {
     </TouchableOpacity>
   );
 
+  // Detailed therapist card
   const DetailedTherapistCard = ({ therapist }) => (
     <TouchableOpacity 
       style={styles.detailedTherapistCard}
@@ -496,9 +509,12 @@ const TherapistsScreen = ({ navigation, route }) => {
               <Text style={styles.headerTitle}>Find Therapists</Text>
               <Text style={styles.headerSubtitle}>Connect with mental health professionals</Text>
             </View>
+            
+            {/* Donate Button */}
             <TouchableOpacity 
               style={styles.donateButton}
-              onPress={() => navigation.navigate('DonationFundScreen')}
+              // onPress={() => navigation.navigate('DonationFundScreen')}
+              onPress={() => setShowDonateModal(true)}
               activeOpacity={0.7}
             >
               <Icon name="favorite" type="material" color={appColors.CardBackground} size={20} />
@@ -668,6 +684,19 @@ const TherapistsScreen = ({ navigation, route }) => {
         position="bottom-left" 
         size="medium" 
         quickAction="modal" 
+      />
+
+      {/* Donate Coming Soon Modal */}
+      <LHGenericFeatureModal
+        title="Donate Feature"
+        description="The donation feature is coming soon! You'll be able to support mental health initiatives and help others access therapy services."
+        buttonTitle="GOT IT"
+        isModVisible={showDonateModal}
+        visibilitySetter={setShowDonateModal}
+        isDismissable={true}
+        hasIcon={true}
+        iconType="material"
+        iconName="favorite"
       />
     </SafeAreaView>
   );

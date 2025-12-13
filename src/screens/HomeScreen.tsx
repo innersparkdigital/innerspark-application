@@ -12,6 +12,7 @@ import {
   Pressable,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/base';
@@ -27,6 +28,17 @@ import { appImages, moodOptions } from '../global/Data';
 import { getFirstName, getGreeting, getLastName, getFullname } from '../global/LHShortcuts';
 import { loadAllMoodData, formatRelativeTime } from '../utils/moodCheckInManager';
 import { selectHasCheckedInToday, selectTodayMoodData } from '../features/mood/moodSlice';
+import { selectUnreadCount } from '../features/notifications/notificationSlice';
+import { getUnreadCount } from '../utils/notificationManager';
+import {
+  selectUpcomingSessions,
+  selectTodayEvents,
+  selectWellnessTip,
+  selectMoodStreak,
+  selectQuickStats,
+  selectDashboardLoading,
+} from '../features/dashboard/dashboardSlice';
+import { loadDashboardData, refreshDashboardData } from '../utils/dashboardManager';
 import EmptySessionsCard from '../components/EmptySessionsCard';
 import SessionCard from '../components/SessionCard';
 import TimelineEvent from '../components/TimelineEvent';
@@ -55,40 +67,16 @@ const HomeScreen = ({ navigation }) => {
   const hasCheckedInToday = useSelector(selectHasCheckedInToday);
   const todayMoodData = useSelector(selectTodayMoodData);
 
-  // Mock data for upcoming sessions
-  const [upcomingSessions, setUpcomingSessions] = useState([
-    {
-      id: 1,
-      therapistName: 'Dr. Sarah Johnson',
-      specialty: 'Cognitive Behavioral Therapy',
-      date: 'Today',
-      time: '3:00 PM',
-      duration: '50 min',
-      type: 'Video Call',
-      avatar: appImages.dPerson1
-    },
-    {
-      id: 2,
-      therapistName: 'Dr. Michael Chen',
-      specialty: 'Anxiety & Depression',
-      date: 'Tomorrow',
-      time: '10:00 AM',
-      duration: '45 min',
-      type: 'In-Person',
-      avatar: appImages.dPerson2
-    },
-    {
-      id: 3,
-      therapistName: 'Dr. Emily Rodriguez',
-      specialty: 'Trauma Therapy',
-      date: 'Dec 3',
-      time: '2:30 PM',
-      duration: '60 min',
-      type: 'Video Call',
-      avatar: appImages.dPerson3
-    }
-  ]);
-  const [unreadNotifications, setUnreadNotifications] = useState(3); // Mock unread count
+  // Get dashboard data from Redux
+  const upcomingSessions = useSelector(selectUpcomingSessions);
+  const todayEvents = useSelector(selectTodayEvents);
+  const wellnessTip = useSelector(selectWellnessTip);
+  const moodStreak = useSelector(selectMoodStreak);
+  const quickStats = useSelector(selectQuickStats);
+  const isDashboardLoading = useSelector(selectDashboardLoading);
+  
+  // Get unread notification count from Redux
+  const unreadNotifications = useSelector(selectUnreadCount);
   // Commented out for future use
   // const [recentActivities] = useState([
   //   { id: 1, type: 'mood', title: 'Mood Check-in', time: '2 hours ago' },
@@ -96,13 +84,8 @@ const HomeScreen = ({ navigation }) => {
   //   { id: 3, type: 'exercise', title: 'Breathing Exercise', time: '2 days ago' },
   // ]);
 
-  // Today's Events and Prompts - Rotating Display
-  const [todaysEvents] = useState([
-    { id: 1, type: 'event', title: 'Join Support Group', time: '8:00 PM', icon: 'people', color: '#4CAF50' },
-    { id: 2, type: 'event', title: 'Mindfulness Session', time: '3:00 PM', icon: 'self-improvement', color: '#9C27B0' },
-    { id: 3, type: 'event', title: 'Therapy Workshop', time: '6:00 PM', icon: 'psychology', color: '#2196F3' },
-    { id: 4, type: 'event', title: 'Breathing Exercise', time: '12:00 PM', icon: 'air', color: '#00BCD4' },
-  ]);
+  // State for refreshing
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const wellnessPrompts = [
     "Take 5 deep breaths and notice how you feel right now",
@@ -165,16 +148,18 @@ const HomeScreen = ({ navigation }) => {
 
   // Rotate through events and prompts every 4 minutes
   useEffect(() => {
+    if (todayEvents.length === 0) return;
+    
     const rotationInterval = setInterval(() => {
-      setCurrentEventIndex(prevIndex => (prevIndex + 1) % todaysEvents.length);
+      setCurrentEventIndex(prevIndex => (prevIndex + 1) % todayEvents.length);
       setCurrentPromptIndex(prevIndex => (prevIndex + 1) % wellnessPrompts.length);
     }, 4 * 60 * 1000); // 4 minutes
 
     return () => clearInterval(rotationInterval);
-  }, [todaysEvents.length, wellnessPrompts.length]);
+  }, [todayEvents.length, wellnessPrompts.length]);
 
   // Get current items to display
-  const currentEvent = todaysEvents[currentEventIndex];
+  const currentEvent = todayEvents.length > 0 ? todayEvents[currentEventIndex] : null;
   const currentPrompt = {
     id: 'prompt',
     type: 'prompt',
@@ -242,11 +227,31 @@ const HomeScreen = ({ navigation }) => {
 
     initializeNotifications();
     
-    // Load all mood data if user is logged in
+    // Load all data if user is logged in
     if (userDetails?.userId) {
       loadAllMoodData(userDetails.userId);
+      getUnreadCount(userDetails.userId);
+      loadDashboardData(userDetails.userId);
     }
   }, [userDetails?.userId]);
+
+  // Handle pull-to-refresh
+  const handleRefresh = async () => {
+    if (!userDetails?.userId) return;
+    
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refreshDashboardData(userDetails.userId),
+        getUnreadCount(userDetails.userId),
+        loadAllMoodData(userDetails.userId),
+      ]);
+    } catch (error) {
+      console.log('Error refreshing home data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleMoodSelect = (mood: any) => {
     // Navigate to TodayMoodScreen with pre-selected mood
@@ -397,7 +402,18 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       {/* THEMED: ScrollView background adapts to light (#F6F6F6) / dark (#121212) */}
-      <ScrollView style={[styles.scrollView, { backgroundColor: appColors.background }]} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={[styles.scrollView, { backgroundColor: appColors.background }]} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={appColors.AppBlue}
+            colors={[appColors.AppBlue]}
+          />
+        }
+      >
 
         {/* Quick Actions Section */}
         <View style={styles.section}>
@@ -443,74 +459,61 @@ const HomeScreen = ({ navigation }) => {
         </View>
         */}
 
-        {/* Upcoming Sessions - Dynamic with Components */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionHeader}>Upcoming Sessions</Text>
-            {upcomingSessions.length > 1 && (
-              <TouchableOpacity 
+        {/* Upcoming Sessions - Only show if there are sessions */}
+        {upcomingSessions.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionHeader}>Upcoming Sessions</Text>
+              {upcomingSessions.length > 1 && (
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate('AppointmentsScreen')}
+                  style={styles.viewAllButton}
+                >
+                  <Text style={styles.viewAllText}>View All ({upcomingSessions.length})</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {upcomingSessions.length === 1 ? (
+              <SessionCard 
+                session={{
+                  ...upcomingSessions[0],
+                  status: 'confirmed',
+                  urgent: getSessionUrgency(upcomingSessions[0]) === 'soon'
+                }}
                 onPress={() => navigation.navigate('AppointmentsScreen')}
-                style={styles.viewAllButton}
+              />
+            ) : (
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.sessionsScroll}
               >
-                <Text style={styles.viewAllText}>View All ({upcomingSessions.length})</Text>
-              </TouchableOpacity>
+                {upcomingSessions.map((session: any) => (
+                  <SessionCard 
+                    key={session.id}
+                    session={{
+                      ...session,
+                      status: 'confirmed',
+                      urgent: getSessionUrgency(session) === 'soon'
+                    }}
+                    onPress={() => navigation.navigate('AppointmentsScreen')}
+                    compact={true}
+                  />
+                ))}
+              </ScrollView>
             )}
           </View>
-          
-          {upcomingSessions.length === 0 ? (
-            <EmptySessionsCard 
-              onBookSession={() => navigation.navigate('TherapistsScreen')}
-            />
-          ) : upcomingSessions.length === 1 ? (
-            <SessionCard 
-              session={{
-                ...upcomingSessions[0],
-                status: 'confirmed',
-                urgent: getSessionUrgency(upcomingSessions[0]) === 'soon'
-              }}
-              onPress={() => navigation.navigate('AppointmentsScreen')}
-              onJoin={() => {
-                toast.show({
-                  description: 'Joining session...',
-                  duration: 2000,
-                });
-              }}
-            />
-          ) : (
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.sessionsScroll}
-            >
-              {upcomingSessions.map((session) => (
-                <SessionCard 
-                  key={session.id}
-                  session={{
-                    ...session,
-                    status: 'confirmed',
-                    urgent: getSessionUrgency(session) === 'soon'
-                  }}
-                  onPress={() => navigation.navigate('AppointmentsScreen')}
-                  compact={true}
-                />
-              ))}
-            </ScrollView>
-          )}
-        </View>
+        )}
 
-        {/* Today's Schedule Section */}
-        <View style={styles.section}>
-          {/* THEMED: Section header text adapts - light (#5170FF) / dark (#6B8AFF) */}
-          <Text style={[styles.sectionHeader, { color: appColors.AppBlue }]}>Today's Schedule</Text>
-          
-          {todaysEvents.length === 0 ? (
-            <View style={styles.emptyEventsCard}>
-              <Icon name="event-note" type="material" color={appColors.grey3} size={40} />
-              <Text style={styles.emptyEventsText}>No events scheduled for today</Text>
-            </View>
-          ) : (
+        {/* Today's Schedule Section - Only show if there are events */}
+        {todayEvents.length > 0 && (
+          <View style={styles.section}>
+            {/* THEMED: Section header text adapts - light (#5170FF) / dark (#6B8AFF) */}
+            <Text style={[styles.sectionHeader, { color: appColors.AppBlue }]}>Today's Schedule</Text>
+            
             <View style={styles.timelineContainer}>
-              {todaysEvents.map((event, index) => (
+              {todayEvents.map((event: any, index: number) => (
                 <TimelineEvent
                   key={event.id}
                   id={event.id}
@@ -518,7 +521,7 @@ const HomeScreen = ({ navigation }) => {
                   time={event.time}
                   icon={event.icon}
                   color={event.color}
-                  isLast={index === todaysEvents.length - 1}
+                  isLast={index === todayEvents.length - 1}
                   onPress={() => {
                     toast.show({
                       description: `Event: ${event.title}`,
@@ -528,14 +531,14 @@ const HomeScreen = ({ navigation }) => {
                 />
               ))}
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
-        {/* Wellness Tip of the Day */}
+        {/* Wellness Tip of the Day - Uses API data with fallback */}
         <View style={styles.section}>
           <WellnessTipCard
-            tip={wellnessPrompts[currentPromptIndex]}
-            category="Mindfulness"
+            tip={wellnessTip?.tip || wellnessPrompts[currentPromptIndex]}
+            category={wellnessTip?.category || "Mindfulness"}
             isCompleted={completedTips.has(currentPromptIndex)}
             onComplete={() => markTipAsCompleted(currentPromptIndex)}
             onRefresh={handleNextTip}

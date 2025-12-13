@@ -1059,3 +1059,117 @@ export const mockWeekSummary = {
     { emoji: '😐', count: 2, label: '2 days' },
   ]
 };
+
+/**
+ * Mock Wellness Tips Data
+ * Used as fallback when API returns null wellness tip
+ */
+export const mockWellnessTips = [
+  {
+    id: 'tip_001',
+    tip: 'Take 5 deep breaths when you feel anxious',
+    category: 'Mindfulness'
+  },
+  {
+    id: 'tip_002',
+    tip: 'Practice gratitude by writing down 3 things you\'re thankful for today',
+    category: 'Gratitude'
+  },
+  {
+    id: 'tip_003',
+    tip: 'Take a 10-minute walk outside to boost your mood',
+    category: 'Physical Health'
+  },
+  {
+    id: 'tip_004',
+    tip: 'Connect with a friend or loved one today',
+    category: 'Social Connection'
+  },
+  {
+    id: 'tip_005',
+    tip: 'Limit screen time before bed for better sleep',
+    category: 'Sleep Hygiene'
+  },
+  {
+    id: 'tip_006',
+    tip: 'Practice self-compassion - treat yourself with kindness',
+    category: 'Self-Care'
+  },
+  {
+    id: 'tip_007',
+    tip: 'Set small, achievable goals for today',
+    category: 'Goal Setting'
+  },
+  {
+    id: 'tip_008',
+    tip: 'Take breaks throughout the day to stretch and relax',
+    category: 'Stress Management'
+  },
+];
+
+/**
+ * Get random wellness tip
+ */
+export const getRandomWellnessTip = () => {
+  const randomIndex = Math.floor(Math.random() * mockWellnessTips.length);
+  return mockWellnessTips[randomIndex];
+};
+
+/**
+ * Mock Notifications Data
+ * Used as fallback when API is unavailable or returns 404
+ */
+export const mockNotifications = [
+  {
+    id: 'notif_001',
+    title: 'Appointment Reminder',
+    message: 'Your session with Dr. Nakato Aisha is scheduled for tomorrow at 2:00 PM',
+    type: 'appointment',
+    timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    isRead: false,
+    avatar: require('../assets/images/dummy-people/d-person1.png'),
+    actionData: { therapistId: 1, appointmentId: 'apt_001' }
+  },
+  {
+    id: 'notif_002',
+    title: 'Goal Achievement',
+    message: 'Congratulations! You completed your daily mindfulness goal',
+    type: 'goal',
+    timestamp: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+    isRead: false,
+    actionData: { goalId: 3 }
+  },
+  {
+    id: 'notif_003',
+    title: 'New Event Available',
+    message: 'Mental Health First Aid Training is now open for registration',
+    type: 'event',
+    timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    isRead: true,
+    actionData: { eventId: 2 }
+  },
+  {
+    id: 'notif_004',
+    title: 'Mood Check-in',
+    message: 'How are you feeling today? Take a moment to log your mood',
+    type: 'reminder',
+    timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+    isRead: true,
+  },
+  {
+    id: 'notif_005',
+    title: 'System Update',
+    message: 'New features added: Enhanced goal tracking and event calendar',
+    type: 'system',
+    timestamp: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+    isRead: true,
+  },
+  {
+    id: 'notif_006',
+    title: 'Weekly Progress',
+    message: 'Your wellness journey this week: 5 goals completed, 2 sessions attended',
+    type: 'system',
+    timestamp: new Date(Date.now() - 345600000).toISOString(), // 4 days ago
+    isRead: true,
+  }
+];

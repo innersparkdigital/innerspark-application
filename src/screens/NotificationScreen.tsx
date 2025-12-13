@@ -2,6 +2,7 @@
  * Notification Screen - Displays user notifications with professional UI
  */
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
   StyleSheet,
   Text,
@@ -9,6 +10,7 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Badge } from '@rneui/base';
@@ -17,6 +19,19 @@ import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../components/ISGenericHeader';
+import {
+  selectNotifications,
+  selectUnreadCount,
+  selectNotificationsLoading,
+  selectNotificationsRefreshing,
+} from '../features/notifications/notificationSlice';
+import {
+  loadNotifications,
+  refreshNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification,
+} from '../utils/notificationManager';
 
 interface Notification {
   id: number;
@@ -35,136 +50,81 @@ interface NotificationScreenProps {
 
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
   const toast = useToast();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Mock notification data
-  const mockNotifications: Notification[] = [
-    {
-      id: 1,
-      title: 'Appointment Reminder',
-      message: 'Your session with Dr. Martin Pilier is scheduled for tomorrow at 2:00 PM',
-      type: 'appointment',
-      timestamp: '2024-01-14T10:30:00Z',
-      isRead: false,
-      avatar: require('../assets/images/dummy-people/d-person1.png'),
-      actionData: { therapistId: 1 }
-    },
-    {
-      id: 2,
-      title: 'Goal Achievement',
-      message: 'Congratulations! You completed your daily mindfulness goal',
-      type: 'goal',
-      timestamp: '2024-01-14T08:15:00Z',
-      isRead: false,
-      actionData: { goalId: 3 }
-    },
-    {
-      id: 3,
-      title: 'New Event Available',
-      message: 'Mental Health First Aid Training is now open for registration',
-      type: 'event',
-      timestamp: '2024-01-13T16:45:00Z',
-      isRead: true,
-      actionData: { eventId: 2 }
-    },
-    {
-      id: 4,
-      title: 'Mood Check-in',
-      message: 'How are you feeling today? Take a moment to log your mood',
-      type: 'reminder',
-      timestamp: '2024-01-13T09:00:00Z',
-      isRead: true,
-    },
-    {
-      id: 5,
-      title: 'System Update',
-      message: 'New features added: Enhanced goal tracking and event calendar',
-      type: 'system',
-      timestamp: '2024-01-12T14:20:00Z',
-      isRead: true,
-    },
-    {
-      id: 6,
-      title: 'Weekly Progress',
-      message: 'Your wellness journey this week: 5 goals completed, 2 sessions attended',
-      type: 'system',
-      timestamp: '2024-01-12T10:00:00Z',
-      isRead: true,
-    }
-  ];
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  
+  // Get data from Redux
+  const notifications = useSelector(selectNotifications);
+  const unreadCount = useSelector(selectUnreadCount);
+  const isLoading = useSelector(selectNotificationsLoading);
+  const isRefreshing = useSelector(selectNotificationsRefreshing);
 
   useEffect(() => {
-    loadNotifications();
-  }, []);
+    if (userDetails?.userId) {
+      loadNotifications(userDetails.userId);
+    }
+  }, [userDetails?.userId]);
 
-  const loadNotifications = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setNotifications(mockNotifications);
-    } catch (error) {
-      toast.show({
-        description: 'Failed to load notifications',
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
+  const handleRefresh = async () => {
+    if (userDetails?.userId) {
+      await refreshNotifications(userDetails.userId);
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadNotifications();
-    setIsRefreshing(false);
-  };
-
-  const handleNotificationPress = (notification: Notification) => {
+  const handleNotificationPress = async (notification: Notification) => {
     // Mark as read
-    setNotifications(prev => 
-      prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
-    );
+    if (!notification.isRead && userDetails?.userId) {
+      await markNotificationRead(notification.id.toString(), userDetails.userId);
+    }
 
     // Navigate to detail screen
     navigation.navigate('NotificationDetailScreen', { notification });
   };
 
-  const handleMarkAsRead = (notificationId: number) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-    );
-    toast.show({
-      description: 'Notification marked as read',
-      duration: 2000,
-    });
+  const handleMarkAsRead = async (notificationId: number) => {
+    if (userDetails?.userId) {
+      const result = await markNotificationRead(notificationId.toString(), userDetails.userId);
+      if (result.success) {
+        toast.show({
+          description: 'Notification marked as read',
+          duration: 2000,
+        });
+      }
+    }
   };
 
-  const handleDismissNotification = (notificationId: number) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    toast.show({
-      description: 'Notification dismissed',
-      duration: 2000,
-    });
+  const handleDismissNotification = async (notificationId: number) => {
+    const result = await deleteNotification(notificationId.toString());
+    if (result.success) {
+      toast.show({
+        description: 'Notification dismissed',
+        duration: 2000,
+      });
+    }
   };
 
-  const handleArchiveNotification = (notificationId: number) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, isRead: true, archived: true } : n)
-    );
-    toast.show({
-      description: 'Notification archived',
-      duration: 2000,
-    });
+  const handleArchiveNotification = async (notificationId: number) => {
+    // Archive is same as marking as read for now
+    if (userDetails?.userId) {
+      const result = await markNotificationRead(notificationId.toString(), userDetails.userId);
+      if (result.success) {
+        toast.show({
+          description: 'Notification archived',
+          duration: 2000,
+        });
+      }
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    toast.show({
-      description: 'All notifications marked as read',
-      duration: 2000,
-    });
+  const markAllAsRead = async () => {
+    if (userDetails?.userId) {
+      const result = await markAllNotificationsRead(userDetails.userId);
+      if (result.success) {
+        toast.show({
+          description: 'All notifications marked as read',
+          duration: 2000,
+        });
+      }
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -189,7 +149,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     return date.toLocaleDateString();
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  // unreadCount already from Redux
 
   const NotificationCard: React.FC<{ notification: Notification }> = ({ notification }) => {
     const iconConfig = getNotificationIcon(notification.type);

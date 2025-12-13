@@ -28,6 +28,12 @@ import eventsReducer from '../features/events/eventsSlice';
 // Emergency slice
 import emergencyReducer from '../features/emergency/emergencySlice';
 
+// Notifications slice
+import notificationsReducer from '../features/notifications/notificationSlice';
+
+// Dashboard slice
+import dashboardReducer from '../features/dashboard/dashboardSlice';
+
 
 export default configureStore({
     reducer: {
@@ -49,6 +55,12 @@ export default configureStore({
         
         // User settings reducer (appearance, accessibility, etc.)
         userSettings: userSettingsReducer,
+        
+        // Notifications reducer
+        notifications: notificationsReducer,
+        
+        // Dashboard reducer (home screen data)
+        dashboard: dashboardReducer,
         
         // Therapist-specific reducers
         therapistDashboard: therapistDashboardReducer,
