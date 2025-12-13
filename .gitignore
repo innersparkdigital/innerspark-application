@@ -5,6 +5,8 @@
 # dev_artifacts
 # 
 dev_artifacts/
+docs/
+
 .windsurf/
 
 # Environment variables
