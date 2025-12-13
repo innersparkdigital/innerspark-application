@@ -8,8 +8,22 @@ import {
   setMoodStats, 
   addMoodEntry,
   setLoading,
-  setError 
+  setError,
+  setMoodHistory,
+  setInsightsData,
+  setMilestonesData,
+  setLoadingInsights,
+  setLoadingMilestones,
+  setLoadingHistory,
+  setSubmitting,
 } from '../features/mood/moodSlice';
+import { 
+  getTodayMood, 
+  logMood as logMoodAPI, 
+  getMoodHistory, 
+  getMoodInsights, 
+  getMoodMilestones 
+} from '../api/client/mood';
 
 export interface TodayMoodData {
   id: string;
@@ -23,63 +37,167 @@ export interface TodayMoodData {
 }
 
 /**
+ * Load all mood data for a user
+ * Convenience function to load today's status, history, insights, and milestones
+ */
+export const loadAllMoodData = async (userId: string) => {
+  try {
+    // Load data in parallel for better performance
+    await Promise.all([
+      loadTodayCheckInStatus(userId),
+      loadMoodHistory(userId, 'week'),
+      loadMoodInsights(userId),
+      loadMoodMilestones(userId),
+    ]);
+  } catch (error) {
+    console.log('Error loading mood data:', error);
+  }
+};
+
+/**
  * Load today's check-in status from API and update Redux
  * This should be called on app start or when navigating to mood screens
  */
-export const loadTodayCheckInStatus = async () => {
+export const loadTodayCheckInStatus = async (userId: string) => {
   const dispatch = store.dispatch;
   
   try {
     dispatch(setLoading(true));
     
-    // TODO: Replace with actual API call
-    // const response = await APIInstance.get('/mood/today');
+    const response = await getTodayMood(userId);
     
-    const today = new Date().toDateString();
-    
-    // Mock: No check-in for testing
-    // If API returns no data, Redux state remains hasCheckedInToday: false
-    
-    // Mock: With check-in (uncomment to test)
-    // const mockData: TodayMoodData = {
-    //   id: '1',
-    //   mood: 'Happy',
-    //   emoji: '😊',
-    //   moodValue: 4,
-    //   note: 'Had a great day with friends!',
-    //   pointsEarned: 500,
-    //   timestamp: new Date().toISOString(),
-    //   date: today,
-    // };
-    // dispatch(setTodayCheckIn(mockData));
+    if (response.success && response.data) {
+      const { hasCheckedIn, todayMood, stats } = response.data;
+      
+      // Update check-in status
+      if (hasCheckedIn && todayMood) {
+        const moodData: TodayMoodData = {
+          id: todayMood.moodId || todayMood.id || '1',
+          mood: todayMood.moodLabel || todayMood.mood || 'Good',
+          emoji: todayMood.moodEmoji || todayMood.emoji || '😊',
+          moodValue: todayMood.moodValue || 3,
+          note: todayMood.note || '',
+          pointsEarned: todayMood.pointsEarned || 0,
+          timestamp: todayMood.timestamp || new Date().toISOString(),
+          date: todayMood.date || new Date().toISOString(),
+        };
+        dispatch(setTodayCheckIn(moodData));
+      }
+      
+      // Update stats from today's response
+      if (stats) {
+        dispatch(setMoodStats({
+          currentStreak: stats.currentStreak || 0,
+          totalPoints: stats.totalPoints || 0,
+          totalCheckIns: stats.totalCheckIns || 0,
+          milestonesReached: stats.milestonesReached || 0,
+          nextMilestone: stats.nextMilestone || 7,
+        }));
+      }
+    }
     
     dispatch(setLoading(false));
   } catch (error) {
-    console.error('Error loading today check-in status:', error);
+    console.log('Error loading today check-in status:', error);
     dispatch(setError(error instanceof Error ? error.message : 'Failed to load check-in status'));
   }
 };
 
 /**
- * Load user mood stats from API and update Redux
+ * Load mood history from API and update Redux
  */
-export const loadMoodStats = async () => {
+export const loadMoodHistory = async (userId: string, period: string = 'week', page: number = 1, limit: number = 20) => {
   const dispatch = store.dispatch;
   
   try {
-    // TODO: Replace with actual API call
-    // const response = await APIInstance.get('/mood/stats');
+    dispatch(setLoadingHistory(true));
     
-    // Mock stats
-    const mockStats = {
-      currentStreak: 7,
-      totalPoints: 3500,
-      totalCheckIns: 15,
-    };
+    const response = await getMoodHistory(userId, period, page, limit);
     
-    dispatch(setMoodStats(mockStats));
+    if (response.success && response.data) {
+      const { entries, stats, pagination } = response.data;
+      
+      // Update mood history
+      dispatch(setMoodHistory({ entries: entries || [], pagination }));
+      
+      // Update stats from history response
+      if (stats) {
+        dispatch(setMoodStats({
+          currentStreak: stats.currentStreak || 0,
+          totalPoints: stats.totalPoints || 0,
+          totalCheckIns: stats.totalCheckIns || 0,
+          milestonesReached: stats.milestonesReached || 0,
+          nextMilestone: stats.nextMilestone || 7,
+          averageMood: stats.averageMood,
+          mostCommonMood: stats.mostCommonMood,
+        }));
+      }
+    }
+    
+    dispatch(setLoadingHistory(false));
   } catch (error) {
-    console.error('Error loading mood stats:', error);
+    console.log('Error loading mood history:', error);
+    dispatch(setLoadingHistory(false));
+  }
+};
+
+/**
+ * Load mood insights from API and update Redux
+ */
+export const loadMoodInsights = async (userId: string) => {
+  const dispatch = store.dispatch;
+  
+  try {
+    dispatch(setLoadingInsights(true));
+    
+    const response = await getMoodInsights(userId);
+    
+    if (response.success && response.data) {
+      dispatch(setInsightsData({
+        insights: response.data.insights || [],
+        patterns: response.data.patterns || [],
+        recommendations: response.data.recommendations || [],
+        bestTimeOfDay: response.data.bestTimeOfDay,
+        weeklyImprovement: response.data.weeklyImprovement,
+      }));
+    }
+    
+    dispatch(setLoadingInsights(false));
+  } catch (error) {
+    console.log('Error loading mood insights:', error);
+    dispatch(setLoadingInsights(false));
+  }
+};
+
+/**
+ * Load mood milestones from API and update Redux
+ */
+export const loadMoodMilestones = async (userId: string) => {
+  const dispatch = store.dispatch;
+  
+  try {
+    dispatch(setLoadingMilestones(true));
+    
+    const response = await getMoodMilestones(userId);
+    
+    if (response.success && response.data) {
+      dispatch(setMilestonesData({
+        milestones: response.data.milestones || [],
+        nextMilestone: response.data.nextMilestone,
+        currentStreak: response.data.currentStreak,
+        longestStreak: response.data.longestStreak,
+        availablePoints: response.data.availablePoints || 0,
+        usedPoints: response.data.usedPoints || 0,
+        totalPoints: response.data.totalPoints || 0,
+        milestonesReached: response.data.milestonesReached || 0,
+        redeemOptions: response.data.redeemOptions || [],
+      }));
+    }
+    
+    dispatch(setLoadingMilestones(false));
+  } catch (error) {
+    console.log('Error loading mood milestones:', error);
+    dispatch(setLoadingMilestones(false));
   }
 };
 
@@ -101,20 +219,59 @@ export const formatRelativeTime = (timestamp: string): string => {
 };
 
 /**
- * Save mood check-in
- * @param moodData - Mood check-in data to save
+ * Save mood check-in (Log mood)
+ * @param userId - User ID
+ * @param moodValue - Mood value (1-5)
+ * @param note - Optional note
+ * @returns Promise with log mood response
  */
-export const saveMoodCheckIn = async (moodData: Partial<TodayMoodData>): Promise<boolean> => {
+export const saveMoodCheckIn = async (
+  userId: string, 
+  moodValue: number, 
+  note: string = ''
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const dispatch = store.dispatch;
+  
   try {
-    // TODO: Replace with actual API call
-    // const response = await APIInstance.post('/mood/checkin', moodData);
+    dispatch(setSubmitting(true));
     
-    console.log('Saving mood check-in:', moodData);
+    const response = await logMoodAPI(userId, moodValue, note);
     
-    // Mock success
-    return true;
+    if (response.success && response.data) {
+      // Map API response to TodayMoodData format
+      const moodData: TodayMoodData = {
+        id: response.data.moodId,
+        mood: response.data.moodLabel,
+        emoji: response.data.moodEmoji,
+        moodValue: moodValue,
+        note: note,
+        pointsEarned: response.data.pointsEarned || 0,
+        timestamp: response.data.timestamp,
+        date: new Date().toISOString(),
+      };
+      
+      // Update Redux state
+      dispatch(setTodayCheckIn(moodData));
+      dispatch(addMoodEntry(moodData));
+      
+      // Update stats from log mood response
+      dispatch(setMoodStats({
+        currentStreak: response.data.currentStreak,
+        totalPoints: response.data.totalPoints,
+        milestonesReached: response.data.milestonesReached,
+        nextMilestone: response.data.nextMilestone,
+      }));
+      
+      dispatch(setSubmitting(false));
+      return { success: true, data: response.data };
+    }
+    
+    dispatch(setSubmitting(false));
+    return { success: false, error: 'Failed to log mood' };
   } catch (error) {
-    console.error('Error saving mood check-in:', error);
-    return false;
+    console.log('Error saving mood check-in:', error);
+    dispatch(setSubmitting(false));
+    dispatch(setError(error instanceof Error ? error.message : 'Failed to save check-in'));
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to save check-in' };
   }
 };

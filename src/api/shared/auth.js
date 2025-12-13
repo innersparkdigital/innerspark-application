@@ -2,7 +2,7 @@
  * Shared Authentication API Functions
  * Used by both client and therapist flows
  */
-import { APIInstance } from '../LHAPI';
+import { APIInstance, AuthInstance } from '../LHAPI';
 
 
 /**
@@ -12,7 +12,7 @@ import { APIInstance } from '../LHAPI';
  * @returns {Promise} Login response with token and user data
  */
 export const login = async (email, password) => {
-    const response = await APIInstance.post('/auth/login', {
+    const response = await AuthInstance.post('/auth/login', {
         email,
         password
     });
@@ -25,7 +25,7 @@ export const login = async (email, password) => {
  * @returns {Promise} Signup response with token and user data
  */
 export const signup = async (userData) => {
-    const response = await APIInstance.post('/auth/signup', userData);
+    const response = await AuthInstance.post('/auth/signup', userData);
     return response.data;
 };
 
@@ -35,7 +35,7 @@ export const signup = async (userData) => {
  * @returns {Promise} Success message
  */
 export const resetPassword = async (email) => {
-    const response = await APIInstance.post('/auth/reset-password', { email });
+    const response = await AuthInstance.post('/auth/reset-password', { email });
     return response.data;
 };
 
@@ -46,7 +46,7 @@ export const resetPassword = async (email) => {
  * @returns {Promise} Verification result
  */
 export const verifyResetCode = async (email, code) => {
-    const response = await APIInstance.post('/auth/verify-reset-code', {
+    const response = await AuthInstance.post('/auth/verify-reset-code', {
         email,
         code
     });
@@ -61,7 +61,7 @@ export const verifyResetCode = async (email, code) => {
  * @returns {Promise} Success message
  */
 export const setNewPassword = async (email, code, newPassword) => {
-    const response = await APIInstance.post('/auth/set-new-password', {
+    const response = await AuthInstance.post('/auth/set-new-password', {
         email,
         code,
         newPassword
@@ -75,7 +75,7 @@ export const setNewPassword = async (email, code, newPassword) => {
  * @returns {Promise} Success message
  */
 export const logout = async (userId) => {
-    const response = await APIInstance.post('/auth/logout', { userId });
+    const response = await AuthInstance.post('/auth/logout', { userId });
     return response.data;
 };
 
@@ -85,7 +85,7 @@ export const logout = async (userId) => {
  * @returns {Promise} New access token
  */
 export const refreshAuthToken = async (refreshToken) => {
-    const response = await APIInstance.post('/auth/refresh-token', {
+    const response = await AuthInstance.post('/auth/refresh-token', {
         refreshToken
     });
     return response.data;
@@ -98,7 +98,7 @@ export const refreshAuthToken = async (refreshToken) => {
  * @returns {Promise} Verification result
  */
 export const verifyEmail = async (email, code) => {
-    const response = await APIInstance.post('/auth/verify-email', {
+    const response = await AuthInstance.post('/auth/verify-email', {
         email,
         code
     });
@@ -111,6 +111,6 @@ export const verifyEmail = async (email, code) => {
  * @returns {Promise} Success message
  */
 export const resendVerificationCode = async (email) => {
-    const response = await APIInstance.post('/auth/resend-verification', { email });
+    const response = await AuthInstance.post('/auth/resend-verification', { email });
     return response.data;
 };

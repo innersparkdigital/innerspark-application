@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { signin } from '../../features/user/userSlice';
 import { updateUserAvatar, updateUserDetails } from '../../features/user/userDataSlice';
-import { getAppHomeData } from '../../api/LHFunctions';
 import { 
     View, 
     Text, 
@@ -24,6 +23,7 @@ import { useToast } from 'native-base';
 import { storeItemLS } from '../../global/StorageActions';
 import { appImages } from '../../global/Data';
 import { AuthInstance } from '../../api/LHAPI';
+import { resendVerificationCode } from '../../api/shared/auth';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHLoginSuccessModal from '../../components/modals/LHLoginSuccessModal';
@@ -68,6 +68,7 @@ export default function SigninScreen({navigation}){
 
     // Password Handler
     const onChangePasswordHandler = (password) => { setPassword(password); }
+    
 
     /* Validate Signin Inputs */
     const validateSigninInputs = () => {
@@ -127,10 +128,10 @@ export default function SigninScreen({navigation}){
             let trimmedPassword = password.trim(); // trimmed Password
 
             // testing console.log
-            console.log("User Login With Email")
-            console.log("Username: " + username);
-            console.log("Email: " + trimmedEmail);
-            console.log("Password: " + trimmedPassword);
+            // console.log("User Login With Email")
+            // console.log("Username: " + username);
+            // console.log("Email: " + trimmedEmail);
+            // console.log("Password: " + trimmedPassword);
            
             const response = await AuthInstance.post( '/auth/login', {
                 email: trimmedEmail,
@@ -158,6 +159,11 @@ export default function SigninScreen({navigation}){
 
                     // redirect to OTP Verification Screen if email is not verified 
                     if (response.data.user.email_verified === 0) {
+
+                        // invoke resend verification code -- before redirecting to OTP Verification Screen
+                        await resendVerificationCode(trimmedEmail);
+
+                        // redirect to OTP Verification Screen
                         navigation.navigate(
                             'SigninOTPScreen', 
                             { 

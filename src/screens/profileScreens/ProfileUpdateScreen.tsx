@@ -2,7 +2,7 @@
  * Profile Update Screen - Edit and update user profile information
  */
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
   View, 
@@ -22,6 +22,8 @@ import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getFullname } from '../../global/LHShortcuts';
+import { getProfile as getClientProfile, updateProfile as updateClientProfile } from '../../api/client/profile';
+import { setUserProfile } from '../../features/user/userDataSlice';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -32,6 +34,7 @@ interface UserProfile {
   image?: any;
   role?: string;
   bio?: string;
+  gender?: string;
   dateJoined?: string;
   lastActive?: string;
 }
@@ -104,6 +107,14 @@ const EditModal = ({
           maxLength: 500,
           multiline: true
         };
+      case 'gender':
+        return { 
+          title: 'Select Gender', 
+          placeholder: 'Select your gender',
+          keyboardType: 'default' as const,
+          maxLength: 20,
+          multiline: false
+        };
       default:
         return { 
           title: 'Edit Field', 
@@ -149,7 +160,7 @@ const EditModal = ({
     setIsLoading(true);
     
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
     
     setIsLoading(false);
     onSave(editValue);
@@ -182,25 +193,56 @@ const EditModal = ({
           </View>
         )}
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={[styles.textInput, config.multiline && styles.textInputMultiline]}
-            value={editValue}
-            onChangeText={setEditValue}
-            placeholder={config.placeholder}
-            placeholderTextColor={appColors.AppGray}
-            keyboardType={config.keyboardType}
-            maxLength={config.maxLength}
-            multiline={config.multiline}
-            numberOfLines={config.multiline ? 4 : 1}
-            autoFocus={true}
-          />
-          {config.multiline && (
-            <Text style={styles.characterCount}>
-              {editValue.length}/{config.maxLength}
-            </Text>
-          )}
-        </View>
+        {field === 'gender' ? (
+          <View style={styles.genderOptionsContainer}>
+            {['Male', 'Female'].map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.genderOption,
+                  editValue === option && styles.genderOptionSelected
+                ]}
+                onPress={() => setEditValue(option)}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.genderRadio,
+                  editValue === option && styles.genderRadioSelected
+                ]}>
+                  {editValue === option && (
+                    <View style={styles.genderRadioInner} />
+                  )}
+                </View>
+                <Text style={[
+                  styles.genderOptionText,
+                  editValue === option && styles.genderOptionTextSelected
+                ]}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[styles.textInput, config.multiline && styles.textInputMultiline]}
+              value={editValue}
+              onChangeText={setEditValue}
+              placeholder={config.placeholder}
+              placeholderTextColor={appColors.AppGray}
+              keyboardType={config.keyboardType}
+              maxLength={config.maxLength}
+              multiline={config.multiline}
+              numberOfLines={config.multiline ? 4 : 1}
+              autoFocus={true}
+            />
+            {config.multiline && (
+              <Text style={styles.characterCount}>
+                {editValue.length}/{config.maxLength}
+              </Text>
+            )}
+          </View>
+        )}
 
         <View style={styles.modalActions}>
           <Button
@@ -225,21 +267,24 @@ const EditModal = ({
 
 export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdateScreenProps) {
   const toast = useToast();
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const userProfile = useSelector((state: any) => state.userData.userProfile);
   
   const [profileData, setProfileData] = useState<UserProfile>({});
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [currentEditField, setCurrentEditField] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Get initial data from route params or use mock data
+  // Get initial data from route params or Redux (fallback to userDetails)
   const initialData = route?.params?.currentData || {
-    firstName: userDetails?.firstName || 'Jane',
-    lastName: userDetails?.lastName || 'Doe',
-    email: userDetails?.email || 'jane.doe@example.com',
-    phone: userDetails?.phone || '+256 700 123 456',
+    firstName: userProfile?.firstName ?? userDetails?.firstName ?? '',
+    lastName: userProfile?.lastName ?? userDetails?.lastName ?? '',
+    email: userProfile?.email ?? userDetails?.email ?? '',
+    phone: userProfile?.phoneNumber ?? userDetails?.phone ?? '',
     role: userDetails?.role || 'Premium Member',
-    bio: userDetails?.bio || 'Mental health advocate and wellness enthusiast. Passionate about mindfulness and personal growth.',
+    bio: userProfile?.bio ?? userDetails?.bio ?? '',
+    gender: userProfile?.gender ?? '',
   };
 
   // Toast notifications
@@ -292,10 +337,40 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   const handleSaveProfile = async () => {
     try {
       setIsSaving(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
+      const userId = userDetails?.userId;
+      if (!userId) {
+        notifyWithToast('Unable to update profile: missing user id');
+        return;
+      }
+
+      // Only send fields that changed (partial update)
+      const payload: any = {};
+      if ((profileData.firstName || '') !== (initialData.firstName || '')) payload.firstName = profileData.firstName;
+      if ((profileData.lastName || '') !== (initialData.lastName || '')) payload.lastName = profileData.lastName;
+      if ((profileData.bio || '') !== (initialData.bio || '')) payload.bio = profileData.bio;
+      if ((profileData.gender || '') !== (initialData.gender || '')) payload.gender = profileData.gender;
+
+      // phone/email are handled via OTP verification screens (do not update here)
+
+      if (Object.keys(payload).length === 0) {
+        notifyWithToast('No changes to save');
+        navigation.goBack();
+        return;
+      }
+
+      await (updateClientProfile as any)(userId, payload);
+
+      // Refresh Redux profile
+      try {
+        const refreshed = await getClientProfile(userId);
+        if (refreshed?.data) {
+          dispatch(setUserProfile(refreshed.data));
+        }
+      } catch (e) {
+        // Best-effort refresh; screen still succeeds
+      }
+
       notifyWithToast('Profile updated successfully');
       navigation.goBack();
     } catch (error) {
@@ -419,6 +494,13 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
               icon="phone"
               onEdit={() => handleEditField('phone')}
               requiresVerification={true}
+            />
+            
+            <UpdateProfileField
+              label="Gender"
+              value={profileData.gender || ''}
+              icon="person-outline"
+              onEdit={() => handleEditField('gender')}
             />
             
             <UpdateProfileField
@@ -677,5 +759,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
+  },
+  genderOptionsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  genderOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: appColors.AppLightGray,
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: appColors.CardBackground,
+  },
+  genderOptionSelected: {
+    borderColor: appColors.AppBlue,
+    backgroundColor: appColors.AppBlue + '10',
+  },
+  genderRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: appColors.AppGray,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  genderRadioSelected: {
+    borderColor: appColors.AppBlue,
+  },
+  genderRadioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: appColors.AppBlue,
+  },
+  genderOptionText: {
+    fontSize: 16,
+    color: appColors.AppGray,
+    fontFamily: appFonts.bodyTextRegular,
+  },
+  genderOptionTextSelected: {
+    color: appColors.AppBlue,
+    fontFamily: appFonts.bodyTextMedium,
+    fontWeight: '600',
   },
 });

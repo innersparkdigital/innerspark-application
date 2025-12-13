@@ -2,6 +2,7 @@
  * Privacy Settings Screen - Manage data sharing and privacy controls
  */
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -19,6 +20,8 @@ import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { getPrivacySettings, updatePrivacySettings } from '../../api/client/settings';
+import { setPrivacySettings, updatePrivacySetting as updatePrivacySettingRedux, selectPrivacySettings } from '../../features/settings/userSettingsSlice';
 
 interface PrivacySettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -40,38 +43,108 @@ interface PrivacySetting {
 
 const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const dispatch = useDispatch();
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const privacySettings = useSelector(selectPrivacySettings);
   
-  // Data Collection Settings
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Data Collection Settings (local UI state - not from backend)
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
   const [crashReportsEnabled, setCrashReportsEnabled] = useState(true);
   const [usageDataEnabled, setUsageDataEnabled] = useState(true);
   const [locationDataEnabled, setLocationDataEnabled] = useState(false);
   
-  // Profile Visibility
-  const [profilePublic, setProfilePublic] = useState(false);
-  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
-  const [shareProgress, setShareProgress] = useState(false);
+  // Profile Visibility (synced with Redux/backend)
+  const [profilePublic, setProfilePublic] = useState(privacySettings.profileVisibility === 'public');
+  const [showOnlineStatus, setShowOnlineStatus] = useState(privacySettings.showOnlineStatus);
+  const [shareProgress, setShareProgress] = useState(privacySettings.shareProgress);
   
-  // Communication Privacy
-  const [allowMessages, setAllowMessages] = useState(true);
-  const [allowGroupInvites, setAllowGroupInvites] = useState(true);
-  const [shareContactInfo, setShareContactInfo] = useState(false);
+  // Communication Privacy (synced with Redux/backend)
+  const [allowMessages, setAllowMessages] = useState(privacySettings.allowMessages);
+  const [allowGroupInvites, setAllowGroupInvites] = useState(privacySettings.allowGroupInvites);
+  const [shareContactInfo, setShareContactInfo] = useState(privacySettings.shareContactInfo);
   
-  // Data Sharing
+  // Data Sharing (synced with Redux/backend)
   const [shareWithTherapists, setShareWithTherapists] = useState(true);
-  const [shareForResearch, setShareForResearch] = useState(false);
+  const [shareForResearch, setShareForResearch] = useState(privacySettings.dataSharing);
   const [shareWithPartners, setShareWithPartners] = useState(false);
+
+  // Load privacy settings from API on mount
+  useEffect(() => {
+    loadPrivacySettings();
+  }, []);
+
+  // Sync local state with Redux when settings change
+  useEffect(() => {
+    setProfilePublic(privacySettings.profileVisibility === 'public');
+    setShowOnlineStatus(privacySettings.showOnlineStatus);
+    setShareProgress(privacySettings.shareProgress);
+    setAllowMessages(privacySettings.allowMessages);
+    setAllowGroupInvites(privacySettings.allowGroupInvites);
+    setShareContactInfo(privacySettings.shareContactInfo);
+    setShareForResearch(privacySettings.dataSharing);
+  }, [privacySettings]);
+
+  const loadPrivacySettings = async () => {
+    try {
+      setIsLoading(true);
+      const userId = userDetails?.userId;
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await getPrivacySettings(userId);
+      const data = response?.data;
+
+      if (data) {
+        dispatch(setPrivacySettings({
+          allowMessages: data.allowMessages ?? true,
+          dataSharing: data.dataSharing ?? false,
+          profileVisibility: data.profileVisibility ?? 'private',
+          showOnlineStatus: data.showOnlineStatus ?? true,
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load privacy settings:', error);
+      toast.show({
+        description: 'Failed to load privacy settings',
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
+    await loadPrivacySettings();
+    setIsRefreshing(false);
+    toast.show({
+      description: 'Privacy settings refreshed',
+      duration: 2000,
+    });
+  };
+
+  const updatePrivacySettingHandler = async (key: string, value: any) => {
+    try {
+      const userId = userDetails?.userId;
+      if (!userId) return;
+
+      const payload: any = {};
+      payload[key] = value;
+
+      await updatePrivacySettings(userId, payload);
+      dispatch(updatePrivacySettingRedux({ key, value }));
+    } catch (error) {
+      console.error('Failed to update privacy setting:', error);
       toast.show({
-        description: 'Privacy settings refreshed',
+        description: 'Failed to update setting',
         duration: 2000,
       });
-    }, 1000);
+    }
   };
 
   const handleAnalyticsToggle = (value: boolean) => {
@@ -121,6 +194,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
             text: 'Allow',
             onPress: () => {
               setShareForResearch(true);
+              updatePrivacySettingHandler('dataSharing', true);
               toast.show({
                 description: 'Research data sharing enabled',
                 duration: 2000,
@@ -131,6 +205,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       );
     } else {
       setShareForResearch(false);
+      updatePrivacySettingHandler('dataSharing', false);
       toast.show({
         description: 'Research data sharing disabled',
         duration: 2000,
@@ -149,7 +224,10 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       iconColor: '#9C27B0',
       hasSwitch: true,
       switchValue: profilePublic,
-      onSwitchChange: setProfilePublic,
+      onSwitchChange: (value) => {
+        setProfilePublic(value);
+        updatePrivacySettingHandler('profileVisibility', value ? 'public' : 'private');
+      },
     },
     {
       id: 'online_status',
@@ -159,7 +237,10 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       iconColor: '#4CAF50',
       hasSwitch: true,
       switchValue: showOnlineStatus,
-      onSwitchChange: setShowOnlineStatus,
+      onSwitchChange: (value) => {
+        setShowOnlineStatus(value);
+        updatePrivacySettingHandler('showOnlineStatus', value);
+      },
     },
     {
       id: 'share_progress',
@@ -169,7 +250,11 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       iconColor: '#00BCD4',
       hasSwitch: true,
       switchValue: shareProgress,
-      onSwitchChange: setShareProgress,
+      onSwitchChange: (value) => {
+        setShareProgress(value);
+        // No backend endpoint yet, but update Redux for instant UI persistence
+        dispatch(updatePrivacySettingRedux({ key: 'shareProgress', value }));
+      },
     },
   ];
 
@@ -182,7 +267,10 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       iconColor: '#E91E63',
       hasSwitch: true,
       switchValue: allowMessages,
-      onSwitchChange: setAllowMessages,
+      onSwitchChange: (value) => {
+        setAllowMessages(value);
+        updatePrivacySettingHandler('allowMessages', value);
+      },
     },
     {
       id: 'group_invites',
@@ -192,7 +280,11 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       iconColor: '#795548',
       hasSwitch: true,
       switchValue: allowGroupInvites,
-      onSwitchChange: setAllowGroupInvites,
+      onSwitchChange: (value) => {
+        setAllowGroupInvites(value);
+        // No backend endpoint yet, but update Redux for instant UI persistence
+        dispatch(updatePrivacySettingRedux({ key: 'allowGroupInvites', value }));
+      },
     },
     {
       id: 'contact_info',
@@ -202,7 +294,11 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       iconColor: '#607D8B',
       hasSwitch: true,
       switchValue: shareContactInfo,
-      onSwitchChange: setShareContactInfo,
+      onSwitchChange: (value) => {
+        setShareContactInfo(value);
+        // No backend endpoint yet, but update Redux for instant UI persistence
+        dispatch(updatePrivacySettingRedux({ key: 'shareContactInfo', value }));
+      },
     },
   ];
 

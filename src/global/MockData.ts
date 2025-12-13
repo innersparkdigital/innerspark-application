@@ -976,3 +976,86 @@ export const mockSafetyPlan = {
   ],
   lastUpdated: new Date().toISOString(),
 };
+
+/**
+ * Mock Mood Data
+ * Used as fallback when API is unavailable or for empty states in mood tracking
+ */
+export const mockMoodHistory = [
+  { 
+    id: '1',
+    date: 'Today', 
+    mood: 'Happy', 
+    emoji: '😊', 
+    color: '#8BC34A',
+    moodValue: 4,
+    note: 'Had a productive day!',
+    timestamp: new Date().toISOString(),
+  },
+  { 
+    id: '2',
+    date: 'Yesterday', 
+    mood: 'Neutral', 
+    emoji: '😐', 
+    color: '#FFC107',
+    moodValue: 3,
+    note: '',
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+  },
+  { 
+    id: '3',
+    date: '2 days ago', 
+    mood: 'Amazing', 
+    emoji: '🤩', 
+    color: '#4CAF50',
+    moodValue: 5,
+    note: 'Celebrated a big win!',
+    timestamp: new Date(Date.now() - 172800000).toISOString(),
+  },
+  { 
+    id: '4',
+    date: '3 days ago', 
+    mood: 'Happy', 
+    emoji: '😊', 
+    color: '#8BC34A',
+    moodValue: 4,
+    note: '',
+    timestamp: new Date(Date.now() - 259200000).toISOString(),
+  },
+];
+
+export const mockMoodInsights = [
+  {
+    id: 1,
+    title: 'Weekly Progress',
+    description: 'Your mood has improved 20% this week',
+    icon: 'trending-up',
+    color: '#4CAF50',
+    type: 'positive'
+  },
+  {
+    id: 2,
+    title: 'Best Time',
+    description: 'You feel best in the mornings',
+    icon: 'wb-sunny',
+    color: '#FF9800',
+    type: 'info'
+  },
+  {
+    id: 3,
+    title: 'Streak',
+    description: '5 days of mood tracking!',
+    icon: 'local-fire-department',
+    color: '#F44336',
+    type: 'achievement'
+  }
+];
+
+export const mockWeekSummary = {
+  week: 'This Week',
+  moods: [
+    { emoji: '😊', count: 3, label: '3 days' },
+    { emoji: '🙂', count: 2, label: '2 days' },
+    { emoji: '😐', count: 2, label: '2 days' },
+  ]
+};

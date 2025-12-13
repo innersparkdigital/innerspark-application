@@ -1,7 +1,7 @@
 /**
  * Mood Reminder Settings Screen - Configure mood check-in reminder preferences
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectMoodReminderSettings, updateMoodReminderSetting } from '../../features/settings/userSettingsSlice';
 
 interface MoodReminderSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -25,20 +27,32 @@ interface MoodReminderSettingsScreenProps {
 
 const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const moodSettings = useSelector(selectMoodReminderSettings);
   
   // Reminder Settings
-  const [reminderEnabled, setReminderEnabled] = useState(true);
-  const [reminderTime, setReminderTime] = useState('8:00 PM');
+  const [reminderEnabled, setReminderEnabled] = useState(moodSettings.moodReminderEnabled);
+  const [reminderTime, setReminderTime] = useState(moodSettings.moodReminderTime);
   
   // Days of Week
-  const [selectedDays, setSelectedDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+  const [selectedDays, setSelectedDays] = useState<string[]>(moodSettings.moodReminderDays);
   
   // Reminder Frequency
-  const [reminderFrequency, setReminderFrequency] = useState<'once' | 'twice' | 'thrice'>('once');
+  const [reminderFrequency, setReminderFrequency] = useState<'once' | 'twice' | 'thrice'>(moodSettings.moodReminderFrequency);
   
   // Sound & Vibration
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [vibrationEnabled, setVibrationEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(moodSettings.moodReminderSound);
+  const [vibrationEnabled, setVibrationEnabled] = useState(moodSettings.moodReminderVibration);
+  
+  // Sync with Redux when settings change
+  useEffect(() => {
+    setReminderEnabled(moodSettings.moodReminderEnabled);
+    setReminderTime(moodSettings.moodReminderTime);
+    setSelectedDays(moodSettings.moodReminderDays);
+    setReminderFrequency(moodSettings.moodReminderFrequency);
+    setSoundEnabled(moodSettings.moodReminderSound);
+    setVibrationEnabled(moodSettings.moodReminderVibration);
+  }, [moodSettings]);
   
   // Time Picker
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -58,7 +72,9 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
   const toggleDay = (day: string) => {
     if (selectedDays.includes(day)) {
       if (selectedDays.length > 1) {
-        setSelectedDays(selectedDays.filter(d => d !== day));
+        const newDays = selectedDays.filter(d => d !== day);
+        setSelectedDays(newDays);
+        dispatch(updateMoodReminderSetting({ key: 'moodReminderDays', value: newDays }));
       } else {
         toast.show({
           description: 'At least one day must be selected',
@@ -66,7 +82,9 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
         });
       }
     } else {
-      setSelectedDays([...selectedDays, day]);
+      const newDays = [...selectedDays, day];
+      setSelectedDays(newDays);
+      dispatch(updateMoodReminderSetting({ key: 'moodReminderDays', value: newDays }));
     }
   };
 
@@ -79,16 +97,37 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
     const displayHour = selectedHour > 12 ? selectedHour - 12 : selectedHour === 0 ? 12 : selectedHour;
     const formattedTime = `${displayHour}:${selectedMinute.toString().padStart(2, '0')} ${period}`;
     setReminderTime(formattedTime);
+    dispatch(updateMoodReminderSetting({ key: 'moodReminderTime', value: formattedTime }));
     setShowTimePicker(false);
   };
 
   const handleSaveSettings = () => {
-    // Here you would save to backend/local storage
+    // All settings are already saved to Redux on change
     toast.show({
       description: 'Reminder settings saved successfully!',
       duration: 2000,
     });
     navigation.goBack();
+  };
+  
+  const handleReminderToggle = (value: boolean) => {
+    setReminderEnabled(value);
+    dispatch(updateMoodReminderSetting({ key: 'moodReminderEnabled', value }));
+  };
+  
+  const handleFrequencyChange = (freq: 'once' | 'twice' | 'thrice') => {
+    setReminderFrequency(freq);
+    dispatch(updateMoodReminderSetting({ key: 'moodReminderFrequency', value: freq }));
+  };
+  
+  const handleSoundToggle = (value: boolean) => {
+    setSoundEnabled(value);
+    dispatch(updateMoodReminderSetting({ key: 'moodReminderSound', value }));
+  };
+  
+  const handleVibrationToggle = (value: boolean) => {
+    setVibrationEnabled(value);
+    dispatch(updateMoodReminderSetting({ key: 'moodReminderVibration', value }));
   };
 
   return (
@@ -114,7 +153,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
             </View>
             <Switch
               value={reminderEnabled}
-              onValueChange={setReminderEnabled}
+              onValueChange={handleReminderToggle}
               trackColor={{ false: appColors.grey5, true: appColors.AppBlue + '40' }}
               thumbColor={reminderEnabled ? appColors.AppBlue : appColors.grey4}
             />
@@ -180,7 +219,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
               <View style={styles.sectionContent}>
                 <TouchableOpacity
                   style={styles.frequencyOption}
-                  onPress={() => setReminderFrequency('once')}
+                  onPress={() => handleFrequencyChange('once')}
                   activeOpacity={0.7}
                 >
                   <View style={styles.frequencyLeft}>
@@ -196,7 +235,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
 
                 <TouchableOpacity
                   style={styles.frequencyOption}
-                  onPress={() => setReminderFrequency('twice')}
+                  onPress={() => handleFrequencyChange('twice')}
                   activeOpacity={0.7}
                 >
                   <View style={styles.frequencyLeft}>
@@ -212,7 +251,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
 
                 <TouchableOpacity
                   style={styles.frequencyOption}
-                  onPress={() => setReminderFrequency('thrice')}
+                  onPress={() => handleFrequencyChange('thrice')}
                   activeOpacity={0.7}
                 >
                   <View style={styles.frequencyLeft}>
@@ -237,7 +276,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
                   </View>
                   <Switch
                     value={soundEnabled}
-                    onValueChange={setSoundEnabled}
+                    onValueChange={handleSoundToggle}
                     trackColor={{ false: appColors.grey5, true: appColors.AppBlue + '40' }}
                     thumbColor={soundEnabled ? appColors.AppBlue : appColors.grey4}
                   />
@@ -252,7 +291,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
                   </View>
                   <Switch
                     value={vibrationEnabled}
-                    onValueChange={setVibrationEnabled}
+                    onValueChange={handleVibrationToggle}
                     trackColor={{ false: appColors.grey5, true: appColors.AppBlue + '40' }}
                     thumbColor={vibrationEnabled ? appColors.AppBlue : appColors.grey4}
                   />

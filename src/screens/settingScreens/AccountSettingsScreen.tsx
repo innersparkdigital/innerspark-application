@@ -1,7 +1,7 @@
 /**
  * Account Settings Screen - Manage account actions and preferences
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,9 +19,21 @@ import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { useSelector } from 'react-redux';
 import { getFullname } from '../../global/LHShortcuts';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface AccountSettingsScreenProps {
   navigation: NavigationProp<any>;
+}
+
+interface UserProfile {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  bio?: string;
+  gender?: string;
+  joinedDate?: string;
+  profileImage?: string;
 }
 
 interface AccountSetting {
@@ -41,8 +53,45 @@ interface AccountSetting {
 const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const userProfile = useSelector((state: any) => state.userData.userProfile);
+  
   const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(true);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [profileData, setProfileData] = useState<UserProfile | null>(null);
+
+  // Sync profile data from Redux when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userProfile) {
+        setProfileData({
+          firstName: userProfile.firstName,
+          lastName: userProfile.lastName,
+          email: userProfile.email,
+          phone: userProfile.phoneNumber,
+          bio: userProfile.bio,
+          gender: userProfile.gender,
+          joinedDate: userProfile.joinedDate,
+          profileImage: userProfile.profileImage,
+        });
+      }
+    }, [userProfile])
+  );
+
+  // Format date for "Member since"
+  const formatMemberSince = (dateString: string | null | undefined) => {
+    if (!dateString) {
+      const currentYear = new Date().getFullYear();
+      return currentYear.toString();
+    }
+    
+    try {
+      const date = new Date(dateString);
+      const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
+    } catch {
+      const currentYear = new Date().getFullYear();
+      return currentYear.toString();
+    }
+  };
 
   const handleChangePassword = () => {
     navigation.navigate('ChangePasswordScreen');
@@ -69,14 +118,7 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
 
   
 
-  const handleBiometricToggle = (value: boolean) => {
-    setBiometricEnabled(value);
-    toast.show({
-      description: value ? 'Biometric login enabled' : 'Biometric login disabled',
-      duration: 2000,
-    });
-  };
-
+// Security Settings
   const securitySettings: AccountSetting[] = [
     {
       id: 'change_password',
@@ -88,26 +130,7 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
       onPress: handleChangePassword,
     },
     
-    {
-      id: 'biometric',
-      title: 'Biometric Login',
-      subtitle: biometricEnabled ? 'Face ID / Fingerprint enabled' : 'Disabled',
-      icon: 'fingerprint',
-      iconColor: '#9C27B0',
-      hasSwitch: true,
-      switchValue: biometricEnabled,
-      onSwitchChange: handleBiometricToggle,
-    },
-    {
-      id: 'login_alerts',
-      title: 'Login Alerts',
-      subtitle: loginAlertsEnabled ? 'Get notified of new logins' : 'Disabled',
-      icon: 'notifications-active',
-      iconColor: '#FF9800',
-      hasSwitch: true,
-      switchValue: loginAlertsEnabled,
-      onSwitchChange: setLoginAlertsEnabled,
-    },
+    
   ];
 
   const accountActions: AccountSetting[] = [
@@ -206,12 +229,14 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
           <Icon name="account-circle" type="material" color={appColors.AppBlue} size={48} />
           <View style={styles.infoContent}>
             <Text style={styles.infoName}>
-              {getFullname(userDetails?.firstName, userDetails?.lastName) || 'User'}
+              {getFullname(userProfile?.firstName || userDetails?.firstName, userProfile?.lastName || userDetails?.lastName) || 'User'}
             </Text>
             <Text style={styles.infoEmail}>
-              {userDetails?.email || 'user@example.com'}
+              {userProfile?.email || userDetails?.email || 'user@innersparkafrica.com'}
             </Text>
-            <Text style={styles.infoMember}>Member since Oct 2024</Text>
+            <Text style={styles.infoMember}>
+              Member since {formatMemberSince(profileData?.joinedDate)}
+            </Text>
           </View>
         </View>
 
@@ -238,17 +263,6 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
                 {index < accountActions.length - 1 && <View style={styles.separator} />}
               </View>
             ))}
-          </View>
-        </View>
-
-        {/* Warning Card */}
-        <View style={styles.warningCard}>
-          <Icon name="warning" type="material" color="#FF9800" size={24} />
-          <View style={styles.warningContent}>
-            <Text style={styles.warningTitle}>Important Information</Text>
-            <Text style={styles.warningText}>
-              Deactivating your account is temporary and reversible. Deleting your account is permanent and cannot be undone.
-            </Text>
           </View>
         </View>
 

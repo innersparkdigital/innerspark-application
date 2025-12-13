@@ -2,7 +2,8 @@
  * Profile Screen - Detailed user profile display and management
  */
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
   StatusBar,
   ScrollView,
@@ -21,6 +22,8 @@ import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getFullname } from '../../global/LHShortcuts';
+import { getProfile as getClientProfile } from '../../api/client/profile';
+import { setUserProfile } from '../../features/user/userDataSlice';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -31,6 +34,7 @@ interface UserProfile {
   image?: any;
   role?: string;
   bio?: string;
+  gender?: string;
   dateJoined?: string;
   lastActive?: string;
 }
@@ -91,23 +95,13 @@ const ProfileField = ({
 
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const toast = useToast();
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const userProfile = useSelector((state: any) => state.userData.userProfile);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile>({});
-
-  // Mock user data for demonstration
-  const mockUserData: UserProfile = {
-    firstName: userDetails?.firstName || 'Jane',
-    lastName: userDetails?.lastName || 'Doe',
-    email: userDetails?.email || 'jane.doe@example.com',
-    phone: userDetails?.phone || '+256 700 123 456',
-    role: userDetails?.role || 'Premium Member',
-    bio: userDetails?.bio || 'Mental health advocate and wellness enthusiast. Passionate about mindfulness and personal growth.',
-    dateJoined: 'March 2024',
-    lastActive: 'Today at 2:30 PM',
-  };
 
   // Toast notifications
   const notifyWithToast = (description: string) => {
@@ -121,9 +115,44 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const loadProfileData = async () => {
     try {
       setIsLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setProfileData(mockUserData);
+      const userId = userDetails?.userId;
+      if (!userId) {
+        setProfileData({
+          firstName: userDetails?.firstName,
+          lastName: userDetails?.lastName,
+          email: userDetails?.email,
+          phone: userDetails?.phone,
+          role: userDetails?.role,
+          bio: userDetails?.bio,
+        });
+        return;
+      }
+
+      const response = await getClientProfile(userId);
+      const data = response?.data;
+
+      if (data) {
+        dispatch(setUserProfile(data));
+        setProfileData({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phoneNumber,
+          bio: data.bio,
+          gender: data.gender,
+          dateJoined: data.joinedDate,
+          role: userDetails?.role,
+        });
+      } else {
+        setProfileData({
+          firstName: userDetails?.firstName,
+          lastName: userDetails?.lastName,
+          email: userDetails?.email,
+          phone: userDetails?.phone,
+          role: userDetails?.role,
+          bio: userDetails?.bio,
+        });
+      }
     } catch (error) {
       notifyWithToast('Failed to load profile data');
     } finally {
@@ -155,9 +184,26 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     );
   };
 
-  useEffect(() => {
-    loadProfileData();
-  }, []);
+  // Sync local state from Redux userProfile whenever screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userProfile) {
+        setProfileData({
+          firstName: userProfile.firstName,
+          lastName: userProfile.lastName,
+          email: userProfile.email,
+          phone: userProfile.phoneNumber,
+          bio: userProfile.bio,
+          gender: userProfile.gender,
+          dateJoined: userProfile.joinedDate,
+          role: userDetails?.role,
+        });
+        setIsLoading(false);
+      } else {
+        loadProfileData();
+      }
+    }, [userProfile])
+  );
 
   if (isLoading) {
     return (
@@ -213,17 +259,18 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           </TouchableOpacity>
           
           <Text style={styles.userName}>
-            {getFullname(profileData.firstName, profileData.lastName)}
+            {getFullname(profileData.firstName || '', profileData.lastName || '')}
           </Text>
           
           {/* header meta data */}
-          <View style={styles.metaDataContainer}>
+          {/* Header meta data is hidden for now */}
+          {/* <View style={styles.metaDataContainer}>
             <Text style={styles.userRole}>{profileData.role}</Text>
             <View style={styles.statusContainer}>
               <View style={styles.statusDot} />
               <Text style={styles.statusText}>Active now</Text>
             </View>
-          </View>
+          </View> */}
 
         </View>
 
@@ -265,6 +312,12 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           />
           
           <ProfileField
+            label="Gender"
+            value={profileData.gender || ''}
+            icon="person-outline"
+          />
+          
+          <ProfileField
             label="Bio"
             value={profileData.bio || ''}
             icon="info"
@@ -284,16 +337,21 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             icon="calendar-today"
           />
           
+          {/* Last active field is hidden for now */}
+          {/* 
           <ProfileField
             label="Last Active"
             value={profileData.lastActive || ''}
             icon="access-time"
             isLast={true}
-          />
+          /> 
+          */}
         </View>
 
+
         {/* Action Buttons */}
-        <View style={styles.actionSection}>
+        {/* Action Buttons are hidden for now */}
+        {/* <View style={styles.actionSection}>
           <Button
             title="Account Settings"
             buttonStyle={styles.settingsButton}
@@ -309,7 +367,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
               />
             }
           />
-        </View>
+        </View> 
+        */}
+
 
         <View style={styles.bottomSpacing} />
       </ScrollView>

@@ -174,26 +174,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
               </Text>
             </View>
           </View>
-
-          {/* Comparison Card */}
-          <View style={styles.comparisonCard}>
-            <Text style={styles.comparisonTitle}>Deactivate vs Delete</Text>
-            <View style={styles.comparisonRow}>
-              <View style={styles.comparisonColumn}>
-                <Text style={styles.comparisonLabel}>Deactivate</Text>
-                <Text style={styles.comparisonValue}>✓ Temporary</Text>
-                <Text style={styles.comparisonValue}>✓ Reversible</Text>
-                <Text style={styles.comparisonValue}>✓ Data preserved</Text>
-              </View>
-              <View style={styles.comparisonDivider} />
-              <View style={styles.comparisonColumn}>
-                <Text style={styles.comparisonLabel}>Delete</Text>
-                <Text style={styles.comparisonValue}>✗ Permanent</Text>
-                <Text style={styles.comparisonValue}>✗ Irreversible</Text>
-                <Text style={styles.comparisonValue}>✗ Data removed</Text>
-              </View>
-            </View>
-          </View>
+          
 
           {/* Reason Selection */}
           <View style={styles.section}>

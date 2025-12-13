@@ -19,7 +19,8 @@ import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import MoodCheckInCard from '../../components/MoodCheckInCard';
 import { moodOptions as globalMoodOptions } from '../../global/Data';
-import { setTodayCheckIn, addPoints, incrementStreak, selectHasCheckedInToday, selectTodayMoodData, selectMoodStats } from '../../features/mood/moodSlice';
+import { selectHasCheckedInToday, selectTodayMoodData, selectExtendedMoodStats, selectMoodSubmitting } from '../../features/mood/moodSlice';
+import { saveMoodCheckIn } from '../../utils/moodCheckInManager';
 
 interface MoodEntry {
   id: string;
@@ -43,14 +44,15 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
   const preSelectedMood = route?.params?.preSelectedMood;
   const [selectedMood, setSelectedMood] = useState<number | null>(preSelectedMood?.id || null);
   const [moodNote, setMoodNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMoodObj, setSelectedMoodObj] = useState<any>(preSelectedMood || null);
   const [isTypingReflection, setIsTypingReflection] = useState(false);
   
   // Get mood data from Redux
   const hasCheckedInToday = useSelector(selectHasCheckedInToday);
   const todayEntry = useSelector(selectTodayMoodData);
-  const { currentStreak, totalPoints } = useSelector(selectMoodStats);
+  const { currentStreak, totalPoints, milestonesReached } = useSelector(selectExtendedMoodStats);
+  const isSubmitting = useSelector(selectMoodSubmitting);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
 
   // Mood-specific reflection prompts
   const reflectionPromptsByMood: { [key: number]: string[] } = {
@@ -102,20 +104,8 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
     }
   }, [selectedMood]);
 
-  useEffect(() => {
-    loadTodayMood();
-    loadUserStats();
-  }, []);
-
-  const loadTodayMood = async () => {
-    // Redux now handles this - data comes from global state
-    // No need to load here, already loaded in HomeScreen/MoodScreen
-  };
-
-  const loadUserStats = async () => {
-    // Redux now handles this - data comes from global state
-    // No need to load here, already loaded in HomeScreen/MoodScreen
-  };
+  // Data is loaded from global state via MoodScreen/HomeScreen
+  // No need to load here
 
   const handleMoodSelect = (mood: any) => {
     setSelectedMood(mood.id);
@@ -139,60 +129,52 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
       return;
     }
 
-    setIsSubmitting(true);
+    if (!userDetails?.userId) {
+      toast.show({
+        description: 'User session not found. Please log in again.',
+        duration: 3000,
+      });
+      return;
+    }
+
     try {
-      const selectedMoodData = globalMoodOptions.find(mood => mood.id === selectedMood)!;
-      
-      const newEntry: MoodEntry = {
-        id: Date.now().toString(),
-        date: new Date().toDateString(),
-        moodValue: selectedMood,
-        moodEmoji: selectedMoodData.emoji,
-        moodLabel: selectedMoodData.name,
-        note: moodNote.trim(),
-        timestamp: new Date().toISOString(),
-        pointsEarned: 0, // MVP: Points deferred until milestones
-      };
+      // Call real API to log mood
+      const result = await saveMoodCheckIn(userDetails.userId, selectedMood, moodNote.trim());
 
-      // Simulate API call
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1500));
+      if (result.success && result.data) {
+        // Check if milestone was reached
+        const isMilestone = result.data.isMilestone || false;
+        const newStreak = result.data.currentStreak || currentStreak + 1;
+        const milestoneMessage = isMilestone 
+          ? '\n\n🎁 Milestone reached! Check your rewards.' 
+          : '';
 
-      // Update Redux state
-      dispatch(setTodayCheckIn({
-        id: newEntry.id,
-        mood: newEntry.moodLabel,
-        emoji: newEntry.moodEmoji,
-        moodValue: newEntry.moodValue,
-        note: newEntry.note,
-        pointsEarned: newEntry.pointsEarned,
-        timestamp: newEntry.timestamp,
-        date: newEntry.date,
-      }));
-      // MVP: Don't add points immediately
-      // dispatch(addPoints(pointsEarned));
-      dispatch(incrementStreak());
+        // Show success message focused on streak
+        Alert.alert(
+          '🎉 Mood Logged Successfully!',
+          `Current streak: ${newStreak} day${newStreak === 1 ? '' : 's'}${milestoneMessage}`,
+          [
+            { text: 'View History', onPress: () => navigation.navigate('MoodHistoryScreen') },
+            { text: 'Great!', style: 'default', onPress: () => navigation.goBack() }
+          ]
+        );
 
-      // Show success message focused on streak
-      Alert.alert(
-        '🎉 Mood Logged Successfully!',
-        `Current streak: ${currentStreak + 1} day${currentStreak + 1 === 1 ? '' : 's'}${currentStreak + 1 === 7 || currentStreak + 1 === 14 || currentStreak + 1 === 30 ? '\n\n🎁 Milestone reached! Check your rewards.' : ''}`,
-        [
-          { text: 'View History', onPress: () => navigation.navigate('MoodHistoryScreen') },
-          { text: 'Great!', style: 'default' }
-        ]
-      );
-
-      // Reset form
-      setSelectedMood(null);
-      setMoodNote('');
-
+        // Reset form
+        setSelectedMood(null);
+        setMoodNote('');
+        setSelectedMoodObj(null);
+      } else {
+        toast.show({
+          description: result.error || 'Failed to save mood. Please try again.',
+          duration: 3000,
+        });
+      }
     } catch (error) {
+      console.log('Error submitting mood:', error);
       toast.show({
         description: 'Failed to save mood. Please try again.',
         duration: 3000,
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -235,6 +217,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         selectedMood={selectedMoodObj}
         onMoodSelect={handleMoodSelect}
         centerTitle={true}
+        disabled={isSubmitting}
       />
     </View>
   );
@@ -314,6 +297,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
                   blurOnSubmit={false}
                   onFocus={() => setIsTypingReflection(true)}
                   onBlur={() => setIsTypingReflection(false)}
+                  editable={!isSubmitting}
                 />
                 <View style={styles.inputFooter}>
                   <Text style={styles.characterCount}>{moodNote.length}/300</Text>

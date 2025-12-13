@@ -2,6 +2,7 @@
  * Mood History Screen - View mood trends and history with charts
  */
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -10,22 +11,29 @@ import {
   TouchableOpacity,
   Dimensions,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import {
+  selectMoodHistory,
+  selectMoodStats,
+  selectHistoryLoading,
+} from '../../features/mood/moodSlice';
+import { loadMoodHistory } from '../../utils/moodCheckInManager';
 
 interface MoodEntry {
   id: string;
   date: string;
   moodValue: number;
-  moodEmoji: string;
-  moodLabel: string;
+  emoji: string;
+  mood: string;
   note: string;
   timestamp: string;
-  pointsEarned: number;
+  color?: string;
 }
 
 interface MoodHistoryScreenProps {
@@ -37,10 +45,17 @@ const CHART_WIDTH = SCREEN_WIDTH - 40;
 
 const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedPeriod, setSelectedPeriod] = useState<'7' | '30' | '90'>('7');
-  const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
+  
+  // Get data from Redux
+  const moodHistoryData = useSelector(selectMoodHistory);
+  const reduxStats = useSelector(selectMoodStats);
+  const isLoading = useSelector(selectHistoryLoading);
+  
+  // Use Redux data directly
+  const moodHistory = moodHistoryData || [];
+  const [localStats, setLocalStats] = useState({
     averageMood: 0,
     currentStreak: 0,
     totalEntries: 0,
@@ -79,72 +94,20 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
   };
 
   useEffect(() => {
-    loadMoodHistory();
-  }, [selectedPeriod]);
-
-  const loadMoodHistory = async () => {
-    setIsLoading(true);
-    try {
-      // Generate mock mood history data
-      const mockData: MoodEntry[] = [];
-      const days = parseInt(selectedPeriod);
-      
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        
-        // Skip occasional days to simulate realistic missing entries (skip ~15% of days)
-        if (Math.random() > 0.15) {
-          // Generate varied mood values with slight trend upward for realism
-          const baseValue = 3; // Start around "Okay"
-          const variation = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
-          const trendBonus = i < days / 2 ? 0 : Math.random() > 0.7 ? 1 : 0; // Slight improvement over time
-          const moodValue = Math.max(1, Math.min(5, baseValue + variation + trendBonus));
-          
-          const notes = [
-            "Had a productive day at work",
-            "Spent time with family",
-            "Feeling a bit overwhelmed",
-            "Great therapy session today",
-            "Practiced mindfulness",
-            "Challenging day but managed well",
-            "Feeling grateful for small things",
-            "Had some anxiety but used coping strategies",
-            "Took a walk and felt better",
-            "Connected with a friend",
-            "Focused on self-care today",
-            "Managed stress well",
-          ];
-          
-          mockData.push({
-            id: `mood-${i}`,
-            date: date.toDateString(),
-            moodValue,
-            moodEmoji: moodEmojis[moodValue as keyof typeof moodEmojis],
-            moodLabel: moodLabels[moodValue as keyof typeof moodLabels],
-            note: notes[Math.floor(Math.random() * notes.length)],
-            timestamp: date.toISOString(),
-            pointsEarned: 0, // MVP: Points deferred
-          });
-        }
-      }
-
-      setMoodHistory(mockData);
-      calculateStats(mockData);
-      
-    } catch (error) {
-      toast.show({
-        description: 'Failed to load mood history',
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
+    if (userDetails?.userId) {
+      const periodMap = { '7': 'week', '30': 'month', '90': 'quarter' };
+      loadMoodHistory(userDetails.userId, periodMap[selectedPeriod] || 'week');
     }
-  };
+  }, [selectedPeriod, userDetails?.userId]);
+  
+  // Recalculate local stats when mood history changes
+  useEffect(() => {
+    calculateStats(moodHistory);
+  }, [moodHistory]);
 
   const calculateStats = (data: MoodEntry[]) => {
     if (data.length === 0) {
-      setStats({
+      setLocalStats({
         averageMood: 0,
         currentStreak: 0,
         totalEntries: 0,
@@ -178,7 +141,7 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
 
     // Most common mood
     const moodCounts = data.reduce((counts, entry) => {
-      counts[entry.moodLabel] = (counts[entry.moodLabel] || 0) + 1;
+      counts[entry.mood] = (counts[entry.mood] || 0) + 1;
       return counts;
     }, {} as Record<string, number>);
     
@@ -186,9 +149,9 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
       moodCounts[a[0]] > moodCounts[b[0]] ? a : b
     )[0];
 
-    setStats({
+    setLocalStats({
       averageMood: Math.round(averageMood * 10) / 10,
-      currentStreak: streak,
+      currentStreak: reduxStats.currentStreak || streak,
       totalEntries: data.length,
       bestDay,
       mostCommonMood,
@@ -335,21 +298,21 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
     <View style={styles.statsContainer}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.averageMood}</Text>
+          <Text style={styles.statValue}>{localStats.averageMood || '--'}</Text>
           <Text style={styles.statLabel}>Average Mood</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.currentStreak}</Text>
+          <Text style={styles.statValue}>{localStats.currentStreak || 0}</Text>
           <Text style={styles.statLabel}>Current Streak</Text>
         </View>
       </View>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.totalEntries}</Text>
+          <Text style={styles.statValue}>{localStats.totalEntries || 0}</Text>
           <Text style={styles.statLabel}>Total Entries</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.mostCommonMood}</Text>
+          <Text style={styles.statValue}>{localStats.mostCommonMood || '--'}</Text>
           <Text style={styles.statLabel}>Most Common</Text>
         </View>
       </View>
@@ -370,10 +333,10 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
       </View>
 
       <View style={styles.historyMood}>
-        <Text style={styles.historyEmoji}>{item.moodEmoji}</Text>
+        <Text style={styles.historyEmoji}>{item.emoji}</Text>
         <View style={styles.historyMoodInfo}>
-          <Text style={[styles.historyMoodLabel, { color: moodColors[item.moodValue as keyof typeof moodColors] }]}>
-            {item.moodLabel}
+          <Text style={[styles.historyMoodLabel, { color: item.color || moodColors[item.moodValue as keyof typeof moodColors] }]}>
+            {item.mood}
           </Text>
           <Text style={styles.historyNote} numberOfLines={2}>
             {item.note}

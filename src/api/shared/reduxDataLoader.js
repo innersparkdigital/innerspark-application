@@ -13,7 +13,9 @@
  */
 
 import { getEmergencyContacts, getCrisisLines, getSafetyPlan } from '../client/emergency';
+import { getProfile as getClientProfile } from '../client/profile';
 import { getPlans, getCurrentSubscription, getBillingHistory } from '../client/subscriptions';
+import { getPrivacySettings, getNotificationSettings, getAppearanceSettings } from '../client/settings';
 import { 
   setEmergencyContacts, 
   setCrisisLines, 
@@ -24,6 +26,12 @@ import {
   setCurrentSubscription, 
   setBillingHistory 
 } from '../../features/subscription/subscriptionSlice';
+import { setUserProfile } from '../../features/user/userDataSlice';
+import { 
+  setPrivacySettings, 
+  setNotificationSettings, 
+  setAppearanceSettings 
+} from '../../features/settings/userSettingsSlice';
 
 /**
  * Load all critical data into Redux stores
@@ -45,6 +53,115 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
     failed: [],
     total: 0,
   };
+
+  // Privacy Settings
+  try {
+    const privacyResponse = await getPrivacySettings(userId);
+    const privacyData = privacyResponse?.data;
+
+    if (privacyData) {
+      dispatch(setPrivacySettings({
+        allowMessages: privacyData.allowMessages ?? true,
+        dataSharing: privacyData.dataSharing ?? false,
+        profileVisibility: privacyData.profileVisibility ?? 'private',
+        showOnlineStatus: privacyData.showOnlineStatus ?? true,
+      }));
+      results.success.push('privacy-settings');
+      console.log('✅ Privacy settings loaded to Redux');
+    } else {
+      results.success.push('privacy-settings');
+      console.log('ℹ️ Using default privacy settings');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load privacy settings:', error);
+    results.failed.push('privacy-settings');
+  }
+  results.total++;
+
+  // Notification Settings
+  try {
+    const notificationResponse = await getNotificationSettings(userId);
+    const notificationData = notificationResponse?.data;
+
+    if (notificationData) {
+      dispatch(setNotificationSettings({
+        appointmentReminders: notificationData.appointmentReminders ?? true,
+        emailNotifications: notificationData.emailNotifications ?? true,
+        eventUpdates: notificationData.eventUpdates ?? true,
+        goalReminders: notificationData.goalReminders ?? true,
+        pushNotifications: notificationData.pushNotifications ?? true,
+        smsNotifications: notificationData.smsNotifications ?? false,
+      }));
+      results.success.push('notification-settings');
+      console.log('✅ Notification settings loaded to Redux');
+    } else {
+      results.success.push('notification-settings');
+      console.log('ℹ️ Using default notification settings');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load notification settings:', error);
+    results.failed.push('notification-settings');
+  }
+  results.total++;
+
+  // Appearance Settings
+  try {
+    const appearanceResponse = await getAppearanceSettings(userId);
+    const appearanceData = appearanceResponse?.data;
+
+    if (appearanceData) {
+      dispatch(setAppearanceSettings({
+        theme: appearanceData.theme ?? 'light',
+        useSystemTheme: appearanceData.useSystemTheme ?? false,
+        accentColor: appearanceData.accentColor ?? '#5D7BF5',
+        fontStyle: appearanceData.fontStyle ?? 'system',
+        highContrast: appearanceData.highContrast ?? false,
+        reducedMotion: appearanceData.reducedMotion ?? false,
+        largeText: appearanceData.largeText ?? false,
+      }));
+      results.success.push('appearance-settings');
+      console.log('✅ Appearance settings loaded to Redux');
+    } else {
+      results.success.push('appearance-settings');
+      console.log('ℹ️ Using default appearance settings');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load appearance settings:', error);
+    results.failed.push('appearance-settings');
+  }
+  results.total++;
+
+  // Profile (full user profile)
+  try {
+    const profileResponse = await getClientProfile(userId);
+    const profileData = profileResponse?.data || null;
+
+    if (profileData) {
+      const mappedProfile = {
+        bio: profileData.bio ?? null,
+        dateOfBirth: profileData.dateOfBirth ?? null,
+        email: profileData.email ?? null,
+        firstName: profileData.firstName ?? null,
+        gender: profileData.gender ?? null,
+        joinedDate: profileData.joinedDate ?? null,
+        lastName: profileData.lastName ?? null,
+        phoneNumber: profileData.phoneNumber ?? null,
+        profileImage: profileData.profileImage ?? null,
+      };
+
+      dispatch(setUserProfile(mappedProfile));
+      results.success.push('profile');
+      console.log('✅ Profile loaded to Redux');
+    } else {
+      dispatch(setUserProfile(null));
+      results.success.push('profile');
+      console.log('ℹ️ No profile data found');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load profile:', error);
+    results.failed.push('profile');
+  }
+  results.total++;
 
   // Emergency Contacts
   try {

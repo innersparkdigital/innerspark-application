@@ -30,16 +30,28 @@ export const getAppearanceSettings = async (userId) => {
 
 /**
  * Update appearance settings
+ * Supports both:
+ * 1) Legacy positional args: (userId, theme, useSystemTheme)
+ * 2) Partial object payload: (userId, { theme?, useSystemTheme?, accentColor?, fontStyle?, highContrast?, reducedMotion?, largeText? })
  * @param {string} userId - User ID
- * @param {string} theme - Theme (light, dark)
- * @param {boolean} useSystemTheme - Use system theme
  * @returns {Promise} Updated settings
  */
-export const updateAppearanceSettings = async (userId, theme, useSystemTheme) => {
+export const updateAppearanceSettings = async (userId, themeOrPayload, useSystemTheme) => {
+    const isPayloadObject =
+        themeOrPayload !== null &&
+        typeof themeOrPayload === 'object' &&
+        !Array.isArray(themeOrPayload);
+
+    const payload = isPayloadObject
+        ? themeOrPayload
+        : {
+            theme: themeOrPayload,
+            useSystemTheme,
+        };
+
     const response = await APIInstance.put('/client/settings/appearance', {
         user_id: userId,
-        theme,
-        useSystemTheme
+        ...payload,
     });
     return response.data;
 };
@@ -58,20 +70,30 @@ export const getPrivacySettings = async (userId) => {
 
 /**
  * Update privacy settings
+ * Supports both:
+ * 1) Legacy positional args: (userId, profileVisibility, showOnlineStatus, allowMessages, dataSharing)
+ * 2) Partial object payload: (userId, { profileVisibility?, showOnlineStatus?, allowMessages?, dataSharing?, walletBalanceVisibility? })
  * @param {string} userId - User ID
- * @param {string} profileVisibility - Profile visibility (private, public)
- * @param {boolean} showOnlineStatus - Show online status
- * @param {boolean} allowMessages - Allow messages
- * @param {boolean} dataSharing - Data sharing preference
  * @returns {Promise} Updated settings
  */
-export const updatePrivacySettings = async (userId, profileVisibility, showOnlineStatus, allowMessages, dataSharing) => {
+export const updatePrivacySettings = async (userId, profileVisibilityOrPayload, showOnlineStatus, allowMessages, dataSharing) => {
+    const isPayloadObject =
+        profileVisibilityOrPayload !== null &&
+        typeof profileVisibilityOrPayload === 'object' &&
+        !Array.isArray(profileVisibilityOrPayload);
+
+    const payload = isPayloadObject
+        ? profileVisibilityOrPayload
+        : {
+            profileVisibility: profileVisibilityOrPayload,
+            showOnlineStatus,
+            allowMessages,
+            dataSharing,
+        };
+
     const response = await APIInstance.put('/client/settings/privacy', {
         user_id: userId,
-        profileVisibility,
-        showOnlineStatus,
-        allowMessages,
-        dataSharing
+        ...payload,
     });
     return response.data;
 };
@@ -90,16 +112,28 @@ export const getNotificationSettings = async (userId) => {
 
 /**
  * Update notification settings
+ * Supports both:
+ * 1) Legacy positional args: (userId, emailNotifications, pushNotifications)
+ * 2) Partial object payload: (userId, { emailNotifications?, pushNotifications?, smsNotifications?, appointmentReminders?, eventUpdates?, goalReminders? })
  * @param {string} userId - User ID
- * @param {boolean} emailNotifications - Email notifications enabled
- * @param {boolean} pushNotifications - Push notifications enabled
  * @returns {Promise} Updated settings
  */
-export const updateNotificationSettings = async (userId, emailNotifications, pushNotifications) => {
+export const updateNotificationSettings = async (userId, emailNotificationsOrPayload, pushNotifications) => {
+    const isPayloadObject =
+        emailNotificationsOrPayload !== null &&
+        typeof emailNotificationsOrPayload === 'object' &&
+        !Array.isArray(emailNotificationsOrPayload);
+
+    const payload = isPayloadObject
+        ? emailNotificationsOrPayload
+        : {
+            emailNotifications: emailNotificationsOrPayload,
+            pushNotifications,
+        };
+
     const response = await APIInstance.put('/client/settings/notifications', {
         user_id: userId,
-        emailNotifications,
-        pushNotifications
+        ...payload,
     });
     return response.data;
 };

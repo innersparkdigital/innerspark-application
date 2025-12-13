@@ -24,8 +24,19 @@ import LHGenericHeader from '../components/LHGenericHeader';
 import PanicButtonComponent from '../components/PanicButtonComponent';
 import MoodCheckInCard from '../components/MoodCheckInCard';
 import TodayMoodSummaryCard from '../components/TodayMoodSummaryCard';
-import { loadTodayCheckInStatus, loadMoodStats, formatRelativeTime } from '../utils/moodCheckInManager';
-import { selectHasCheckedInToday, selectTodayMoodData, selectMoodStats } from '../features/mood/moodSlice';
+import { loadAllMoodData, formatRelativeTime } from '../utils/moodCheckInManager';
+import { 
+  selectHasCheckedInToday, 
+  selectTodayMoodData, 
+  selectMoodStats,
+  selectMoodHistory,
+  selectMoodInsights,
+  selectBestTimeOfDay,
+  selectWeeklyImprovement,
+  selectMoodLoading,
+  selectInsightsLoading,
+  selectHistoryLoading,
+} from '../features/mood/moodSlice';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -35,12 +46,20 @@ const MoodScreen = ({ navigation }) => {
   
   const userDetails = useSelector(state => state.userData.userDetails);
   const [selectedMood, setSelectedMood] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   
-  // Get mood check-in status from Redux
+  // Get mood data from Redux
   const hasCheckedInToday = useSelector(selectHasCheckedInToday);
   const todayMoodData = useSelector(selectTodayMoodData);
   const { currentStreak, totalPoints, totalCheckIns } = useSelector(selectMoodStats);
+  const moodHistoryData = useSelector(selectMoodHistory);
+  const insightsData = useSelector(selectMoodInsights);
+  const bestTimeOfDay = useSelector(selectBestTimeOfDay);
+  const weeklyImprovement = useSelector(selectWeeklyImprovement);
+  
+  // Loading states
+  const isLoadingMain = useSelector(selectMoodLoading);
+  const isLoadingInsights = useSelector(selectInsightsLoading);
+  const isLoadingHistory = useSelector(selectHistoryLoading);
 
   // Dynamic subtitle messages
   const subtitlesBeforeCheckIn = [
@@ -71,69 +90,42 @@ const MoodScreen = ({ navigation }) => {
     setCurrentSubtitle(randomSubtitle);
   }, [hasCheckedInToday]);
 
-  const moodHistory = [
-    { date: 'Today', mood: 'Happy', emoji: '😊', color: '#8BC34A' },
-    { date: 'Yesterday', mood: 'Neutral', emoji: '😐', color: '#FFC107' },
-    { date: '2 days ago', mood: 'Amazing', emoji: '🤩', color: '#4CAF50' },
-    { date: '3 days ago', mood: 'Happy', emoji: '😊', color: '#8BC34A' },
-  ];
-
-  const insights = [
-    {
-      id: 1,
-      title: 'Weekly Progress',
-      description: 'Your mood has improved 20% this week',
-      icon: 'trending-up',
-      color: '#4CAF50',
-      type: 'positive'
-    },
-    {
-      id: 2,
-      title: 'Best Time',
-      description: 'You feel best in the mornings',
-      icon: 'wb-sunny',
-      color: '#FF9800',
-      type: 'info'
-    },
-    {
-      id: 3,
-      title: 'Streak',
-      description: '5 days of mood tracking!',
-      icon: 'local-fire-department',
-      color: '#F44336',
-      type: 'achievement'
-    }
-  ];
+  // Use only real API data - no mock fallback
+  const moodHistory = moodHistoryData;
+  const insights = insightsData;
 
   useEffect(() => {
-    loadTodayCheckInStatus(); // Load from API and update Redux
-    loadMoodStats(); // Load user stats
-  }, []);
+    if (userDetails?.userId) {
+      loadAllMoodData(userDetails.userId); // Load all mood data from API
+    }
+  }, [userDetails?.userId]);
 
   const handleMoodSelect = (mood) => {
     // Navigate to TodayMoodScreen with pre-selected mood
     navigation.navigate('TodayMoodScreen', { preSelectedMood: mood });
   };
 
-  const saveMood = () => {
-    if (!selectedMood) {
-      toast.show({
-        description: "Please select a mood first",
-        duration: 2000,
-      });
-      return;
+  // Calculate week summary from history data
+  const calculateWeekSummary = () => {
+    if (!moodHistory || moodHistory.length === 0) {
+      return { week: 'This Week', moods: [] };
     }
-
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.show({
-        description: `Mood "${selectedMood.name}" saved successfully!`,
-        duration: 2000,
-      });
-    }, 1000);
+    
+    const moodCounts = {};
+    moodHistory.slice(0, 7).forEach(entry => {
+      const emoji = entry.emoji || '😐';
+      moodCounts[emoji] = (moodCounts[emoji] || 0) + 1;
+    });
+    
+    const moods = Object.entries(moodCounts)
+      .map(([emoji, count]) => ({ emoji, count, label: `${count} days` }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+    
+    return { week: 'This Week', moods };
   };
+  
+  const weekSummary = calculateWeekSummary();
 
   const notifyWithToast = (description) => {
     toast.show({
@@ -315,49 +307,63 @@ const MoodScreen = ({ navigation }) => {
             </View>
 
             {/* Key Metrics Grid */}
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricCard}>
-                <Icon name="trending-up" type="material" color="#4CAF50" size={32} />
-                <Text style={styles.metricValue}>+20%</Text>
-                <Text style={styles.metricLabel}>Weekly Improvement</Text>
+            {isLoadingInsights ? (
+              <View style={styles.metricsGrid}>
+                <View style={styles.metricCard}>
+                  <ActivityIndicator size="small" color={appColors.AppBlue} />
+                </View>
+                <View style={styles.metricCard}>
+                  <ActivityIndicator size="small" color={appColors.AppBlue} />
+                </View>
               </View>
-              <View style={styles.metricCard}>
-                <Icon name="wb-sunny" type="material" color="#FF9800" size={32} />
-                <Text style={styles.metricValue}>Morning</Text>
-                <Text style={styles.metricLabel}>Best Time</Text>
+            ) : (
+              <View style={styles.metricsGrid}>
+                <View style={styles.metricCard}>
+                  <Icon name="trending-up" type="material" color="#4CAF50" size={32} />
+                  <Text style={styles.metricValue}>{weeklyImprovement ? `${weeklyImprovement > 0 ? '+' : ''}${weeklyImprovement}%` : '--'}</Text>
+                  <Text style={styles.metricLabel}>Weekly Improvement</Text>
+                </View>
+                <View style={styles.metricCard}>
+                  <Icon name="wb-sunny" type="material" color="#FF9800" size={32} />
+                  <Text style={styles.metricValue}>{bestTimeOfDay || '--'}</Text>
+                  <Text style={styles.metricLabel}>Best Time</Text>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* Insights Cards - Vertical Layout */}
             <View style={styles.insightsListSection}>
               <Text style={styles.sectionTitle}>Detailed Insights</Text>
-              {insights.map((insight) => (
-                <View key={insight.id} style={styles.insightCardFull}>
-                  <View style={styles.insightCardHeader}>
-                    <View style={[styles.insightIconContainer, { backgroundColor: insight.color + '15' }]}>
-                      <Icon
-                        name={insight.icon}
-                        type="material"
-                        color={insight.color}
-                        size={28}
-                      />
-                    </View>
-                    <View style={styles.insightCardContent}>
-                      <Text style={styles.insightTitle}>{insight.title}</Text>
-                      <Text style={styles.insightDescription}>{insight.description}</Text>
+              {isLoadingInsights ? (
+                <View style={styles.insightCardFull}>
+                  <ActivityIndicator size="small" color={appColors.AppBlue} />
+                  <Text style={[styles.insightDescription, { textAlign: 'center', marginTop: 10 }]}>Loading insights...</Text>
+                </View>
+              ) : insights.length > 0 ? (
+                insights.map((insight) => (
+                  <View key={insight.id} style={styles.insightCardFull}>
+                    <View style={styles.insightCardHeader}>
+                      <View style={[styles.insightIconContainer, { backgroundColor: insight.color + '15' }]}>
+                        <Icon
+                          name={insight.icon}
+                          type="material"
+                          color={insight.color}
+                          size={28}
+                        />
+                      </View>
+                      <View style={styles.insightCardContent}>
+                        <Text style={styles.insightTitle}>{insight.title}</Text>
+                        <Text style={styles.insightDescription}>{insight.description}</Text>
+                      </View>
                     </View>
                   </View>
+                ))
+              ) : (
+                <View style={styles.insightCardFull}>
+                  <Icon name="lightbulb-outline" type="material" color={appColors.grey3} size={32} />
+                  <Text style={[styles.insightDescription, { textAlign: 'center', marginTop: 10 }]}>Start tracking your mood to see personalized insights</Text>
                 </View>
-              ))}
-            </View>
-
-            {/* Mood Patterns Section */}
-            <View style={styles.patternsSection}>
-              <Text style={styles.sectionTitle}>Mood Patterns</Text>
-              <View style={styles.patternCard}>
-                <Icon name="info-outline" type="material" color={appColors.AppBlue} size={24} />
-                <Text style={styles.patternText}>Connect your mood data to see personalized patterns and trends</Text>
-              </View>
+              )}
             </View>
 
             <View style={styles.bottomSpacing} />
@@ -374,23 +380,29 @@ const MoodScreen = ({ navigation }) => {
             </View>
 
             {/* This Week Summary */}
-            <View style={styles.weekSummary}>
-              <Text style={styles.weekTitle}>This Week</Text>
-              <View style={styles.weekMoods}>
-                <View style={styles.weekMoodItem}>
-                  <Text style={styles.weekEmoji}>😊</Text>
-                  <Text style={styles.weekCount}>3 days</Text>
-                </View>
-                <View style={styles.weekMoodItem}>
-                  <Text style={styles.weekEmoji}>🙂</Text>
-                  <Text style={styles.weekCount}>2 days</Text>
-                </View>
-                <View style={styles.weekMoodItem}>
-                  <Text style={styles.weekEmoji}>😐</Text>
-                  <Text style={styles.weekCount}>2 days</Text>
+            {isLoadingHistory ? (
+              <View style={styles.weekSummary}>
+                <ActivityIndicator size="small" color={appColors.AppBlue} />
+                <Text style={styles.weekCount}>Loading week summary...</Text>
+              </View>
+            ) : weekSummary.moods.length > 0 ? (
+              <View style={styles.weekSummary}>
+                <Text style={styles.weekTitle}>{weekSummary.week}</Text>
+                <View style={styles.weekMoods}>
+                  {weekSummary.moods.map((mood, index) => (
+                    <View key={index} style={styles.weekMoodItem}>
+                      <Text style={styles.weekEmoji}>{mood.emoji}</Text>
+                      <Text style={styles.weekCount}>{mood.label}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
-            </View>
+            ) : (
+              <View style={styles.weekSummary}>
+                <Text style={styles.weekTitle}>This Week</Text>
+                <Text style={styles.weekCount}>No mood entries yet this week</Text>
+              </View>
+            )}
 
             {/* Full History List */}
             <View style={styles.historyFullSection}>
@@ -402,22 +414,34 @@ const MoodScreen = ({ navigation }) => {
               </View>
               
               <View style={styles.historyContainer}>
-                {moodHistory.map((entry, index) => (
-                  <TouchableOpacity 
-                    key={index} 
-                    style={styles.historyItemEnhanced}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.historyMoodContainer, { backgroundColor: entry.color + '15' }]}>
-                      <Text style={styles.historyEmoji}>{entry.emoji}</Text>
-                    </View>
-                    <View style={styles.historyContent}>
-                      <Text style={styles.historyMood}>{entry.mood}</Text>
-                      <Text style={styles.historyDateSmall}>{entry.date}</Text>
-                    </View>
-                    <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
-                  </TouchableOpacity>
-                ))}
+                {isLoadingHistory ? (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={appColors.AppBlue} />
+                    <Text style={styles.historyDateSmall}>Loading history...</Text>
+                  </View>
+                ) : moodHistory.length > 0 ? (
+                  moodHistory.slice(0, 4).map((entry, index) => (
+                    <TouchableOpacity 
+                      key={entry.id || index} 
+                      style={styles.historyItemEnhanced}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.historyMoodContainer, { backgroundColor: entry.color + '15' }]}>
+                        <Text style={styles.historyEmoji}>{entry.emoji}</Text>
+                      </View>
+                      <View style={styles.historyContent}>
+                        <Text style={styles.historyMood}>{entry.mood}</Text>
+                        <Text style={styles.historyDateSmall}>{entry.date}</Text>
+                      </View>
+                      <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Icon name="history" type="material" color={appColors.grey3} size={32} />
+                    <Text style={[styles.historyDateSmall, { marginTop: 10 }]}>No mood history yet. Start by checking in today!</Text>
+                  </View>
+                )}
               </View>
             </View>
 

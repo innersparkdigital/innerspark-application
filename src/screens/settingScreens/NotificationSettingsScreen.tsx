@@ -2,6 +2,7 @@
  * Notification Settings Screen - Manage all notification preferences
  */
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -18,6 +19,8 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { getNotificationSettings, updateNotificationSettings } from '../../api/client/settings';
+import { setNotificationSettings, updateNotificationSetting as updateNotificationSettingRedux, selectNotificationSettings } from '../../features/settings/userSettingsSlice';
 
 interface NotificationSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -40,38 +43,115 @@ interface NotificationSetting {
 
 const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const notificationSettings = useSelector(selectNotificationSettings);
+  
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // General Notifications
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
+  // General Notifications (synced with Redux/backend)
+  const [pushNotifications, setPushNotifications] = useState(notificationSettings.pushNotifications);
+  const [emailNotifications, setEmailNotifications] = useState(notificationSettings.emailNotifications);
+  const [smsNotifications, setSmsNotifications] = useState(notificationSettings.smsNotifications);
   
-  // Wellness Notifications
-  const [moodReminders, setMoodReminders] = useState(true);
-  const [therapyReminders, setTherapyReminders] = useState(true);
-  const [wellnessGoals, setWellnessGoals] = useState(true);
-  const [weeklyReports, setWeeklyReports] = useState(true);
+  // Wellness Notifications (synced with Redux/backend)
+  const [moodReminders, setMoodReminders] = useState(notificationSettings.goalReminders);
+  const [therapyReminders, setTherapyReminders] = useState(notificationSettings.appointmentReminders);
+  const [wellnessGoals, setWellnessGoals] = useState(notificationSettings.goalReminders);
+  const [weeklyReports, setWeeklyReports] = useState(notificationSettings.weeklyReports);
   
-  // Social Notifications
-  const [messages, setMessages] = useState(true);
-  const [groupUpdates, setGroupUpdates] = useState(true);
-  const [eventInvites, setEventInvites] = useState(true);
+  // Social Notifications (synced with Redux/backend)
+  const [messages, setMessages] = useState(notificationSettings.messages);
+  const [groupUpdates, setGroupUpdates] = useState(notificationSettings.eventUpdates);
+  const [eventInvites, setEventInvites] = useState(notificationSettings.eventUpdates);
   
-  // System Notifications
-  const [securityAlerts, setSecurityAlerts] = useState(true);
-  const [systemUpdates, setSystemUpdates] = useState(false);
+  // System Notifications (synced with Redux)
+  const [securityAlerts, setSecurityAlerts] = useState(notificationSettings.securityAlerts);
+  const [systemUpdates, setSystemUpdates] = useState(notificationSettings.systemUpdates);
   const [promotions, setPromotions] = useState(false);
+
+  // Load notification settings from API on mount
+  useEffect(() => {
+    loadNotificationSettings();
+  }, []);
+
+  // Sync local state with Redux when settings change
+  useEffect(() => {
+    setPushNotifications(notificationSettings.pushNotifications);
+    setEmailNotifications(notificationSettings.emailNotifications);
+    setSmsNotifications(notificationSettings.smsNotifications);
+    setMoodReminders(notificationSettings.goalReminders);
+    setTherapyReminders(notificationSettings.appointmentReminders);
+    setWellnessGoals(notificationSettings.goalReminders);
+    setWeeklyReports(notificationSettings.weeklyReports);
+    setMessages(notificationSettings.messages);
+    setGroupUpdates(notificationSettings.eventUpdates);
+    setEventInvites(notificationSettings.eventUpdates);
+    setSecurityAlerts(notificationSettings.securityAlerts);
+    setSystemUpdates(notificationSettings.systemUpdates);
+  }, [notificationSettings]);
+
+  const loadNotificationSettings = async () => {
+    try {
+      setIsLoading(true);
+      const userId = userDetails?.userId;
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await getNotificationSettings(userId);
+      const data = response?.data;
+
+      if (data) {
+        dispatch(setNotificationSettings({
+          appointmentReminders: data.appointmentReminders ?? true,
+          emailNotifications: data.emailNotifications ?? true,
+          eventUpdates: data.eventUpdates ?? true,
+          goalReminders: data.goalReminders ?? true,
+          pushNotifications: data.pushNotifications ?? true,
+          smsNotifications: data.smsNotifications ?? false,
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load notification settings:', error);
+      toast.show({
+        description: 'Failed to load notification settings',
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
+    await loadNotificationSettings();
+    setIsRefreshing(false);
+    toast.show({
+      description: 'Notification settings refreshed',
+      duration: 2000,
+    });
+  };
+
+  const updateNotificationSettingHandler = async (key: string, value: any) => {
+    try {
+      const userId = userDetails?.userId;
+      if (!userId) return;
+
+      const payload: any = {};
+      payload[key] = value;
+
+      await updateNotificationSettings(userId, payload);
+      dispatch(updateNotificationSettingRedux({ key, value }));
+    } catch (error) {
+      console.error('Failed to update notification setting:', error);
       toast.show({
-        description: 'Notification settings refreshed',
+        description: 'Failed to update setting',
         duration: 2000,
       });
-    }, 1000);
+    }
   };
 
   // Master Toggle Function
@@ -79,6 +159,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
     switch (type) {
       case 'push':
         setPushNotifications(value);
+        updateNotificationSettingHandler('pushNotifications', value);
         if (!value) {
           // Disable all push-related notifications
           setMoodReminders(false);
@@ -89,9 +170,11 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
         break;
       case 'email':
         setEmailNotifications(value);
+        updateNotificationSettingHandler('emailNotifications', value);
         break;
       case 'sms':
         setSmsNotifications(value);
+        updateNotificationSettingHandler('smsNotifications', value);
         break;
     }
     
@@ -145,7 +228,10 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#E91E63',
       hasSwitch: true,
       switchValue: moodReminders && pushNotifications,
-      onSwitchChange: setMoodReminders,
+      onSwitchChange: (value) => {
+        setMoodReminders(value);
+        updateNotificationSettingHandler('goalReminders', value);
+      },
       isEnabled: pushNotifications,
       onPress: () => moodReminders && navigation.navigate('MoodReminderSettingsScreen'),
     },
@@ -157,7 +243,10 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#2196F3',
       hasSwitch: true,
       switchValue: therapyReminders && pushNotifications,
-      onSwitchChange: setTherapyReminders,
+      onSwitchChange: (value) => {
+        setTherapyReminders(value);
+        updateNotificationSettingHandler('appointmentReminders', value);
+      },
       isEnabled: pushNotifications,
     },
     {
@@ -168,7 +257,10 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#4CAF50',
       hasSwitch: true,
       switchValue: wellnessGoals && pushNotifications,
-      onSwitchChange: setWellnessGoals,
+      onSwitchChange: (value) => {
+        setWellnessGoals(value);
+        updateNotificationSettingHandler('goalReminders', value);
+      },
       isEnabled: pushNotifications,
     },
     {
@@ -179,7 +271,11 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#9C27B0',
       hasSwitch: true,
       switchValue: weeklyReports,
-      onSwitchChange: setWeeklyReports,
+      onSwitchChange: (value) => {
+        setWeeklyReports(value);
+        // No backend endpoint yet, but update Redux for instant UI persistence
+        dispatch(updateNotificationSettingRedux({ key: 'weeklyReports', value }));
+      },
     },
   ];
 
@@ -193,7 +289,11 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#00BCD4',
       hasSwitch: true,
       switchValue: messages && pushNotifications,
-      onSwitchChange: setMessages,
+      onSwitchChange: (value) => {
+        setMessages(value);
+        // No backend endpoint yet, but update Redux for instant UI persistence
+        dispatch(updateNotificationSettingRedux({ key: 'messages', value }));
+      },
       isEnabled: pushNotifications,
     },
     {
@@ -204,7 +304,10 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#795548',
       hasSwitch: true,
       switchValue: groupUpdates && pushNotifications,
-      onSwitchChange: setGroupUpdates,
+      onSwitchChange: (value) => {
+        setGroupUpdates(value);
+        updateNotificationSettingHandler('eventUpdates', value);
+      },
       isEnabled: pushNotifications,
     },
     {
@@ -215,7 +318,10 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#FF5722',
       hasSwitch: true,
       switchValue: eventInvites && pushNotifications,
-      onSwitchChange: setEventInvites,
+      onSwitchChange: (value) => {
+        setEventInvites(value);
+        updateNotificationSettingHandler('eventUpdates', value);
+      },
       isEnabled: pushNotifications,
     },
   ];
@@ -230,7 +336,11 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#F44336',
       hasSwitch: true,
       switchValue: securityAlerts,
-      onSwitchChange: setSecurityAlerts,
+      onSwitchChange: (value) => {
+        setSecurityAlerts(value);
+        // No backend endpoint yet, but update Redux for instant UI persistence
+        dispatch(updateNotificationSettingRedux({ key: 'securityAlerts', value }));
+      },
     },
 
     {
@@ -241,7 +351,11 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       iconColor: '#607D8B',
       hasSwitch: true,
       switchValue: systemUpdates,
-      onSwitchChange: setSystemUpdates,
+      onSwitchChange: (value) => {
+        setSystemUpdates(value);
+        // No backend endpoint yet, but update Redux for instant UI persistence
+        dispatch(updateNotificationSettingRedux({ key: 'systemUpdates', value }));
+      },
     },
 
   ];

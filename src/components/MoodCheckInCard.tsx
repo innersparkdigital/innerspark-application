@@ -28,6 +28,7 @@ interface MoodCheckInCardProps {
   showNavigationHint?: boolean;
   navigationHintText?: string;
   centerTitle?: boolean;
+  disabled?: boolean;
 }
 
 const MoodCheckInCard: React.FC<MoodCheckInCardProps> = ({
@@ -40,6 +41,7 @@ const MoodCheckInCard: React.FC<MoodCheckInCardProps> = ({
   showNavigationHint = false,
   navigationHintText = 'Tap a mood to log your daily check-in',
   centerTitle = false,
+  disabled = false,
 }) => {
   return (
     <View style={[styles.moodCard, containerStyle]}>
@@ -61,8 +63,10 @@ const MoodCheckInCard: React.FC<MoodCheckInCardProps> = ({
                   borderWidth: 3,
                   backgroundColor: mood.color + '20',
                 },
+                disabled && styles.moodButtonDisabled,
               ]}
               onPress={() => onMoodSelect(mood)}
+              disabled={disabled}
             >
               <Text style={styles.moodEmoji}>{mood.emoji}</Text>
             </TouchableOpacity>
@@ -138,6 +142,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
+  },
+  moodButtonDisabled: {
+    opacity: 0.5,
   },
   moodEmoji: {
     fontSize: 28,

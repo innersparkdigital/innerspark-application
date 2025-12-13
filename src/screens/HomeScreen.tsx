@@ -25,7 +25,7 @@ import MoodCheckInCard, { MoodOption } from '../components/MoodCheckInCard';
 import TodayMoodSummaryCard from '../components/TodayMoodSummaryCard';
 import { appImages, moodOptions } from '../global/Data';
 import { getFirstName, getGreeting, getLastName, getFullname } from '../global/LHShortcuts';
-import { loadTodayCheckInStatus, loadMoodStats, formatRelativeTime } from '../utils/moodCheckInManager';
+import { loadAllMoodData, formatRelativeTime } from '../utils/moodCheckInManager';
 import { selectHasCheckedInToday, selectTodayMoodData } from '../features/mood/moodSlice';
 import EmptySessionsCard from '../components/EmptySessionsCard';
 import SessionCard from '../components/SessionCard';
@@ -241,9 +241,12 @@ const HomeScreen = ({ navigation }) => {
     };
 
     initializeNotifications();
-    loadTodayCheckInStatus(); // Load from API and update Redux
-    loadMoodStats(); // Load user stats
-  }, []);
+    
+    // Load all mood data if user is logged in
+    if (userDetails?.userId) {
+      loadAllMoodData(userDetails.userId);
+    }
+  }, [userDetails?.userId]);
 
   const handleMoodSelect = (mood: any) => {
     // Navigate to TodayMoodScreen with pre-selected mood

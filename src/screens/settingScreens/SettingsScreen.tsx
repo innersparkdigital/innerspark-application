@@ -17,8 +17,9 @@ import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import ISStatusBar from '../../components/ISStatusBar';
+import { selectGeneralSettings, updateGeneralSetting } from '../../features/settings/userSettingsSlice';
 
 interface SettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -48,12 +49,23 @@ interface SettingSection {
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
   const emergencyContacts = useSelector((state: any) => state.emergency?.emergencyContacts || []);
+  const generalSettings = useSelector(selectGeneralSettings);
+  
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [locationEnabled, setLocationEnabled] = useState(true);
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(generalSettings.notificationsEnabled);
+  const [biometricEnabled, setBiometricEnabled] = useState(generalSettings.biometricEnabled);
+  const [locationEnabled, setLocationEnabled] = useState(generalSettings.locationEnabled);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(generalSettings.analyticsEnabled);
+  
+  // Sync with Redux when settings change
+  useEffect(() => {
+    setNotificationsEnabled(generalSettings.notificationsEnabled);
+    setBiometricEnabled(generalSettings.biometricEnabled);
+    setLocationEnabled(generalSettings.locationEnabled);
+    setAnalyticsEnabled(generalSettings.analyticsEnabled);
+  }, [generalSettings]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -69,6 +81,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const handleNotificationToggle = (value: boolean) => {
     setNotificationsEnabled(value);
+    dispatch(updateGeneralSetting({ key: 'notificationsEnabled', value }));
     toast.show({
       description: value ? 'Notifications enabled' : 'Notifications disabled',
       duration: 2000,
@@ -77,6 +90,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const handleBiometricToggle = (value: boolean) => {
     setBiometricEnabled(value);
+    dispatch(updateGeneralSetting({ key: 'biometricEnabled', value }));
     toast.show({
       description: value ? 'Biometric authentication enabled' : 'Biometric authentication disabled',
       duration: 2000,
@@ -85,6 +99,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const handleLocationToggle = (value: boolean) => {
     setLocationEnabled(value);
+    dispatch(updateGeneralSetting({ key: 'locationEnabled', value }));
     toast.show({
       description: value ? 'Location services enabled' : 'Location services disabled',
       duration: 2000,
@@ -93,6 +108,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const handleAnalyticsToggle = (value: boolean) => {
     setAnalyticsEnabled(value);
+    dispatch(updateGeneralSetting({ key: 'analyticsEnabled', value }));
     toast.show({
       description: value ? 'Analytics enabled' : 'Analytics disabled',
       duration: 2000,

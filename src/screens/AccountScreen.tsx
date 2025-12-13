@@ -57,6 +57,7 @@ export default function AccountScreen({ navigation }){
     const dispatch = useDispatch();
     const userToken = useSelector(state => state.user.userToken); // User token data (userId, email, name, phone)
     const userDetails = useSelector(state => state.userData.userDetails); // User details from redux store
+    const userProfile = useSelector((state: any) => state.userData.userProfile);
     
     const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
 
@@ -108,16 +109,19 @@ export default function AccountScreen({ navigation }){
               <Avatar 
                 rounded 
                 size={90} 
-                source={userDetails?.image || appImages.avatarDefault}
+                source={userProfile?.profileImage || userDetails?.image || appImages.avatarDefault}
                 containerStyle={styles.avatarStyle}
                 avatarStyle={styles.avatarImageStyle}
               />
             </View>
             <Text style={styles.userName}>
-              {getFullname(userDetails?.firstName, userDetails?.lastName) || 'Jane Doe'}
+              {getFullname(
+                userProfile?.firstName || userDetails?.firstName || '',
+                userProfile?.lastName || userDetails?.lastName || ''
+              ) || 'Jane Doe'}
             </Text>
             <Text style={styles.userEmail}>
-              {userDetails?.email || 'user@example.com'}
+              {userProfile?.email || userDetails?.email || 'user@example.com'}
             </Text>
             <View style={styles.memberBadge}>
               <Icon name="verified" type="material" color="#4CAF50" size={14} />

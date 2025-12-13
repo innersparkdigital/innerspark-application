@@ -22,6 +22,8 @@ import { APIInstance } from '../../api/LHAPI';
 import { notifyWithToast } from '../../global/LHShortcuts';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import LHGenericHeader from '../../components/LHGenericHeader';
+import { getProfile as getClientProfile } from '../../api/client/profile';
+import { setUserProfile } from '../../features/user/userDataSlice';
 // import RNOtpVerify from 'react-native-otp-verify';
 // import { Countdown } from "react-native-element-timer";
 
@@ -45,7 +47,7 @@ export default function VerifyEmailScreen( { navigation, route } ){
     // const [showResendCode, setShowResendCode] = useState(false); // Toggle Resend OTP Button upon expiry
 
     // route data
-    const { verificationEmail } = route.params; // previous screen params
+    const { verificationEmail, returnScreen } = route.params; // previous screen params
 
     // OTP Verify -------------------------------------------------
     const [otpCode, setOTPCode] = useState('');
@@ -149,10 +151,20 @@ export default function VerifyEmailScreen( { navigation, route } ){
                         // get the user's app home data to refresh the App State
                         getAppHomeData({ dispatch:dispatch, userID:userDetails.userId });
 
+                        // refresh Redux profile (best-effort)
+                        try {
+                            const refreshedProfile = await getClientProfile(userDetails.userId);
+                            if (refreshedProfile?.data) {
+                                dispatch(setUserProfile(refreshedProfile.data));
+                            }
+                        } catch (e) {
+                            // ignore refresh errors
+                        }
+
                         setIsLoading(false);
 
-                        // navigate to Profile Info Screen
-                        navigation.navigate("ProfileInfoScreen");
+                        // navigate back to the calling screen (fallback to ProfileInfoScreen)
+                        navigation.navigate(returnScreen || "ProfileInfoScreen");
                         
                     } else {
                         //console.log(response.data)

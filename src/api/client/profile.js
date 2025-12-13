@@ -18,20 +18,31 @@ export const getProfile = async (userId) => {
 
 /**
  * Update user profile
+ * Supports both:
+ * 1) Legacy positional args: (userId, firstName, lastName, phoneNumber, bio)
+ * 2) Partial object payload: (userId, { firstName?, lastName?, phoneNumber?, bio? })
+ * 
  * @param {string} userId - User ID
- * @param {string} firstName - First name
- * @param {string} lastName - Last name
- * @param {string} phoneNumber - Phone number
- * @param {string} bio - Biography
  * @returns {Promise} Updated profile
  */
-export const updateProfile = async (userId, firstName, lastName, phoneNumber, bio) => {
+export const updateProfile = async (userId, firstNameOrPayload, lastName, phoneNumber, bio) => {
+    const isPayloadObject =
+        firstNameOrPayload !== null &&
+        typeof firstNameOrPayload === 'object' &&
+        !Array.isArray(firstNameOrPayload);
+
+    const payload = isPayloadObject
+        ? firstNameOrPayload
+        : {
+            firstName: firstNameOrPayload,
+            lastName,
+            phoneNumber,
+            bio,
+        };
+
     const response = await APIInstance.put('/client/profile', {
         user_id: userId,
-        firstName,
-        lastName,
-        phoneNumber,
-        bio
+        ...payload,
     });
     return response.data;
 };

@@ -33,6 +33,7 @@ export const userDataSlice = createSlice({
             email_verified: 0,
             phone_verified: 0,
       },
+      userProfile: null,
       userAvatar: null,
       sessionUserId: null, 
       userNotifications: [],
@@ -45,6 +46,17 @@ export const userDataSlice = createSlice({
     reducers: {
         updateUserDetails: (state, action) => {
             state.userDetails = action.payload
+        },
+
+        setUserProfile: (state, action) => {
+            state.userProfile = action.payload;
+        },
+
+        mergeUserProfile: (state, action) => {
+            state.userProfile = {
+                ...(state.userProfile || {}),
+                ...(action.payload || {}),
+            };
         },
 
         updateUserAvatar: (state, action) => {
@@ -77,6 +89,8 @@ export const userDataSlice = createSlice({
 // Action creators are generated for each case function
 export const { 
     updateUserDetails, 
+    setUserProfile,
+    mergeUserProfile,
     updateUserAvatar, 
     updateSessionUserId,
     updateUserNotifications,

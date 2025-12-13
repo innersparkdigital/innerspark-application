@@ -18,12 +18,14 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { getAppearanceSettings, updateAppearanceSettings } from '../../api/client/settings';
 import {
   setTheme,
   setUseSystemTheme,
   setHighContrast,
   setReducedMotion,
   setLargeText,
+  setAppearanceSettings as setAppearanceSettingsRedux,
   selectAppearanceSettings,
 } from '../../features/settings/userSettingsSlice';
 
@@ -34,9 +36,12 @@ interface AppearanceSettingsScreenProps {
 const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const dispatch = useDispatch();
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   
   // Get settings from Redux
   const appearanceSettings = useSelector(selectAppearanceSettings);
+  
+  const [isLoading, setIsLoading] = useState(true);
   
   // Local state synced with Redux
   const [selectedTheme, setSelectedThemeLocal] = useState<'light' | 'dark' | 'auto'>(appearanceSettings.theme);
@@ -45,7 +50,12 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   const [reducedMotionLocal, setReducedMotionLocal] = useState(appearanceSettings.reducedMotion);
   const [largeTextLocal, setLargeTextLocal] = useState(appearanceSettings.largeText);
   
-  // Sync local state with Redux on mount
+  // Load appearance settings from API on mount
+  useEffect(() => {
+    loadAppearanceSettings();
+  }, []);
+  
+  // Sync local state with Redux when settings change
   useEffect(() => {
     setSelectedThemeLocal(appearanceSettings.theme);
     setUseSystemThemeLocal(appearanceSettings.useSystemTheme);
@@ -53,6 +63,50 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
     setReducedMotionLocal(appearanceSettings.reducedMotion);
     setLargeTextLocal(appearanceSettings.largeText);
   }, [appearanceSettings]);
+
+  const loadAppearanceSettings = async () => {
+    try {
+      setIsLoading(true);
+      const userId = userDetails?.userId;
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await getAppearanceSettings(userId);
+      const data = response?.data;
+
+      if (data) {
+        dispatch(setAppearanceSettingsRedux({
+          theme: data.theme ?? 'light',
+          useSystemTheme: data.useSystemTheme ?? false,
+          accentColor: data.accentColor ?? '#5D7BF5',
+          fontStyle: data.fontStyle ?? 'system',
+          highContrast: data.highContrast ?? false,
+          reducedMotion: data.reducedMotion ?? false,
+          largeText: data.largeText ?? false,
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load appearance settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateAppearanceSettingHandler = async (key: string, value: any) => {
+    try {
+      const userId = userDetails?.userId;
+      if (!userId) return;
+
+      const payload: any = {};
+      payload[key] = value;
+
+      await updateAppearanceSettings(userId, payload, undefined);
+    } catch (error) {
+      console.error('Failed to update appearance setting:', error);
+    }
+  };
   
   // Listen to system theme changes when auto mode is enabled
   useEffect(() => {
@@ -70,6 +124,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   const handleThemeChange = (theme: 'light' | 'dark' | 'auto') => {
     setSelectedThemeLocal(theme);
     dispatch(setTheme(theme));
+    updateAppearanceSettingHandler('theme', theme);
     toast.show({
       description: `${theme === 'auto' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'} theme selected`,
       duration: 2000,
@@ -79,6 +134,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   const handleSystemThemeToggle = (value: boolean) => {
     setUseSystemThemeLocal(value);
     dispatch(setUseSystemTheme(value));
+    updateAppearanceSettingHandler('useSystemTheme', value);
     if (value) {
       setSelectedThemeLocal('auto');
       const systemTheme = Appearance.getColorScheme();
@@ -92,6 +148,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   const handleHighContrastToggle = (value: boolean) => {
     setHighContrastLocal(value);
     dispatch(setHighContrast(value));
+    updateAppearanceSettingHandler('highContrast', value);
     toast.show({
       description: `High contrast ${value ? 'enabled' : 'disabled'}`,
       duration: 2000,
@@ -101,6 +158,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   const handleReducedMotionToggle = (value: boolean) => {
     setReducedMotionLocal(value);
     dispatch(setReducedMotion(value));
+    updateAppearanceSettingHandler('reducedMotion', value);
     toast.show({
       description: `Reduced motion ${value ? 'enabled' : 'disabled'}`,
       duration: 2000,
@@ -110,6 +168,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   const handleLargeTextToggle = (value: boolean) => {
     setLargeTextLocal(value);
     dispatch(setLargeText(value));
+    updateAppearanceSettingHandler('largeText', value);
     toast.show({
       description: `Large text ${value ? 'enabled' : 'disabled'}`,
       duration: 2000,
@@ -165,7 +224,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
       <ISGenericHeader
         title="Appearance"
         navigation={navigation}
-              />
+      />
 
       <ScrollView 
         style={styles.scrollView}
@@ -214,7 +273,8 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
           </View>
         </View>
 
-        {/* System Theme Toggle */}
+        {/* System Theme Toggle - COMMENTED OUT */}
+        {/*
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>SYSTEM INTEGRATION</Text>
           <View style={styles.sectionContent}>
@@ -244,8 +304,10 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
             </View>
           </View>
         </View>
+        */}
 
-        {/* Accessibility */}
+        {/* Accessibility - COMMENTED OUT */}
+        {/*
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ACCESSIBILITY</Text>
           <View style={styles.sectionContent}>
@@ -329,8 +391,10 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
             </View>
           </View>
         </View>
+        */}
 
-        {/* Display Preferences */}
+        {/* Display Preferences - COMMENTED OUT */}
+        {/*
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>DISPLAY</Text>
           <View style={styles.sectionContent}>
@@ -359,8 +423,10 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
             </TouchableOpacity>
           </View>
         </View>
+        */}
 
-        {/* Preview Card */}
+        {/* Preview Card - COMMENTED OUT */}
+        {/*
         <View style={styles.previewCard}>
           <Text style={styles.previewTitle}>Preview</Text>
           <View style={styles.previewContent}>
@@ -376,6 +442,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
             </View>
           </View>
         </View>
+        */}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
