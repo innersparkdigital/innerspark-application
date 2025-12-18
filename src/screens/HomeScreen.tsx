@@ -253,12 +253,14 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  // Handle quick mood selection
   const handleMoodSelect = (mood: any) => {
     // Navigate to TodayMoodScreen with pre-selected mood
     navigation.navigate('TodayMoodScreen', { preSelectedMood: mood });
   };
 
-  const handleQuickAction = (action) => {
+  // Handle quick action button presses
+  const handleQuickAction = (action: any) => {
     const bottomTabScreens = ['TherapistsScreen', 'MoodScreen', 'EmergencyScreen']; // Tabs screens available
     const stackScreens = ['AppointmentsScreen', 'GoalsScreen', 'EventsScreen', 'GroupsScreen', 'ServicesScreen', 'MeditationScreen']; // Available screens that can be navigated to directly
     
@@ -276,7 +278,8 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const notifyWithToast = (description) => {
+  // Helper function to show toast notifications
+  const notifyWithToast = (description: string) => {
     toast.show({
       description: description,
       duration: 2000,
@@ -284,7 +287,8 @@ const HomeScreen = ({ navigation }) => {
   };
 
 
-  const QuickActionCard = ({ action }) => (
+  // Render a quick action card
+  const QuickActionCard = ({ action }: { action: any }) => (
     <TouchableOpacity
       style={styles.actionCard}
       onPress={() => handleQuickAction(action)}
@@ -313,7 +317,6 @@ const HomeScreen = ({ navigation }) => {
   };
 
   // Test Notification Button
-  
   const TestNotificationButton = () => (
     <TouchableOpacity
       style={{ backgroundColor: staticAppColors.AppBlue, padding: 10, borderRadius: 5 }}
@@ -322,8 +325,6 @@ const HomeScreen = ({ navigation }) => {
       <Text style={{ color: staticAppColors.CardBackground, fontSize: 16 }}>Test Notification</Text>
     </TouchableOpacity>
   );
-
-
 
 
   return (

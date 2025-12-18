@@ -16,8 +16,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { changePassword } from '../../api/client/settings';
 
 interface ChangePasswordScreenProps {
   navigation: NavigationProp<any>;
@@ -25,6 +27,7 @@ interface ChangePasswordScreenProps {
 
 const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -81,26 +84,31 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation 
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await changePassword(userId, currentPassword, newPassword, confirmPassword);
       
+      if (response.success) {
+        toast.show({
+          description: response.message || 'Password changed successfully!',
+          duration: 3000,
+        });
+        
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        
+        setTimeout(() => {
+          navigation.goBack();
+        }, 1000);
+      } else {
+        toast.show({
+          description: response.message || 'Failed to change password',
+          duration: 3000,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error changing password:', error);
       toast.show({
-        description: 'Password changed successfully!',
-        duration: 3000,
-      });
-      
-      // Clear fields
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      
-      // Navigate back
-      setTimeout(() => {
-        navigation.goBack();
-      }, 1000);
-    } catch (error) {
-      toast.show({
-        description: 'Failed to change password. Please try again.',
+        description: error.response?.data?.message || 'Failed to change password. Please try again.',
         duration: 3000,
       });
     } finally {

@@ -1,5 +1,6 @@
 /**
- * Security Settings Screen - Manage password, biometric authentication, and security options
+ * Security Settings Screen 
+ * - Manage password, biometric authentication, and security options
  */
 import React, { useState, useEffect } from 'react';
 import {
@@ -16,9 +17,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { getUserSettings } from '../../api/client/settings';
 
 interface SecuritySettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -41,22 +44,51 @@ interface SecuritySetting {
 
 const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(true);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [autoLockEnabled, setAutoLockEnabled] = useState(true);
-  const [sessionTimeoutEnabled, setSessionTimeoutEnabled] = useState(true);
-  const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(true);
+
+
+  useEffect(() => {
+    fetchSecuritySettings();
+  }, [userId]);
+
+  const fetchSecuritySettings = async () => {
+    try {
+      const response = await getUserSettings(userId);
+      
+      if (response.success && response.data) {
+        const settings = response.data;
+        
+        setBiometricEnabled(settings.security?.biometricEnabled ?? true);
+        setTwoFactorEnabled(settings.security?.twoFactorEnabled ?? false);
+
+      }
+    } catch (error) {
+      console.error('Error fetching security settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
+    try {
+      await fetchSecuritySettings();
       toast.show({
         description: 'Security settings refreshed',
         duration: 2000,
       });
-    }, 1000);
+    } catch (error) {
+      toast.show({
+        description: 'Failed to refresh settings',
+        duration: 2000,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleBiometricToggle = (value: boolean) => {
@@ -105,30 +137,9 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
     }
   };
 
-  const handleAutoLockToggle = (value: boolean) => {
-    setAutoLockEnabled(value);
-    toast.show({
-      description: value ? 'Auto-lock enabled' : 'Auto-lock disabled',
-      duration: 2000,
-    });
-  };
+ 
 
-  const handleSessionTimeoutToggle = (value: boolean) => {
-    setSessionTimeoutEnabled(value);
-    toast.show({
-      description: value ? 'Session timeout enabled' : 'Session timeout disabled',
-      duration: 2000,
-    });
-  };
-
-  const handleLoginAlertsToggle = (value: boolean) => {
-    setLoginAlertsEnabled(value);
-    toast.show({
-      description: value ? 'Login alerts enabled' : 'Login alerts disabled',
-      duration: 2000,
-    });
-  };
-
+  // Security Settings 
   const securitySettings: SecuritySetting[] = [
     {
       id: 'change_password',
@@ -159,97 +170,7 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
       switchValue: twoFactorEnabled,
       onSwitchChange: handleTwoFactorToggle,
     },
-    {
-      id: 'auto_lock',
-      title: 'Auto-Lock',
-      subtitle: autoLockEnabled ? 'Lock after 5 minutes' : 'Disabled',
-      icon: 'screen-lock-portrait',
-      iconColor: '#2196F3',
-      hasSwitch: true,
-      switchValue: autoLockEnabled,
-      onSwitchChange: handleAutoLockToggle,
-      onPress: () => autoLockEnabled && navigation.navigate('AutoLockSettingsScreen'),
-    },
-    {
-      id: 'session_timeout',
-      title: 'Session Timeout',
-      subtitle: sessionTimeoutEnabled ? 'Auto logout after 30 minutes' : 'Disabled',
-      icon: 'timer',
-      iconColor: '#9C27B0',
-      hasSwitch: true,
-      switchValue: sessionTimeoutEnabled,
-      onSwitchChange: handleSessionTimeoutToggle,
-    },
-    {
-      id: 'login_alerts',
-      title: 'Login Alerts',
-      subtitle: loginAlertsEnabled ? 'Get notified of new logins' : 'Disabled',
-      icon: 'notifications-active',
-      iconColor: '#E91E63',
-      hasSwitch: true,
-      switchValue: loginAlertsEnabled,
-      onSwitchChange: handleLoginAlertsToggle,
-    },
-  ];
-
-  const securityActions: SecuritySetting[] = [
-    {
-      id: 'active_sessions',
-      title: 'Active Sessions',
-      subtitle: '3 active sessions',
-      icon: 'devices',
-      iconColor: '#607D8B',
-      hasChevron: true,
-      onPress: () => navigation.navigate('ActiveSessionsScreen'),
-    },
-    {
-      id: 'login_history',
-      title: 'Login History',
-      subtitle: 'View recent login activity',
-      icon: 'history',
-      iconColor: '#795548',
-      hasChevron: true,
-      onPress: () => navigation.navigate('LoginHistoryScreen'),
-    },
-    {
-      id: 'security_checkup',
-      title: 'Security Checkup',
-      subtitle: 'Review your security settings',
-      icon: 'verified-user',
-      iconColor: '#4CAF50',
-      hasChevron: true,
-      onPress: () => navigation.navigate('SecurityCheckupScreen'),
-    },
-    {
-      id: 'trusted_devices',
-      title: 'Trusted Devices',
-      subtitle: '2 trusted devices',
-      icon: 'verified',
-      iconColor: '#009688',
-      hasChevron: true,
-      onPress: () => navigation.navigate('TrustedDevicesScreen'),
-    },
-  ];
-
-  const emergencyActions: SecuritySetting[] = [
-    {
-      id: 'recovery_options',
-      title: 'Account Recovery',
-      subtitle: 'Set up recovery methods',
-      icon: 'restore',
-      iconColor: '#FF5722',
-      hasChevron: true,
-      onPress: () => navigation.navigate('AccountRecoveryScreen'),
-    },
-    {
-      id: 'emergency_access',
-      title: 'Emergency Access',
-      subtitle: 'Grant access to trusted contacts',
-      icon: 'emergency',
-      iconColor: '#F44336',
-      hasChevron: true,
-      onPress: () => navigation.navigate('EmergencyAccessScreen'),
-    },
+   
   ];
 
   const renderSecurityItem = (item: SecuritySetting) => (
@@ -362,8 +283,6 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
         }
       >
         {renderSection('Authentication', securitySettings)}
-        {renderSection('Security Monitoring', securityActions)}
-        {renderSection('Emergency & Recovery', emergencyActions)}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>

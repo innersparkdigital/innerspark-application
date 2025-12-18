@@ -18,6 +18,7 @@ import { Icon, Button, Slider } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
+import { submitReview } from '../../utils/appointmentsManager';
 
 interface SessionDetails {
   id: string;
@@ -120,31 +121,49 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
 
     setIsSubmitting(true);
     try {
-      // Simulate API call to submit feedback
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Log session data for wellness report
-      const sessionLog = {
-        sessionId: sessionDetails.id,
-        therapistId: sessionDetails.therapistId,
-        userId: 'current_user_id', // Would come from auth context
-        sessionDate: sessionDetails.sessionDate,
-        sessionDuration: sessionDetails.sessionDuration,
-        feedback: feedback,
-        submittedAt: new Date().toISOString(),
+      // Prepare review data according to API format
+      const reviewData = {
+        rating: feedback.overallRating,
+        comment: `${feedback.whatWentWell}\n\nProgress: ${feedback.goalProgress}${feedback.additionalComments ? `\n\n${feedback.additionalComments}` : ''}`,
+        tags: [
+          feedback.recommendToOthers ? 'recommended' : 'not-recommended',
+          `therapist-rating-${feedback.therapistRating}`,
+          `effectiveness-${feedback.sessionEffectiveness}`,
+        ],
       };
 
-      console.log('Session logged for wellness report:', sessionLog);
+      // Submit review via API
+      const result = await submitReview(sessionDetails.id, reviewData);
+      
+      if (result.success) {
+        // Log session data for wellness report
+        const sessionLog = {
+          sessionId: sessionDetails.id,
+          therapistId: sessionDetails.therapistId,
+          sessionDate: sessionDetails.sessionDate,
+          sessionDuration: sessionDetails.sessionDuration,
+          feedback: feedback,
+          submittedAt: new Date().toISOString(),
+        };
 
-      toast.show({
-        description: 'Thank you! Your feedback has been submitted successfully.',
-        duration: 4000,
-      });
+        console.log('Session logged for wellness report:', sessionLog);
 
-      // Navigate back to appointments or home
-      navigation.navigate('AppointmentsScreen');
+        toast.show({
+          description: 'Thank you! Your feedback has been submitted successfully.',
+          duration: 4000,
+        });
+
+        // Navigate back to appointments
+        navigation.navigate('AppointmentsScreen');
+      } else {
+        toast.show({
+          description: result.error || 'Failed to submit feedback. Please try again.',
+          duration: 3000,
+        });
+      }
       
     } catch (error) {
+      console.error('Error submitting feedback:', error);
       toast.show({
         description: 'Failed to submit feedback. Please try again.',
         duration: 3000,
@@ -196,7 +215,16 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
       <View style={styles.sliderContainer}>
         <Slider
           value={value}
-          onValueChange={onValueChange}
+          onValueChange={(val) => {
+            const roundedValue = Math.round(val);
+            if (roundedValue !== value) {
+              onValueChange(roundedValue);
+            }
+          }}
+          onSlidingComplete={(val) => {
+            const roundedValue = Math.round(val);
+            onValueChange(roundedValue);
+          }}
           minimumValue={1}
           maximumValue={5}
           step={1}
@@ -204,7 +232,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           trackStyle={styles.sliderTrack}
           minimumTrackTintColor={appColors.AppBlue}
           maximumTrackTintColor={appColors.grey5}
-          thumbTouchSize={{ width: 40, height: 40 }}
+          thumbTouchSize={{ width: 44, height: 44 }}
           style={{ width: '100%' }}
         />
         <View style={styles.ratingLabels}>

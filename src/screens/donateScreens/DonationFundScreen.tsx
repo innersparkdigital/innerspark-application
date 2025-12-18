@@ -22,6 +22,7 @@ import { useToast } from 'native-base';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
 import { isValidPhoneNumber } from '../../global/LHValidators';
 import { getPhoneNumberOperator } from '../../global/LHShortcuts';
+import ImpactStatsCard from '../../components/donate/ImpactStatsCard';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -51,7 +52,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
     { amount: '100000', impact: '20 subsidized sessions' },
   ];
 
-  // Mock impact stats
+  // Mock impact stats --- FOR DEMO PURPOSES ONLY
   const impactStats = {
     membersHelped: 234,
     sessionsSubsidized: 1847,
@@ -162,28 +163,9 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
           </Text>
         </View>
 
-        {/* Impact Stats */}
-        <View style={styles.impactSection}>
-          <Text style={styles.sectionTitle}>Our Impact</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{impactStats.membersHelped}</Text>
-              <Text style={styles.statLabel}>Members Helped</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{impactStats.sessionsSubsidized}</Text>
-              <Text style={styles.statLabel}>Sessions Subsidized</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{impactStats.thisMonth}</Text>
-              <Text style={styles.statLabel}>This Month</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{impactStats.fundBalance}</Text>
-              <Text style={styles.statLabel}>Active Fund</Text>
-            </View>
-          </View>
-        </View>
+        {/* Impact Stats - COMMENTED OUT: No API endpoint available for real data */}
+        {/* See: DOCS/DONATION_SCREEN_API_ANALYSIS.md */}
+        {/* <ImpactStatsCard stats={impactStats} />  */}
 
         {/* How It Works */}
         <View style={styles.howItWorksCard}>
@@ -235,12 +217,13 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
                 ]}>
                   UGX {parseInt(item.amount).toLocaleString()}
                 </Text>
-                <Text style={[
-                  styles.impactText,
+                {/* Hide the impact text for now */}
+                {/* <Text style={[ 
+                  styles.impactText, 
                   donationAmount === item.amount && styles.selectedImpactText
                 ]}>
                   {item.impact}
-                </Text>
+                </Text> */}
               </TouchableOpacity>
             ))}
           </View>
@@ -318,7 +301,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
         />
       </View>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal */} 
       <Modal
         visible={showConfirmModal}
         transparent={true}

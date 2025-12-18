@@ -23,6 +23,7 @@ import { useToast } from 'native-base';
 import { getPlans } from '../../api/client/subscriptions';
 import { mockSubscriptionPlans } from '../../global/MockData';
 import { setAvailablePlans } from '../../features/subscription/subscriptionSlice';
+import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 
 interface SubscriptionPlan {
   id: string;
@@ -51,6 +52,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
 
   useEffect(() => {
     loadPlans();
@@ -66,8 +68,8 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
       console.log('✅ Plans response:', response);
 
       // Map API response to local format
-      const plansData = response.plans;
-      if (plansData.length > 0) {
+      const plansData = response.plans || response.data?.plans || [];
+      if (plansData && plansData.length > 0) {
         const mappedPlans = plansData.map((plan: any) => ({
           id: plan.id || plan.plan_id,
           name: plan.name,
@@ -112,6 +114,10 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
   };
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
+    // Show Coming Soon modal since subscription plans not fully implemented
+    setShowComingSoonModal(true);
+    
+    /* ORIGINAL CODE - Commented out until backend is ready
     if (plan.isCurrent) {
       toast.show({
         description: 'You are already on this plan',
@@ -127,6 +133,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
         billingCycle: billingCycle,
       }
     });
+    */
   };
 
   const getPrice = (plan: SubscriptionPlan) => {
@@ -318,6 +325,18 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
           </View>
         }
         ListFooterComponent={<View style={{ height: 20 }} />}
+      />
+
+      <LHGenericFeatureModal
+        title="Subscription Plans"
+        description="Premium subscription plans are coming soon! We're working on integrating payment processing for Support Groups and Direct Therapist Chat access. You'll be notified once this feature is ready."
+        buttonTitle="GOT IT"
+        isModVisible={showComingSoonModal}
+        visibilitySetter={setShowComingSoonModal}
+        isDismissable={true}
+        hasIcon={true}
+        iconType="material"
+        iconName="card-membership"
       />
     </View>
   );

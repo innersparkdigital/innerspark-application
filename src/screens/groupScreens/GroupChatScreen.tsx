@@ -30,7 +30,6 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getGroupMessages, sendGroupMessage } from '../../api/client/groups';
-import { mockGroupChatMessages } from '../../global/MockData';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 
@@ -122,8 +121,9 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
         }));
         setMessages(mappedMessages);
       } else {
-        // Fallback to mock data
-        setMessages(mockGroupChatMessages);
+        // Empty state - no messages
+        console.log('ℹ️ No messages found - showing empty state');
+        setMessages([]);
       }
 
       setIsLoading(false);
@@ -132,8 +132,8 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     } catch (error: any) {
       console.error('❌ Error loading messages:', error);
       
-      // Fallback to mock data on error
-      setMessages(mockGroupChatMessages);
+      // Empty state on error - no mock fallback
+      setMessages([]);
       setIsLoading(false);
       toast.show({
         description: 'Failed to load messages',

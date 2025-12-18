@@ -17,6 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector, useDispatch } from 'react-redux';
+import { loadMessages, sendChatMessage, markConversationRead } from '../../utils/chatManager';
+import { selectMessages, selectChatLoading, selectChatSending } from '../../features/chat/chatSlice';
 
 interface Message {
   id: string;
@@ -37,117 +40,36 @@ interface DMThreadScreenProps {
 
 const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
   const flatListRef = useRef<FlatList>(null);
   const { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail } = route.params;
-
-  const [messages, setMessages] = useState<Message[]>([]);
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  const chatId = `${userId}_${partnerId}`;
+  
+  const messages = useSelector(selectMessages);
+  const isLoading = useSelector(selectChatLoading);
+  const isSending = useSelector(selectChatSending);
   const [messageText, setMessageText] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
-
-  // Mock messages data
-  const mockMessages: Message[] = [
-    {
-      id: '1',
-      senderId: 'current_user',
-      senderName: 'You',
-      content: 'Hi Dr. Johnson, I wanted to follow up on our session yesterday.',
-      createdAt: '2025-01-27T10:30:00Z',
-      isRead: true,
-      isSent: true,
-      isOwn: true,
-      type: 'text',
-    },
-    {
-      id: '2',
-      senderId: partnerId,
-      senderName: partnerName,
-      content: 'Hello! I\'m glad you reached out. How are you feeling today?',
-      createdAt: '2025-01-27T10:32:00Z',
-      isRead: true,
-      isSent: true,
-      isOwn: false,
-      type: 'text',
-    },
-    {
-      id: '3',
-      senderId: 'current_user',
-      senderName: 'You',
-      content: 'I\'ve been practicing the breathing exercises you taught me, and they really help with my anxiety.',
-      createdAt: '2025-01-27T10:35:00Z',
-      isRead: true,
-      isSent: true,
-      isOwn: true,
-      type: 'text',
-    },
-    {
-      id: '4',
-      senderId: partnerId,
-      senderName: partnerName,
-      content: 'That\'s wonderful to hear! Consistency is key with these techniques. Have you noticed any particular times when they work best for you?',
-      createdAt: '2025-01-27T10:38:00Z',
-      isRead: true,
-      isSent: true,
-      isOwn: false,
-      type: 'text',
-    },
-    {
-      id: '5',
-      senderId: 'current_user',
-      senderName: 'You',
-      content: 'Definitely in the mornings before work. It helps me start the day with a clearer mind.',
-      createdAt: '2025-01-27T10:40:00Z',
-      isRead: true,
-      isSent: true,
-      isOwn: true,
-      type: 'text',
-    },
-    {
-      id: '6',
-      senderId: partnerId,
-      senderName: partnerName,
-      content: 'Thank you for the session today. Remember to practice the breathing exercises we discussed.',
-      createdAt: '2025-01-27T14:20:00Z',
-      isRead: false,
-      isSent: true,
-      isOwn: false,
-      type: 'text',
-    },
-  ];
 
   useEffect(() => {
-    loadMessages();
-    // Mark messages as read when viewing
+    loadMessagesData();
     markMessagesAsRead();
   }, []);
 
-  const loadMessages = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      setTimeout(() => {
-        setMessages(mockMessages);
-        setIsLoading(false);
-        scrollToBottom();
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+  const loadMessagesData = async () => {
+    const result = await dispatch(loadMessages(userId, chatId));
+    if (!result.success) {
       toast.show({
         description: 'Failed to load messages',
         duration: 3000,
       });
+    } else {
+      scrollToBottom();
     }
   };
 
-  const markMessagesAsRead = () => {
-    // Mark all unread messages from partner as read
-    setMessages(prev => 
-      prev.map(msg => 
-        !msg.isOwn && !msg.isRead 
-          ? { ...msg, isRead: true }
-          : msg
-      )
-    );
+  const markMessagesAsRead = async () => {
+    await dispatch(markConversationRead(userId, chatId));
   };
 
   const scrollToBottom = () => {
@@ -159,46 +81,16 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   const handleSendMessage = async () => {
     if (!messageText.trim() || isSending) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      senderId: 'current_user',
-      senderName: 'You',
-      content: messageText.trim(),
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      isSent: false,
-      isOwn: true,
-      type: 'text',
-    };
-
-    setMessages(prev => [...prev, newMessage]);
+    const content = messageText.trim();
     setMessageText('');
-    setIsSending(true);
     scrollToBottom();
 
-    try {
-      // Simulate API call
-      setTimeout(() => {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === newMessage.id 
-              ? { ...msg, isSent: true }
-              : msg
-          )
-        );
-        setIsSending(false);
-      }, 1000);
-    } catch (error) {
-      setIsSending(false);
-      // Show retry option
-      Alert.alert(
-        'Failed to send message',
-        'Would you like to try again?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => handleSendMessage() },
-        ]
-      );
+    const result = await dispatch(sendChatMessage(userId, chatId, content));
+    if (!result.success) {
+      toast.show({
+        description: 'Failed to send message',
+        duration: 3000,
+      });
     }
   };
 

@@ -45,3 +45,17 @@ export const deleteAccount = async (userId, reason) => {
     });
     return response.data;
 };
+
+/**
+ * Delete specific user data categories
+ * @param {string} userId - User ID
+ * @param {Array<string>} categories - Data categories to delete (mood_history, journal_entries, therapy_notes, messages, goals, activity_logs)
+ * @returns {Promise} Deletion confirmation
+ */
+export const deleteUserData = async (userId, categories) => {
+    const response = await APIInstance.post('/client/data/delete', {
+        user_id: userId,
+        categories
+    });
+    return response.data;
+};

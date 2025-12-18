@@ -38,6 +38,16 @@ export const updateGoal = async (goalId, goalData) => {
 };
 
 /**
+ * Mark goal as completed
+ * @param {string} goalId - Goal ID
+ * @returns {Promise} Completed goal data
+ */
+export const completeGoal = async (goalId) => {
+    const response = await APIInstance.post(`/client/goals/${goalId}/complete`);
+    return response.data;
+};
+
+/**
  * Delete goal
  * @param {string} goalId - Goal ID
  * @returns {Promise} Success message

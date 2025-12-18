@@ -16,6 +16,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
+import { markGoalComplete, updateExistingGoal, deleteExistingGoal } from '../../utils/goalsManager';
 
 interface Goal {
   id: number;
@@ -92,19 +93,27 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
 
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await markGoalComplete(currentGoal.id);
       
-      setCurrentGoal(prev => ({ 
-        ...prev, 
-        status: 'completed', 
-        progress: 100 
-      }));
-      
-      toast.show({
-        description: 'Congratulations! Goal marked as completed!',
-        duration: 3000,
-      });
+      if (result.success) {
+        setCurrentGoal(prev => ({ 
+          ...prev, 
+          status: 'completed', 
+          progress: 100 
+        }));
+        
+        toast.show({
+          description: 'Congratulations! Goal marked as completed! 🎉',
+          duration: 3000,
+        });
+      } else {
+        toast.show({
+          description: result.error || 'Failed to update goal',
+          duration: 3000,
+        });
+      }
     } catch (error) {
+      console.error('Error completing goal:', error);
       toast.show({
         description: 'Failed to update goal',
         duration: 3000,
@@ -130,15 +139,23 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
           onPress: async () => {
             setIsLoading(true);
             try {
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              const result = await deleteExistingGoal(currentGoal.id);
               
-              toast.show({
-                description: 'Goal deleted successfully',
-                duration: 2000,
-              });
-              
-              navigation.goBack();
+              if (result.success) {
+                toast.show({
+                  description: 'Goal deleted successfully',
+                  duration: 2000,
+                });
+                
+                navigation.goBack();
+              } else {
+                toast.show({
+                  description: result.error || 'Failed to delete goal',
+                  duration: 3000,
+                });
+              }
             } catch (error) {
+              console.error('Error deleting goal:', error);
               toast.show({
                 description: 'Failed to delete goal',
                 duration: 3000,
@@ -157,15 +174,23 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
     
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await updateExistingGoal(currentGoal.id, { status: newStatus });
       
-      setCurrentGoal(prev => ({ ...prev, status: newStatus }));
-      
-      toast.show({
-        description: `Goal ${newStatus === 'paused' ? 'paused' : 'resumed'}`,
-        duration: 2000,
-      });
+      if (result.success) {
+        setCurrentGoal(prev => ({ ...prev, status: newStatus }));
+        
+        toast.show({
+          description: `Goal ${newStatus === 'paused' ? 'paused' : 'resumed'}`,
+          duration: 2000,
+        });
+      } else {
+        toast.show({
+          description: result.error || 'Failed to update goal',
+          duration: 3000,
+        });
+      }
     } catch (error) {
+      console.error('Error updating goal:', error);
       toast.show({
         description: 'Failed to update goal',
         duration: 3000,

@@ -19,8 +19,10 @@ import { useToast } from 'native-base';
 import { Icon, Tab, TabView } from '@rneui/themed';
 import { appColors, parameters } from '../../global/Styles';
 import { appImages } from '../../global/Data';
+import { isValidEmailAddress, isValidPhoneNumber, isValidEmailOrPhone } from '../../global/LHValidators';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import { APIInstance } from '../../api/LHAPI';
+import { resetPassword } from '../../api/shared/auth';
 
 export default function PasswordResetScreen( { navigation } ){
 
@@ -31,7 +33,7 @@ export default function PasswordResetScreen( { navigation } ){
 
     /* Email or Phone Handler --- onChange */
     const onChangeEmailOrPhoneHandler = (emailOrPhone) => {
-        setEmailOrPhone(emailOrPhone);
+        setEmailOrPhone(emailOrPhone.trim()); // trim whitespace
     }
 
     /* Toast Notifications */
@@ -42,120 +44,100 @@ export default function PasswordResetScreen( { navigation } ){
         })
     }
 
-    /* Submit Email Form Handler --- Reset Password With Email */
-    const onSubmitFormEmailHandler = async (event) => {
-        // some basic validation --- do more validation later
-        if (!emailOrPhone.trim()) {
-            notifyWithToast("Provide a valid Email address!");  // Notify with toast
+     /* Validate Password Reset Inputs */
+    const validatePasswordResetInputs = () => {
+        // validate email or phone number
+        if (!isValidEmailOrPhone(emailOrPhone.trim())) {
+            notifyWithToast("Enter a valid email or phone number.");
+            return false;
+        }
+        
+        // if it's a ugandan phone
+        // if (isValidPhoneNumber(emailOrPhone) && !emailOrPhone.startsWith('+256')) {
+        //     notifyWithToast("Uganda phone numbers must start with +256");
+        //     return false;
+        // }
+        
+        return true;
+    }
+
+
+    /** Smart Password Reset Select
+     * @param {event} event - The event object.
+     * @returns {void}
+    */
+    const smartPasswordResetSelect = async (event) => {
+        // validate inputs
+        if (!validatePasswordResetInputs()) {
+            return;
+        }   
+
+        // select the login method based on the username (email or password)
+        if (isValidEmailOrPhone(emailOrPhone)) {
+            // check if provided value is email otherwise phone
+            if (isValidEmailAddress(emailOrPhone)) {
+                resetPasswordWithEmail(); // reset with email
+            } else if (isValidPhoneNumber(emailOrPhone)) {
+                // resetPasswordWithPhone(); // reset with phone
+                // Password reset with phone not available
+                notifyWithToast("Password reset via phone not available. Please use email.");
+                return;
+            }
+        } else {
+            notifyWithToast("Enter a valid email or phone number.");
             return;
         }
-        console.log("Email: " + emailOrPhone);
-        // set loading state
-        setIsLoading(true);
+            
+    }
 
-        // making a request to the API
+    /* Reset Password with Email */
+    const resetPasswordWithEmail = async () => {
+        setIsLoading(true);  // set loading state
+
+        // making a request to the API using auth.js resetPassword function
         try {
-
-            const response = await APIInstance.post('/forgot-pwd', {
-                email : emailOrPhone,
-                phone : '',
-            });
+            const response = await resetPassword(emailOrPhone); 
             
             // checking the status
             if (response.status === 200) {
 
                 // IF status is successful
-                // JSON.stringify(response.data);
-                if (response.data.status == "success"){
+                if (response.data.status === "success") {
+                    console.log(response.data); // Debug: log the response data
 
-                    console.log(response.data);
-
-                    notifyWithToast("Password reset accepted, OTP Sent!"); // notify with Toast
+                    notifyWithToast("OTP has been sent to your email!"); // notify with Toast
                    
-                    // Verify OTP? 
-                    // Redirect to OPT Verification Page
-                    navigation.navigate('PasswordResetOTPScreen')
+                    // Redirect to OTP Verification Page
+                    navigation.navigate(
+                        'PasswordResetOTPScreen', 
+                        {
+                            passwordResetData: {
+                                type: 'email',
+                                email: emailOrPhone
+                            }, 
+                        }
+                    ); 
                     setIsLoading(false); // loading state change
                     setEmailOrPhone(''); // clear the email input field
 
                 } else {
                     console.log(response.data); // what happened
-                    notifyWithToast(response.data.message);  // notify with Toast
+                    notifyWithToast(response.data.message || "Failed to send reset code");  // notify with Toast
                     setIsLoading(false);
                 }
 
             } else {
-
                 throw new Error("Oops! an error has occurred!");
-
             }
 
         } catch (error) {
             console.log(error.message);
-            // Notify with Toasts
-            notifyWithToast("Oops? Something Went Wrong!");
-            setIsLoading(false);
+            notifyWithToast("Oops! Something went wrong. Please try again."); // Notify with Toasts
+            setIsLoading(false); // Reset loading state
         }
-
     }
 
-
-    /* Submit Phone Form Handler --- Reset Password with Phone Number */
-    const onSubmitFormPhoneHandler = async (event) => {
-        // some basic validation
-        if (!emailOrPhone.trim()) {
-            notifyWithToast("Enter a valid phone Number!");
-            return;
-        }
-        // set loading state
-        setIsLoading(true);
-
-
-        // making a request to the API
-        try {
-
-            const response = await APIInstance.post('/forgot-pwd', {
-                email : '',
-                phone : emailOrPhone,  // Calling Code + phone:sliced
-            });
-
-            // checking the status
-            if (response.status === 200) {
-
-                 // IF status is successful
-                if (response.data.status === "success"){ 
-
-                    console.log(response.data);
-                    notifyWithToast("Password reset accepted, OTP Sent!");  // notify with Toast
-
-                    // Redirect to Verify OTP? 
-                    // Redirect to OPT Verification Page
-                    navigation.navigate('PasswordResetOTPScreen');
-
-                    setIsLoading(false); // Loading state
-                    setEmailOrPhone(''); // clearing the phone input field
-
-                } else {
-
-                    console.log(response.data);
-                    notifyWithToast(response.data.message); // Notify with Toasts
-                    setIsLoading(false); // Loading state change
-
-                }
-
-            } else {
-
-                throw new Error("Oops! an error has occurred!");
-
-            }
-
-        } catch (error) {
-            console.log(error.message);
-            notifyWithToast("Oops? Something went wrong!");  // Notify With Toasts
-            setIsLoading(false);
-        }
-
-    }
+ 
 
     return(
         <SafeAreaView style={ styles.container }>
@@ -221,8 +203,8 @@ export default function PasswordResetScreen( { navigation } ){
                                         title="Reset Password"
                                         buttonStyle={ parameters.appButtonXLBlue }
                                         titleStyle={ parameters.appButtonXLTitleBlue } 
-                                        // onPress={ onSubmitFormPhoneHandler }
-                                        onPress={ () => { console.log("Reset Password"); } }
+                                        onPress={ smartPasswordResetSelect }
+                                        // onPress={ () => { console.log("Reset Password"); } }
                                         disabled={isLoading}
                                     /> 
                                 </View>

@@ -17,6 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector, useDispatch } from 'react-redux';
+import { createNewTicket } from '../../utils/supportTicketsManager';
+import { selectTicketsSubmitting } from '../../features/supportTickets/supportTicketsSlice';
 
 interface FormData {
   subject: string;
@@ -38,6 +41,9 @@ interface CreateTicketScreenProps {
 
 const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  const isSubmitting = useSelector(selectTicketsSubmitting);
   const preselectedCategory = route?.params?.category || '';
 
   const [formData, setFormData] = useState<FormData>({
@@ -48,7 +54,6 @@ const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, rou
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = [
     'Technical Issue',
@@ -91,31 +96,39 @@ const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, rou
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    setIsSubmitting(true);
+    const ticketData = {
+      subject: formData.subject.trim(),
+      category: formData.category,
+      priority: formData.priority,
+      description: formData.description.trim(),
+    };
 
-    try {
-      // Simulate API call
+    const result = await dispatch(createNewTicket(userId, ticketData));
+
+    if (result.success) {
+      toast.show({
+        description: 'Support ticket created successfully!',
+        duration: 3000,
+      });
+
+      // Reset form
+      setFormData({
+        subject: '',
+        category: '',
+        priority: 'Medium',
+        description: '',
+      });
+      setErrors({});
+
+      // Navigate back to tickets list
       setTimeout(() => {
-        setIsSubmitting(false);
-        
-        // Generate ticket ID
-        const ticketId = `TKT-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-        
-        toast.show({
-          description: `Support ticket ${ticketId} created successfully!`,
-          duration: 3000,
-        });
-
-        // Navigate back to tickets list
         navigation.navigate('MyTicketsScreen');
-      }, 2000);
-    } catch (error) {
-      setIsSubmitting(false);
-      Alert.alert(
-        'Error',
-        'Failed to create support ticket. Please try again.',
-        [{ text: 'OK' }]
-      );
+      }, 500);
+    } else {
+      toast.show({
+        description: 'Failed to create support ticket. Please try again.',
+        duration: 3000,
+      });
     }
   };
 

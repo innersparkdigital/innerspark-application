@@ -18,7 +18,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
+import { updateProfile } from '../../api/client/profile';
 
 interface ProfileSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -40,6 +42,7 @@ interface ProfileData {
 
 const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -64,17 +67,29 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setHasChanges(false);
-      toast.show({
-        description: 'Profile updated successfully',
-        duration: 3000,
+      const response = await updateProfile(userId, {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        phoneNumber: profileData.phone,
+        bio: profileData.bio,
       });
-    } catch (error) {
+      
+      if (response.success) {
+        setHasChanges(false);
+        toast.show({
+          description: response.message || 'Profile updated successfully',
+          duration: 3000,
+        });
+      } else {
+        toast.show({
+          description: response.message || 'Failed to update profile',
+          duration: 3000,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
       toast.show({
-        description: 'Failed to update profile',
+        description: error.response?.data?.message || 'Failed to update profile',
         duration: 3000,
       });
     } finally {

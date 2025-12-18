@@ -14,8 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { requestDataExport } from '../../api/client/account';
 
 interface DataExportScreenProps {
   navigation: NavigationProp<any>;
@@ -33,6 +35,7 @@ interface DataCategory {
 
 const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>('json');
   const [dataCategories, setDataCategories] = useState<DataCategory[]>([
@@ -42,7 +45,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       description: 'Name, email, phone, and account details',
       icon: 'person',
       iconColor: appColors.AppBlue,
-      size: '< 1 MB',
+      size: '',
       included: true,
     },
     {
@@ -51,7 +54,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       description: 'All mood entries, patterns, and insights',
       icon: 'mood',
       iconColor: '#FF5722',
-      size: '~2 MB',
+      size: '',
       included: true,
     },
     {
@@ -60,7 +63,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       description: 'Personal reflections and notes',
       icon: 'book',
       iconColor: '#9C27B0',
-      size: '~5 MB',
+      size: '',
       included: true,
     },
     {
@@ -69,7 +72,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       description: 'Session notes and progress records',
       icon: 'psychology',
       iconColor: '#4CAF50',
-      size: '~3 MB',
+      size: '',
       included: true,
     },
     {
@@ -78,7 +81,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       description: 'Goals, milestones, and achievements',
       icon: 'flag',
       iconColor: '#FFC107',
-      size: '< 1 MB',
+      size: '',
       included: true,
     },
     {
@@ -87,7 +90,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       description: 'Chat history with therapists and support',
       icon: 'chat',
       iconColor: '#2196F3',
-      size: '~4 MB',
+      size: '',
       included: false,
     },
     {
@@ -96,7 +99,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       description: 'App usage and activity logs',
       icon: 'history',
       iconColor: '#607D8B',
-      size: '< 1 MB',
+      size: '',
       included: false,
     },
   ]);
@@ -136,18 +139,25 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
           onPress: async () => {
             setIsExporting(true);
             try {
-              // Simulate export process
-              await new Promise(resolve => setTimeout(resolve, 3000));
+              const categoryIds = selectedCategories.map(cat => cat.id);
+              const response = await requestDataExport(userId, exportFormat, categoryIds);
               
+              if (response.success) {
+                toast.show({
+                  description: response.message || 'Data export request submitted. Check your email for the download link.',
+                  duration: 5000,
+                });
+                navigation.goBack();
+              } else {
+                toast.show({
+                  description: response.message || 'Export failed. Please try again.',
+                  duration: 3000,
+                });
+              }
+            } catch (error: any) {
+              console.error('Error exporting data:', error);
               toast.show({
-                description: 'Data export complete! Check your email for the download link.',
-                duration: 5000,
-              });
-              
-              navigation.goBack();
-            } catch (error) {
-              toast.show({
-                description: 'Export failed. Please try again.',
+                description: error.response?.data?.message || 'Export failed. Please try again.',
                 duration: 3000,
               });
             } finally {

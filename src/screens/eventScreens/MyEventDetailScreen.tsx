@@ -332,16 +332,18 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
           )}
 
         {/* Ticket / QR */}
-          {/* Ticket/QR removed until feature is available */}
+        {/* Ticket/QR removed until feature is available */}
 
-        {/* Actions */}
+        {/* Actions - hidden for now */}
+        {/* Share removed until feature is available */}
+        {/*  
           <View style={[styles.rowBetween, { marginTop: 10 }] }>
             <TouchableOpacity style={styles.secondaryBtn} onPress={handleAddToCalendar}>
               <Icon name="event" type="material" color={appColors.AppBlue} size={18} />
               <Text style={styles.secondaryBtnText}>Add to Calendar</Text>
             </TouchableOpacity>
-            {/* Share removed until feature is available */}
           </View>
+          */}
 
         </View>
       </ScrollView>

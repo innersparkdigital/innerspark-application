@@ -14,8 +14,9 @@ import {
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
-import { useSelector } from 'react-redux';
-import { getChats } from '../../api/client/messages';
+import { useSelector, useDispatch } from 'react-redux';
+import { loadConversations, refreshConversations } from '../../utils/chatManager';
+import { selectConversations, selectChatLoading, selectChatRefreshing } from '../../features/chat/chatSlice';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 
 interface Conversation {
@@ -37,93 +38,28 @@ interface ConversationsListScreenProps {
 
 const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Mock conversations data moved to MockData.ts
-  const mockConversations: Conversation[] = [
-    {
-      id: '1',
-      partnerId: 'therapist_1',
-      partnerName: 'Dr. Sarah Johnson',
-      partnerEmail: 'sarah.johnson@innerspark.com',
-      partnerAvatar: require('../../assets/images/dummy-people/d-person1.png'),
-      lastMessage: 'Thank you for the session today. Remember to practice the breathing exercises we discussed.',
-      lastMessageTime: '2 min ago',
-      unreadCount: 2,
-      isOnline: true,
-    },
-    {
-      id: '2',
-      partnerId: 'therapist_2',
-      partnerName: 'Dr. Clara Odding',
-      partnerEmail: 'clara.odding@innerspark.com',
-      partnerAvatar: require('../../assets/images/dummy-people/d-person2.png'),
-      lastMessage: 'How are you feeling after our last session? Any questions about the homework?',
-      lastMessageTime: '1 hour ago',
-      unreadCount: 0,
-      isOnline: false,
-      lastSeen: '30 min ago',
-    },
-    {
-      id: '3',
-      partnerId: 'therapist_3',
-      partnerName: 'Dr. Martin Pilier',
-      partnerEmail: 'martin.pilier@innerspark.com',
-      partnerAvatar: require('../../assets/images/dummy-people/d-person1.png'),
-      lastMessage: 'Your progress has been excellent. Keep up the good work!',
-      lastMessageTime: '1 day ago',
-      unreadCount: 0,
-      isOnline: false,
-      lastSeen: '2 hours ago',
-    },
-  ];
+  const conversations = useSelector(selectConversations);
+  const isLoading = useSelector(selectChatLoading);
+  const isRefreshing = useSelector(selectChatRefreshing);
 
   useEffect(() => {
-    loadConversations();
+    loadConversationsData();
   }, []);
 
-  const loadConversations = async () => {
-    setIsLoading(true);
-    try {
-      console.log('📞 Calling getChats API...');
-      const response = await getChats(userId);
-      console.log('✅ Chats API Response:', JSON.stringify(response, null, 2));
-      
-      const apiChats = response.data?.chats || [];
-      const mappedConversations: Conversation[] = apiChats.map((chat: any) => ({
-        id: chat.id?.toString() || chat._id?.toString(),
-        partnerId: chat.partnerId || chat.partner_id || chat.therapistId || chat.therapist_id,
-        partnerName: chat.partnerName || chat.partner_name || chat.therapistName || chat.therapist_name || 'Unknown',
-        partnerEmail: chat.partnerEmail || chat.partner_email || chat.therapistEmail || chat.therapist_email || '',
-        partnerAvatar: getImageSource(chat.partnerAvatar || chat.partner_avatar || chat.therapistAvatar || chat.therapist_avatar, FALLBACK_IMAGES.user),
-        lastMessage: chat.lastMessage || chat.last_message || 'No messages yet',
-        lastMessageTime: chat.lastMessageTime || chat.last_message_time || '',
-        unreadCount: chat.unreadCount || chat.unread_count || 0,
-        isOnline: chat.isOnline || chat.is_online || false,
-        lastSeen: chat.lastSeen || chat.last_seen,
-      }));
-      
-      setConversations(mappedConversations);
-      console.log('✅ Mapped Conversations:', mappedConversations.length);
-    } catch (error: any) {
-      console.error('❌ Error loading conversations:', error);
+  const loadConversationsData = async () => {
+    const result = await dispatch(loadConversations(userId));
+    if (!result.success) {
       toast.show({
-        description: error.response?.data?.message || 'Failed to load conversations. Please try again.',
+        description: 'Failed to load conversations',
         duration: 3000,
       });
-      setConversations([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadConversations();
-    setIsRefreshing(false);
+    await dispatch(refreshConversations(userId));
   };
 
   const handleOpenConversation = (conversation: Conversation) => {
@@ -146,7 +82,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
           text: 'Delete', 
           style: 'destructive',
           onPress: () => {
-            setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+            // TODO: Implement delete conversation API call
             toast.show({
               description: 'Conversation deleted',
               duration: 2000,

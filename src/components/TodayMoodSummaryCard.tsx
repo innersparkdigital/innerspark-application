@@ -43,7 +43,7 @@ const TodayMoodSummaryCard: React.FC<TodayMoodSummaryCardProps> = ({
     >
       {/* Header with checkmark */}
       <View style={styles.header}>
-        <Text style={styles.title}>Today's Mood Check-in</Text>
+        <Text style={styles.title}>Your mood today</Text>
         <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
       </View>
 
@@ -51,7 +51,7 @@ const TodayMoodSummaryCard: React.FC<TodayMoodSummaryCardProps> = ({
       <View style={styles.moodDisplay}>
         <Text style={styles.emoji}>{emoji}</Text>
         <View style={styles.moodInfo}>
-          <Text style={styles.moodName}>{mood}</Text>
+          <Text style={styles.moodName}>Feeling {mood}</Text>
           <Text style={styles.timestamp}>{timestamp}</Text>
         </View>
       </View>

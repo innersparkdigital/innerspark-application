@@ -17,6 +17,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
+import { createNewGoal } from '../../utils/goalsManager';
 
 interface CreateGoalScreenProps {
   navigation: NavigationProp<any>;
@@ -95,16 +96,33 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Prepare goal data according to API format
+      const goalData = {
+        title: title.trim(),
+        description: description.trim(),
+        dueDate,
+        category,
+        priority,
+      };
+
+      // Create goal via API
+      const result = await createNewGoal(goalData);
       
-      toast.show({
-        description: 'Goal created successfully!',
-        duration: 3000,
-      });
-      
-      navigation.goBack();
+      if (result.success) {
+        toast.show({
+          description: 'Goal created successfully! 🎯',
+          duration: 3000,
+        });
+        
+        navigation.goBack();
+      } else {
+        toast.show({
+          description: result.error || 'Failed to create goal. Please try again.',
+          duration: 3000,
+        });
+      }
     } catch (error) {
+      console.error('Error creating goal:', error);
       toast.show({
         description: 'Failed to create goal. Please try again.',
         duration: 3000,

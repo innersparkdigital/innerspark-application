@@ -14,6 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector, useDispatch } from 'react-redux';
+import { loadTickets, refreshTickets } from '../../utils/supportTicketsManager';
+import { setFilters, selectFilteredTickets, selectTicketsLoading, selectTicketsRefreshing } from '../../features/supportTickets/supportTicketsSlice';
 
 interface SupportTicket {
   id: string;
@@ -34,106 +37,29 @@ interface MyTicketsScreenProps {
 
 const MyTicketsScreen: React.FC<MyTicketsScreenProps> = ({ navigation }) => {
   const toast = useToast();
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [filteredTickets, setFilteredTickets] = useState<SupportTicket[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  const filteredTickets = useSelector(selectFilteredTickets);
+  const isLoading = useSelector(selectTicketsLoading);
+  const isRefreshing = useSelector(selectTicketsRefreshing);
+  const currentFilters = useSelector((state: any) => state.supportTickets.filters);
   const [selectedFilter, setSelectedFilter] = useState<'All' | 'Open' | 'Pending' | 'Resolved'>('All');
 
-  // Mock tickets data
-  const mockTickets: SupportTicket[] = [
-    {
-      id: 'TKT-001',
-      subject: 'Unable to book therapy session',
-      category: 'Technical Issue',
-      status: 'Open',
-      priority: 'High',
-      createdAt: '2025-01-25T10:30:00Z',
-      updatedAt: '2025-01-27T14:20:00Z',
-      lastResponse: 'We are investigating this issue and will update you soon.',
-      responseCount: 3,
-      isUnread: true,
-    },
-    {
-      id: 'TKT-002',
-      subject: 'Payment not processed correctly',
-      category: 'Billing',
-      status: 'Pending',
-      priority: 'Medium',
-      createdAt: '2025-01-23T16:45:00Z',
-      updatedAt: '2025-01-26T09:15:00Z',
-      lastResponse: 'Please provide your transaction reference number.',
-      responseCount: 2,
-      isUnread: false,
-    },
-    {
-      id: 'TKT-003',
-      subject: 'Add dark mode to the app',
-      category: 'Feature Request',
-      status: 'Open',
-      priority: 'Low',
-      createdAt: '2025-01-20T11:20:00Z',
-      updatedAt: '2025-01-22T13:30:00Z',
-      lastResponse: 'Thank you for the suggestion. We\'ll consider this for future updates.',
-      responseCount: 1,
-      isUnread: false,
-    },
-    {
-      id: 'TKT-004',
-      subject: 'Cannot access my account',
-      category: 'Account Problem',
-      status: 'Resolved',
-      priority: 'Urgent',
-      createdAt: '2025-01-18T08:15:00Z',
-      updatedAt: '2025-01-19T10:45:00Z',
-      lastResponse: 'Your account has been restored. Please try logging in again.',
-      responseCount: 4,
-      isUnread: false,
-    },
-    {
-      id: 'TKT-005',
-      subject: 'Mood tracker not saving data',
-      category: 'Technical Issue',
-      status: 'Pending',
-      priority: 'Medium',
-      createdAt: '2025-01-15T14:30:00Z',
-      updatedAt: '2025-01-24T16:20:00Z',
-      lastResponse: 'We\'ve identified the issue and are working on a fix.',
-      responseCount: 5,
-      isUnread: true,
-    },
-    {
-      id: 'TKT-006',
-      subject: 'How to join support groups?',
-      category: 'General',
-      status: 'Resolved',
-      priority: 'Low',
-      createdAt: '2025-01-12T09:45:00Z',
-      updatedAt: '2025-01-13T11:30:00Z',
-      lastResponse: 'Please check our user guide for detailed instructions.',
-      responseCount: 2,
-      isUnread: false,
-    },
-  ];
+  // Removed mock data - now using Redux state
 
   useEffect(() => {
-    loadTickets();
+    loadTicketsData();
   }, []);
 
   useEffect(() => {
-    filterTickets();
-  }, [tickets, selectedFilter]);
+    // Update Redux filters when local filter changes
+    const status = selectedFilter === 'All' ? 'all' : selectedFilter.toLowerCase();
+    dispatch(setFilters({ status }));
+  }, [selectedFilter]);
 
-  const loadTickets = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      setTimeout(() => {
-        setTickets(mockTickets);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+  const loadTicketsData = async () => {
+    const result = await dispatch(loadTickets(userId));
+    if (!result.success) {
       toast.show({
         description: 'Failed to load tickets',
         duration: 3000,
@@ -142,29 +68,18 @@ const MyTicketsScreen: React.FC<MyTicketsScreenProps> = ({ navigation }) => {
   };
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      // Simulate refresh
-      setTimeout(() => {
-        setIsRefreshing(false);
-        toast.show({
-          description: 'Tickets refreshed',
-          duration: 2000,
-        });
-      }, 1000);
-    } catch (error) {
-      setIsRefreshing(false);
+    const result = await dispatch(refreshTickets(userId));
+    if (!result.success) {
+      toast.show({
+        description: 'Failed to refresh tickets',
+        duration: 3000,
+      });
+    } else {
+      toast.show({
+        description: 'Tickets refreshed',
+        duration: 2000,
+      });
     }
-  };
-
-  const filterTickets = () => {
-    let filtered = tickets;
-    
-    if (selectedFilter !== 'All') {
-      filtered = tickets.filter(ticket => ticket.status === selectedFilter);
-    }
-
-    setFilteredTickets(filtered);
   };
 
   const getRelativeTime = (dateString: string) => {

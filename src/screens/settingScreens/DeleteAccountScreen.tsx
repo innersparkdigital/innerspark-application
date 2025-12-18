@@ -17,9 +17,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { deleteAccount } from '../../api/client/account';
 
 interface DeleteAccountScreenProps {
   navigation: NavigationProp<any>;
@@ -33,6 +35,7 @@ interface DeletionReason {
 
 const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
@@ -109,22 +112,35 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
           onPress: async () => {
             setIsLoading(true);
             try {
-              // Simulate API call
-              await new Promise(resolve => setTimeout(resolve, 3000));
+              const reasonText = selectedReasons.map(id => {
+                const reason = deletionReasons.find(r => r.id === id);
+                return reason?.title || id;
+              }).join(', ');
               
-              toast.show({
-                description: 'Account deletion initiated. You will receive a confirmation email.',
-                duration: 5000,
-              });
+              const finalReason = additionalFeedback ? `${reasonText}. ${additionalFeedback}` : reasonText;
               
-              // Navigate to confirmation screen or logout
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'AccountDeletionConfirmationScreen' }],
-              });
-            } catch (error) {
+              const response = await deleteAccount(userId, finalReason);
+              
+              if (response.success) {
+                toast.show({
+                  description: response.message || 'Account deletion initiated. You will receive a confirmation email.',
+                  duration: 5000,
+                });
+                
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'SigninScreen' }],
+                });
+              } else {
+                toast.show({
+                  description: response.message || 'Failed to delete account',
+                  duration: 3000,
+                });
+              }
+            } catch (error: any) {
+              console.error('Error deleting account:', error);
               toast.show({
-                description: 'Failed to delete account. Please try again.',
+                description: error.response?.data?.message || 'Failed to delete account. Please try again.',
                 duration: 3000,
               });
             } finally {

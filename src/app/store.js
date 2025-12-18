@@ -34,6 +34,26 @@ import notificationsReducer from '../features/notifications/notificationSlice';
 // Dashboard slice
 import dashboardReducer from '../features/dashboard/dashboardSlice';
 
+// Therapists slice
+import therapistsReducer from '../features/therapists/therapistsSlice';
+
+// Appointments slice
+import appointmentsReducer from '../features/appointments/appointmentsSlice';
+
+// Goals slice
+import goalsReducer from '../features/goals/goalsSlice';
+
+// Reports slice
+import reportsReducer from '../features/reports/reportsSlice';
+
+// Wallet slice
+import walletReducer from '../features/wallet/walletSlice';
+
+// Support Tickets slice
+import supportTicketsReducer from '../features/supportTickets/supportTicketsSlice';
+
+// Chat slice
+import chatReducer from '../features/chat/chatSlice';
 
 export default configureStore({
     reducer: {
@@ -72,7 +92,24 @@ export default configureStore({
         
         // Events reducer
         events: eventsReducer,
-
-       
+        
+        // Therapists reducer (client-side therapist directory)
+        therapists: therapistsReducer,
+        
+        // Appointments reducer (client appointments management)
+        appointments: appointmentsReducer,
+        
+        // Goals reducer (client goals management)
+        goals: goalsReducer,
+        
+        // Reports reducer (wellness reports and analytics)
+        reports: reportsReducer,
+        
+        // Wallet reducer (wellness vault and transactions)
+        wallet: walletReducer,
+        
+        // Support Tickets reducer
+        supportTickets: supportTicketsReducer,
+        chat: chatReducer,
     }
 })

@@ -25,6 +25,20 @@ import {
   getMoodMilestones 
 } from '../api/client/mood';
 
+/**
+ * Get color for mood value
+ */
+const getMoodColor = (moodValue: number): string => {
+  const colors: { [key: number]: string } = {
+    1: '#4CAF50', // Great - Green
+    2: '#8BC34A', // Good - Light Green
+    3: '#FFC107', // Okay - Amber
+    4: '#FF9800', // Bad - Orange
+    5: '#F44336', // Terrible - Red
+  };
+  return colors[moodValue] || '#9E9E9E';
+};
+
 export interface TodayMoodData {
   id: string;
   mood: string;
@@ -117,8 +131,16 @@ export const loadMoodHistory = async (userId: string, period: string = 'week', p
     if (response.success && response.data) {
       const { entries, stats, pagination } = response.data;
       
+      // Map API response fields to UI expected fields
+      const mappedEntries = (entries || []).map((entry: any) => ({
+        ...entry,
+        emoji: entry.moodEmoji || entry.emoji,
+        mood: entry.moodLabel || entry.mood,
+        color: getMoodColor(entry.moodValue),
+      }));
+      
       // Update mood history
-      dispatch(setMoodHistory({ entries: entries || [], pagination }));
+      dispatch(setMoodHistory({ entries: mappedEntries, pagination }));
       
       // Update stats from history response
       if (stats) {

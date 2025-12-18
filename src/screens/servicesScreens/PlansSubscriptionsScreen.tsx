@@ -27,6 +27,7 @@ import {
   toggleAutoRenew as toggleAutoRenewRedux,
   cancelSubscription as cancelSubscriptionRedux
 } from '../../features/subscription/subscriptionSlice';
+import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 
 interface CurrentPlan {
   id: string;
@@ -66,6 +67,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
 
   useEffect(() => {
     loadSubscriptionData();
@@ -154,7 +156,12 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
   };
 
   const handleCancelSubscription = () => {
+    // Show Coming Soon modal since subscription cancellation not fully implemented
+    setShowComingSoonModal(true);
+    
+    /* ORIGINAL CODE - Commented out until backend is ready
     setShowCancelModal(true);
+    */
   };
 
   const confirmCancelSubscription = async () => {
@@ -189,6 +196,10 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
   const handleToggleAutoRenew = async () => {
     if (!currentSubscription) return;
 
+    // Show Coming Soon modal since auto-renewal toggle not fully implemented
+    setShowComingSoonModal(true);
+    
+    /* ORIGINAL CODE - Commented out until backend is ready
     try {
       // ⚠️ MISSING ENDPOINT: toggleAutoRenew(userId, subscriptionId)
       console.log('⚠️ MISSING API: toggleAutoRenew - using local state only');
@@ -206,6 +217,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
         duration: 3000,
       });
     }
+    */
   };
 
   const formatDate = (dateString: string) => {
@@ -449,6 +461,18 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
           </View>
         </View>
       </Modal>
+
+      <LHGenericFeatureModal
+        title="Subscription Management"
+        description="Subscription management features are coming soon! We're working on integrating full subscription controls including upgrades, cancellations, and auto-renewal settings. You'll be notified once this feature is ready."
+        buttonTitle="GOT IT"
+        isModVisible={showComingSoonModal}
+        visibilitySetter={setShowComingSoonModal}
+        isDismissable={true}
+        hasIcon={true}
+        iconType="material"
+        iconName="subscriptions"
+      />
     </View>
   );
 };

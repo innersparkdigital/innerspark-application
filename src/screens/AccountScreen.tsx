@@ -3,7 +3,7 @@
  */
 import React, { useState, useRef, useEffect, useCallback }  from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { signout } from '../features/user/userSlice';
+import { performLogout } from '../utils/authManager';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import { 
@@ -69,16 +69,12 @@ export default function AccountScreen({ navigation }){
         })
     }
 
-    /** Signout current user */  
+    /** 
+     * Signout current user
+     * Uses authManager utility to perform comprehensive data wipe
+     */  
     const signOutHandler = () => {
-        dispatch(signout());
-
-        // remove local storage session as well if there's one
-        if (retrieveItemLS("userToken")) { removeItemLS("userToken"); }
-
-        // Remove all stored data if available
-        //if (retrieveItemLS("userDetailsLS")) { removeItemLS("userDetailsLS"); } 
-        //if (retrieveItemLS("userAvatarLS")) { removeItemLS("userAvatarLS"); } 
+        performLogout();
     }
 
     const MenuRow = ({ icon, iconType = "material", title, subtitle, onPress, showChevron = true, isLast = false, iconColor = appColors.AppBlue }) => (
@@ -250,8 +246,8 @@ export default function AccountScreen({ navigation }){
                 />
             </View>
 
-             {/* Test Section */}
-            <View style={styles.logoutSection}>
+            {/* Test Section */}
+            {/* <View style={styles.logoutSection}>
                 <TouchableOpacity 
                     style={styles.logoutButton}
                     onPress={() => navigation.navigate('DevTestScreen')}
@@ -262,7 +258,7 @@ export default function AccountScreen({ navigation }){
                     </View>
                     <Text style={styles.logoutText}>Test API Endpoints</Text>
                 </TouchableOpacity>
-            </View>
+            </View> */}
 
             {/* Logout Section */}
             <View style={styles.logoutSection}>

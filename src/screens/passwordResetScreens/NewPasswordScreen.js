@@ -1,3 +1,7 @@
+/**
+ * New Password Screen Component
+ * Handles password reset functionality
+ */
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { 
@@ -9,7 +13,6 @@ import {
     ActivityIndicator, 
     ImageBackground,
     Pressable,
-    //SafeAreaView,
 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,11 +21,10 @@ import { useToast } from 'native-base';
 import { appColors, parameters } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
-import { APIInstance } from '../../api/LHAPI';
+import { setNewPassword } from '../../api/shared/auth';
 
 
-
-export default function NewPasswordScreen( { navigation } ){
+export default function NewPasswordScreen({ navigation, route }){
 
     const toast = useToast();
     const [password, setPassword] = useState("");
@@ -30,6 +32,7 @@ export default function NewPasswordScreen( { navigation } ){
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordResetModalVisible, setIsPasswordResetModalVisible] = useState(false);
     const storedSessionUserId = useSelector(state => state.userData.sessionUserId ); // just for temporary use
+    const { resetToken, email } = route.params || {}; // Get resetToken and email from route params
 
 
     // Toast Notifications
@@ -50,9 +53,10 @@ export default function NewPasswordScreen( { navigation } ){
         setPassword1(password);
     }
 
-
-    // Submit Password Change Form Handler
-    const onSubmitPasswordChangeHandler = async (event) => {
+    /** 
+     * Password Change Form Handler 
+     */
+    const PasswordChangeHandler = async () => {
         // some basic validation --- More validation needed
         if (!password1.trim() || !password.trim()) {
             notifyWithToast("A new password must be provided!"); // Notify with toast
@@ -66,18 +70,11 @@ export default function NewPasswordScreen( { navigation } ){
         // set loading state
         setIsLoading(true);
 
-        // making a request to the API
+        // making a request to the API using auth.js setNewPassword function
         try {
-
-            const response = await APIInstance.post('/reset-pwd-test', {
-                user : storedSessionUserId,
-                password : password,
-                confirm : password1
-
-            });
+            const response = await setNewPassword(email, resetToken, password.trim());
             
             // checking the status
-            // response.status === 201
             if (response.status === 200) {
 
                 // IF status is successful
@@ -193,7 +190,12 @@ export default function NewPasswordScreen( { navigation } ){
                                 title="Reset Password"
                                 buttonStyle={ parameters.appButtonXLBlue }
                                 titleStyle={ parameters.appButtonXLTitleBlue }   
-                                onPress={ onSubmitPasswordChangeHandler }
+                                // onPress={ PasswordChangeHandler }
+                                onPress={
+                                    () => {
+                                        setIsPasswordResetModalVisible(true);
+                                    }                               
+                                }
                                 disabled={isLoading}
                             /> 
                         </View>
@@ -204,7 +206,10 @@ export default function NewPasswordScreen( { navigation } ){
                 {/* Feature Discovery Modal */}
                 <BottomSheet
                     // containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
-                    containerStyle={{ backgroundColor: appColors.CardBackground }}
+                    containerStyle={{ 
+                        backgroundColor: appColors.CardBackground, 
+                        justifyContent: 'center',
+                    }}
                     modalProps = {{
                         presentationStyle:"overFullScreen",
                         visible: isPasswordResetModalVisible,
@@ -212,39 +217,76 @@ export default function NewPasswordScreen( { navigation } ){
                 >
 
                     <View style={{ ...parameters.doffeeModalContainer, paddingVertical:120 }}>
-                        <View style={{ paddingVertical:15, }}>
+                        <View style={{ paddingVertical:15, paddingHorizontal:20 }}>
 
                             {/* Modal Content */}
-                            <View style={{ flex:1, justifyContent:"center", alignItems:"center", paddingVertical:30 }}>
-                                <View style={{ justifyContent: "center", alignItems:"center" }}>
-                                    <Icon type= "material-community" name= "check"  color={appColors.AppBlue} size= {100} />
+                            <View style={{ justifyContent:"center", alignItems:"center", paddingVertical:20 }}>
+                                
+                                {/* Success Icon with Background Circle */}
+                                <View style={{ 
+                                    justifyContent: "center", 
+                                    alignItems:"center",
+                                    backgroundColor: appColors.AppBlue + '15',
+                                    borderRadius: 80,
+                                    width: 140,
+                                    height: 140,
+                                    marginBottom: 20
+                                }}>
+                                    <Icon 
+                                        type="material-community" 
+                                        name="check-circle" 
+                                        color={appColors.AppBlue} 
+                                        size={90} 
+                                    />
                                 </View>
-                                <View style={{ marginVertical:10, paddingHorizontal:5 }}>
-                                    <Text style={{ fontSize:20, textAlign:'center', fontWeight:"bold", paddingVertical:5, color:appColors.black }}>
-                                        Your password has been reset successfully.
+
+                                {/* Success Message */}
+                                <View style={{ marginVertical:10, paddingHorizontal:15 }}>
+                                    <Text style={{ 
+                                        fontSize: 24, 
+                                        textAlign:'center', 
+                                        fontWeight:"700", 
+                                        paddingVertical:5, 
+                                        color: appColors.black,
+                                        letterSpacing: 0.3
+                                    }}>
+                                        Password Updated!
+                                    </Text>
+                                    <Text style={{ 
+                                        fontSize: 15, 
+                                        textAlign:'center', 
+                                        paddingTop:8,
+                                        color: appColors.grey2,
+                                        lineHeight: 22
+                                    }}>
+                                        Your password has been successfully updated. You can now sign in with your new password.
                                     </Text>
                                 </View>
                             </View>
 
-                            {/* The following options  */}
-                            <View style={{ flex:1, justifyContent:"center", marginVertical:15, paddingHorizontal:10, }}>
+                            {/* Action Button */}
+                            <View style={{ justifyContent:"center", marginTop:10, marginBottom:5, paddingHorizontal:10 }}>
                                 <Button 
-                                    title="LOGIN NOW" 
-                                    buttonStyle={ parameters.appButtonXLBlue }
-                                    titleStyle={ parameters.appButtonXLBlueTitle }
+                                    title="SIGN IN NOW" 
+                                    buttonStyle={{ 
+                                        ...parameters.appButtonXLBlue,
+                                        paddingVertical: 16,
+                                        borderRadius: 12
+                                    }}
+                                    titleStyle={{ 
+                                        ...parameters.appButtonXLTitle,
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                        letterSpacing: 0.5
+                                    }}
                                     onPress = { 
                                         () => { 
-                                            // setIsPasswordResetModalVisible(false);
-                                            // Login the user or Navigate to HomeScreen
-                                            // You can clear the stack to disable Going back
                                             navigation.popToTop();
                                             navigation.navigate('SigninScreen');
-                                        
                                         }
                                     }
                                 />
                             </View>
-
                         </View>
 
                     </View>

@@ -1,7 +1,8 @@
 /**
  * Notification Manager
  * Handles notification API calls with graceful error handling
- * Falls back to mock data when endpoints are not yet implemented (404)
+ * Returns empty arrays/objects for 404 (endpoint not implemented yet)
+ * UI handles empty states seamlessly
  */
 import store from '../app/store';
 import {
@@ -15,11 +16,10 @@ import {
   setError,
 } from '../features/notifications/notificationSlice';
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../api/client/notifications';
-import { mockNotifications } from '../global/MockData';
 
 /**
  * Load notifications from API
- * Falls back to mock data if endpoint returns 404
+ * Returns empty array if endpoint not implemented (404)
  */
 export const loadNotifications = async (userId: string, page: number = 1) => {
   store.dispatch(setLoading(true));
@@ -50,32 +50,26 @@ export const loadNotifications = async (userId: string, page: number = 1) => {
       fullError: error
     });
     
-    // Handle 404 - endpoint not implemented yet
+    // Handle 404 - endpoint not implemented yet, return empty state
     if (error?.response?.status === 404) {
-      console.log('📦 GET /client/notifications endpoint returns 404, using mock data');
-      
-      // Use mock data from MockData.ts
-      const notifications = mockNotifications || [];
-      const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+      console.log('📦 GET /client/notifications endpoint returns 404, showing empty state');
       
       store.dispatch(setNotifications({
-        notifications,
-        pagination: { currentPage: 1, totalPages: 1, totalItems: notifications.length },
+        notifications: [],
+        pagination: { currentPage: 1, totalPages: 1, totalItems: 0 },
       }));
       
-      store.dispatch(setUnreadCount(unreadCount));
+      store.dispatch(setUnreadCount(0));
     } else {
-      // Other errors - set error state but don't break UI
-      console.log('⚠️ Non-404 error, using mock data as fallback');
-      const notifications = mockNotifications || [];
-      const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+      // Other errors - set error state with empty data
+      console.log('⚠️ Non-404 error, showing empty state');
       
       store.dispatch(setNotifications({
-        notifications,
-        pagination: { currentPage: 1, totalPages: 1, totalItems: notifications.length },
+        notifications: [],
+        pagination: { currentPage: 1, totalPages: 1, totalItems: 0 },
       }));
       
-      store.dispatch(setUnreadCount(unreadCount));
+      store.dispatch(setUnreadCount(0));
       store.dispatch(setError(error?.message || 'Failed to load notifications'));
     }
   } finally {
@@ -105,17 +99,14 @@ export const refreshNotifications = async (userId: string) => {
   } catch (error: any) {
     console.log('Error refreshing notifications:', error);
     
-    // Handle 404 gracefully
+    // Handle 404 gracefully - show empty state
     if (error?.response?.status === 404) {
-      const notifications = mockNotifications || [];
-      const unreadCount = notifications.filter((n: any) => !n.isRead).length;
-      
       store.dispatch(setNotifications({
-        notifications,
-        pagination: { currentPage: 1, totalPages: 1, totalItems: notifications.length },
+        notifications: [],
+        pagination: { currentPage: 1, totalPages: 1, totalItems: 0 },
       }));
       
-      store.dispatch(setUnreadCount(unreadCount));
+      store.dispatch(setUnreadCount(0));
     }
   } finally {
     store.dispatch(setRefreshing(false));
@@ -196,12 +187,10 @@ export const getUnreadCount = async (userId: string) => {
   } catch (error: any) {
     console.log('Error getting unread count:', error);
     
-    // Handle 404 - calculate from mock data
+    // Handle 404 - return 0 for unread count
     if (error?.response?.status === 404) {
-      const notifications = mockNotifications || [];
-      const unreadCount = notifications.filter((n: any) => !n.isRead).length;
-      store.dispatch(setUnreadCount(unreadCount));
-      return unreadCount;
+      store.dispatch(setUnreadCount(0));
+      return 0;
     }
   }
   

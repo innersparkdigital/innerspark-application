@@ -14,8 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { deleteUserData } from '../../api/client/account';
 
 interface DataDeletionScreenProps {
   navigation: NavigationProp<any>;
@@ -35,6 +37,7 @@ interface DataCategory {
 
 const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isDeleting, setIsDeleting] = useState(false);
   const [dataCategories, setDataCategories] = useState<DataCategory[]>([
     {
@@ -43,7 +46,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       description: 'All mood entries and emotional patterns',
       icon: 'mood',
       iconColor: '#FF5722',
-      itemCount: '234 entries',
+      itemCount: '',
       selected: false,
       canDelete: true,
       warning: 'This will permanently delete all your mood tracking data',
@@ -54,7 +57,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       description: 'Personal reflections and notes',
       icon: 'book',
       iconColor: '#9C27B0',
-      itemCount: '87 entries',
+      itemCount: '',
       selected: false,
       canDelete: true,
       warning: 'Your journal entries will be permanently deleted',
@@ -65,7 +68,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       description: 'Session records and progress notes',
       icon: 'psychology',
       iconColor: '#4CAF50',
-      itemCount: '12 sessions',
+      itemCount: '',
       selected: false,
       canDelete: true,
       warning: 'Therapy session data will be permanently removed',
@@ -76,7 +79,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       description: 'Chat history with therapists',
       icon: 'chat',
       iconColor: '#2196F3',
-      itemCount: '156 messages',
+      itemCount: '',
       selected: false,
       canDelete: true,
       warning: 'All conversation history will be deleted',
@@ -87,7 +90,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       description: 'Goals and achievements',
       icon: 'flag',
       iconColor: '#FFC107',
-      itemCount: '8 goals',
+      itemCount: '',
       selected: false,
       canDelete: true,
     },
@@ -97,7 +100,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       description: 'App usage and activity history',
       icon: 'history',
       iconColor: '#607D8B',
-      itemCount: '90 days',
+      itemCount: '',
       selected: false,
       canDelete: true,
     },
@@ -107,7 +110,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       description: 'Name, email, and account details',
       icon: 'person',
       iconColor: appColors.AppBlue,
-      itemCount: 'Account data',
+      itemCount: '',
       selected: false,
       canDelete: false,
       warning: 'Cannot delete profile data. Use "Delete Account" instead',
@@ -156,23 +159,30 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
           onPress: async () => {
             setIsDeleting(true);
             try {
-              // Simulate API call
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              const categoryIds = selectedCategories.map(cat => cat.id);
+              const response = await deleteUserData(userId, categoryIds);
               
+              if (response.success) {
+                toast.show({
+                  description: response.message || `Successfully deleted ${selectedCategories.length} data categories`,
+                  duration: 3000,
+                });
+                
+                setDataCategories(prev =>
+                  prev.map(cat => ({ ...cat, selected: false }))
+                );
+                
+                navigation.goBack();
+              } else {
+                toast.show({
+                  description: response.message || 'Failed to delete data',
+                  duration: 3000,
+                });
+              }
+            } catch (error: any) {
+              console.error('Error deleting data:', error);
               toast.show({
-                description: `Successfully deleted ${selectedCategories.length} data categories`,
-                duration: 3000,
-              });
-              
-              // Reset selections
-              setDataCategories(prev =>
-                prev.map(cat => ({ ...cat, selected: false }))
-              );
-              
-              navigation.goBack();
-            } catch (error) {
-              toast.show({
-                description: 'Failed to delete data. Please try again.',
+                description: error.response?.data?.message || 'Failed to delete data. Please try again.',
                 duration: 3000,
               });
             } finally {

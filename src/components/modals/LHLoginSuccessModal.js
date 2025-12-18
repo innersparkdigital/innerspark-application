@@ -26,48 +26,79 @@ export default function LHLoginSuccessModal(
             modalProps={{ presentationStyle:"overFullScreen", visible: isModVisible }}
         >
             <View style={{ ...parameters.doffeeModalContainer, paddingVertical:50, backgroundColor:appColors.CardBackground }}>
-                <View style={{ paddingVertical:15, }}>
+                <View style={{ paddingVertical:15, paddingHorizontal:20 }}>
+                    
                     {/* Modal Content */}
-                    <View style={{ flex:1, justifyContent:"center", alignItems:"center", paddingVertical:20 }}>
-                        <View style={{ justifyContent: "center", alignItems:"center", paddingVertical:15 }}>
-                            <Icon type="material-community" name="check-circle" color={appColors.AppBlue} size={60} />
+                    <View style={{ justifyContent:"center", alignItems:"center", paddingVertical:20 }}>
+                        
+                        {/* Success Icon with Background Circle */}
+                        <View style={{ 
+                            justifyContent: "center", 
+                            alignItems:"center",
+                            backgroundColor: appColors.AppBlue + '15',
+                            borderRadius: 80,
+                            width: 140,
+                            height: 140,
+                            marginBottom: 20
+                        }}>
+                            <Icon 
+                                type="material-community" 
+                                name="check-circle" 
+                                color={appColors.AppBlue} 
+                                size={90} 
+                            />
                         </View>
-                        <View style={{ marginVertical:10, paddingHorizontal:5 }}>
+
+                        {/* Success Message */}
+                        <View style={{ marginVertical:10, paddingHorizontal:15 }}>
                             <Text 
                                 style={{ 
-                                    fontSize:18, textAlign:'center', 
+                                    fontSize: 24, 
+                                    textAlign:'center', 
+                                    fontWeight:"700", 
                                     paddingVertical:5, 
-                                    color:appColors.AppBlue, 
-                                    fontFamily:appFonts.headerTextBold 
+                                    color: appColors.black,
+                                    letterSpacing: 0.3,
+                                    fontFamily: appFonts.headerTextExtraBold
                                 }}>
-                                {description}
+                                {title}
                             </Text>
                             <Text 
                                 style={{ 
-                                    fontSize:22, textAlign:'center', 
-                                    paddingVertical:5, 
-                                    color:appColors.AppBlue, 
-                                    fontFamily:appFonts.headerTextExtraBold 
+                                    fontSize: 15, 
+                                    textAlign:'center', 
+                                    paddingTop:8,
+                                    color: appColors.grey2,
+                                    lineHeight: 22
                                 }}>
-                                {title}
+                                {description}
                             </Text>
                         </View>
                     </View>
 
-                    {/* The following options  */}
-                    <View style={{ flex:1, justifyContent:"center", marginVertical:10, paddingHorizontal:10, }}>
+                    {/* Action Button or Loading State */}
+                    <View style={{ justifyContent:"center", marginTop:10, marginBottom:5, paddingHorizontal:10 }}>
                         { isLoading && 
                             <View style={{ flexDirection:'row', justifyContent:'center', alignItems:'center', paddingVertical:20, marginBottom:10 }}>
                                 <ActivityIndicator size="small" style={{ marginHorizontal:5, }} color={appColors.AppBlue} /> 
-                                <Text style={{ color:appColors.AppBlue, paddingHorizontal:5, fontSize:14 }}>{loadingText}</Text>
+                                <Text style={{ color:appColors.grey2, paddingHorizontal:5, fontSize:14 }}>{loadingText}</Text>
                             </View>
                         } 
 
                         { !isLoading && 
                             <Button 
                                 title={buttonTitle} 
-                                buttonStyle={ parameters.appButtonXLBlue }
-                                titleStyle={ parameters.appButtonXLTitle }
+                                buttonStyle={{ 
+                                    ...parameters.appButtonXLBlue,
+                                    paddingVertical: 16,
+                                    borderRadius: 12
+                                }}
+                                titleStyle={{ 
+                                    ...parameters.appButtonXLTitle,
+                                    fontSize: 16,
+                                    fontWeight: '600',
+                                    letterSpacing: 0.5
+                                }}
                                 disabled={isLoading}
                                 onPress={ onPressAction }
                             />

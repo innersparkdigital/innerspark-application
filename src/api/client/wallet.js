@@ -3,6 +3,17 @@
  */
 import { APIInstance } from '../LHAPI';
 
+/**
+ * Get wallet balance
+ * @param {string} userId - User ID
+ * @returns {Promise} Wallet balance with breakdown
+ */
+export const getWalletBalance = async (userId) => {
+    const response = await APIInstance.get('/client/wallet/balance', {
+        params: { user_id: userId }
+    });
+    return response.data;
+};
 
 /**
  * Topup wallet

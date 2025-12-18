@@ -1,7 +1,8 @@
 /**
  * Therapist Suggestions Screen - Ranked list based on quiz answers
  */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -13,6 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import {
+  selectTherapists,
+  selectTherapistsLoading,
+} from '../../features/therapists/therapistsSlice';
+import { loadTherapists } from '../../utils/therapistsManager';
 
 interface QuizAnswers {
   genderPreference: 'Any' | 'Male' | 'Female';
@@ -51,81 +57,19 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
   const answers: QuizAnswers | undefined = route?.params?.answers;
   const [refineOpen, setRefineOpen] = useState(false);
 
-  // Fallback therapists (same baseline as TherapistsScreen)
-  const baseTherapists: Therapist[] = [
-    {
-      id: 1,
-      name: 'Dr. Martin Pilier',
-      gender: 'Male',
-      specialty: 'Therapist - Specialist',
-      rating: 3,
-      location: 'Kampala Down Town - 2 km',
-      image: require('../../assets/images/dummy-people/d-person1.png'),
-      reviews: 213,
-      experience: '8 years',
-      price: 'UGX 50,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Specialized in cognitive behavioral therapy and mindfulness techniques.',
-      nextAvailable: 'Today 2:00 PM',
-      languages: ['English'],
-      tags: ['Anxiety', 'Stress']
-    },
-    {
-      id: 2,
-      name: 'Dr. Clara Odding',
-      gender: 'Female',
-      specialty: 'Therapist',
-      rating: 2,
-      location: 'Nakawa - 3 km',
-      image: require('../../assets/images/dummy-people/d-person2.png'),
-      reviews: 25,
-      experience: '5 years',
-      price: 'UGX 45,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Expert in anxiety and depression treatment.',
-      nextAvailable: 'Tomorrow 10:00 AM',
-      languages: ['English', 'Luganda'],
-      tags: ['Depression', 'Adolescent']
-    },
-    {
-      id: 3,
-      name: 'Dr. Julien More',
-      gender: 'Male',
-      specialty: 'Therapist',
-      rating: 5,
-      location: 'Mukono - 10 km',
-      image: require('../../assets/images/dummy-people/d-person3.png'),
-      reviews: 456,
-      experience: '12 years',
-      price: 'UGX 60,000',
-      priceUnit: '/session',
-      available: false,
-      bio: 'Specializes in trauma therapy and PTSD treatment.',
-      nextAvailable: 'Next week',
-      languages: ['English', 'French'],
-      tags: ['Trauma/PTSD']
-    },
-    {
-      id: 4,
-      name: 'Dr. Sarah Johnson',
-      gender: 'Female',
-      specialty: 'Anxiety & Depression',
-      rating: 4,
-      location: 'Kampala Central - 5 km',
-      image: require('../../assets/images/dummy-people/d-person4.png'),
-      reviews: 189,
-      experience: '10 years',
-      price: 'UGX 55,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Focused on adolescent mental health and behavioral issues.',
-      nextAvailable: 'Today 4:30 PM',
-      languages: ['English'],
-      tags: ['Anxiety', 'Adolescent']
-    },
-  ];
+  // Get therapists from Redux (same data source as TherapistsScreen)
+  const therapistsFromRedux = useSelector(selectTherapists);
+  const isLoading = useSelector(selectTherapistsLoading);
+
+  // Load therapists if not already loaded
+  useEffect(() => {
+    if (therapistsFromRedux.length === 0 && !isLoading) {
+      loadTherapists();
+    }
+  }, []);
+
+  // Use the same therapist data from API/Redux
+  const baseTherapists: Therapist[] = therapistsFromRedux as Therapist[];
 
   const scoreTherapist = (t: Therapist): { score: number; reasons: string[] } => {
     const reasons: string[] = [];
@@ -242,6 +186,26 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
     </View>
   );
 
+  // Loading state
+  if (isLoading && therapistsFromRedux.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Therapist Suggestions</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.empty}>
+          <Icon name="psychology" type="material" color={appColors.grey3} size={56} />
+          <Text style={styles.emptyTitle}>Loading therapists...</Text>
+          <Text style={styles.emptyText}>Please wait while we fetch available therapists.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -253,7 +217,21 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
         <View style={{ width: 40 }} />
       </View>
 
-      {answers ? (
+      {!answers ? (
+        <EmptyState />
+      ) : rankedTherapists.length === 0 ? (
+        <View style={styles.empty}>
+          <Icon name="person-search" type="material" color={appColors.grey3} size={56} />
+          <Text style={styles.emptyTitle}>No therapists available</Text>
+          <Text style={styles.emptyText}>We didn’t find a match—browse all available therapists instead.</Text>
+          <Button
+            title="Browse Directory"
+            onPress={() => navigation.navigate('LHBottomTabs', { screen: 'TherapistsScreen' })}
+            buttonStyle={styles.primaryBtn}
+            titleStyle={styles.primaryBtnText}
+          />
+        </View>
+      ) : (
         <FlatList
           data={rankedTherapists}
           renderItem={renderItem}
@@ -261,8 +239,6 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
-      ) : (
-        <EmptyState />
       )}
     </SafeAreaView>
   );
@@ -309,7 +285,7 @@ const styles = StyleSheet.create({
   secondaryBtn: { borderColor: appColors.AppBlue, borderWidth: 1, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 18 },
   secondaryBtnText: { color: appColors.AppBlue, fontWeight: '700', fontFamily: appFonts.appTextRegular },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
-  emptyTitle: { fontSize: 18, fontWeight: 'bold', color: appColors.grey1, marginTop: 12, fontFamily: appFonts.headerTextBold },
+  emptyTitle: { fontSize: 20, fontWeight: 'bold', color: appColors.grey1, marginTop: 12, fontFamily: appFonts.headerTextBold },
   emptyText: { fontSize: 14, color: appColors.grey3, marginTop: 4, marginBottom: 16, fontFamily: appFonts.appTextRegular, textAlign: 'center' },
 });
 

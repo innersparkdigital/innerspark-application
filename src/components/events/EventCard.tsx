@@ -121,10 +121,11 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
               <Icon name="confirmation-number" type="material" color={appColors.AppBlue} size={18} />
               <Text style={styles.secondaryBtnText}>View Ticket</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={onAddToCalendar}>
+            {/* Add to Calendar hidden for now */}
+            {/* <TouchableOpacity style={styles.secondaryBtn} onPress={onAddToCalendar}>
               <Icon name="event" type="material" color={appColors.AppBlue} size={18} />
               <Text style={styles.secondaryBtnText}>Add to Calendar</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         )}
       </View>

@@ -147,7 +147,9 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
             : event.organizerImage
               ? { uri: event.organizerImage }
               : require('../assets/images/avatar-placeholder.png'),
-          isRegistered: event.isRegistered || false,
+          // For my-events, all returned events are registered by definition
+          // The API doesn't return isRegistered field, so we set it based on the tab
+          isRegistered: activeTab === 'my-events' ? true : (event.isRegistered || false),
           // Include registration data for my-events
           ...(activeTab === 'my-events' && {
             registrationId: event.registrationId,
@@ -374,7 +376,7 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
                 variant={activeTab === 'my-events' ? 'my' : 'public'}
                 onPress={() => handleEventPress(item)}
                 onViewTicket={activeTab === 'my-events' ? () => navigation.navigate('MyEventDetailScreen', { event: item, registrationId: `R-${item.id}` }) : undefined}
-                onAddToCalendar={activeTab === 'my-events' ? () => toast.show({ description: 'Added to calendar (placeholder)', duration: 2000 }) : undefined}
+                onAddToCalendar={activeTab === 'my-events' ? () => toast.show({ description: 'Upcoming Calendar Feature', duration: 2000 }) : undefined}
               />
             )
           )}

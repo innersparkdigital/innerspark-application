@@ -51,7 +51,8 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
 
   const tabs = ['About', 'Reviews', 'Availability'];
   
-  // Session types with different pricing
+  // TODO: Fetch session types from therapist profile API
+  // These should come from GET /api/v1/client/therapists/:therapistId
   const sessionTypes = [
     { id: 'individual', name: 'Individual Session', price: 'UGX 50,000', duration: '60 min' },
     { id: 'couple', name: 'Couple Session', price: 'UGX 75,000', duration: '90 min' },
@@ -59,6 +60,9 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
     { id: 'consultation', name: 'Consultation', price: 'UGX 25,000', duration: '30 min' },
   ];
   
+  // TODO: Fetch availability from API
+  // Use GET /api/v1/client/therapists/:therapistId/availability
+  // Returns empty array if endpoint not implemented (404)
   const availableSlots = [
     { id: 1, date: 'Today', time: '2:00 PM', available: true },
     { id: 2, date: 'Today', time: '4:30 PM', available: true },
@@ -68,6 +72,9 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
     { id: 6, date: 'Wed', time: '2:30 PM', available: true },
   ];
 
+  // TODO: Fetch reviews from API
+  // Use GET /api/v1/client/therapists/:therapistId/reviews
+  // Returns empty array if endpoint not implemented (404)
   const reviews = [
     {
       id: 1,

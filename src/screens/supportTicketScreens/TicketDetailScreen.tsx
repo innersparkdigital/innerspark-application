@@ -17,6 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector, useDispatch } from 'react-redux';
+import { loadTicketById, addMessageToTicketAction, closeTicketAction, reopenTicketAction } from '../../utils/supportTicketsManager';
+import { selectCurrentTicket, selectTicketsLoading, selectTicketsSubmitting } from '../../features/supportTickets/supportTicketsSlice';
 
 interface TicketResponse {
   id: string;
@@ -45,80 +48,28 @@ interface TicketDetailScreenProps {
 
 const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const flatListRef = useRef<FlatList>(null);
-  const { ticket } = route.params;
+  const { ticketId } = route.params;
+  
+  const currentTicket = useSelector(selectCurrentTicket);
+  const isLoading = useSelector(selectTicketsLoading);
+  const isSending = useSelector(selectTicketsSubmitting);
 
-  const [responses, setResponses] = useState<TicketResponse[]>([]);
   const [newResponse, setNewResponse] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const [hasNewReplies, setHasNewReplies] = useState(false);
 
-  // Mock responses data
-  const mockResponses: TicketResponse[] = [
-    {
-      id: '1',
-      author: 'user',
-      authorName: 'You',
-      content: ticket.subject === 'Unable to book therapy session' 
-        ? 'Hi, I\'ve been trying to book a therapy session for the past 2 days but the app keeps showing an error message "Session unavailable" even for slots that appear to be open. I\'ve tried restarting the app and my phone but the issue persists. Can you please help me resolve this?'
-        : ticket.subject === 'Payment not processed correctly'
-        ? 'Hello, I made a payment of UGX 55,000 for a therapy session yesterday but the payment shows as failed in the app, even though the money was deducted from my account. My transaction reference is TXN123456789. Please help me resolve this issue.'
-        : 'I would like to request this feature for better user experience.',
-      createdAt: ticket.createdAt,
-    },
-    {
-      id: '2',
-      author: 'support',
-      authorName: 'Sarah from Support',
-      content: ticket.subject === 'Unable to book therapy session'
-        ? 'Thank you for contacting us. I understand how frustrating this must be. I\'ve checked your account and can see the booking attempts. This appears to be related to a synchronization issue with our booking system. Our technical team is currently investigating this issue.'
-        : ticket.subject === 'Payment not processed correctly'
-        ? 'Thank you for reaching out. I can see the payment discrepancy in your account. I\'ve escalated this to our billing team for immediate review. Could you please provide a screenshot of the transaction from your mobile money statement?'
-        : 'Thank you for your suggestion! We appreciate user feedback and will consider this feature for future updates.',
-      createdAt: '2025-01-25T14:30:00Z',
-    },
-    {
-      id: '3',
-      author: 'user',
-      authorName: 'You',
-      content: ticket.subject === 'Unable to book therapy session'
-        ? 'Thank you for the quick response. I really need to book a session soon as I have been going through a difficult time. Is there any workaround I can use in the meantime? Or can you manually book a session for me?'
-        : ticket.subject === 'Payment not processed correctly'
-        ? 'I\'ve attached the screenshot of the transaction. The money was definitely deducted from my account. Please resolve this quickly as I need to book another session.'
-        : 'Great! I think this would really improve the app experience for users like me who prefer dark themes.',
-      createdAt: '2025-01-26T09:15:00Z',
-    },
-    {
-      id: '4',
-      author: 'support',
-      authorName: 'Mike from Technical Support',
-      content: ticket.subject === 'Unable to book therapy session'
-        ? 'I completely understand your urgency. As a temporary workaround, I can manually book a session for you. I\'ve also implemented a fix that should resolve the booking issue. Please try booking again and let me know if you encounter any problems.'
-        : ticket.subject === 'Payment not processed correctly'
-        ? 'I\'ve reviewed your transaction and confirmed the payment was processed successfully on our end. I\'ve manually credited your account and you should now be able to book your session. We apologize for the inconvenience.'
-        : 'We\'ve added your request to our feature backlog. While I can\'t provide a specific timeline, dark mode is definitely something we\'re considering for a future release.',
-      createdAt: ticket.status === 'Resolved' ? '2025-01-27T11:45:00Z' : '2025-01-27T14:20:00Z',
-    },
-  ];
+  // Removed mock data - now using Redux state
+  const responses = currentTicket?.messages || [];
 
   useEffect(() => {
-    loadResponses();
-    // Mark ticket as read
-    setTimeout(() => setHasNewReplies(false), 2000);
-  }, []);
+    loadTicketData();
+  }, [ticketId]);
 
-  const loadResponses = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      setTimeout(() => {
-        setResponses(mockResponses);
-        setIsLoading(false);
-        scrollToBottom();
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+  const loadTicketData = async () => {
+    const result = await dispatch(loadTicketById(userId, ticketId));
+    if (!result.success) {
       toast.show({
         description: 'Failed to load ticket details',
         duration: 3000,
@@ -126,81 +77,89 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
     }
   };
 
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
   const handleSendResponse = async () => {
-    if (!newResponse.trim() || isSending) return;
-
-    if (ticket.status === 'Resolved') {
-      Alert.alert(
-        'Ticket Resolved',
-        'This ticket has been resolved. You cannot add new responses to resolved tickets.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    const response: TicketResponse = {
-      id: Date.now().toString(),
-      author: 'user',
-      authorName: 'You',
-      content: newResponse.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    setResponses(prev => [...prev, response]);
-    setNewResponse('');
-    setIsSending(true);
-    scrollToBottom();
-
-    try {
-      // Simulate API call
-      setTimeout(() => {
-        setIsSending(false);
-        toast.show({
-          description: 'Response sent successfully',
-          duration: 2000,
-        });
-      }, 1000);
-    } catch (error) {
-      setIsSending(false);
+    if (!newResponse.trim()) {
       toast.show({
-        description: 'Failed to send response',
-        duration: 3000,
-      });
-    }
-  };
-
-  const handleRequestClose = () => {
-    if (ticket.status === 'Resolved') {
-      toast.show({
-        description: 'This ticket is already resolved',
+        description: 'Please enter a message',
         duration: 2000,
       });
       return;
     }
 
+    const result = await dispatch(addMessageToTicketAction(userId, ticketId, newResponse.trim()));
+
+    if (result.success) {
+      setNewResponse('');
+      toast.show({
+        description: 'Message sent successfully',
+        duration: 2000,
+      });
+      // Scroll to bottom to show new message
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } else {
+      toast.show({
+        description: 'Failed to send message',
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleCloseTicket = async () => {
     Alert.alert(
-      'Request Ticket Closure',
-      'Are you sure you want to request closure of this ticket? This action will mark the ticket as resolved.',
+      'Close Ticket',
+      'Are you sure you want to close this ticket?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Request Closure', 
-          onPress: () => {
-            toast.show({
-              description: 'Closure request sent to support team',
-              duration: 3000,
-            });
-          }
+        {
+          text: 'Close',
+          onPress: async () => {
+            const result = await dispatch(closeTicketAction(userId, ticketId));
+            if (result.success) {
+              toast.show({
+                description: 'Ticket closed successfully',
+                duration: 2000,
+              });
+              navigation.goBack();
+            } else {
+              toast.show({
+                description: 'Failed to close ticket',
+                duration: 3000,
+              });
+            }
+          },
         },
       ]
     );
   };
+
+  const handleReopenTicket = async () => {
+    const result = await dispatch(reopenTicketAction(userId, ticketId));
+    if (result.success) {
+      toast.show({
+        description: 'Ticket reopened successfully',
+        duration: 2000,
+      });
+    } else {
+      toast.show({
+        description: 'Failed to reopen ticket',
+        duration: 3000,
+      });
+    }
+  };
+
+  if (isLoading || !currentTicket) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading ticket...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // All old duplicate code removed - using Redux state and manager actions above
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);

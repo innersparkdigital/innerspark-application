@@ -91,13 +91,15 @@ export default function SignupScreen({navigation}){
     const onChangeNameHandler = (name) => { setName(name); }   
 
     // First Name Handler
-    const onChangeFirstNameHandler = (firstName) => { setFirstName(firstName); }   
+    const onChangeFirstNameHandler = (firstName) => { 
+        setFirstName(firstName.trim()); // trim whitespace
+    }   
 
     // Last Name Handler
-    const onChangeLastNameHandler = (lastName) => { setLastName(lastName); }   
+    const onChangeLastNameHandler = (lastName) => { setLastName(lastName.trim()); }   
 
     // Email Handler
-     const onChangeEmailHandler = (email) => { setEmail(email); }
+     const onChangeEmailHandler = (email) => { setEmail(email.trim()); }
 
     // Get Formatted Gender value
     const getGender = (gender) => { return (gender == 'M') ? 'Male' : 'Female'; }
@@ -106,10 +108,10 @@ export default function SignupScreen({navigation}){
     const onChangePhoneHandler = (phone) => { setPhone(phone); }
 
     // Password Handler
-    const onChangePasswordHandler = (password) => { setPassword(password); }            
+    const onChangePasswordHandler = (password) => { setPassword(password.trim()); }            
 
     // Verify Password Handler
-    const onChangeVerifyPasswordHandler = (password) => { setVerifyPassword(password); }
+    const onChangeVerifyPasswordHandler = (password) => { setVerifyPassword(password.trim()); }
 
     // Toast Notifications
     const notifyWithToast = (description) => {
@@ -145,7 +147,7 @@ export default function SignupScreen({navigation}){
 
     const validateStep2 = () => {
         // Validate Email
-        if ( !isValidEmailAddress(email) ) {
+        if ( !isValidEmailAddress(email.trim()) ) {
             notifyWithToast("Enter valid Email.");
             return false;
         }
@@ -668,7 +670,7 @@ export default function SignupScreen({navigation}){
               {/* Account Created Success Modal  */}
               <BottomSheet
                     // containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
-                    containerStyle={{ backgroundColor: appColors.CardBackground }}
+                    containerStyle={{ backgroundColor: appColors.CardBackground, justifyContent:'center' }}
                     modalProps = {{
                         presentationStyle:"overFullScreen",
                         visible: showSuccessModal,
@@ -677,48 +679,75 @@ export default function SignupScreen({navigation}){
                >
 
                     <View style={{ ...parameters.doffeeModalContainer, paddingVertical:180 }}>
-                        <View style={{ paddingVertical:15, }}>
+                        <View style={{ paddingVertical:15, paddingHorizontal:20 }}>
 
                             {/* Modal Content */}
-                            <View style={{ flex:1, justifyContent:"center", alignItems:"center", paddingVertical:30 }}>
-                                {/* <View style={{ justifyContent: "center", alignItems:"center", paddingVertical:20, }}>
-                                    <Image source={appImages.logoRound} style={{ width:100, height:80, resizeMode:'contain' }} />
-                                </View> */}
-
-                                <View style={{ justifyContent: "center", alignItems:"center", paddingVertical:20 }}>
-                                    <Icon type="font-awesome-5" name="user-check" color={appColors.AppBlue} size={80} />
+                            <View style={{ justifyContent:"center", alignItems:"center", paddingVertical:20 }}>
+                                
+                                {/* Success Icon with Background Circle */}
+                                <View style={{ 
+                                    justifyContent: "center", 
+                                    alignItems:"center",
+                                    backgroundColor: appColors.AppBlue + '15',
+                                    borderRadius: 80,
+                                    width: 140,
+                                    height: 140,
+                                    marginBottom: 20
+                                }}>
+                                    <Icon 
+                                        type="font-awesome-5" 
+                                        name="user-check" 
+                                        color={appColors.AppBlue} 
+                                        size={70} 
+                                    />
                                 </View>
 
-                                <View style={{ marginVertical:10, paddingHorizontal:5 }}>
-                                    <Text style={{ fontSize:18, textAlign:'center', paddingVertical:5, color:appColors.AppBlue, fontFamily:appFonts.headerTextBold }}>
-                                        Excited to have you join us! 
+                                {/* Success Message */}
+                                <View style={{ marginVertical:10, paddingHorizontal:15 }}>
+                                    <Text style={{ 
+                                        fontSize: 24, 
+                                        textAlign:'center', 
+                                        fontWeight:"700", 
+                                        paddingVertical:5, 
+                                        color: appColors.black,
+                                        letterSpacing: 0.3,
+                                        fontFamily: appFonts.headerTextExtraBold
+                                    }}>
+                                        Welcome Aboard!
                                     </Text>
-                                    <Text style={{ fontSize:22, textAlign:'center', fontWeight:'bold', paddingVertical:5, color:appColors.AppBlue, fontFamily:appFonts.headerTextExtraBold }}>
-                                        Welcome, let’s get started!
+                                    <Text style={{ 
+                                        fontSize: 15, 
+                                        textAlign:'center', 
+                                        paddingTop:8,
+                                        color: appColors.grey2,
+                                        lineHeight: 22
+                                    }}>
+                                        Your account has been created successfully. You can now access all features and start your wellness journey.
                                     </Text>
                                 </View>
                             </View>
 
-                            {/* The following options  */}
-                            <View style={{ flex:1, justifyContent:"center", marginVertical:15, paddingHorizontal:10, }}>
-                                <View style = {{ marginHorizontal:15, marginVertical:15, justifyContent:'center', alignItems:'center' }}>
-                                    <Pressable 
-                                        style={ styles.roundButton } 
-                                        onPress={ 
-                                            () => { 
-
-                                                setShowSuccessModal(false);
-                                                // Login the user or Navigate to HomeScreen
-                                                // You can clear the stack to disable Going back
-                                                navigation.popToTop(); // This clear stack history
-                                                navigation.navigate('SigninScreen'); // Redirect to Signin Page
-                                                // dispatch(signin(userTokenData));
-
-                                            } 
-                                        }>
-                                        <Icon name="arrow-forward" type="material-icons" color={appColors.CardBackground} size={40} />
-                                    </Pressable>   
-                                </View> 
+                            {/* Action Button */}
+                            <View style={{ justifyContent:"center", marginTop:10, marginBottom:5, paddingHorizontal:10 }}>
+                                <Button 
+                                    title="GET STARTED" 
+                                    buttonStyle={{ 
+                                        ...parameters.appButtonXLBlue,
+                                        paddingVertical: 16,
+                                        borderRadius: 12
+                                    }}
+                                    titleStyle={{ 
+                                        ...parameters.appButtonXLTitle,
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                        letterSpacing: 0.5
+                                    }}
+                                    onPress={() => { 
+                                        setShowSuccessModal(false);
+                                        navigation.popToTop();
+                                        navigation.navigate('SigninScreen');
+                                    }}
+                                />
                             </View>
 
                         </View>

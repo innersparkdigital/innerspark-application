@@ -15,6 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getTherapists } from '../../api/client/therapists';
+import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 
 interface Contact {
   id: string;
@@ -33,6 +36,7 @@ interface NewMessageScreenProps {
 
 const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messageText, setMessageText] = useState('');
@@ -40,58 +44,6 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-
-  // Mock contacts data - CLIENTS CAN ONLY MESSAGE THERAPISTS
-  const mockContacts: Contact[] = [
-    {
-      id: 'therapist_1',
-      name: 'Dr. Sarah Johnson',
-      email: 'sarah.johnson@innerspark.com',
-      avatar: require('../../assets/images/dummy-people/d-person1.png'),
-      type: 'therapist',
-      specialty: 'Anxiety & Depression',
-      isOnline: true,
-    },
-    {
-      id: 'therapist_2',
-      name: 'Dr. Clara Odding',
-      email: 'clara.odding@innerspark.com',
-      avatar: require('../../assets/images/dummy-people/d-person2.png'),
-      type: 'therapist',
-      specialty: 'Couples Therapy',
-      isOnline: false,
-      lastSeen: '30 min ago',
-    },
-    {
-      id: 'therapist_3',
-      name: 'Dr. Martin Pilier',
-      email: 'martin.pilier@innerspark.com',
-      avatar: require('../../assets/images/dummy-people/d-person1.png'),
-      type: 'therapist',
-      specialty: 'Group Therapy',
-      isOnline: false,
-      lastSeen: '2 hours ago',
-    },
-    {
-      id: 'therapist_4',
-      name: 'Dr. Emily Carter',
-      email: 'emily.carter@innerspark.com',
-      avatar: require('../../assets/images/dummy-people/d-person2.png'),
-      type: 'therapist',
-      specialty: 'Trauma & PTSD',
-      isOnline: true,
-    },
-    {
-      id: 'therapist_5',
-      name: 'Dr. James Mitchell',
-      email: 'james.mitchell@innerspark.com',
-      avatar: require('../../assets/images/dummy-people/d-person1.png'),
-      type: 'therapist',
-      specialty: 'Mindfulness & Meditation',
-      isOnline: false,
-      lastSeen: '1 hour ago',
-    },
-  ];
 
   useEffect(() => {
     loadContacts();
@@ -104,17 +56,38 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   const loadContacts = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setContacts(mockContacts);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
+      console.log('📞 Calling getTherapists API...');
+      const response = await getTherapists({ search: searchQuery });
+      console.log('✅ Therapists API Response:', JSON.stringify(response, null, 2));
+      
+      if (response.success && response.data?.therapists) {
+        const apiTherapists = response.data.therapists;
+        const mappedContacts: Contact[] = apiTherapists.map((therapist: any) => ({
+          id: therapist.id?.toString() || therapist._id?.toString(),
+          name: therapist.name || 'Unknown Therapist',
+          email: therapist.email || '',
+          avatar: getImageSource(therapist.image || therapist.avatar, FALLBACK_IMAGES.user),
+          type: 'therapist' as const,
+          specialty: therapist.specialty || therapist.specialization || '',
+          isOnline: therapist.isOnline || therapist.is_online || false,
+          lastSeen: therapist.lastSeen || therapist.last_seen,
+        }));
+        
+        setContacts(mappedContacts);
+        console.log('✅ Mapped Contacts:', mappedContacts.length);
+      } else {
+        console.log('ℹ️ No therapists found - empty state');
+        setContacts([]);
+      }
+    } catch (error: any) {
+      console.error('❌ Error loading therapists:', error);
+      setContacts([]);
       toast.show({
-        description: 'Failed to load contacts',
+        description: 'Failed to load therapists',
         duration: 3000,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -140,7 +113,6 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   const handleSendMessage = async () => {
     if (!selectedContact || !messageText.trim() || isSending) return;
 
-    // Validate message
     if (messageText.length > 1000) {
       Alert.alert('Message too long', 'Please keep your message under 1000 characters.');
       return;
@@ -149,15 +121,15 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
     setIsSending(true);
 
     try {
-      // Simulate API call to start conversation
+      // TODO: Implement API call to start conversation/send first message
+      // For now, just navigate to the thread screen
       setTimeout(() => {
         setIsSending(false);
         toast.show({
-          description: `Message sent to ${selectedContact.name}`,
-          duration: 3000,
+          description: `Opening conversation with ${selectedContact.name}`,
+          duration: 2000,
         });
 
-        // Navigate to the new conversation
         navigation.replace('DMThreadScreen', {
           partnerId: selectedContact.id,
           partnerName: selectedContact.name,
@@ -165,11 +137,11 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           isOnline: selectedContact.isOnline,
           lastSeen: selectedContact.lastSeen,
         });
-      }, 2000);
+      }, 1000);
     } catch (error) {
       setIsSending(false);
       Alert.alert(
-        'Failed to send message',
+        'Failed to open conversation',
         'Please check your connection and try again.',
         [
           { text: 'OK' },

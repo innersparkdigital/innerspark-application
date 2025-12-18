@@ -17,7 +17,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
+import {
+  selectCurrentReport,
+  selectReportsLoading,
+  selectReportsRefreshing,
+} from '../../features/reports/reportsSlice';
+import { loadWeeklyReport, refreshWeeklyReport, sendReportEmail } from '../../utils/reportsManager';
 
 interface WeeklyReport {
   id: string;
@@ -62,87 +69,26 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) => {
   const toast = useToast();
-  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get report from Redux
+  const weeklyReport = useSelector(selectCurrentReport) as WeeklyReport | null;
+  const isLoading = useSelector(selectReportsLoading);
+  const isRefreshing = useSelector(selectReportsRefreshing);
 
+  // Load report on mount
   useEffect(() => {
-    loadWeeklyReport();
+    // TODO: Get userId from auth context/Redux
+    const userId = 'current_user_id';
+    loadWeeklyReport(userId);
   }, []);
 
-  const loadWeeklyReport = async () => {
-    setIsLoading(true);
-    try {
-      // Mock weekly report data
-      const mockReport: WeeklyReport = {
-        id: 'report-2024-w12',
-        weekStartDate: '2024-03-18',
-        weekEndDate: '2024-03-24',
-        generatedDate: new Date().toISOString(),
-        moodSummary: {
-          averageMood: 3.8,
-          moodTrend: 'improving',
-          totalCheckIns: 6,
-          streakDays: 6,
-          dominantMood: 'Good',
-          moodDistribution: [
-            { mood: 'Great', percentage: 33, emoji: '😊' },
-            { mood: 'Good', percentage: 50, emoji: '🙂' },
-            { mood: 'Okay', percentage: 17, emoji: '😐' },
-            { mood: 'Bad', percentage: 0, emoji: '😔' },
-            { mood: 'Terrible', percentage: 0, emoji: '😢' },
-          ],
-        },
-        journalingSummary: {
-          totalEntries: 6,
-          averageLength: 85,
-          commonThemes: ['gratitude', 'work stress', 'family time', 'self-care'],
-          sentimentScore: 0.72,
-          keyInsights: [
-            'You expressed more gratitude this week compared to last week',
-            'Work stress mentions decreased by 30%',
-            'Family time was a recurring positive theme',
-          ],
-        },
-        activitiesSummary: {
-          completedActivities: 4,
-          recommendedActivities: ['Morning meditation', 'Evening walk', 'Journaling'],
-          upcomingGoals: ['Complete 7-day streak', 'Try group therapy session'],
-          achievedMilestones: ['6-day mood tracking streak', 'First week of consistent journaling'],
-        },
-        recommendations: {
-          moodBased: [
-            'Continue your positive mood trend with morning affirmations',
-            'Consider scheduling a therapy session to maintain progress',
-          ],
-          activityBased: [
-            'Try our new mindfulness workshop this weekend',
-            'Join a support group to connect with others',
-          ],
-          therapyRecommendations: [
-            'Dr. Sarah Johnson - Specializes in stress management',
-            'Group therapy session on Thursdays',
-          ],
-        },
-        pointsEarned: 3500,
-        nextReportDate: '2024-03-31',
-      };
-
-      setWeeklyReport(mockReport);
-    } catch (error) {
-      toast.show({
-        description: 'Failed to load weekly report',
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadWeeklyReport();
-    setIsRefreshing(false);
+    const userId = 'current_user_id';
+    await refreshWeeklyReport(userId);
+    toast.show({
+      description: 'Report refreshed',
+      duration: 2000,
+    });
   };
 
   const handleShareReport = async () => {
@@ -166,7 +112,15 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
     }
   };
 
-  const handleEmailReport = () => {
+  const handleEmailReport = async () => {
+    if (!weeklyReport) {
+      toast.show({
+        description: 'No report available to email',
+        duration: 2000,
+      });
+      return;
+    }
+
     Alert.alert(
       'Email Report',
       'Your weekly report will be sent to your registered email address.',
@@ -174,11 +128,21 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Send Email', 
-          onPress: () => {
-            toast.show({
-              description: 'Weekly report sent to your email!',
-              duration: 3000,
-            });
+          onPress: async () => {
+            const userId = 'current_user_id';
+            const result = await sendReportEmail(userId, weeklyReport.id);
+            
+            if (result.success) {
+              toast.show({
+                description: 'Weekly report sent to your email!',
+                duration: 3000,
+              });
+            } else {
+              toast.show({
+                description: result.error || 'Failed to send email',
+                duration: 3000,
+              });
+            }
           }
         }
       ]
@@ -452,7 +416,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Weekly Report</Text>
           <View style={styles.placeholder} />
@@ -465,6 +429,56 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
             <Skeleton animation="pulse" width="100%" height={150} style={{ marginBottom: 20 }} />
             <Skeleton animation="pulse" width="100%" height={180} />
           </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Empty state when no report is available
+  if (!weeklyReport) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Weekly Report</Text>
+          <TouchableOpacity 
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+          >
+            <Icon name="refresh" type="material" color={appColors.CardBackground} size={24} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.emptyContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[appColors.AppBlue]}
+            />
+          }
+        >
+          <Icon name="assessment" type="material" color={appColors.grey3} size={80} />
+          <Text style={styles.emptyTitle}>No Report Available</Text>
+          <Text style={styles.emptySubtitle}>
+            Your weekly wellness report will be generated automatically based on your mood tracking, journaling, and activities.
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            Start tracking your mood and journaling to see your first report!
+          </Text>
+          <Button
+            title="Track Mood Now"
+            buttonStyle={styles.emptyButton}
+            titleStyle={styles.emptyButtonText}
+            onPress={() => navigation.navigate('MoodScreen')}
+          />
         </ScrollView>
       </SafeAreaView>
     );
@@ -505,7 +519,8 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
         <JournalingSummaryCard />
         <ActivitiesSummaryCard />
         <RecommendationsCard />
-        <PointsEarnedCard />
+        {/* Hide points card for now */}
+        {/* <PointsEarnedCard /> */}
 
         {/* Next Report Info */}
         <View style={styles.nextReportCard}>
@@ -852,6 +867,40 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontFamily: appFonts.headerTextBold,
+    color: appColors.grey1,
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    fontFamily: appFonts.headerTextRegular,
+    color: appColors.grey3,
+    marginTop: 12,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyButton: {
+    backgroundColor: appColors.AppBlue,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 24,
+  },
+  emptyButtonText: {
+    fontSize: 16,
+    fontFamily: appFonts.headerTextSemiBold,
+    color: appColors.CardBackground,
   },
 });
 

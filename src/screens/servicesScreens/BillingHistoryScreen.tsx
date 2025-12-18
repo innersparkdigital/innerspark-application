@@ -54,6 +54,9 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
   const toast = useToast();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const walletBalance = useSelector((state: any) => state.wallet.balance);
+  const walletCurrency = useSelector((state: any) => state.wallet.currency);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,15 +118,41 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       }
 
       // ⚠️ MISSING ENDPOINT: getPaymentMethods(userId)
-      // Using mock data for payment methods
-      console.log('⚠️ MISSING API: getPaymentMethods - using mock data');
-      setPaymentMethods(mockPaymentMethods);
+      // Build dynamic payment methods from Redux state
+      console.log('ℹ️ Building payment methods from Redux state');
+      
+      const dynamicPaymentMethods: PaymentMethod[] = [];
+      
+      // Add Wellness Vault if user has balance
+      if (walletBalance > 0) {
+        dynamicPaymentMethods.push({
+          id: '1',
+          type: 'wellnessvault',
+          name: 'WellnessVault',
+          details: `${walletCurrency} ${walletBalance.toLocaleString()} available`,
+          isDefault: true,
+        });
+      }
+      
+      // Add Mobile Money if user has phone number
+      if (userDetails?.phoneNumber) {
+        const maskedPhone = userDetails.phoneNumber.replace(/\d(?=\d{4})/g, '*');
+        dynamicPaymentMethods.push({
+          id: '2',
+          type: 'mobile_money',
+          name: 'Mobile Money',
+          details: maskedPhone,
+          isDefault: dynamicPaymentMethods.length === 0, // Default if no wallet balance
+        });
+      }
+      
+      setPaymentMethods(dynamicPaymentMethods);
     } catch (error: any) {
       console.error('❌ Error loading billing history:', error);
       
       // On error, show empty state (not mock data)
       setInvoices([]);
-      setPaymentMethods(mockPaymentMethods);
+      setPaymentMethods([]); // Empty payment methods on error
       setHasMore(false);
       
       toast.show({
@@ -350,6 +379,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
     </View>
   );
 
+  // Payment Methods Card
   const PaymentMethodsCard: React.FC = () => (
     <View style={styles.paymentMethodsCard}>
       <Text style={styles.sectionTitle}>Payment Methods</Text>
@@ -411,7 +441,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
         ListHeaderComponent={
           !isLoading ? (
             <View>
-              <PaymentMethodsCard />
+              {paymentMethods.length > 0 && <PaymentMethodsCard />}
               <FilterChips />
             </View>
           ) : null

@@ -32,41 +32,41 @@ export const signup = async (userData) => {
 /**
  * Request password reset
  * @param {string} email - User email
- * @returns {Promise} Success message
+ * @returns {Promise} Full response with status and data
  */
 export const resetPassword = async (email) => {
-    const response = await AuthInstance.post('/auth/reset-password', { email });
-    return response.data;
+    const response = await AuthInstance.post('/auth/forgot-password', { email });
+    return response;
 };
 
 /**
  * Verify password reset code
  * @param {string} email - User email
- * @param {string} code - Reset code
+ * @param {string} otp - Reset code (6-digit OTP)
  * @returns {Promise} Verification result
  */
-export const verifyResetCode = async (email, code) => {
-    const response = await AuthInstance.post('/auth/verify-reset-code', {
-        email,
-        code
+export const verifyResetCode = async (email, otp) => {
+    const response = await AuthInstance.post('/auth/verify-reset-otp', {
+        email: email,
+        otp: otp
     });
-    return response.data;
+    return response;
 };
 
 /**
  * Set new password after reset
  * @param {string} email - User email
- * @param {string} code - Reset code
+ * @param {string} resetToken - Reset token from response
  * @param {string} newPassword - New password
  * @returns {Promise} Success message
  */
-export const setNewPassword = async (email, code, newPassword) => {
-    const response = await AuthInstance.post('/auth/set-new-password', {
+export const setNewPassword = async (email, resetToken, newPassword) => {
+    const response = await AuthInstance.post('/auth/reset-password', {
         email,
-        code,
+        resetToken,
         newPassword
     });
-    return response.data;
+    return response;
 };
 
 /**

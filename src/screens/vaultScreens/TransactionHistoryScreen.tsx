@@ -1,7 +1,7 @@
 /**
  * Transaction History Screen - Full history of all wallet transactions
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -12,12 +12,37 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { useSelector } from 'react-redux';
+import { RefreshControl, FlatList, ActivityIndicator } from 'react-native';
+import {
+  selectTransactions,
+  selectWalletLoading,
+  selectWalletRefreshing,
+} from '../../features/wallet/walletSlice';
+import { loadWalletTransactions, refreshWalletTransactions } from '../../utils/walletManager';
 
 const TransactionHistoryScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all'); // all, credit, debit
+  
+  // Get transactions from Redux
+  const allTransactions = useSelector(selectTransactions);
+  const isLoading = useSelector(selectWalletLoading);
+  const isRefreshing = useSelector(selectWalletRefreshing);
 
-  // Mock transaction data - in real app this would come from API
-  const allTransactions = [
+  // Load transactions on mount
+  useEffect(() => {
+    // TODO: Get userId from auth context/Redux
+    const userId = 'current_user_id';
+    loadWalletTransactions(userId, 1, 50); // Load more transactions for history
+  }, []);
+
+  const handleRefresh = async () => {
+    const userId = 'current_user_id';
+    await refreshWalletTransactions(userId, 1, 50);
+  };
+
+  // Original mock data structure for reference (now from Redux)
+  const mockTransactions = [
     {
       id: 1,
       description: 'MoMo Top-up',
@@ -118,7 +143,22 @@ const TransactionHistoryScreen = ({ navigation }) => {
       icon: 'stars',
       category: 'Rewards',
     },
-  ];
+  ]; // End mock reference
+
+  // Calculate stats from actual transactions
+  const calculateStats = () => {
+    const totalCredits = allTransactions
+      .filter(txn => txn.type === 'credit')
+      .reduce((sum, txn) => sum + (txn.amount || 0), 0);
+    
+    const totalDebits = allTransactions
+      .filter(txn => txn.type === 'debit')
+      .reduce((sum, txn) => sum + Math.abs(txn.amount || 0), 0);
+    
+    return { totalCredits, totalDebits };
+  };
+
+  const { totalCredits, totalDebits } = calculateStats();
 
   const filteredTransactions = allTransactions.filter(transaction => {
     if (filter === 'all') return true;
@@ -194,31 +234,69 @@ const TransactionHistoryScreen = ({ navigation }) => {
         <FilterButton label="Debits" value="debit" />
       </View>
 
-      {/* Summary Card */}
-      <View style={styles.summaryCard}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total Credits</Text>
-          <Text style={[styles.summaryAmount, styles.creditAmount]}>+198,000 UGX</Text>
+      {/* Summary Card - Only show if there are transactions */}
+      {allTransactions.length > 0 && (
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Total Credits</Text>
+            <Text style={[styles.summaryAmount, styles.creditAmount]}>
+              +{totalCredits.toLocaleString()} UGX
+            </Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Total Debits</Text>
+            <Text style={[styles.summaryAmount, styles.debitAmount]}>
+              -{totalDebits.toLocaleString()} UGX
+            </Text>
+          </View>
         </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total Debits</Text>
-          <Text style={[styles.summaryAmount, styles.debitAmount]}>-110,000 UGX</Text>
-        </View>
-      </View>
+      )}
 
       {/* Transactions List */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.transactionsContainer}>
-          <Text style={styles.sectionTitle}>
-            {filter === 'all' ? 'All Transactions' : filter === 'credit' ? 'Credits Only' : 'Debits Only'}
-            <Text style={styles.countText}> ({filteredTransactions.length})</Text>
-          </Text>
-          
-          {filteredTransactions.map((transaction) => (
-            <TransactionItem key={transaction.id} transaction={transaction} />
-          ))}
-        </View>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[appColors.AppBlue]}
+          />
+        }
+      >
+        {allTransactions.length > 0 ? (
+          <View style={styles.transactionsContainer}>
+            <Text style={styles.sectionTitle}>
+              {filter === 'all' ? 'All Transactions' : filter === 'credit' ? 'Credits Only' : 'Debits Only'}
+              <Text style={styles.countText}> ({filteredTransactions.length})</Text>
+            </Text>
+            
+            {filteredTransactions.length > 0 ? (
+              filteredTransactions.map((transaction) => (
+                <TransactionItem key={transaction.id} transaction={transaction} />
+              ))
+            ) : (
+              <View style={styles.emptyFiltered}>
+                <Icon name="filter-list-off" type="material" color={appColors.grey4} size={48} />
+                <Text style={styles.emptyFilteredText}>
+                  No {filter === 'credit' ? 'credit' : 'debit'} transactions found
+                </Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Icon name="receipt-long" type="material" color={appColors.grey4} size={80} />
+            <Text style={styles.emptyTitle}>No Transactions Yet</Text>
+            <Text style={styles.emptyText}>
+              Your transaction history will appear here once you start using your wellness vault.
+            </Text>
+            <Text style={styles.emptyText}>
+              Top up your wallet to get started!
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -385,6 +463,41 @@ const styles = StyleSheet.create({
   },
   debitAmount: {
     color: '#F44336',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 80,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontFamily: appFonts.headerTextBold,
+    color: appColors.grey1,
+    marginTop: 20,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    fontFamily: appFonts.headerTextRegular,
+    color: appColors.grey3,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 8,
+  },
+  emptyFiltered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyFilteredText: {
+    fontSize: 14,
+    fontFamily: appFonts.headerTextRegular,
+    color: appColors.grey3,
+    marginTop: 16,
+    textAlign: 'center',
   },
 });
 

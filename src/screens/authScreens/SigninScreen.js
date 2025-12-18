@@ -503,7 +503,7 @@ export default function SigninScreen({navigation}){
                                     editable={!isLoading}
                                     placeholder='Email or Phone'
                                     value={username}
-                                    maxLength={30}
+                                    maxLength={50}
                                     onChangeText={ onChangeUsernameHandler }
                                 />  
                             </View>
@@ -549,6 +549,7 @@ export default function SigninScreen({navigation}){
                                         () => {
                                             // testing the feature modal
                                             // setIsFeatureModalVisible(true);
+                                            // setIsLoggedInModalVisible(true);
 
                                             // Select Login Method (Email or Phone)
                                             smartLoginSelect(); 
@@ -635,8 +636,12 @@ export default function SigninScreen({navigation}){
                             > Sign up</Text>
                         </View>
 
+
+
                         {/* Test Therapist Login Link */}
-                        <View style={{ justifyContent:'center', paddingVertical:10, paddingTop:20 }}>
+                        {/* Temporary debug link - will be removed in production */}
+                        {/* This is a temporary link for testing therapist dashboard access and will be removed before production release */}
+                        {/* <View style={{ justifyContent:'center', paddingVertical:10, paddingTop:20 }}>
                             <Pressable
                                 style={{ flexDirection:'row', alignItems:'center', justifyContent:'center' }}
                                 onPress={ 
@@ -654,19 +659,19 @@ export default function SigninScreen({navigation}){
                                         };
 
                                         // Store user token data
-                                        storeItemLS("userToken", therapistTestData);
+                                        // storeItemLS("userToken", therapistTestData);
                                         
                                         // Dispatch signin action
-                                        dispatch(signin(therapistTestData));
+                                        // dispatch(signin(therapistTestData));
                                         
                                         // Dispatch update user details
-                                        dispatch(updateUserDetails(therapistTestData));
+                                        // dispatch(updateUserDetails(therapistTestData));
                                         
                                         // Store user details in local storage
-                                        storeItemLS("userDetailsLS", therapistTestData);
+                                        // storeItemLS("userDetailsLS", therapistTestData);
                                         
                                         // Show success message
-                                        notifyWithToast("🩺 Therapist mode activated!");
+                                        // notifyWithToast("🩺 Therapist mode activated!");
                                     } 
                                 }
                             >
@@ -676,6 +681,8 @@ export default function SigninScreen({navigation}){
                                 </Text>
                             </Pressable>
                         </View>
+                        */}
+
 
                         {/* Terms of Service - with separate links */}
                         {/* <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:15 }}>

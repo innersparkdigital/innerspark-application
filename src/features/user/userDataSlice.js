@@ -83,6 +83,34 @@ export const userDataSlice = createSlice({
             state.pushNotificationCount = action.payload            
         },
 
+        /**
+         * Reset all user data to initial state
+         * Called on logout to clear sensitive user information
+         */
+        resetUserData: (state) => {
+            state.userDetails = {
+                userId: 0,
+                name: "App User",
+                email: "standard@example.com",
+                phone: "+25689888885",
+                city: "Kampala", 
+                country: "Uganda",
+                balance : 0.0,
+                gender: "",
+                image: "",
+                pin: "0",
+                email_verified: 0,
+                phone_verified: 0,
+            };
+            state.userProfile = null;
+            state.userAvatar = null;
+            state.sessionUserId = null;
+            state.userNotifications = [];
+            state.userNotificationCount = 0;
+            state.pushNotifications = [];
+            state.pushNotificationCount = 0;
+        },
+
     }
 })
 
@@ -97,6 +125,7 @@ export const {
     updateUserNotificationCount,
     updatePushNotifications,
     updatePushNotificationCount,
+    resetUserData,
 
 } = userDataSlice.actions
 

@@ -17,7 +17,9 @@ import {
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
+import { appContents } from '../global/Data';
 
 interface PanicButtonComponentProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
@@ -36,6 +38,8 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
 }) => {
   const navigation = useNavigation();
   const toast = useToast();
+  const crisisLines = useSelector((state: any) => state.emergency.crisisLines || []);
+  const emergencyContacts = useSelector((state: any) => state.emergency.contacts || []);
   const [isPressed, setIsPressed] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -129,47 +133,86 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
     hideModalAnimation();
   };
 
+  // Emergency Actions Data - Dynamic data from API and Redux
+  const emergencyActionsData = [
+    // First item: First crisis hotline from API
+    {
+      phone: crisisLines[0]?.phone || '+256-700-123-456',
+      name: crisisLines[0]?.name || 'Counselor',
+      icon: crisisLines[0]?.icon || 'phone',
+      color: crisisLines[0]?.color || '#2196F3',
+      type: 'call',
+    },
+    // Second item: Second crisis hotline from API
+    {
+      phone: crisisLines[1]?.phone || '+256-800-567-890',
+      name: crisisLines[1]?.name || 'Crisis Line',
+      icon: crisisLines[1]?.icon || 'local-hospital',
+      color: crisisLines[1]?.color || '#FF5722',
+      type: 'call',
+    },
+    // Third item: Navigate to EmergencyScreen
+    {
+      type: 'navigation',
+      screen: 'EmergencyScreen',
+      icon: 'support-agent',
+      color: '#9C27B0',
+      label: 'Crisis\nSupport',
+    },
+    // Fourth item: Notify emergency contacts
+    {
+      type: 'notify',
+      icon: 'contacts',
+      color: '#4CAF50',
+      label: 'Notify\nContacts',
+      contacts: emergencyContacts,
+    },
+  ];
+
   const emergencyActions = [
     {
       id: 1,
-      icon: 'phone',
-      label: 'Call\nCounselor',
-      color: '#2196F3',
+      icon: emergencyActionsData[0]?.icon || 'phone',
+      label: `Call\n${emergencyActionsData[0]?.name?.split(' ')[0] || 'Counselor'}`,
+      color: emergencyActionsData[0]?.color || '#2196F3',
       action: () => {
         hideModalAnimation();
-        setTimeout(() => handleCall('+256-700-123-456', 'Counselor'), 300);
+        setTimeout(() => handleCall(emergencyActionsData[0]?.phone, emergencyActionsData[0]?.name), 300);
       },
     },
     {
       id: 2,
-      icon: 'local-hospital',
-      label: 'Crisis\nLine',
-      color: '#FF5722',
+      icon: emergencyActionsData[1]?.icon || 'local-hospital',
+      label: `Call\n${emergencyActionsData[1]?.name?.split(' ')[0] || 'Crisis'}`,
+      color: emergencyActionsData[1]?.color || '#FF5722',
       action: () => {
         hideModalAnimation();
-        setTimeout(() => handleCall('+256-800-567-890', 'Crisis Line'), 300);
+        setTimeout(() => handleCall(emergencyActionsData[1]?.phone, emergencyActionsData[1]?.name), 300);
       },
     },
     {
       id: 3,
-      icon: 'support-agent',
-      label: 'Crisis\nSupport',
-      color: '#9C27B0',
+      icon: emergencyActionsData[2]?.icon || 'support-agent',
+      label: emergencyActionsData[2]?.label || 'Crisis\nSupport',
+      color: emergencyActionsData[2]?.color || '#9C27B0',
       action: () => {
         hideModalAnimation();
-        setTimeout(() => navigation.navigate('EmergencyScreen' as never), 300);
+        setTimeout(() => navigation.navigate(emergencyActionsData[2]?.screen as never), 300);
       },
     },
     {
       id: 4,
-      icon: 'contacts',
-      label: 'Notify\nContacts',
-      color: '#4CAF50',
+      icon: emergencyActionsData[3]?.icon || 'contacts',
+      label: emergencyActionsData[3]?.label || 'Notify\nContacts',
+      color: emergencyActionsData[3]?.color || '#4CAF50',
       action: () => {
         hideModalAnimation();
         setTimeout(() => {
+          const contactCount = emergencyActionsData[3]?.contacts?.length || 0;
           toast.show({
-            description: 'Notifying emergency contacts...',
+            description: contactCount > 0 
+              ? `Notifying ${contactCount} emergency contact${contactCount !== 1 ? 's' : ''}...`
+              : 'No emergency contacts configured',
             duration: 2000,
           });
         }, 300);
@@ -178,9 +221,13 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
   ];
 
   const handleDirectCall = () => {
+    const primaryContact = emergencyContacts.find((c: any) => c.isPrimary) || emergencyContacts[0];
+    const contactPhone = primaryContact?.phone || emergencyActionsData[0]?.phone || appContents.supportPhone;
+    const contactName = primaryContact?.name || emergencyActionsData[0]?.name || 'Primary Counselor';
+    
     Alert.alert(
       'Emergency Call',
-      'Call your primary crisis support contact?',
+      `Call ${contactName}?`,
       [
         {
           text: 'Cancel',
@@ -188,7 +235,7 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
         },
         {
           text: 'Call Now',
-          onPress: () => handleCall('+256-700-123-456', 'Primary Counselor'),
+          onPress: () => handleCall(contactPhone, contactName),
           style: 'destructive',
         },
       ]

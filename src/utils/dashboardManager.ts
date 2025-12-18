@@ -52,7 +52,21 @@ export const loadDashboardData = async (userId: string) => {
       data: error?.response?.data,
     });
     
-    store.dispatch(setError(error?.message || 'Failed to load dashboard data'));
+    // Handle 404 - endpoint not implemented yet, return empty structure with wellness tip
+    if (error?.response?.status === 404) {
+      console.log('📦 GET /client/dashboard endpoint returns 404, showing empty state with wellness tip');
+      
+      store.dispatch(setDashboardData({
+        user: { firstName: '', lastName: '', profileImage: null },
+        upcomingSessions: [],
+        todayEvents: [],
+        wellnessTip: getRandomWellnessTip(), // Always provide wellness tip for better UX
+        moodStreak: 0,
+        quickStats: { sessionsCompleted: 0, goalsAchieved: 0 },
+      }));
+    } else {
+      store.dispatch(setError(error?.message || 'Failed to load dashboard data'));
+    }
   } finally {
     store.dispatch(setLoading(false));
   }
@@ -80,7 +94,22 @@ export const refreshDashboardData = async (userId: string) => {
     }
   } catch (error: any) {
     console.log('❌ Error refreshing dashboard data:', error?.message);
-    store.dispatch(setError(error?.message || 'Failed to refresh dashboard data'));
+    
+    // Handle 404 - endpoint not implemented yet
+    if (error?.response?.status === 404) {
+      console.log('📦 Dashboard refresh returns 404, showing empty state with wellness tip');
+      
+      store.dispatch(setDashboardData({
+        user: { firstName: '', lastName: '', profileImage: null },
+        upcomingSessions: [],
+        todayEvents: [],
+        wellnessTip: getRandomWellnessTip(),
+        moodStreak: 0,
+        quickStats: { sessionsCompleted: 0, goalsAchieved: 0 },
+      }));
+    } else {
+      store.dispatch(setError(error?.message || 'Failed to refresh dashboard data'));
+    }
   } finally {
     store.dispatch(setRefreshing(false));
   }

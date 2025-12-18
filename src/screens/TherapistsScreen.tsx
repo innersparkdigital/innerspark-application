@@ -27,6 +27,12 @@ import LHGenericHeader from '../components/LHGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
 import PanicButtonComponent from '../components/PanicButtonComponent';
 import LHGenericFeatureModal from '../components/LHGenericFeatureModal';
+import {
+  selectTherapists,
+  selectTherapistsLoading,
+  selectTherapistsRefreshing,
+} from '../features/therapists/therapistsSlice';
+import { loadTherapists, refreshTherapists } from '../utils/therapistsManager';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -37,18 +43,27 @@ const TherapistsScreen = ({ navigation, route }) => {
   // Check if we came from outside bottom tabs (need back button)
   const showBackButton = route?.params?.showBackButton || false;
   
+  // Get therapists from Redux
+  const therapists = useSelector(selectTherapists);
+  const isLoading = useSelector(selectTherapistsLoading);
+  const isRefreshing = useSelector(selectTherapistsRefreshing);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
-  const [isLoading, setIsLoading] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState(['Anxiety therapy', 'Dr. Sarah', 'Couples counseling']);
   const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
   const [showFilters, setShowFilters] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
 
-  // Mock therapist data with complete information - African-Ugandan names
-  const therapists = [
+  // Load therapists on mount
+  useEffect(() => {
+    loadTherapists();
+  }, []);
+
+  // Removed inline mock data - now using API data from Redux
+  // Mock data moved to src/global/MockData.ts
+  const mockTherapists = [
     {
       id: 1,
       name: 'Dr. Nakato Aisha',
@@ -344,16 +359,8 @@ const TherapistsScreen = ({ navigation, route }) => {
 
   // Pull to refresh handler
   const onRefresh = async () => {
-    setRefreshing(true);
-    
-    // Simulate API call to refresh therapist list
-    // In production, this would fetch fresh data from the server
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setRefreshing(false);
-    toast.show({
-      description: 'Therapist list refreshed',
-      duration: 2000,
+    await refreshTherapists({
+      specialty: selectedSpecialty !== 'All Specialities' ? selectedSpecialty : null,
     });
   };
 
@@ -652,7 +659,7 @@ const TherapistsScreen = ({ navigation, route }) => {
             }
             refreshControl={
               <RefreshControl
-                refreshing={refreshing}
+                refreshing={isRefreshing}
                 onRefresh={onRefresh}
                 colors={[appColors.AppBlue]}
                 tintColor={appColors.AppBlue}

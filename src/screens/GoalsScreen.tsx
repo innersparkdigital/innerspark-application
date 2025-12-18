@@ -15,9 +15,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton, Tab, TabView, Button, FAB } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import ISStatusBar from '../components/ISStatusBar';
 import ISGenericHeader from '../components/ISGenericHeader';
 import { NavigationProp } from '@react-navigation/native';
+import {
+  selectGoals,
+  selectGoalsStats,
+  selectGoalsLoading,
+  selectGoalsRefreshing,
+} from '../features/goals/goalsSlice';
+import { loadGoals, refreshGoals, markGoalComplete } from '../utils/goalsManager';
 
 interface Goal {
   id: number;
@@ -37,15 +45,23 @@ interface GoalsScreenProps {
 
 const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
   const toast = useToast();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get goals from Redux
+  const goals = useSelector(selectGoals);
+  const stats = useSelector(selectGoalsStats);
+  const isLoading = useSelector(selectGoalsLoading);
+  const isRefreshing = useSelector(selectGoalsRefreshing);
   
   // Tab View State
   const [activeTabIndex, setActiveTabIndex] = useState(0);
 
-  // Mock goals data
-  const mockGoals: Goal[] = [
+  // Load goals on mount
+  useEffect(() => {
+    loadGoals('all');
+  }, []);
+
+  // Mock goals data (keeping for reference)
+  const mockGoalsData: Goal[] = [
     {
       id: 1,
       title: 'Daily Meditation Practice',
@@ -114,32 +130,23 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
     },
   ];
 
-  useEffect(() => {
-    loadGoals();
-  }, []);
-
-  const loadGoals = async () => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // Sort by due date (due soon first)
-      const sortedGoals = mockGoals.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-      setGoals(sortedGoals);
-    } catch (error) {
-      toast.show({
-        description: 'Failed to load goals',
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadGoals();
-    setIsRefreshing(false);
+    const statusFilter = activeTabIndex === 0 ? 'all' : activeTabIndex === 1 ? 'active' : activeTabIndex === 2 ? 'completed' : 'paused';
+    await refreshGoals(statusFilter);
+    toast.show({
+      description: 'Goals refreshed',
+      duration: 2000,
+    });
   };
+
+  // Reload when tab changes
+  useEffect(() => {
+    const statusFilter = activeTabIndex === 0 ? 'all' : activeTabIndex === 1 ? 'active' : activeTabIndex === 2 ? 'completed' : 'paused';
+    if (goals.length > 0) {
+      // Only reload if we already have data (avoid double load on mount)
+      loadGoals(statusFilter);
+    }
+  }, [activeTabIndex]);
 
   const handleGoalPress = (goal: Goal) => {
     navigation.navigate('GoalDetailScreen', { goal });
@@ -149,18 +156,20 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
     navigation.navigate('CreateGoalScreen');
   };
 
-  const handleMarkComplete = (goalId: number) => {
-    setGoals(prev => 
-      prev.map(goal => 
-        goal.id === goalId 
-          ? { ...goal, status: 'completed', progress: 100 }
-          : goal
-      )
-    );
-    toast.show({
-      description: 'Goal marked as completed!',
-      duration: 2000,
-    });
+  const handleMarkComplete = async (goalId: number) => {
+    const result = await markGoalComplete(goalId);
+    
+    if (result.success) {
+      toast.show({
+        description: 'Goal marked as completed! 🎉',
+        duration: 2000,
+      });
+    } else {
+      toast.show({
+        description: result.error || 'Failed to mark goal as complete',
+        duration: 3000,
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -338,14 +347,27 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
   const GoalsList: React.FC<{ status: 'active' | 'completed' | 'paused' }> = ({ status }) => {
     const filteredGoals = getGoalsByStatus(status);
     
+    // Show loading state on initial load
+    if (isLoading && goals.length === 0) {
+      return (
+        <View style={styles.tabContent}>
+          <FlatList
+            data={Array(4).fill({})}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={() => <GoalSkeleton />}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+          />
+        </View>
+      );
+    }
+    
     return (
       <View style={styles.tabContent}>
         <FlatList
-          data={isLoading ? Array(4).fill({}) : filteredGoals}
-          keyExtractor={(item, index) => isLoading ? index.toString() : item.id?.toString()}
-          renderItem={({ item }) => 
-            isLoading ? <GoalSkeleton /> : <GoalCard goal={item} />
-          }
+          data={filteredGoals}
+          keyExtractor={(item) => item.id?.toString()}
+          renderItem={({ item }) => <GoalCard goal={item} />}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           refreshControl={
@@ -355,7 +377,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
               colors={[appColors.AppBlue]}
             />
           }
-          ListEmptyComponent={!isLoading ? <EmptyState status={status} /> : null}
+          ListEmptyComponent={<EmptyState status={status} />}
         />
       </View>
     );

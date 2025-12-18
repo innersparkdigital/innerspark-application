@@ -14,8 +14,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
+import { getPrivacySettings } from '../../api/client/settings';
 
 interface PrivacyCheckupScreenProps {
   navigation: NavigationProp<any>;
@@ -37,12 +39,13 @@ interface PrivacyCheckItem {
 
 const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isScanning, setIsScanning] = useState(true);
   const [scanProgress, setScanProgress] = useState(0);
   const [checkupComplete, setCheckupComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const progressAnim = useState(new Animated.Value(0))[0];
 
-  // Privacy check items
   const [privacyChecks, setPrivacyChecks] = useState<PrivacyCheckItem[]>([
     {
       id: 'data_collection',
@@ -113,8 +116,103 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
   ]);
 
   useEffect(() => {
-    // Simulate privacy scan
-    if (isScanning) {
+    const fetchPrivacyData = async () => {
+      try {
+        const response = await getPrivacySettings(userId);
+        
+        if (response.success) {
+          const settings = response.data;
+          
+          const checks: PrivacyCheckItem[] = [
+            {
+              id: 'profile_visibility',
+              category: 'Profile',
+              title: 'Profile Visibility',
+              description: `Your profile is set to ${settings.profileVisibility || 'private'}`,
+              status: settings.profileVisibility === 'private' ? 'good' : 'warning',
+              icon: settings.profileVisibility === 'private' ? 'visibility-off' : 'visibility',
+              recommendation: settings.profileVisibility === 'private' 
+                ? 'Your profile information is protected' 
+                : 'Consider setting your profile to private for better privacy',
+              action: settings.profileVisibility !== 'private' ? {
+                label: 'Review Settings',
+                onPress: () => navigation.navigate('PrivacySettingsScreen'),
+              } : undefined,
+            },
+            {
+              id: 'data_sharing',
+              category: 'Data Sharing',
+              title: 'Third-Party Sharing',
+              description: settings.dataSharing ? 'Data sharing with partners is enabled' : 'Data sharing with partners is disabled',
+              status: settings.dataSharing ? 'warning' : 'good',
+              icon: 'shield',
+              recommendation: settings.dataSharing 
+                ? 'Consider disabling data sharing for better privacy' 
+                : 'Your data is not shared with third parties',
+              action: settings.dataSharing ? {
+                label: 'Adjust Settings',
+                onPress: () => navigation.navigate('PrivacySettingsScreen'),
+              } : undefined,
+            },
+            {
+              id: 'online_status',
+              category: 'Communication',
+              title: 'Online Status',
+              description: settings.showOnlineStatus ? 'Your online status is visible' : 'Your online status is hidden',
+              status: settings.showOnlineStatus ? 'warning' : 'good',
+              icon: settings.showOnlineStatus ? 'visibility' : 'visibility-off',
+              recommendation: settings.showOnlineStatus 
+                ? 'Consider hiding your online status for more privacy' 
+                : 'Good! Your online status is private',
+            },
+            {
+              id: 'communication',
+              category: 'Communication',
+              title: 'Message Privacy',
+              description: settings.allowMessages ? 'Messages from all users are allowed' : 'Messages are restricted',
+              status: settings.allowMessages ? 'warning' : 'good',
+              icon: 'chat',
+              recommendation: settings.allowMessages 
+                ? 'Consider restricting messages to connections only' 
+                : 'Good! Message privacy is enabled',
+              action: settings.allowMessages ? {
+                label: 'Adjust Settings',
+                onPress: () => navigation.navigate('PrivacySettingsScreen'),
+              } : undefined,
+            },
+            {
+              id: 'account_security',
+              category: 'Security',
+              title: 'Account Security',
+              description: 'Two-factor authentication status',
+              status: 'critical',
+              icon: 'security',
+              recommendation: 'Enable 2FA to better protect your account',
+              action: {
+                label: 'Enable 2FA',
+                onPress: () => navigation.navigate('SecuritySettingsScreen'),
+              },
+            },
+          ];
+          
+          setPrivacyChecks(checks);
+        }
+      } catch (error) {
+        console.error('Error fetching privacy settings:', error);
+        toast.show({
+          description: 'Failed to load privacy settings',
+          duration: 3000,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPrivacyData();
+  }, [userId]);
+
+  useEffect(() => {
+    if (isScanning && !isLoading) {
       const interval = setInterval(() => {
         setScanProgress((prev) => {
           if (prev >= 100) {
@@ -135,7 +233,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
 
       return () => clearInterval(interval);
     }
-  }, [isScanning]);
+  }, [isScanning, isLoading]);
 
   const getStatusColor = (status: 'good' | 'warning' | 'critical') => {
     switch (status) {
@@ -352,14 +450,49 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
         
         <TouchableOpacity
           style={styles.runAgainButton}
-          onPress={() => {
+          onPress={async () => {
             setIsScanning(true);
             setCheckupComplete(false);
             setScanProgress(0);
+            setIsLoading(true);
             toast.show({
               description: 'Running privacy checkup again...',
               duration: 2000,
             });
+            
+            try {
+              const response = await getPrivacySettings(userId);
+              if (response.success) {
+                const settings = response.data;
+                const checks: PrivacyCheckItem[] = [
+                  {
+                    id: 'profile_visibility',
+                    category: 'Profile',
+                    title: 'Profile Visibility',
+                    description: `Your profile is set to ${settings.profileVisibility || 'private'}`,
+                    status: settings.profileVisibility === 'private' ? 'good' : 'warning',
+                    icon: settings.profileVisibility === 'private' ? 'visibility-off' : 'visibility',
+                    recommendation: settings.profileVisibility === 'private' 
+                      ? 'Your profile information is protected' 
+                      : 'Consider setting your profile to private for better privacy',
+                  },
+                  {
+                    id: 'data_sharing',
+                    category: 'Data Sharing',
+                    title: 'Third-Party Sharing',
+                    description: settings.dataSharing ? 'Data sharing enabled' : 'Data sharing disabled',
+                    status: settings.dataSharing ? 'warning' : 'good',
+                    icon: 'shield',
+                    recommendation: settings.dataSharing ? 'Consider disabling' : 'Good!',
+                  },
+                ];
+                setPrivacyChecks(checks);
+              }
+            } catch (error) {
+              console.error('Error re-scanning:', error);
+            } finally {
+              setIsLoading(false);
+            }
           }}
           activeOpacity={0.7}
         >

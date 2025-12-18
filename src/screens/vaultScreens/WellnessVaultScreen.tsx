@@ -1,7 +1,7 @@
 /**
  * Wellness Vault Screen - Points, rewards, and wellness credits management
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -16,21 +16,47 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
+import {
+  selectBalance,
+  selectCurrency,
+  selectBreakdown,
+  selectTransactions,
+  selectWalletLoading,
+} from '../../features/wallet/walletSlice';
+import { loadWalletBalance, loadWalletTransactions } from '../../utils/walletManager';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const WellnessVaultScreen = ({ navigation }) => {
   const toast = useToast();
   const userDetails = useSelector(state => state.userData.userDetails);
+  const [showTopupModal, setShowTopupModal] = useState(false);
+  
+  // Get wallet data from Redux
+  const balance = useSelector(selectBalance);
+  const currency = useSelector(selectCurrency);
+  const breakdown = useSelector(selectBreakdown);
+  const transactions = useSelector(selectTransactions);
+  const isLoading = useSelector(selectWalletLoading);
+
+  // Load wallet data on mount
+  useEffect(() => {
+    // TODO: Get userId from auth context/Redux
+    const userId = userDetails?.userId || 'current_user_id';
+    loadWalletBalance(userId);
+    loadWalletTransactions(userId, 1, 5); // Load recent 5 transactions
+  }, [userDetails?.userId]);
 
   // Conversion rate: 100 points = 1000 UGX (10 UGX per point)
   const POINTS_TO_UGX_RATE = 10;
 
+  // Build funding channels from Redux breakdown
   const fundingChannels = [
     {
       id: 1,
       name: 'MoMo Funds',
-      amount: 50000,
+      amount: breakdown?.momoTopup || 0,
       currency: 'UGX',
       icon: 'account-balance-wallet',
       color: '#FF9800',
@@ -38,16 +64,16 @@ const WellnessVaultScreen = ({ navigation }) => {
     {
       id: 2,
       name: 'Reward Points',
-      amount: 1500,
+      amount: (breakdown?.rewardPoints || 0) / POINTS_TO_UGX_RATE,
       currency: 'Points',
       icon: 'stars',
       color: '#4CAF50',
-      cashEquivalent: 15000, // 1500 points * 10 UGX
+      cashEquivalent: breakdown?.rewardPoints || 0,
     },
     {
       id: 3,
       name: 'Wellness Credits',
-      amount: 20000,
+      amount: breakdown?.wellnessCredits || 0,
       currency: 'UGX',
       icon: 'volunteer-activism',
       color: '#2196F3',
@@ -55,65 +81,25 @@ const WellnessVaultScreen = ({ navigation }) => {
     },
   ];
 
-  // Calculate total balance: MoMo + Rewards (converted) + Wellness Credits
-  const calculateTotalBalance = () => {
-    const momoFunds = fundingChannels[0].amount;
-    const rewardsInCash = fundingChannels[1].cashEquivalent;
-    const wellnessCredits = fundingChannels[2].amount;
-    return momoFunds + rewardsInCash + wellnessCredits;
-  };
-
   const vaultData = {
-    balance: calculateTotalBalance(),
-    currency: 'UGX'
+    balance: balance,
+    currency: currency
   };
 
-  const recentActivities = [
-    {
-      id: 1,
-      description: 'MoMo Top-up',
-      amount: '+50,000 UGX',
-      time: '2 hours ago',
-      type: 'credit',
-      icon: 'add-circle',
-    },
-    {
-      id: 2,
-      description: 'Therapy Session Payment',
-      amount: '-30,000 UGX',
-      time: 'Yesterday',
-      type: 'debit',
-      icon: 'remove-circle',
-    },
-    {
-      id: 3,
-      description: 'Wellness Credits Received',
-      amount: '+20,000 UGX',
-      time: '2 days ago',
-      type: 'credit',
-      icon: 'volunteer-activism',
-    },
-    {
-      id: 4,
-      description: 'Event Registration',
-      amount: '-15,000 UGX',
-      time: '3 days ago',
-      type: 'debit',
-      icon: 'remove-circle',
-    },
-    {
-      id: 5,
-      description: 'Reward Points Redeemed',
-      amount: '+5,000 UGX',
-      time: '5 days ago',
-      type: 'credit',
-      icon: 'stars',
-    },
-  ];
+  // Get recent activities from transactions (limit to 5)
+  const recentActivities = transactions.slice(0, 5).map(txn => ({
+    id: txn.id,
+    description: txn.description,
+    amount: `${txn.amount >= 0 ? '+' : ''}${txn.amount.toLocaleString()} ${txn.currency}`,
+    time: txn.date,
+    type: txn.type,
+    icon: txn.icon || (txn.type === 'credit' ? 'add-circle' : 'remove-circle'),
+  }));
 
   const handleTopUp = () => {
-    navigation.navigate('MoMoTopupScreen'); // Navigate to MoMo Topup Screen
-
+    // Show coming soon modal instead of navigating
+    setShowTopupModal(true);
+    // navigation.navigate('MoMoTopupScreen');
   };
 
   const handleViewAll = () => {
@@ -227,18 +213,49 @@ const WellnessVaultScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activities</Text>
-            <TouchableOpacity onPress={handleViewAll}>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
+            {recentActivities.length > 0 && (
+              <TouchableOpacity onPress={handleViewAll}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            )}
           </View>
           
-          <View style={styles.activitiesContainer}>
-            {recentActivities.map((activity) => (
-              <ActivityItem key={activity.id} activity={activity} />
-            ))}
-          </View>
+          {recentActivities.length > 0 ? (
+            <View style={styles.activitiesContainer}>
+              {recentActivities.map((activity) => (
+                <ActivityItem key={activity.id} activity={activity} />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyActivities}>
+              <Icon name="receipt-long" type="material" color={appColors.grey4} size={60} />
+              <Text style={styles.emptyActivitiesTitle}>No Transactions Yet</Text>
+              <Text style={styles.emptyActivitiesText}>
+                Your recent wallet activities will appear here once you make transactions.
+              </Text>
+              <TouchableOpacity 
+                style={styles.emptyActivitiesButton}
+                onPress={handleTopUp}
+              >
+                <Text style={styles.emptyActivitiesButtonText}>Top Up Wallet</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
+
+      {/* Wallet Topup Coming Soon Modal */}
+      <LHGenericFeatureModal
+        title="Wallet Top-Up"
+        description="Wellness Vault top-up is currently unavailable. We're working on integrating mobile money payments. You'll be notified once this feature is ready!"
+        buttonTitle="GOT IT"
+        isModVisible={showTopupModal}
+        visibilitySetter={setShowTopupModal}
+        isDismissable={true}
+        hasIcon={true}
+        iconType="material"
+        iconName="account-balance-wallet"
+      />
     </SafeAreaView>
   );
 };
@@ -454,6 +471,39 @@ const styles = StyleSheet.create({
   },
   debitAmount: {
     color: '#F44336',
+  },
+  emptyActivities: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyActivitiesTitle: {
+    fontSize: 18,
+    fontFamily: appFonts.headerTextBold,
+    color: appColors.grey1,
+    marginTop: 20,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyActivitiesText: {
+    fontSize: 14,
+    fontFamily: appFonts.headerTextRegular,
+    color: appColors.grey3,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyActivitiesButton: {
+    backgroundColor: appColors.AppBlue,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  emptyActivitiesButtonText: {
+    fontSize: 16,
+    fontFamily: appFonts.headerTextSemiBold,
+    color: appColors.CardBackground,
   },
 });
 

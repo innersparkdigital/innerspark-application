@@ -19,56 +19,111 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import LHGenericHeader from '../components/LHGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
+import { appContents } from '../global/Data';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const EmergencyScreen = ({ navigation }) => {
   const toast = useToast();
+  const crisisLines = useSelector((state: any) => state.emergency.crisisLines || []);
 
-  // Quick emergency actions
-  const quickActions = [
+  // Quick Actions Data - Dynamic data from API and app config
+  const quickActionsData = [
+    // First two items: Crisis hotlines from API (EmergencyContactsScreen)
+    ...(crisisLines.length >= 1 ? [{
+      id: 'crisis_1',
+      title: crisisLines[0].phone,
+      subtitle: crisisLines[0].name,
+      contact: crisisLines[0].phone,
+      name: crisisLines[0].name,
+      icon: crisisLines[0].icon || 'phone',
+      color: crisisLines[0].color || '#E91E63',
+      type: 'call',
+    }] : []),
+    ...(crisisLines.length >= 2 ? [{
+      id: 'crisis_2',
+      title: crisisLines[1].phone,
+      subtitle: crisisLines[1].name,
+      contact: crisisLines[1].phone,
+      name: crisisLines[1].name,
+      icon: crisisLines[1].icon || 'local-hospital',
+      color: crisisLines[1].color || '#F44336',
+      type: 'call',
+    }] : []),
+    // Third item: Support contact from app config
     {
-      id: 1,
-      title: 'Call 988',
-      subtitle: 'Crisis Lifeline',
-      icon: 'phone',
-      color: '#E91E63',
-      action: () => handleCall({ number: '988', name: 'Crisis Lifeline' }),
-    },
-    {
-      id: 2,
-      title: 'Call 911',
-      subtitle: 'Emergency',
-      icon: 'local-hospital',
-      color: '#F44336',
-      action: () => handleCall({ number: '911', name: 'Emergency Services' }),
-    },
-    {
-      id: 3,
-      title: 'Call Counselor',
-      subtitle: 'Talk to someone',
+      id: 'support',
+      title: appContents.supportPhone,
+      subtitle: 'Innerspark Support',
+      contact: appContents.supportPhone,
+      name: 'Innerspark Support',
       icon: 'psychology',
       color: '#2196F3',
-      action: () => {
-        Alert.alert(
-          'Crisis Counselor',
-          'Connect with a trained crisis counselor for immediate support.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Call Now', onPress: () => handleCall({ number: '+256-800-CRISIS', name: 'Crisis Counselor' }) },
-          ]
-        );
-      },
+      type: 'call',
     },
+    // Fourth item: Safety Plan (navigation)
     {
-      id: 4,
+      id: 'safety_plan',
       title: 'Safety Plan',
       subtitle: 'View your plan',
       icon: 'security',
       color: '#4CAF50',
-      action: () => navigation.navigate('SafetyPlanScreen'),
+      type: 'navigation',
+      screen: 'SafetyPlanScreen',
+    },
+  ];
+
+  // Quick emergency actions - using quickActionsData as source
+  const quickActions = [
+    {
+      id: 1,
+      title: quickActionsData[0]?.title || 'Call 988',
+      subtitle: quickActionsData[0]?.subtitle || 'Crisis Lifeline',
+      icon: quickActionsData[0]?.icon || 'phone',
+      color: quickActionsData[0]?.color || '#E91E63',
+      action: () => quickActionsData[0]?.type === 'call' 
+        ? handleCall({ number: quickActionsData[0].contact, name: quickActionsData[0].name })
+        : null,
+    },
+    {
+      id: 2,
+      title: quickActionsData[1]?.title || 'Call 911',
+      subtitle: quickActionsData[1]?.subtitle || 'Emergency',
+      icon: quickActionsData[1]?.icon || 'local-hospital',
+      color: quickActionsData[1]?.color || '#F44336',
+      action: () => quickActionsData[1]?.type === 'call'
+        ? handleCall({ number: quickActionsData[1].contact, name: quickActionsData[1].name })
+        : null,
+    },
+    {
+      id: 3,
+      title: quickActionsData[2]?.title || 'Call Counselor',
+      subtitle: quickActionsData[2]?.subtitle || 'Talk to someone',
+      icon: quickActionsData[2]?.icon || 'psychology',
+      color: quickActionsData[2]?.color || '#2196F3',
+      action: () => quickActionsData[2]?.type === 'call'
+        ? handleCall({ number: quickActionsData[2].contact, name: quickActionsData[2].name })
+        : Alert.alert(
+            'Crisis Counselor',
+            'Connect with a trained crisis counselor for immediate support.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Call Now', onPress: () => handleCall({ number: quickActionsData[2]?.contact, name: 'Crisis Counselor' }) },
+            ]
+          ),
+    },
+    {
+      id: 4,
+      title: quickActionsData[3]?.title || 'Safety Plan',
+      subtitle: quickActionsData[3]?.subtitle || 'View your plan',
+      icon: quickActionsData[3]?.icon || 'security',
+      color: quickActionsData[3]?.color || '#4CAF50',
+      action: () => quickActionsData[3]?.type === 'navigation'
+        ? navigation.navigate(quickActionsData[3].screen)
+        : navigation.navigate('SafetyPlanScreen'),
     },
   ];
 

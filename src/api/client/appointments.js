@@ -27,14 +27,49 @@ export const bookAppointment = async (appointmentData) => {
 };
 
 /**
+ * Get appointment by ID
+ * NOTE: Backend may not have implemented this endpoint yet
+ * @param {string} appointmentId - Appointment ID
+ * @returns {Promise} Appointment details
+ */
+export const getAppointmentById = async (appointmentId) => {
+    const response = await APIInstance.get(`/client/appointments/${appointmentId}`);
+    return response.data;
+};
+
+/**
+ * Reschedule appointment
+ * NOTE: Backend may not have implemented this endpoint yet
+ * @param {string} appointmentId - Appointment ID
+ * @param {Object} rescheduleData - { newSlotId, newDate, newTime, reason }
+ * @returns {Promise} Updated appointment
+ */
+export const rescheduleAppointment = async (appointmentId, rescheduleData) => {
+    const response = await APIInstance.put(`/client/appointments/${appointmentId}/reschedule`, rescheduleData);
+    return response.data;
+};
+
+/**
  * Cancel appointment
  * @param {string} appointmentId - Appointment ID
- * @param {string} reason - Cancellation reason
- * @returns {Promise} Success message
+ * @param {Object} cancelData - { reason, requestRefund }
+ * @returns {Promise} Success message with refund info
  */
-export const cancelAppointment = async (appointmentId, reason) => {
-    const response = await APIInstance.post(`/client/appointments/${appointmentId}/cancel`, {
-        reason
+export const cancelAppointment = async (appointmentId, cancelData) => {
+    const response = await APIInstance.delete(`/client/appointments/${appointmentId}`, {
+        data: cancelData
     });
+    return response.data;
+};
+
+/**
+ * Submit appointment review/feedback
+ * NOTE: Backend may not have implemented this endpoint yet
+ * @param {string} appointmentId - Appointment ID
+ * @param {Object} reviewData - { rating, comment, tags }
+ * @returns {Promise} Review submission result
+ */
+export const submitAppointmentReview = async (appointmentId, reviewData) => {
+    const response = await APIInstance.post(`/client/appointments/${appointmentId}/review`, reviewData);
     return response.data;
 };

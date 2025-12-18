@@ -361,6 +361,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     }
   };
 
+  // Payment Confirmation 
   const handlePaymentConfirm = async () => {
     if (isProcessingPayment) return;
     if (selectedPaymentMethod === 'wellnessvault') {
@@ -451,6 +452,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     }
   };
 
+  // Add to Calendar (hidden for now)
   const handleAddToCalendar = () => {
     Alert.alert(
       'Add to Calendar',
@@ -672,8 +674,8 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
             </View>
           )}
 
-          {/* Action Buttons */}
-          {isRegistered && (
+          {/* Action Buttons (hidden for now) */}
+          {/* {isRegistered && (
             <View style={styles.actionButtons}>
               <TouchableOpacity 
                 style={styles.calendarButton}
@@ -683,7 +685,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
                 <Text style={styles.calendarButtonText}>Add to Calendar</Text>
               </TouchableOpacity>
             </View>
-          )}
+          )} */}
         </View>
       </ScrollView>
 

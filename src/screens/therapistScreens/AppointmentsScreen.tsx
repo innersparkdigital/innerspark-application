@@ -19,7 +19,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
 import PanicButtonComponent from '../../components/PanicButtonComponent';
+import {
+  selectAppointments,
+  selectAppointmentsLoading,
+  selectAppointmentsRefreshing,
+} from '../../features/appointments/appointmentsSlice';
+import { loadAppointments, refreshAppointments, cancelAppointmentById } from '../../utils/appointmentsManager';
 
 interface Appointment {
   id: string;
@@ -45,12 +52,29 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   const toast = useToast();
   const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past' | 'pending'>('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
 
-  // Mock appointments data
-  const [appointments, setAppointments] = useState<Appointment[]>([
+  // Get appointments from Redux
+  const appointments = useSelector(selectAppointments);
+  const isLoading = useSelector(selectAppointmentsLoading);
+  const isRefreshing = useSelector(selectAppointmentsRefreshing);
+
+  // Load appointments on mount
+  useEffect(() => {
+    loadAppointments({ status: selectedTab });
+  }, []);
+
+  // Reload when tab changes
+  useEffect(() => {
+    if (appointments.length > 0) {
+      // Only reload if we already have data (avoid double load on mount)
+      loadAppointments({ status: selectedTab });
+    }
+  }, [selectedTab]);
+
+  // Mock appointments data (keeping structure for reference)
+  const mockAppointmentsData = [
     {
       id: '1',
       date: '09/04/2025',
@@ -138,9 +162,9 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       amount: 'UGX 30,000',
       timezone: 'EAT (UTC+3)',
     },
-  ]);
+  ];
 
-  const filteredAppointments = appointments.filter(appointment => {
+  const filteredAppointments = appointments.filter((appointment: Appointment) => {
     let matchesTab = false;
     
     if (selectedTab === 'upcoming') {
@@ -158,15 +182,11 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   });
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsRefreshing(false);
-      toast.show({
-        description: 'Appointments refreshed',
-        duration: 2000,
-      });
-    }, 1500);
+    await refreshAppointments({ status: selectedTab });
+    toast.show({
+      description: 'Appointments refreshed',
+      duration: 2000,
+    });
   };
 
   const handleModifyAppointment = (appointment: Appointment) => {
@@ -221,13 +241,26 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
     setShowCancelModal(true);
   };
 
-  const confirmRequestCancellation = () => {
+  const confirmRequestCancellation = async () => {
     if (appointmentToCancel) {
-      // In production, this would send a cancellation request to the therapist
-      toast.show({
-        description: `Cancellation request sent to ${appointmentToCancel.therapistName}. You'll be notified once they respond.`,
-        duration: 4000,
+      const result = await cancelAppointmentById(appointmentToCancel.id, {
+        reason: 'User requested cancellation',
+        requestRefund: true,
       });
+      
+      if (result.success) {
+        toast.show({
+          description: `Appointment cancelled successfully. ${result.data?.refundStatus ? 'Refund processing.' : ''}`,
+          duration: 4000,
+        });
+        // Reload appointments
+        await loadAppointments({ status: selectedTab });
+      } else {
+        toast.show({
+          description: result.error || 'Failed to cancel appointment',
+          duration: 3000,
+        });
+      }
     }
     setShowCancelModal(false);
     setAppointmentToCancel(null);
@@ -501,44 +534,57 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
         </View>
 
         {/* Appointments List */}
-        <FlatList
-          data={filteredAppointments}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <AppointmentCard appointment={item} />}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={[appColors.AppBlue]}
+        {isLoading && appointments.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon
+              name="schedule"
+              type="material"
+              color={appColors.grey3}
+              size={60}
             />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Icon
-                name="event-busy"
-                type="material"
-                color={appColors.grey3}
-                size={60}
+            <Text style={styles.emptyText}>Loading appointments...</Text>
+            <Text style={styles.emptySubtext}>Please wait while we fetch your appointments</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredAppointments}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <AppointmentCard appointment={item} />}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[appColors.AppBlue]}
               />
-              <Text style={styles.emptyText}>
-                {selectedTab === 'upcoming' 
-                  ? 'No upcoming appointments' 
-                  : selectedTab === 'past'
-                  ? 'No past appointments'
-                  : 'No pending payments'}
-              </Text>
-              <Text style={styles.emptySubtext}>
-                {selectedTab === 'upcoming' 
-                  ? 'Book your first appointment to get started' 
-                  : selectedTab === 'past'
-                  ? 'Your completed appointments will appear here'
-                  : 'All your appointments are paid for'}
-              </Text>
-            </View>
-          }
-        />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Icon
+                  name="event-busy"
+                  type="material"
+                  color={appColors.grey3}
+                  size={60}
+                />
+                <Text style={styles.emptyText}>
+                  {selectedTab === 'upcoming' 
+                    ? 'No upcoming appointments' 
+                    : selectedTab === 'past'
+                    ? 'No past appointments'
+                    : 'No pending payments'}
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  {selectedTab === 'upcoming' 
+                    ? 'Book your first appointment to get started' 
+                    : selectedTab === 'past'
+                    ? 'Your completed appointments will appear here'
+                    : 'All your appointments are paid for'}
+                </Text>
+              </View>
+            }
+          />
+        )}
       </View>
 
       {/* Book New Appointment Button */}

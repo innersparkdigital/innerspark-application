@@ -1905,6 +1905,348 @@ Get daily inspirational quote.
 
 ---
 
+## 📊 Reports & Analytics
+
+### GET `/api/v1/client/reports/weekly`
+Get weekly wellness report.
+
+**Query Parameters:**
+- `user_id` (required): User ID
+- `week_start_date` (optional): Week start date in YYYY-MM-DD format. Defaults to current week.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "report-2024-w12",
+    "weekStartDate": "2024-03-18",
+    "weekEndDate": "2024-03-24",
+    "generatedDate": "2024-03-25T10:00:00Z",
+    "moodSummary": {
+      "averageMood": 3.8,
+      "moodTrend": "improving",
+      "totalCheckIns": 6,
+      "streakDays": 6,
+      "dominantMood": "Good",
+      "moodDistribution": [
+        { "mood": "Great", "percentage": 33, "emoji": "😊" },
+        { "mood": "Good", "percentage": 50, "emoji": "🙂" },
+        { "mood": "Okay", "percentage": 17, "emoji": "😐" },
+        { "mood": "Bad", "percentage": 0, "emoji": "😔" },
+        { "mood": "Terrible", "percentage": 0, "emoji": "😢" }
+      ]
+    },
+    "journalingSummary": {
+      "totalEntries": 6,
+      "averageLength": 85,
+      "commonThemes": ["gratitude", "work stress", "family time", "self-care"],
+      "sentimentScore": 0.72,
+      "keyInsights": [
+        "You expressed more gratitude this week compared to last week",
+        "Work stress mentions decreased by 30%",
+        "Family time was a recurring positive theme"
+      ]
+    },
+    "activitiesSummary": {
+      "completedActivities": 4,
+      "recommendedActivities": ["Morning meditation", "Evening walk", "Journaling"],
+      "upcomingGoals": ["Complete 7-day streak", "Try group therapy session"],
+      "achievedMilestones": ["6-day mood tracking streak", "First week of consistent journaling"]
+    },
+    "recommendations": {
+      "moodBased": [
+        "Continue your positive mood trend with morning affirmations",
+        "Consider scheduling a therapy session to maintain progress"
+      ],
+      "activityBased": [
+        "Try our new mindfulness workshop this weekend",
+        "Join a support group to connect with others"
+      ],
+      "therapyRecommendations": [
+        "Dr. Sarah Johnson - Specializes in stress management",
+        "Group therapy session on Thursdays"
+      ]
+    },
+    "pointsEarned": 3500,
+    "nextReportDate": "2024-03-31"
+  }
+}
+```
+
+### GET `/api/v1/client/reports/monthly`
+Get monthly wellness report.
+
+**Query Parameters:**
+- `user_id` (required): User ID
+- `month` (optional): Month in YYYY-MM format. Defaults to current month.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "report-2024-m03",
+    "month": "2024-03",
+    "generatedDate": "2024-04-01T10:00:00Z",
+    "moodSummary": { ... },
+    "journalingSummary": { ... },
+    "activitiesSummary": { ... },
+    "recommendations": { ... },
+    "pointsEarned": 15000
+  }
+}
+```
+
+### GET `/api/v1/client/reports/history`
+Get list of available reports.
+
+**Query Parameters:**
+- `user_id` (required): User ID
+- `type` (optional): Report type - `weekly` or `monthly`. Defaults to `weekly`.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "reports": [
+      {
+        "id": "report-2024-w12",
+        "type": "weekly",
+        "weekStartDate": "2024-03-18",
+        "weekEndDate": "2024-03-24",
+        "generatedDate": "2024-03-25T10:00:00Z"
+      },
+      {
+        "id": "report-2024-w11",
+        "type": "weekly",
+        "weekStartDate": "2024-03-11",
+        "weekEndDate": "2024-03-17",
+        "generatedDate": "2024-03-18T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+### POST `/api/v1/client/reports/generate`
+Trigger report generation.
+
+**Request Body:**
+```json
+{
+  "user_id": "user_123",
+  "type": "weekly"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Report generated successfully",
+  "data": {
+    "id": "report-2024-w12",
+    "type": "weekly",
+    "generatedDate": "2024-03-25T10:00:00Z"
+  }
+}
+```
+
+### POST `/api/v1/client/reports/email`
+Email report to user's registered email.
+
+**Request Body:**
+```json
+{
+  "user_id": "user_123",
+  "report_id": "report-2024-w12"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Report sent to your email successfully"
+}
+```
+
+---
+
+## 🎫 Support Tickets
+
+### GET `/api/v1/client/support/tickets`
+Get user's support tickets.
+
+**Query Parameters:**
+- `user_id` (required): User ID
+- `status` (optional): Filter by status - `open`, `pending`, `resolved`. Defaults to all.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "tickets": [
+      {
+        "id": "TKT-001",
+        "subject": "Unable to book therapy session",
+        "category": "Technical Issue",
+        "status": "Open",
+        "priority": "High",
+        "createdAt": "2025-01-25T10:30:00Z",
+        "updatedAt": "2025-01-27T14:20:00Z",
+        "lastResponse": "We are investigating this issue and will update you soon.",
+        "responseCount": 3,
+        "isUnread": true
+      }
+    ]
+  }
+}
+```
+
+### GET `/api/v1/client/support/tickets/:ticketId`
+Get support ticket details with messages.
+
+**Query Parameters:**
+- `user_id` (required): User ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "TKT-001",
+    "subject": "Unable to book therapy session",
+    "category": "Technical Issue",
+    "status": "Open",
+    "priority": "High",
+    "createdAt": "2025-01-25T10:30:00Z",
+    "updatedAt": "2025-01-27T14:20:00Z",
+    "description": "I'm trying to book a session with Dr. Sarah but the app keeps crashing.",
+    "messages": [
+      {
+        "id": "msg_001",
+        "sender": "user",
+        "senderName": "John Doe",
+        "message": "I'm trying to book a session with Dr. Sarah but the app keeps crashing.",
+        "timestamp": "2025-01-25T10:30:00Z"
+      },
+      {
+        "id": "msg_002",
+        "sender": "support",
+        "senderName": "Support Team",
+        "message": "Thank you for reporting this. We're looking into it.",
+        "timestamp": "2025-01-26T09:15:00Z"
+      }
+    ]
+  }
+}
+```
+
+### POST `/api/v1/client/support/tickets`
+Create new support ticket.
+
+**Request Body:**
+```json
+{
+  "user_id": "user_123",
+  "subject": "Unable to book therapy session",
+  "category": "Technical Issue",
+  "priority": "High",
+  "description": "I'm trying to book a session with Dr. Sarah but the app keeps crashing when I select a time slot."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Support ticket created successfully",
+  "data": {
+    "id": "TKT-001",
+    "subject": "Unable to book therapy session",
+    "category": "Technical Issue",
+    "status": "Open",
+    "priority": "High",
+    "createdAt": "2025-01-25T10:30:00Z"
+  }
+}
+```
+
+### POST `/api/v1/client/support/tickets/:ticketId/messages`
+Add message/reply to support ticket.
+
+**Request Body:**
+```json
+{
+  "user_id": "user_123",
+  "message": "I tried clearing cache but the issue persists."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Message added successfully",
+  "data": {
+    "id": "msg_003",
+    "sender": "user",
+    "message": "I tried clearing cache but the issue persists.",
+    "timestamp": "2025-01-27T14:20:00Z"
+  }
+}
+```
+
+### POST `/api/v1/client/support/tickets/:ticketId/close`
+Close/resolve support ticket.
+
+**Request Body:**
+```json
+{
+  "user_id": "user_123"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Ticket closed successfully",
+  "data": {
+    "id": "TKT-001",
+    "status": "Resolved"
+  }
+}
+```
+
+### POST `/api/v1/client/support/tickets/:ticketId/reopen`
+Reopen a closed support ticket.
+
+**Request Body:**
+```json
+{
+  "user_id": "user_123"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Ticket reopened successfully",
+  "data": {
+    "id": "TKT-001",
+    "status": "Open"
+  }
+}
+```
+
+---
+
 ## 💰 Wellness Vault
 
 ### GET `/api/v1/client/wallet/balance`

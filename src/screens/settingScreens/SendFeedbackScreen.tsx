@@ -2,6 +2,7 @@
  * Send Feedback Screen - Allow users to submit feedback and suggestions
  */
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -19,6 +20,7 @@ import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import { submitFeedback } from '../../api/client/feedback';
 
 interface SendFeedbackScreenProps {
   navigation: NavigationProp<any>;
@@ -28,6 +30,7 @@ type FeedbackType = 'bug' | 'feature' | 'improvement' | 'compliment' | 'other';
 
 const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   
   const [selectedType, setSelectedType] = useState<FeedbackType>('improvement');
   const [subject, setSubject] = useState('');
@@ -62,8 +65,16 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const userId = userDetails?.userId || 'guest_user';
+      
+      await submitFeedback(userId, {
+        type: selectedType,
+        subject: subject.trim(),
+        message: message.trim(),
+        email: email.trim() || undefined,
+      });
+
       setIsSubmitting(false);
       toast.show({
         description: 'Thank you! Your feedback has been submitted successfully.',
@@ -79,7 +90,14 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
       setTimeout(() => {
         navigation.goBack();
       }, 1000);
-    }, 1500);
+    } catch (error) {
+      setIsSubmitting(false);
+      console.error('Error submitting feedback:', error);
+      toast.show({
+        description: 'Failed to submit feedback. Please try again.',
+        duration: 3000,
+      });
+    }
   };
 
   return (
