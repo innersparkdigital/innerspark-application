@@ -98,6 +98,7 @@ APIInstance.interceptors.response.use(
 );
 
 // Add same interceptors to AuthInstance
+// This ensures consistent request handling across all AuthInstance requests
 AuthInstance.interceptors.request.use(
     (config) => {
         // You can add dynamic token logic here if needed
@@ -109,6 +110,10 @@ AuthInstance.interceptors.request.use(
     }
 );
 
+// AuthInstance response interceptor for global error handling
+// This ensures consistent error handling across all AuthInstance requests
+// Logs common HTTP errors and re-throws for component-level handling
+// Maintains separation between API and Auth instances while providing shared error handling
 AuthInstance.interceptors.response.use(
     (response) => response,
     (error) => {

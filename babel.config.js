@@ -7,5 +7,10 @@ module.exports = {
       "safe": false,
       "allowUndefined": true
     }]
-  ]
+  ],
+  env: {
+    production: {
+      plugins: ['transform-remove-console']
+    }
+  }
 };
