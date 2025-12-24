@@ -185,7 +185,7 @@ export default function PasswordResetScreen( { navigation } ){
                                         editable={!isLoading}
                                         placeholder='Enter email or phone number'
                                         value={emailOrPhone}
-                                        maxLength={30}
+                                        maxLength={100}
                                         onChangeText={ onChangeEmailOrPhoneHandler }
                                         
                                     />  

@@ -494,6 +494,7 @@ export default function SignupScreen({navigation}){
                                 keyboardType='email-address'
                                 editable={!isLoading}
                                 value={email}
+                                maxLength={100}
                                 onChangeText={ onChangeEmailHandler }
                             />   
                         </View>

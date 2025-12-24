@@ -1,4 +1,4 @@
-package com.innerspark.screensecurity;
+package com.innersparkafrica.app.screensecurity;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;

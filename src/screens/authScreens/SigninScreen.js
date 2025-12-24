@@ -503,7 +503,7 @@ export default function SigninScreen({navigation}){
                                     editable={!isLoading}
                                     placeholder='Email or Phone'
                                     value={username}
-                                    maxLength={50}
+                                    maxLength={100}
                                     onChangeText={ onChangeUsernameHandler }
                                 />  
                             </View>

@@ -1,4 +1,4 @@
-package com.innerspark.screensecurity;
+package com.innersparkafrica.app.screensecurity;
 
 import android.app.Activity;
 import android.view.WindowManager;

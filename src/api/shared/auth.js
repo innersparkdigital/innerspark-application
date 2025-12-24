@@ -97,10 +97,10 @@ export const refreshAuthToken = async (refreshToken) => {
  * @param {string} code - Verification code
  * @returns {Promise} Verification result
  */
-export const verifyEmail = async (email, code) => {
+export const verifyEmail = async (email, otpcode) => {
     const response = await AuthInstance.post('/auth/verify-email', {
         email,
-        code
+        otpcode
     });
     return response.data;
 };
