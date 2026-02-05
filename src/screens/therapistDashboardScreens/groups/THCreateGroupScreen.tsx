@@ -16,8 +16,11 @@ import { Icon, Button } from '@rneui/themed';
 import { appColors, appFonts, parameters } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { useSelector } from 'react-redux';
+import { createGroup, updateGroup } from '../../../api/therapist/groups';
 
 const THCreateGroupScreen = ({ navigation, route }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const { group } = route.params || {};
   const isEditing = !!group;
 
@@ -30,7 +33,7 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
 
   const icons = ['🧘', '🌱', '🧠', '🕉️', '💪', '🌟', '🤝', '💙', '🌈', '☮️', '🦋', '🌺'];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!groupName.trim()) {
       Alert.alert('Error', 'Please enter a group name');
       return;
@@ -41,25 +44,34 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
       return;
     }
 
-    const groupData = {
-      name: groupName.trim(),
-      description: description.trim(),
-      icon: selectedIcon,
-      maxMembers: parseInt(maxMembers) || 20,
-      isPrivate,
-      requireApproval,
-    };
+    try {
+      const therapistId = userDetails?.id || '52863268761';
+      const groupData = {
+        therapist_id: therapistId,
+        name: groupName.trim(),
+        description: description.trim(),
+        icon: selectedIcon,
+        maxMembers: parseInt(maxMembers) || 20,
+        privacy: isPrivate ? 'private' : 'public',
+        requireApproval: requireApproval,
+        guidelines: ["Respect confidentiality", "Be supportive", "Attend regularly"] // Default guidelines
+      };
 
-    Alert.alert(
-      'Success',
-      isEditing ? 'Group updated successfully!' : 'Group created successfully!',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]
-    );
+      if (isEditing && group?.id) {
+        await updateGroup(group.id, groupData);
+        Alert.alert('Success', 'Group updated successfully!', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        await createGroup(groupData);
+        Alert.alert('Success', 'Group created successfully!', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to save group. Please try again.');
+    }
   };
 
   return (

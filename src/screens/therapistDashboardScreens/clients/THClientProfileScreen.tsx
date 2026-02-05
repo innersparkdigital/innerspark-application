@@ -14,44 +14,45 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getClientProfile } from '../../../api/therapist';
+import { ActivityIndicator } from 'react-native';
+import { useSelector } from 'react-redux';
 
 const THClientProfileScreen = ({ navigation, route }: any) => {
   const { client, initialTab } = route.params;
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'notes'>(initialTab || 'overview');
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
-  const clientDetails = {
-    id: client?.id || '1',
-    name: client?.name || 'John Doe',
-    avatar: client?.avatar || '👨',
-    email: 'john.doe@email.com',
-    phone: '+256 784 123 456',
-    age: 32,
-    gender: 'Male',
-    joinedDate: 'January 15, 2024',
-    totalSessions: 12,
-    upcomingSessions: 2,
-    lastSession: '2 days ago',
-    status: 'Active',
-    emergencyContact: {
-      name: 'Jane Doe',
-      relationship: 'Spouse',
-      phone: '+256 784 987 654',
-    },
+  // State for data
+  const [clientDetails, setClientDetails] = useState<any>(client || {
+    id: '1', name: 'Loading...', email: '', phone: '', avatar: '👤'
+  });
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    loadProfile();
+  }, [client?.id]);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      if (client?.id) {
+        const response: any = await getClientProfile(client.id, therapistId);
+        if (response?.data) {
+          if (response.data.client) setClientDetails({ ...clientDetails, ...response.data.client });
+          if (response.data.sessions) setSessions(response.data.sessions);
+          if (response.data.notes) setNotes(response.data.notes);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load client profile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const sessions = [
-    { id: '1', date: 'Oct 20, 2025', type: 'Individual', duration: '60 min', status: 'Completed', notes: 'Good progress on anxiety management' },
-    { id: '2', date: 'Oct 13, 2025', type: 'Individual', duration: '60 min', status: 'Completed', notes: 'Discussed coping strategies' },
-    { id: '3', date: 'Oct 6, 2025', type: 'Individual', duration: '60 min', status: 'Completed', notes: 'Initial assessment completed' },
-    { id: '4', date: 'Oct 27, 2025', type: 'Individual', duration: '60 min', status: 'Upcoming', notes: '' },
-  ];
-
-  const notes = [
-    { id: '1', date: 'Oct 20, 2025', title: 'Progress Update', content: 'Client showing significant improvement in managing anxiety symptoms. Recommended continuing current treatment plan.' },
-    { id: '2', date: 'Oct 13, 2025', title: 'Coping Strategies', content: 'Introduced breathing exercises and mindfulness techniques. Client receptive to new approaches.' },
-    { id: '3', date: 'Oct 6, 2025', title: 'Initial Assessment', content: 'Client presents with generalized anxiety. History of work-related stress. No previous therapy experience.' },
-  ];
 
   const renderOverview = () => (
     <View>
@@ -181,7 +182,7 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
   const renderNotes = () => (
     <View style={styles.section}>
       {/* Add Note Button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.addNoteButton}
         onPress={() => navigation.navigate('THAddClientNoteScreen', { client: clientDetails })}
         activeOpacity={0.8}

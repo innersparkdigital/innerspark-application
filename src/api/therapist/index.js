@@ -1,63 +1,54 @@
 /**
- * Therapist API Functions
+ * Therapist API - Barrel Export
  * 
- * TODO: Add therapist-specific API functions here
- * Examples:
- * - getTherapistDashboard()
- * - getClientRequests()
- * - acceptRequest() / declineRequest()
- * - getTherapistAppointments()
- * - getTherapistGroups()
- * - getTherapistChats()
- * - getClientProfile()
- * - updateSessionNotes()
- * etc.
+ * Re-exports all therapist API functions from feature modules.
+ * This allows clean imports: import { getDashboardStats, getAppointments } from '../api/therapist'
  */
-import { APIInstance } from '../LHAPI';
 
+// Dashboard & Profile
+export * from './dashboard';
 
-/**
- * Get therapist dashboard data
- * @returns {Promise} Dashboard stats and overview
- */
-export const getTherapistDashboard = async () => {
-    const response = await APIInstance.get('/th/dashboard');
-    return response.data;
-};
+// Appointments
+export * from './appointments';
 
-/**
- * Get pending client requests
- * @param {Object} filters - { status, urgency }
- * @returns {Promise} Client requests list
- */
-export const getClientRequests = async (filters = {}) => {
-    const response = await APIInstance.get('/th/requests', {
-        params: filters
-    });
-    return response.data;
-};
+// Clients
+export * from './clients';
 
-/**
- * Accept client request
- * @param {string} requestId - Request ID
- * @returns {Promise} Acceptance confirmation
- */
-export const acceptRequest = async (requestId) => {
-    const response = await APIInstance.post(`/th/requests/${requestId}/accept`);
-    return response.data;
-};
+// Messages & Chat
+export * from './messages';
 
-/**
- * Decline client request
- * @param {string} requestId - Request ID
- * @param {string} reason - Decline reason
- * @returns {Promise} Decline confirmation
- */
-export const declineRequest = async (requestId, reason) => {
-    const response = await APIInstance.post(`/th/requests/${requestId}/decline`, {
-        reason
-    });
-    return response.data;
-};
+// Events
+export * from './events';
 
-// TODO: Add more therapist functions as needed
+// Support Groups
+export * from './groups';
+
+// Group Members
+export * from './groupMembers';
+
+// Session Notes
+export * from './sessionNotes';
+
+// Assessments
+export * from './assessments';
+
+// Calendar & Availability
+export * from './calendar';
+
+// Earnings & Pricing
+export * from './earnings';
+
+// Reviews & Transactions
+export * from './reviews';
+
+// Notifications
+export * from './notifications';
+
+// Analytics
+export * from './analytics';
+
+// Utilities
+export * from './utilities';
+
+// Requests
+export * from './requests';

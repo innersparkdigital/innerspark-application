@@ -85,4 +85,7 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-android/gradle.properties
+!android/gradle.properties
+android/keystore.properties
+
+# Android signing keystores  

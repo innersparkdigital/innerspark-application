@@ -270,3 +270,157 @@ if (__DEV__) {
 const response = await getEvents();
 setEvents(response.data.events);
 ```
+
+---
+
+## 🩺 **Therapist Mock Data**
+
+### **Available Mock Data Sets**
+
+```typescript
+import { 
+  mockTherapistDashboardStats,
+  mockTherapistAppointments,
+  mockTherapistClientRequests,
+  mockTherapistConversations,
+  mockTherapistGroups,
+  mockTherapistClients,
+  mockTherapistClientNotes,
+  mockTherapistNotifications,
+  mockTherapistProfile,
+} from '../global/MockData';
+```
+
+### **1. Dashboard Stats**
+
+```typescript
+// Used by: THDashboardScreen.tsx
+import { mockTherapistDashboardStats } from '../global/MockData';
+
+// Contains:
+// - todayAppointments, pendingRequests, activeGroups
+// - unreadMessages, totalClients
+// - weekAppointments, monthAppointments
+```
+
+### **2. Appointments**
+
+```typescript
+// Used by: THAppointmentsScreen.tsx
+import { mockTherapistAppointments } from '../global/MockData';
+
+// 8 sample appointments with:
+// - Client info (name, avatar)
+// - Session type, date, time, duration
+// - Status: upcoming, scheduled, completed
+```
+
+### **3. Client Requests**
+
+```typescript
+// Used by: THRequestsScreen.tsx
+import { mockTherapistClientRequests } from '../global/MockData';
+
+// 5 sample requests with:
+// - Request type (Chat Session, Support Group, Initial Consultation)
+// - Urgency levels (high, medium, low)
+// - Timestamps and descriptions
+```
+
+### **4. Conversations/Chats**
+
+```typescript
+// Used by: THChatsScreen.tsx
+import { mockTherapistConversations } from '../global/MockData';
+
+// 7 sample conversations with:
+// - Last message and timestamp
+// - Unread count, online status
+// - Client info
+```
+
+### **5. Support Groups**
+
+```typescript
+// Used by: THGroupsScreen.tsx
+import { mockTherapistGroups } from '../global/MockData';
+
+// 6 sample groups with:
+// - Member counts, status (active, scheduled)
+// - Categories (anxiety, depression, trauma, etc.)
+// - Next session times
+```
+
+### **6. Clients List**
+
+```typescript
+// Used by: Client management screens
+import { mockTherapistClients } from '../global/MockData';
+
+// 10 sample clients with:
+// - Full profile (name, email, phone)
+// - Session history, diagnosis, assigned groups
+// - Status (active, inactive)
+```
+
+### **7. Client Notes**
+
+```typescript
+// Used by: THClientProfileScreen.tsx, THAddClientNoteScreen.tsx
+import { mockTherapistClientNotes } from '../global/MockData';
+
+// 5 sample session notes with:
+// - Session details, mood, topics
+// - Homework assignments
+// - Progress tracking
+```
+
+### **8. Notifications**
+
+```typescript
+// Used by: THNotificationsScreen.tsx
+import { mockTherapistNotifications } from '../global/MockData';
+
+// 12 sample notifications with:
+// - Types: appointment, request, message, group, system
+// - Read status, action URLs
+// - Icons and colors
+```
+
+### **9. Therapist Profile**
+
+```typescript
+// Used by: THAccountScreen.tsx
+import { mockTherapistProfile } from '../global/MockData';
+
+// Complete profile with:
+// - Personal info, specializations
+// - Availability schedule
+// - Rating, reviews, experience
+```
+
+---
+
+## 📚 **Summary**
+
+**Key Points:**
+1. **All mock data** → `src/global/MockData.ts`
+2. **Use for testing** → Not production
+3. **Keep updated** → Match current API structure
+4. **Document clearly** → Add comments and structure info
+5. **Migrate to real API** → As soon as backend is ready
+
+**Quick Reference:**
+```typescript
+// Import mock data
+import { mockEvents } from '../global/MockData';
+
+// Use for testing only
+if (__DEV__) {
+  setEvents(mockEvents);
+}
+
+// Production: Use real API
+const response = await getEvents();
+setEvents(response.data.events);
+```

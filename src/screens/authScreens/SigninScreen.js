@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { signin } from '../../features/user/userSlice';
 import { updateUserAvatar, updateUserDetails } from '../../features/user/userDataSlice';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    Dimensions, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    Dimensions,
     Image,
     ImageBackground,
     TextInput,
@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { appColors, parameters } from '../../global/Styles';
-import { Button, Icon} from '@rneui/base';
+import { Button, Icon } from '@rneui/base';
 import { useToast } from 'native-base';
 import { storeItemLS } from '../../global/StorageActions';
 import { appImages } from '../../global/Data';
@@ -32,7 +32,7 @@ import { normalizePhone } from '../../global/LHShortcuts';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 import { isEmailVerified, isPhoneVerified } from '../../global/LHValidators';
 
-export default function SigninScreen({navigation}){
+export default function SigninScreen({ navigation }) {
 
     const dispatch = useDispatch();
     const toast = useToast();
@@ -40,7 +40,7 @@ export default function SigninScreen({navigation}){
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [username, setUsername] = useState(""); // represents email or phone number
-    const [isFeatureModalVisible, setIsFeatureModalVisible] = useState(false); 
+    const [isFeatureModalVisible, setIsFeatureModalVisible] = useState(false);
     // const [userToken, setUserToken] = useState(null); // do we need this ?
     const [isLoadingAppData, setIsLoadingAppData] = useState(false); // Toggles App Home Data Loading states
     const [loginPayload, setLoginPayload] = useState(null); // user login payload data
@@ -50,7 +50,7 @@ export default function SigninScreen({navigation}){
     const [userDetails, setUserDetails] = useState(null); // user details
 
     // country calling code
-    const countryCodes = { 'ug' : '+256' }; // country calling code
+    const countryCodes = { 'ug': '+256' }; // country calling code
 
     // Toast Notifications
     const notifyWithToast = (description) => {
@@ -60,6 +60,18 @@ export default function SigninScreen({navigation}){
         })
     }
 
+    // Therapist Test Data 
+    const therapistTestData = {
+        userId: 'TestTherapist-001',
+        firstName: 'Hellen',
+        lastName: 'Mugyenyi',
+        email: 'therapist@innerspark.test',
+        phone: '+256700111222',
+        role: 'therapist',
+        email_verified: 1,
+        phone_verified: 1,
+    };
+
     // Toggle Password Handler
     const togglePassword = () => { if (showPassword) { setShowPassword(false); } else { setShowPassword(true); } }
 
@@ -68,7 +80,7 @@ export default function SigninScreen({navigation}){
 
     // Password Handler
     const onChangePasswordHandler = (password) => { setPassword(password); }
-    
+
 
     /* Validate Signin Inputs */
     const validateSigninInputs = () => {
@@ -82,7 +94,7 @@ export default function SigninScreen({navigation}){
             notifyWithToast("Enter a valid password.");
             return false;
         }
-        
+
         return true;
     }
 
@@ -95,24 +107,24 @@ export default function SigninScreen({navigation}){
         // validate inputs
         if (!validateSigninInputs()) {
             return;
-        }   
+        }
 
         // select the login method based on the username (email or password)
         if (isValidEmailOrPhone(username)) {
-           // check if provided username is email otherwise phone
-           if (isValidEmailAddress(username)) {
-              userLoginWithEmailHandler(); // login with email
-           } else if (isValidPhoneNumber(username)) {
-              userLoginWithPhoneHandler(); // login with phone
-           }
+            // check if provided username is email otherwise phone
+            if (isValidEmailAddress(username)) {
+                userLoginWithEmailHandler(); // login with email
+            } else if (isValidPhoneNumber(username)) {
+                userLoginWithPhoneHandler(); // login with phone
+            }
         } else {
             notifyWithToast("Enter a valid email or phone number.");
             return;
         }
-          
+
     }
 
-    
+
     /** Login With Email Email Form Handler 
      * @param {event} event - The event object.
      * @returns {void}
@@ -120,10 +132,10 @@ export default function SigninScreen({navigation}){
     const userLoginWithEmailHandler = async (event) => {
 
         setIsLoading(true); // set loading state
-            
+
         // making a request to the API to login with email
         try {
-            
+
             let trimmedEmail = username.toLocaleLowerCase().trim(); // trimmed email or username
             let trimmedPassword = password.trim(); // trimmed Password
 
@@ -132,17 +144,17 @@ export default function SigninScreen({navigation}){
             // console.log("Username: " + username);
             // console.log("Email: " + trimmedEmail);
             // console.log("Password: " + trimmedPassword);
-           
-            const response = await AuthInstance.post( '/auth/login', {
+
+            const response = await AuthInstance.post('/auth/login', {
                 email: trimmedEmail,
                 password: trimmedPassword,
             });
-            
+
             // checking the status
             if (response.status === 200) {
 
                 // IF status is successful
-                if (response.data.status === "success"){
+                if (response.data.status === "success") {
                     console.log(response.data); // just for debugging
 
                     // Prepare the login payload data
@@ -165,14 +177,14 @@ export default function SigninScreen({navigation}){
 
                         // redirect to OTP Verification Screen
                         navigation.navigate(
-                            'SigninOTPScreen', 
-                            { 
+                            'SigninOTPScreen',
+                            {
                                 userId: response.data.user.user_id,
                                 loginData: {
                                     type: 'email',
                                     email: trimmedEmail,
-                                    password: trimmedPassword 
-                                }, 
+                                    password: trimmedPassword
+                                },
                                 loginPayload: {
                                     userId: response.data.user.user_id,
                                     firstName: response.data.user.firstName,
@@ -199,7 +211,7 @@ export default function SigninScreen({navigation}){
                             role: response.data.user.role,
                             email_verified: response.data.user.email_verified,
                             phone_verified: response.data.user.phone_verified,
-                            
+
                         });
 
                         // Set User Details Object 
@@ -213,7 +225,7 @@ export default function SigninScreen({navigation}){
                             email_verified: response.data.user.email_verified,
                             phone_verified: response.data.user.phone_verified,
                         });
-    
+
                         // Dispatch update user dettails
                         dispatch(updateUserDetails({
                             userId: response.data.user.user_id,
@@ -224,10 +236,10 @@ export default function SigninScreen({navigation}){
                             role: response.data.user.role,
                             email_verified: response.data.user.email_verified,
                             phone_verified: response.data.user.phone_verified,
-                        })); 
-                        
+                        }));
+
                         // store user login data
-                        storeItemLS("userDetailsLS", { 
+                        storeItemLS("userDetailsLS", {
                             userId: response.data.user.user_id,
                             firstName: response.data.user.firstName,
                             lastName: response.data.user.lastName,
@@ -241,9 +253,9 @@ export default function SigninScreen({navigation}){
                         // ### Implement Later -- When Endpoint Available - #KNEXT
                         // Run the getAppHomeData to get the user's app home data
                         // getAppHomeData({ dispatch:dispatch, userID:response.data.user.user_id, loadingSetter:setIsLoadingAppData });
-                       
+
                         setIsLoggedInModalVisible(true); // Show the Logged In Success Modal
-                       
+
                     }
 
                     setIsLoading(false); // Toggle Loading State
@@ -261,7 +273,7 @@ export default function SigninScreen({navigation}){
                 notifyWithToast("Email or Password is incorrect!"); // Email or Password is incorrect!
                 setIsLoading(false);
                 setPassword(''); // reset sensitive fields
-                
+
             } else {
 
                 throw new Error("Whoops! Something went wrong.");
@@ -272,7 +284,7 @@ export default function SigninScreen({navigation}){
         } catch (error) {
             console.log("Login Error:", error.message);
             console.log("Error Response:", error.response?.status, error.response?.data);
-            
+
             // Better error handling for network issues
             if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
                 notifyWithToast("Request timed out. Please check your connection and try again.");
@@ -285,7 +297,7 @@ export default function SigninScreen({navigation}){
             } else {
                 notifyWithToast("Login failed. Check details and try again.");
             }
-            
+
             setIsLoading(false);
             setPassword(''); // reset sensitive fields
         }
@@ -306,27 +318,27 @@ export default function SigninScreen({navigation}){
 
         // making a request to the API to login with phone number
         try {
-            
+
             let trimmedPhone = username.toLocaleLowerCase().trim(); // trimmed phone number
             // Normalize phone number
             let normalizedPhone = normalizePhone(trimmedPhone, countryCodes.ug);
             let trimmedPassword = password.trim(); // trimmed Password
 
-            const response = await AuthInstance.post( '/auth/login', {
+            const response = await AuthInstance.post('/auth/login', {
                 phone: normalizedPhone,
                 password: trimmedPassword,
             });
-            
+
             // checking the status
             if (response.status === 200) {
 
                 // IF status is successful
-                if (response.data.status === "success"){
+                if (response.data.status === "success") {
 
                     console.log(response.data); // log response data
 
-                     // Prepare the login payload data
-                     setLoginPayload({
+                    // Prepare the login payload data
+                    setLoginPayload({
                         userId: response.data.user.user_id,
                         firstName: response.data.user.firstName,
                         lastName: response.data.user.lastName,
@@ -341,13 +353,13 @@ export default function SigninScreen({navigation}){
                     // redirect to OTP Screen if phone is not verified
                     if (response.data.user.phone_verified === 0) {
                         navigation.navigate(
-                            'SigninOTPScreen', 
-                            { 
+                            'SigninOTPScreen',
+                            {
                                 userId: response.data.user.user_id,
                                 loginData: {
                                     type: 'phone',
                                     phone: normalizedPhone,
-                                    password: trimmedPassword 
+                                    password: trimmedPassword
                                 },
                                 loginPayload: {
                                     userId: response.data.user.user_id,
@@ -358,12 +370,12 @@ export default function SigninScreen({navigation}){
                                     role: response.data.user.role,
                                     email_verified: response.data.user.email_verified,
                                     phone_verified: response.data.user.phone_verified,
-                                } 
+                                }
                             }
                         );
 
                     } else {
-                        
+
                         // Store Insider User token data
                         // get it from the response
                         setUserTokenData({
@@ -375,7 +387,7 @@ export default function SigninScreen({navigation}){
                             role: response.data.user.role,
                             email_verified: response.data.user.email_verified,
                             phone_verified: response.data.user.phone_verified,
-                            
+
                         });
 
                         // Set User Details Object 
@@ -389,7 +401,7 @@ export default function SigninScreen({navigation}){
                             email_verified: response.data.user.email_verified,
                             phone_verified: response.data.user.phone_verified,
                         });
-    
+
                         // Dispatch update user dettails
                         dispatch(updateUserDetails({
                             userId: response.data.user.user_id,
@@ -400,10 +412,10 @@ export default function SigninScreen({navigation}){
                             role: response.data.user.role,
                             email_verified: response.data.user.email_verified,
                             phone_verified: response.data.user.phone_verified,
-                        })); 
-                        
+                        }));
+
                         // store user login data
-                        storeItemLS("userDetailsLS", { 
+                        storeItemLS("userDetailsLS", {
                             userId: response.data.user.user_id,
                             firstName: response.data.user.firstName,
                             lastName: response.data.user.lastName,
@@ -417,7 +429,7 @@ export default function SigninScreen({navigation}){
                         // ### Implement Later -- When Endpoint Available - #KNEXT
                         // Run the getAppHomeData to get the user's app home data
                         // getAppHomeData({ dispatch:dispatch, userID:response.data.user.user_id, loadingSetter:setIsLoadingAppData });
-                       
+
                         setIsLoggedInModalVisible(true); // Show the Logged In Success Modal
 
                     }
@@ -442,7 +454,7 @@ export default function SigninScreen({navigation}){
         } catch (error) {
             console.log("Login Error:", error.message);
             console.log("Error Response:", error.response?.status, error.response?.data);
-            
+
             // Better error handling for network issues
             if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
                 notifyWithToast("Request timed out. Please check your connection and try again.");
@@ -455,7 +467,7 @@ export default function SigninScreen({navigation}){
             } else {
                 notifyWithToast("Login failed. Check details and try again.");
             }
-            
+
             setIsLoading(false); // set loading state
             setPassword(''); // reset sensitive fields
         }
@@ -463,74 +475,74 @@ export default function SigninScreen({navigation}){
     }
 
 
-    return(
-       <SafeAreaView style={ styles.container }>
-            <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, backgroundColor:appColors.CardBackground }}>
-                <View style={{ paddingVertical:parameters.headerHeightTinier }}>
+    return (
+        <SafeAreaView style={styles.container}>
+            <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, backgroundColor: appColors.CardBackground }}>
+                <View style={{ paddingVertical: parameters.headerHeightTinier }}>
                     <LHGenericHeader
-                        title='Sign In' 
+                        title='Sign In'
                         showTitle={false}
                         showLeftIcon={true}
-                        leftIconPressed={ () => { navigation.goBack(); } } 
+                        leftIconPressed={() => { navigation.goBack(); }}
                     />
                 </View>
 
-                <ScrollView contentContainerStyle={{ flex:1, justifyContent:'center'}}>
-                    <View style={{ paddingHorizontal:20, paddingVertical:10, paddingBottom:20 }}>
+                <ScrollView contentContainerStyle={{ flex: 1, justifyContent: 'center' }}>
+                    <View style={{ paddingHorizontal: 20, paddingVertical: 10, paddingBottom: 20 }}>
 
                         {/* Logo and Welcome Text */}
-                        <View style={{ paddingVertical:2 }}>
-                            <View style={{ justifyContent: "center", alignItems:"center" }}>
-                                <Image source={appImages.logoDefault} style={{ width:280, height:140, resizeMode:'contain' }} />
+                        <View style={{ paddingVertical: 2 }}>
+                            <View style={{ justifyContent: "center", alignItems: "center" }}>
+                                <Image source={appImages.logoDefault} style={{ width: 280, height: 140, resizeMode: 'contain' }} />
                             </View>
-                            <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:10, paddingBottom:15 }}>
-                                <Text style={{ fontSize:16, color:appColors.grey2, fontWeight:'500', paddingVertical:5 }}>
-                                Your Journey to mental wellness
+                            <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: 10, paddingBottom: 15 }}>
+                                <Text style={{ fontSize: 16, color: appColors.grey2, fontWeight: '500', paddingVertical: 5 }}>
+                                    Your Journey to mental wellness
                                 </Text>
                             </View>
                         </View>
 
-                        <View style={{ paddingHorizontal:10 }}>
+                        <View style={{ paddingHorizontal: 10 }}>
                             {/* Email, Phone Input Block */}
-                            <View style={ styles.inputBlockRow }>
-                                <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
+                            <View style={styles.inputBlockRow}>
+                                <View style={{ justifyContent: "center", alignItems: "center", paddingRight: 10 }}>
                                     <Icon type="material-icons" name="alternate-email" color={appColors.grey4} size={25} />
                                 </View>
 
-                                <TextInput 
-                                    placeholderTextColor={ appColors.grey3 } 
-                                    style={{ flex:3, fontSize:15, color:appColors.black, paddingVertical:0 }}
+                                <TextInput
+                                    placeholderTextColor={appColors.grey3}
+                                    style={{ flex: 3, fontSize: 15, color: appColors.black, paddingVertical: 0 }}
                                     editable={!isLoading}
                                     placeholder='Email or Phone'
                                     value={username}
                                     maxLength={100}
-                                    onChangeText={ onChangeUsernameHandler }
-                                />  
+                                    onChangeText={onChangeUsernameHandler}
+                                />
                             </View>
 
                             {/* Password Input Block */}
-                            <View style={ styles.inputBlockRow }>
-                                <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                    <Icon type="material-community" name="lock"  color={appColors.grey4} size={25} />
+                            <View style={styles.inputBlockRow}>
+                                <View style={{ justifyContent: "center", alignItems: "center", paddingRight: 10 }}>
+                                    <Icon type="material-community" name="lock" color={appColors.grey4} size={25} />
                                 </View>
-                                <TextInput 
-                                    placeholderTextColor={ appColors.grey3 } 
-                                    style={{ flex:3, fontSize:15, color:appColors.black, paddingVertical:0 }}
-                                    secureTextEntry={!showPassword} 
+                                <TextInput
+                                    placeholderTextColor={appColors.grey3}
+                                    style={{ flex: 3, fontSize: 15, color: appColors.black, paddingVertical: 0 }}
+                                    secureTextEntry={!showPassword}
                                     editable={!isLoading}
-                                    placeholder='Password' 
+                                    placeholder='Password'
                                     value={password}
-                                    onChangeText={ onChangePasswordHandler }
-                                />  
-                                <View style={{ justifyContent: "center", alignItems:"center", paddingLeft:10, }}>
-                                    <Icon 
-                                        type="material-community" 
-                                        name={ showPassword ? "eye-off-outline" : "eye-outline" }  
-                                        color={appColors.grey4} 
-                                        size={25} 
-                                        onPress={ () => togglePassword() }
+                                    onChangeText={onChangePasswordHandler}
+                                />
+                                <View style={{ justifyContent: "center", alignItems: "center", paddingLeft: 10, }}>
+                                    <Icon
+                                        type="material-community"
+                                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                        color={appColors.grey4}
+                                        size={25}
+                                        onPress={() => togglePassword()}
                                     />
-                                </View> 
+                                </View>
                             </View>
 
                             {/* { isLoading && 
@@ -539,23 +551,23 @@ export default function SigninScreen({navigation}){
                                     <Text style={{ color:appColors.black }}>Login in progress...</Text>
                                 </View>
                             } */}
-                            
-                            <View style={{ paddingVertical:15 }}>
-                                <Button 
+
+                            <View style={{ paddingVertical: 15 }}>
+                                <Button
                                     title="Sign In"
-                                    buttonStyle={ parameters.appButtonXLBlue }
-                                    titleStyle={ parameters.appButtonXLTitleBlue } 
-                                    onPress={ 
+                                    buttonStyle={parameters.appButtonXLBlue}
+                                    titleStyle={parameters.appButtonXLTitleBlue}
+                                    onPress={
                                         () => {
                                             // testing the feature modal
                                             // setIsFeatureModalVisible(true);
                                             // setIsLoggedInModalVisible(true);
 
                                             // Select Login Method (Email or Phone)
-                                            smartLoginSelect(); 
-                                        } 
+                                            smartLoginSelect();
+                                        }
                                     }
-                                /> 
+                                />
                             </View>
 
                             {/* A temporary link to bypass the login and setup default user session data */}
@@ -601,131 +613,116 @@ export default function SigninScreen({navigation}){
                             </View>
                             */}
                             {/*  End of skip login section */}
-                            
+
                         </View>
-                    
+
                         {/* Forgot Password Section */}
-                        <View style={{  paddingVertical:5 }}>
+                        <View style={{ paddingVertical: 5 }}>
                             <Pressable
-                                style={{ flexDirection:'row', alignItems:'center', justifyContent:'center', }}
-                                onPress={ 
-                                    () => { 
-                                        navigation.navigate('PasswordResetScreen'); 
-                                    } 
+                                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', }}
+                                onPress={
+                                    () => {
+                                        navigation.navigate('PasswordResetScreen');
+                                    }
                                 }
                             >
-                                <Text 
-                                    style={{ fontSize:14, textAlign:'center', color:appColors.AppBlue, marginRight:5 }} 
+                                <Text
+                                    style={{ fontSize: 14, textAlign: 'center', color: appColors.AppBlue, marginRight: 5 }}
                                 >
                                     Forgot password?
                                 </Text>
-                                <Text style={{ fontSize:14, color:appColors.AppBlue, fontWeight:'bold' }}>Reset Password</Text>
+                                <Text style={{ fontSize: 14, color: appColors.AppBlue, fontWeight: 'bold' }}>Reset Password</Text>
                             </Pressable>
                         </View>
 
                         {/* Don't have an account? */}
-                        <View style={{ justifyContent:'center', paddingVertical:5, flexDirection: 'row' }}>
-                            <Text style={{ color:appColors.AppBlue }}>Don't have an account?</Text>
-                            <Text 
-                                style={{ color:appColors.AppBlue, fontWeight:'bold' }} 
-                                onPress={ 
-                                    () => { 
-                                        navigation.navigate('SignupScreen'); 
-                                    } 
+                        <View style={{ justifyContent: 'center', paddingVertical: 5, flexDirection: 'row' }}>
+                            <Text style={{ color: appColors.AppBlue }}>Don't have an account?</Text>
+                            <Text
+                                style={{ color: appColors.AppBlue, fontWeight: 'bold' }}
+                                onPress={
+                                    () => {
+                                        navigation.navigate('SignupScreen');
+                                    }
                                 }
                             > Sign up</Text>
                         </View>
 
-
-
                         {/* Test Therapist Login Link */}
                         {/* Temporary debug link - will be removed in production */}
                         {/* This is a temporary link for testing therapist dashboard access and will be removed before production release */}
-                        {/* <View style={{ justifyContent:'center', paddingVertical:10, paddingTop:20 }}>
+                        <View style={{ justifyContent: 'center', paddingVertical: 10, paddingTop: 20 }}>
                             <Pressable
-                                style={{ flexDirection:'row', alignItems:'center', justifyContent:'center' }}
-                                onPress={ 
-                                    () => { 
-                                        // Test therapist login with default data
-                                        const therapistTestData = {
-                                            userId: 'TestTherapist-001',
-                                            firstName: 'Hellen',
-                                            lastName: 'Mugyenyi',
-                                            email: 'therapist@innerspark.test',
-                                            phone: '+256700111222',
-                                            role: 'therapist',
-                                            email_verified: 1,
-                                            phone_verified: 1,
-                                        };
-
+                                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+                                onPress={
+                                    () => {
                                         // Store user token data
-                                        // storeItemLS("userToken", therapistTestData);
-                                        
+                                        storeItemLS("userToken", therapistTestData);
+
                                         // Dispatch signin action
-                                        // dispatch(signin(therapistTestData));
-                                        
+                                        dispatch(signin(therapistTestData));
+
                                         // Dispatch update user details
-                                        // dispatch(updateUserDetails(therapistTestData));
-                                        
+                                        dispatch(updateUserDetails(therapistTestData));
+
                                         // Store user details in local storage
-                                        // storeItemLS("userDetailsLS", therapistTestData);
-                                        
+                                        storeItemLS("userDetailsLS", therapistTestData);
+
                                         // Show success message
-                                        // notifyWithToast("🩺 Therapist mode activated!");
-                                    } 
+                                        notifyWithToast("🩺 Therapist mode activated!");
+                                    }
                                 }
                             >
-                                <Icon type="material" name="medical-services" color={appColors.grey3} size={14} style={{ marginRight:5 }} />
-                                <Text style={{ fontSize:12, color:appColors.grey3, textDecorationLine:'underline' }}>
+                                <Icon type="material" name="medical-services" color={appColors.grey3} size={14} style={{ marginRight: 5 }} />
+                                <Text style={{ fontSize: 12, color: appColors.grey3, textDecorationLine: 'underline' }}>
                                     Try Therapist Dashboard
                                 </Text>
                             </Pressable>
                         </View>
-                        */}
 
 
                         {/* Terms of Service - with separate links */}
-                        {/* <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:15 }}>
-                            <Text style={{ color:appColors.grey3, fontSize:12, textAlign:'center' }}>
+                        {/* <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: 15 }}>
+                            <Text style={{ color: appColors.grey3, fontSize: 12, textAlign: 'center' }}>
                                 By continuing, you accept our {' '}
-                                <Text 
-                                    style={{ color:appColors.AppBlue, textDecorationLine:'underline' }} 
-                                    onPress={() => { navigation.navigate('TermsOfServiceScreen'); } }
+                                <Text
+                                    style={{ color: appColors.AppBlue, textDecorationLine: 'underline' }}
+                                    onPress={() => { navigation.navigate('TermsOfServiceScreen'); }}
                                 >Terms of Service</Text>
                                 {' '}and{' '}
-                                <Text 
-                                    style={{ color:appColors.AppBlue, textDecorationLine:'underline' }} 
-                                    onPress={() => { navigation.navigate('PrivacyPolicyScreen'); } }
+                                <Text
+                                    style={{ color: appColors.AppBlue, textDecorationLine: 'underline' }}
+                                    onPress={() => { navigation.navigate('PrivacyPolicyScreen'); }}
                                 >Privacy Policy</Text>
                             </Text>
                         </View> */}
-                       
+
                     </View>
                 </ScrollView>
 
                 {/* Generic Feature Modal */}
-                <LHGenericFeatureModal 
-                    isModVisible={ isFeatureModalVisible } 
-                    visibilitySetter={setIsFeatureModalVisible} 
+                <LHGenericFeatureModal
+                    isModVisible={isFeatureModalVisible}
+                    visibilitySetter={setIsFeatureModalVisible}
                     isDismissable={true}
                     title="Stay Tuned"
                     description="This feature is in progress. Check back soon."
                 />
 
                 {/* Login Success Modal */}
-                <LHLoginSuccessModal 
-                    isModVisible={isLoggedInModalVisible} 
+                <LHLoginSuccessModal
+                    isModVisible={isLoggedInModalVisible}
                     isLoading={isLoadingAppData}
                     title="Welcome aboard!"
                     description="You’re all set!"
                     loadingText="Please wait, getting ready..."
                     buttonTitle="Continue"
-                    onPressAction={ 
-                        () => { 
+                    onPressAction={
+                        () => {
                             storeItemLS("userToken", userTokenData); // Local Session to keep user loggedin
                             dispatch(signin(userTokenData)); // Dispatch user token to the signin action
                             setIsLoggedInModalVisible(false); // Close the success modal
-                        } 
+                        }
                     }
                 />
 
@@ -741,19 +738,19 @@ export default function SigninScreen({navigation}){
 // Local Styles
 const styles = StyleSheet.create({
     container: {
-        flex:1,
-        backgroundColor:appColors.CardBackground,
+        flex: 1,
+        backgroundColor: appColors.CardBackground,
     },
 
     inputBlockRow: {
-        flexDirection:'row', 
-        alignItems:'center', 
-        paddingHorizontal:12, 
-        paddingVertical:8, 
-        borderWidth:1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
         borderColor: appColors.grey4,
-        borderRadius:25, 
-        marginVertical:8
+        borderRadius: 25,
+        marginVertical: 8
     },
 
 })

@@ -19,19 +19,18 @@ import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 
-// Mock clients data
-const mockClients = [
-  { id: '1', name: 'John Doe', avatar: '👨', lastSession: '2 days ago' },
-  { id: '2', name: 'Sarah Williams', avatar: '👩', lastSession: '1 week ago' },
-  { id: '3', name: 'Michael Brown', avatar: '👨‍💼', lastSession: '3 days ago' },
-  { id: '4', name: 'Emily Chen', avatar: '👩‍💼', lastSession: '5 days ago' },
-  { id: '5', name: 'David Martinez', avatar: '👨‍🦱', lastSession: 'New client' },
-];
+import { useSelector } from 'react-redux';
+import { createAppointment, updateAppointment } from '../../../api/therapist/appointments';
+import { getClients } from '../../../api/therapist/clients';
 
 const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   const preSelectedClient = route.params?.client;
   const isReschedule = route.params?.isReschedule || false;
   const existingAppointment = route.params?.existingAppointment;
+
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const [selectedClient, setSelectedClient] = useState(preSelectedClient || null);
   const [sessionType, setSessionType] = useState<'individual' | 'couples' | 'consultation'>(
@@ -42,7 +41,21 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   const [notes, setNotes] = useState('');
   const [meetingType, setMeetingType] = useState<'in-person' | 'virtual'>('virtual');
   const [meetingLink, setMeetingLink] = useState(existingAppointment?.meetingLink || '');
-  
+
+  React.useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      const therapistId = userDetails?.id || '52863268761';
+      const res: any = await getClients(therapistId, { status: 'active' });
+      if (res?.data?.clients) {
+        setClients(res.data.clients);
+      }
+    } catch (e) { console.error(e); }
+  };
+
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -55,23 +68,23 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   ];
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
-  const handleSchedule = () => {
+  const handleSchedule = async () => {
     if (!selectedClient) {
       Alert.alert('Missing Information', 'Please select a client');
       return;
@@ -82,16 +95,40 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
       return;
     }
 
-    Alert.alert(
-      'Appointment Scheduled',
-      `Session with ${selectedClient.name} has been scheduled for ${formatDate(selectedDate)} at ${formatTime(selectedDate)}`,
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]
-    );
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+
+      // Prepare payload (simplified)
+      const payload = {
+        therapist_id: therapistId,
+        clientId: selectedClient.id,
+        type: sessionTypes.find(t => t.id === sessionType)?.label || 'Session',
+        date: selectedDate.toISOString().split('T')[0],
+        time: formatTime(selectedDate), // API expects HH:MM, formatTime returns human readable.
+        // In real app use date-fns/moment to format consistently
+        duration: parseInt(duration),
+        notes: notes,
+        meetingLink: meetingLink
+      };
+
+      if (isReschedule && existingAppointment?.id) {
+        await updateAppointment(existingAppointment.id, payload);
+        Alert.alert('Success', 'Appointment rescheduled successfully', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        await createAppointment(payload);
+        Alert.alert('Success', `Session with ${selectedClient.name} scheduled successfully`, [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to schedule appointment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectedSessionType = sessionTypes.find(t => t.id === sessionType);
@@ -99,9 +136,9 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      <ISGenericHeader 
-        title={isReschedule ? "Reschedule Appointment" : "Schedule Appointment"} 
-        navigation={navigation} 
+      <ISGenericHeader
+        title={isReschedule ? "Reschedule Appointment" : "Schedule Appointment"}
+        navigation={navigation}
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -140,9 +177,9 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
                 key={type.id}
                 style={[
                   styles.typeCard,
-                  sessionType === type.id && { 
+                  sessionType === type.id && {
                     backgroundColor: type.color + '20',
-                    borderColor: type.color 
+                    borderColor: type.color
                   }
                 ]}
                 onPress={() => setSessionType(type.id)}
@@ -182,7 +219,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
               </View>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.dateTimeRow}>
             <TouchableOpacity
               style={styles.dateTimeButton}
@@ -236,7 +273,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
                 Virtual
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[
                 styles.meetingTypeButton,
@@ -348,9 +385,9 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
                 <Icon type="material" name="close" size={24} color={appColors.grey2} />
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.clientList}>
-              {mockClients.map((client) => (
+              {clients.map((client) => (
                 <TouchableOpacity
                   key={client.id}
                   style={styles.clientOption}
@@ -386,7 +423,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Select Date</Text>
             </View>
-            
+
             <DatePicker
               date={selectedDate}
               onDateChange={setSelectedDate}
@@ -394,7 +431,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
               minimumDate={new Date()}
               theme="light"
             />
-            
+
             <View style={styles.pickerButtons}>
               <TouchableOpacity
                 style={[styles.pickerButton, styles.cancelButton]}
@@ -425,7 +462,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Select Time</Text>
             </View>
-            
+
             <DatePicker
               date={selectedDate}
               onDateChange={setSelectedDate}
@@ -433,7 +470,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
               minuteInterval={15}
               theme="light"
             />
-            
+
             <View style={styles.pickerButtons}>
               <TouchableOpacity
                 style={[styles.pickerButton, styles.cancelButton]}
@@ -464,7 +501,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Session Duration</Text>
             </View>
-            
+
             <ScrollView style={styles.durationList}>
               {['30', '45', '60', '90', '120'].map((mins) => (
                 <TouchableOpacity

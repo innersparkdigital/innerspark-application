@@ -1,7 +1,7 @@
 /**
  * Therapist Reviews & Ratings Screen
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,9 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getReviews } from '../../../api/therapist';
+import { useSelector } from 'react-redux';
+import { ActivityIndicator } from 'react-native';
 
 interface Review {
   id: string;
@@ -29,56 +32,34 @@ interface Review {
 }
 
 const THReviewsScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedFilter, setSelectedFilter] = useState<'all' | '5' | '4' | '3' | '2' | '1'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [reviews] = useState<Review[]>([
-    {
-      id: '1',
-      clientName: 'Sarah W.',
-      rating: 5,
-      comment: 'Dr. Johnson has been incredibly helpful in my journey. Her empathetic approach and practical strategies have made a real difference in my life.',
-      date: 'Oct 18, 2025',
-      helpful: 12,
-    },
-    {
-      id: '2',
-      clientName: 'Michael B.',
-      rating: 5,
-      comment: 'Professional, caring, and always makes time to listen. Highly recommend!',
-      date: 'Oct 15, 2025',
-      response: 'Thank you for your kind words! It\'s been a pleasure working with you.',
-      helpful: 8,
-    },
-    {
-      id: '3',
-      clientName: 'Emily C.',
-      rating: 4,
-      comment: 'Great therapist with excellent techniques. Sometimes sessions feel a bit rushed, but overall very satisfied.',
-      date: 'Oct 12, 2025',
-      helpful: 5,
-    },
-    {
-      id: '4',
-      clientName: 'David M.',
-      rating: 5,
-      comment: 'Life-changing experience. The tools and insights I\'ve gained have helped me tremendously.',
-      date: 'Oct 10, 2025',
-      response: 'I\'m so glad to hear about your progress! Keep up the great work.',
-      helpful: 15,
-    },
-    {
-      id: '5',
-      clientName: 'Lisa A.',
-      rating: 5,
-      comment: 'Compassionate and knowledgeable. Creates a safe space for healing.',
-      date: 'Oct 8, 2025',
-      helpful: 10,
-    },
-  ]);
+  useEffect(() => {
+    loadReviews();
+  }, []);
+
+  const loadReviews = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      const response: any = await getReviews(therapistId);
+
+      if (response?.data?.reviews) {
+        setReviews(response.data.reviews);
+      }
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const ratingDistribution = [
     { stars: 5, count: 42, percentage: 84 },
@@ -103,7 +84,7 @@ const THReviewsScreen = ({ navigation }: any) => {
     setReplyText('');
     setShowReplyModal(true);
   };
-  
+
   const submitReply = () => {
     if (replyText.trim()) {
       // TODO: Send reply to backend
@@ -234,52 +215,56 @@ const THReviewsScreen = ({ navigation }: any) => {
 
         {/* Reviews List */}
         <View style={styles.reviewsList}>
-          {filteredReviews.map((review) => (
-            <View key={review.id} style={styles.reviewCard}>
-              <View style={styles.reviewHeader}>
-                <View style={styles.reviewerInfo}>
-                  <View style={styles.reviewerAvatar}>
-                    <Text style={styles.reviewerInitial}>{review.clientName[0]}</Text>
+          {loading ? (
+            <View style={{ padding: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={appColors.AppBlue} />
+              <Text style={{ marginTop: 10, color: appColors.grey3 }}>Loading reviews...</Text>
+            </View>
+          ) : filteredReviews.length > 0 ? (
+            filteredReviews.map((review) => (
+              <View key={review.id} style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <View style={styles.reviewerInfo}>
+                    <View style={styles.reviewerAvatar}>
+                      <Text style={styles.reviewerInitial}>{review.clientName[0]}</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.reviewerName}>{review.clientName}</Text>
+                      <Text style={styles.reviewDate}>{review.date}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={styles.reviewerName}>{review.clientName}</Text>
-                    <Text style={styles.reviewDate}>{review.date}</Text>
-                  </View>
+                  {renderStars(review.rating)}
                 </View>
-                {renderStars(review.rating)}
-              </View>
 
-              <Text style={styles.reviewComment}>{review.comment}</Text>
+                <Text style={styles.reviewComment}>{review.comment}</Text>
 
-              <View style={styles.reviewFooter}>
-                <TouchableOpacity style={styles.helpfulButton}>
-                  <Icon type="material" name="thumb-up-outline" size={16} color={appColors.grey3} />
-                  <Text style={styles.helpfulText}>Helpful ({review.helpful})</Text>
-                </TouchableOpacity>
-                {!review.response && (
-                  <TouchableOpacity
-                    style={styles.replyButton}
-                    onPress={() => handleReply(review.id)}
-                  >
-                    <Icon type="material" name="reply" size={16} color={appColors.AppBlue} />
-                    <Text style={styles.replyText}>Reply</Text>
+                <View style={styles.reviewFooter}>
+                  <TouchableOpacity style={styles.helpfulButton}>
+                    <Icon type="material" name="thumb-up-outline" size={16} color={appColors.grey3} />
+                    <Text style={styles.helpfulText}>Helpful ({review.helpful})</Text>
                   </TouchableOpacity>
+                  {!review.response && (
+                    <TouchableOpacity
+                      style={styles.replyButton}
+                      onPress={() => handleReply(review.id)}
+                    >
+                      <Icon type="material" name="reply" size={16} color={appColors.AppBlue} />
+                      <Text style={styles.replyText}>Reply</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {review.response && (
+                  <View style={styles.responseCard}>
+                    <View style={styles.responseHeader}>
+                      <Icon type="material" name="reply" size={16} color={appColors.AppBlue} />
+                      <Text style={styles.responseLabel}>Your Response</Text>
+                    </View>
+                    <Text style={styles.responseText}>{review.response}</Text>
+                  </View>
                 )}
               </View>
-
-              {review.response && (
-                <View style={styles.responseCard}>
-                  <View style={styles.responseHeader}>
-                    <Icon type="material" name="reply" size={16} color={appColors.AppBlue} />
-                    <Text style={styles.responseLabel}>Your Response</Text>
-                  </View>
-                  <Text style={styles.responseText}>{review.response}</Text>
-                </View>
-              )}
-            </View>
-          ))}
-
-          {filteredReviews.length === 0 && (
+            ))) : (
             <View style={styles.emptyState}>
               <Icon type="material" name="rate-review" size={60} color={appColors.grey3} />
               <Text style={styles.emptyText}>No reviews found</Text>
@@ -314,7 +299,7 @@ const THReviewsScreen = ({ navigation }: any) => {
             <Text style={styles.replyModalSubtitle}>
               Share your response with the client
             </Text>
-            
+
             <TextInput
               style={styles.replyInput}
               placeholder="Write your response..."
@@ -327,11 +312,11 @@ const THReviewsScreen = ({ navigation }: any) => {
               maxLength={500}
               autoFocus
             />
-            
+
             <Text style={styles.replyCharCount}>
               {replyText.length}/500 characters
             </Text>
-            
+
             <View style={styles.replyModalButtons}>
               <TouchableOpacity
                 style={[styles.replyModalButton, styles.cancelButton]}

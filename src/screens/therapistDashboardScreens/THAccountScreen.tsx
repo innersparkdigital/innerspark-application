@@ -53,7 +53,7 @@ const THAccountScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      
+
       <ISGenericHeader
         title="Account"
         navigation={navigation}
@@ -122,8 +122,18 @@ const THAccountScreen = ({ navigation }: any) => {
           </View>
         ))}
 
+
+        {/* Test Button */}
+        <TouchableOpacity
+          style={{ ...parameters.appButtonXLBlue, marginVertical: 10, marginHorizontal: 20 }}
+          onPress={() => navigation.navigate('DevTestScreen')}
+          activeOpacity={0.8}
+        >
+          <Text style={parameters.appButtonXLTitleBlue}>Test</Text>
+        </TouchableOpacity>
+
         {/* Logout Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.logoutButton}
           onPress={() => setIsLogoutModalVisible(true)}
           activeOpacity={0.8}

@@ -28,6 +28,9 @@ import AboutAppScreen from '../screens/AboutAppScreen';
 import ProfileSettingsScreen from '../screens/settingScreens/ProfileSettingsScreen';
 import SendFeedbackScreen from '../screens/settingScreens/SendFeedbackScreen';
 
+// Test screens
+import DevTestScreen from '../screens/DevTestScreen';
+
 const THStack = createStackNavigator();
 
 const LHTherapistNavigator = () => {
@@ -42,7 +45,7 @@ const LHTherapistNavigator = () => {
         name="THMainTabs"
         component={LHTherapistBottomTabs}
       />
-      
+
       {/* Therapist-specific screens */}
       <THStack.Screen
         name="THRequestsScreen"
@@ -51,7 +54,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THNotificationsScreen"
         component={THNotificationsScreen}
@@ -59,7 +62,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THAppointmentDetailsScreen"
         component={THAppointmentDetailsScreen}
@@ -67,7 +70,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THScheduleAppointmentScreen"
         component={THScheduleAppointmentScreen}
@@ -75,7 +78,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THClientProfileScreen"
         component={THClientProfileScreen}
@@ -83,7 +86,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THAddClientNoteScreen"
         component={THAddClientNoteScreen}
@@ -91,7 +94,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THGroupDetailsScreen"
         component={THGroupDetailsScreen}
@@ -99,7 +102,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THGroupChatScreen"
         component={THGroupChatScreen}
@@ -107,7 +110,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THGroupMembersScreen"
         component={THGroupMembersScreen}
@@ -115,7 +118,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THGroupMemberProfileScreen"
         component={THGroupMemberProfileScreen}
@@ -123,7 +126,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THCreateGroupScreen"
         component={THCreateGroupScreen}
@@ -131,7 +134,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THScheduleGroupSessionScreen"
         component={THScheduleGroupSessionScreen}
@@ -139,7 +142,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THSelectClientScreen"
         component={THSelectClientScreen}
@@ -147,7 +150,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THChatConversationScreen"
         component={THChatConversationScreen}
@@ -155,7 +158,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THAvailabilityScreen"
         component={THAvailabilityScreen}
@@ -163,7 +166,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THPricingScreen"
         component={THPricingScreen}
@@ -171,7 +174,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THAnalyticsScreen"
         component={THAnalyticsScreen}
@@ -179,7 +182,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THReviewsScreen"
         component={THReviewsScreen}
@@ -187,7 +190,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="THTransactionHistoryScreen"
         component={THTransactionHistoryScreen}
@@ -195,7 +198,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       {/* Shared screens */}
       <THStack.Screen
         name="AboutAppScreen"
@@ -204,7 +207,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="ProfileSettingsScreen"
         component={ProfileSettingsScreen}
@@ -212,7 +215,7 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
-      
+
       <THStack.Screen
         name="SendFeedbackScreen"
         component={SendFeedbackScreen}
@@ -220,6 +223,16 @@ const LHTherapistNavigator = () => {
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
+
+      {/* Test screens */}
+      <THStack.Screen
+        name="DevTestScreen"
+        component={DevTestScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+
     </THStack.Navigator>
   );
 };

@@ -1,73 +1,68 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import { getAppointments } from '../../api/therapist';
 
-// Mock data for appointments
-const mockAppointments = [
-  {
-    id: '1',
-    clientName: 'John Doe',
-    type: 'Individual Session',
-    date: 'Today',
-    time: '10:00 AM',
-    duration: '60 min',
-    status: 'upcoming',
-    avatar: '👨',
-  },
-  {
-    id: '2',
-    clientName: 'Sarah Williams',
-    type: 'Follow-up Session',
-    date: 'Today',
-    time: '2:00 PM',
-    duration: '45 min',
-    status: 'upcoming',
-    avatar: '👩',
-  },
-  {
-    id: '3',
-    clientName: 'Michael Brown',
-    type: 'Initial Consultation',
-    date: 'Tomorrow',
-    time: '11:30 AM',
-    duration: '60 min',
-    status: 'scheduled',
-    avatar: '👨‍💼',
-  },
-  {
-    id: '4',
-    clientName: 'Emily Chen',
-    type: 'Group Therapy',
-    date: 'Tomorrow',
-    time: '4:00 PM',
-    duration: '90 min',
-    status: 'scheduled',
-    avatar: '👩‍💼',
-  },
-];
+
 
 const THAppointmentsScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
+  useEffect(() => {
+    loadAppointments();
+  }, []);
+
+  const loadAppointments = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+
+      const response = await getAppointments(therapistId);
+
+      if (response?.data?.appointments) {
+        setAppointments(response.data.appointments);
+      } else {
+        setAppointments([]);
+      }
+    } catch (error) {
+      console.error('Failed to load appointments:', error);
+      setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    // TODO: Add API calls here to fetch:
-    // - Appointments list (all, today, upcoming, completed)
-    // - Appointment stats (total, upcoming, completed)
-    // - Client details for each appointment
-    // Example:
-    // await fetchAppointments(selectedFilter);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
+    await loadAppointments();
+    setRefreshing(false);
   };
+
+  const getFilteredAppointments = () => {
+    if (selectedFilter === 'all') return appointments;
+    if (selectedFilter === 'today') {
+      const today = new Date().toISOString().split('T')[0];
+      return appointments.filter((apt: any) => apt.date === today || apt.date?.includes('Today'));
+    }
+    if (selectedFilter === 'upcoming') {
+      return appointments.filter((apt: any) =>
+        apt.status?.toLowerCase() === 'upcoming' ||
+        apt.status?.toLowerCase() === 'scheduled'
+      );
+    }
+    return appointments;
+  };
+
+  const filteredAppointments = getFilteredAppointments();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -83,7 +78,7 @@ const THAppointmentsScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      
+
       <ISGenericHeader
         title="Appointments"
         navigation={navigation}
@@ -150,10 +145,10 @@ const THAppointmentsScreen = ({ navigation }: any) => {
         {/* Appointments List */}
         <View style={styles.appointmentsSection}>
           <Text style={styles.sectionTitle}>Scheduled Appointments</Text>
-          
-          {mockAppointments.map((appointment) => (
-            <TouchableOpacity 
-              key={appointment.id} 
+
+          {filteredAppointments.map((appointment: any) => (
+            <TouchableOpacity
+              key={appointment.id}
               style={styles.appointmentCard}
               onPress={() => navigation.navigate('THAppointmentDetailsScreen', { appointment })}
               activeOpacity={0.7}

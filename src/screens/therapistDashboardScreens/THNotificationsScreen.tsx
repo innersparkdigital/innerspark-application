@@ -1,76 +1,74 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../api/therapist';
 
-// Mock data for notifications
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'appointment',
-    title: 'New Appointment Request',
-    message: 'John Doe requested an appointment for tomorrow at 10:00 AM',
-    time: '5m ago',
-    read: false,
-    icon: 'calendar-today',
-    iconColor: appColors.AppBlue,
-  },
-  {
-    id: '2',
-    type: 'message',
-    title: 'New Message',
-    message: 'Sarah Williams sent you a message',
-    time: '15m ago',
-    read: false,
-    icon: 'message',
-    iconColor: appColors.AppGreen,
-  },
-  {
-    id: '3',
-    type: 'group',
-    title: 'Group Session Starting Soon',
-    message: 'Anxiety Support Circle starts in 30 minutes',
-    time: '30m ago',
-    read: false,
-    icon: 'people',
-    iconColor: '#FF9800',
-  },
-  {
-    id: '4',
-    type: 'reminder',
-    title: 'Session Reminder',
-    message: 'You have a session with Michael Brown at 2:00 PM',
-    time: '1h ago',
-    read: true,
-    icon: 'notifications',
-    iconColor: appColors.grey3,
-  },
-  {
-    id: '5',
-    type: 'feedback',
-    title: 'New Client Feedback',
-    message: 'Emily Chen left feedback for your last session',
-    time: '2h ago',
-    read: true,
-    icon: 'star',
-    iconColor: '#FFD700',
-  },
-];
+
 
 const THNotificationsScreen = ({ navigation }: any) => {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map(notif => 
-      notif.id === id ? { ...notif, read: true } : notif
-    ));
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const loadNotifications = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+
+      const response: any = await getNotifications(therapistId);
+
+      if (response?.data?.notifications) {
+        setNotifications(response.data.notifications);
+      } else {
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notif => ({ ...notif, read: true })));
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadNotifications();
+    setRefreshing(false);
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      const therapistId = userDetails?.id || '52863268761';
+      // Optimistic update
+      setNotifications(notifications.map(notif =>
+        notif.id === id ? { ...notif, read: true } : notif
+      ));
+      await markNotificationAsRead(id, therapistId);
+    } catch (error) {
+      console.error('Failed to mark notification read:', error);
+      // Revert or show error if needed, but for read status silent fail is often acceptable
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const therapistId = userDetails?.id || '52863268761';
+      // Optimistic update
+      setNotifications(notifications.map(notif => ({ ...notif, read: true })));
+      await markAllNotificationsAsRead(therapistId);
+    } catch (error) {
+      console.error('Failed to mark all read:', error);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -78,7 +76,7 @@ const THNotificationsScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      
+
       <ISGenericHeader
         title="Notifications"
         navigation={navigation}

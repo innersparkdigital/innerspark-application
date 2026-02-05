@@ -13,7 +13,8 @@ import { appColors, appFonts } from '../../global/Styles';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 
-// Mock data - replace with actual API calls
+import { useSelector } from 'react-redux';
+import { getRequests, acceptRequest, declineRequest } from '../../api/therapist';
 const mockRequests = [
   {
     id: 1,
@@ -45,7 +46,36 @@ const mockRequests = [
 ];
 
 const THRequestsScreen = ({ navigation }: any) => {
-  const [requests, setRequests] = useState(mockRequests);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    loadRequests();
+  }, []);
+
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      const response: any = await getRequests(therapistId, { status: 'pending' });
+
+      if (response?.data) {
+        // Handle both array directly or nested data
+        setRequests(Array.isArray(response.data) ? response.data : response.data.requests || []);
+      } else {
+        setRequests([]);
+      }
+    } catch (error) {
+      console.error('Failed to load requests:', error);
+      // Fallback to empty only, do not show mock data in production integration
+      setRequests([]);
+    } catch (error) {
+      console.error('Failed to load requests:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -84,10 +114,19 @@ const THRequestsScreen = ({ navigation }: any) => {
         },
         {
           text: 'Accept',
-          onPress: () => {
-            // TODO: API call to accept request
-            setRequests(requests.filter((r) => r.id !== requestId));
-            Alert.alert('Success', 'Request accepted! You can now chat with the client.');
+          onPress: async () => {
+            try {
+              const therapistId = userDetails?.id || '52863268761';
+              // Optimistic update
+              setRequests(requests.filter((r) => r.id !== requestId));
+              await acceptRequest(requestId.toString(), therapistId);
+              Alert.alert('Success', 'Request accepted! You can now chat with the client.');
+            } catch (e) {
+              console.error(e);
+              Alert.alert('Error', 'Failed to accept request');
+              // Could revert state here if needed
+              loadRequests();
+            }
           },
         },
       ]
@@ -106,9 +145,17 @@ const THRequestsScreen = ({ navigation }: any) => {
         {
           text: 'Decline',
           style: 'destructive',
-          onPress: () => {
-            // TODO: API call to decline request
-            setRequests(requests.filter((r) => r.id !== requestId));
+          onPress: async () => {
+            try {
+              const therapistId = userDetails?.id || '52863268761';
+              // Optimistic update
+              setRequests(requests.filter((r) => r.id !== requestId));
+              await declineRequest(requestId.toString(), therapistId);
+            } catch (e) {
+              console.error(e);
+              Alert.alert('Error', 'Failed to decline request');
+              loadRequests();
+            }
           },
         },
       ]
@@ -200,7 +247,7 @@ const THRequestsScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      
+
       <ISGenericHeader
         title="Client Requests"
         navigation={navigation}

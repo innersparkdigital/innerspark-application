@@ -1,0 +1,2050 @@
+{
+  "info": {
+    "_postman_id": "e855baf1-addd-44a8-b347-d5f967c8d365",
+    "name": "Therapist Dashboard API - Complete Collection",
+    "description": "Complete collection of 67 therapist dashboard endpoints for testing.\n\nBefore using:\n1. Set the {{base_url}} variable (e.g., https://server.innersparkafrica.us or http://localhost:8000)\n2. Set {{therapist_id}} to your test therapist ID (e.g., 52863268761)\n3. Set {{x_api_key}} to your x-api-key header value\n\nAll requests automatically include x-api-key header.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "3615648"
+  },
+  "item": [
+    {
+      "name": "1. Dashboard & Profile",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/dashboard/stats?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "dashboard",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            },
+            "description": "Get overview statistics for therapist dashboard including appointments, clients, messages, and groups"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Therapist Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/profile?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "profile"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            },
+            "description": "Get complete therapist profile with professional details and statistics"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Appointments",
+      "item": [
+        {
+          "name": "List Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/appointments?therapist_id={{therapist_id}}&filter=all&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "appointments"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "filter",
+                  "value": "all",
+                  "description": "Options: all, today, upcoming, completed"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Appointment Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/appointments/1?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "appointments",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"clientId\": {{client_id}},\n  \"type\": \"Individual Session\",\n  \"date\": \"2026-02-15\",\n  \"time\": \"14:00\",\n  \"duration\": 60,\n  \"notes\": \"Initial consultation for anxiety management\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/appointments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"date\": \"2026-02-16\",\n  \"time\": \"15:00\",\n  \"notes\": \"Rescheduled due to conflict\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/appointments/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "appointments",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/appointments/1?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "appointments",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Appointment Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/appointments/1/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "appointments",
+                "1",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Clients",
+      "item": [
+        {
+          "name": "List Clients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/clients?therapist_id={{therapist_id}}&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "clients"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/clients/{{client_id}}/profile?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "clients",
+                "{{client_id}}",
+                "profile"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Messages & Chat",
+      "item": [
+        {
+          "name": "List Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/chats?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "chats"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/chats/{{client_id}}/messages?therapist_id={{therapist_id}}&page=1&limit=50",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "chats",
+                "{{client_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"content\": \"Hello, how are you feeling today?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/chats/{{client_id}}/messages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "chats",
+                "{{client_id}}",
+                "messages"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Chat as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/chats/{{client_id}}/read?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "chats",
+                "{{client_id}}",
+                "read"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Events",
+      "item": [
+        {
+          "name": "List Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events?therapist_id={{therapist_id}}&status=all&page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "status",
+                  "value": "all"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Event Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events/1?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Anxiety Management Workshop",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Learn practical coping strategies for managing anxiety in daily life",
+                  "type": "text"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-02-20",
+                  "type": "text"
+                },
+                {
+                  "key": "startTime",
+                  "value": "14:00",
+                  "type": "text"
+                },
+                {
+                  "key": "endTime",
+                  "value": "16:00",
+                  "type": "text"
+                },
+                {
+                  "key": "location",
+                  "value": "Virtual",
+                  "type": "text"
+                },
+                {
+                  "key": "maxAttendees",
+                  "value": "30",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "25000",
+                  "type": "text"
+                },
+                {
+                  "key": "currency",
+                  "value": "UGX",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "Workshop",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"title\": \"Anxiety Management Workshop - Updated\",\n  \"description\": \"Updated description\",\n  \"maxAttendees\": 40\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events/1?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Start Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events/1/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events",
+                "1",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events/{{event_id}}/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events",
+                "{{event_id}}",
+                "complete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Event Attendees",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events/{{event_id}}/attendees?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events",
+                "{{event_id}}",
+                "attendees"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check-in Attendee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/events/{{event_id}}/attendees/{{client_id}}/check-in",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "events",
+                "{{event_id}}",
+                "attendees",
+                "{{client_id}}",
+                "check-in"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Groups",
+      "item": [
+        {
+          "name": "List Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"name\": \"Depression Support Circle\",\n  \"description\": \"A safe space for sharing experiences and supporting each other\",\n  \"category\": \"mental_health\",\n  \"privacy\": \"private\",\n  \"maxMembers\": 20,\n  \"icon\": \"psychology\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"name\": \"Depression Support Circle - Updated\",\n  \"description\": \"Updated description\",\n  \"maxMembers\": 25\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Group",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Group Chat",
+      "item": [
+        {
+          "name": "Get Group Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/messages?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Group Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"content\": \"Welcome everyone to today's session!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/messages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "messages"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Announcement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"content\": \"Important: Next session will be on Friday at 3 PM\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/announcements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "announcements"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Group Message",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/messages/1?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "messages",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Group Members",
+      "item": [
+        {
+          "name": "List Group Members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/members?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Member Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/members/{{client_id}}?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "members",
+                "{{client_id}}"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Member Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"role\": \"moderator\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/members/{{client_id}}/role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "members",
+                "{{client_id}}",
+                "role"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mute Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/members/{{client_id}}/mute",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "members",
+                "{{client_id}}",
+                "mute"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unmute Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/members/{{client_id}}/unmute",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "members",
+                "{{client_id}}",
+                "unmute"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/groups/{{group_id}}/members/{{client_id}}?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{group_id}}",
+                "members",
+                "{{client_id}}"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "9. Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/notifications?therapist_id={{therapist_id}}&unreadOnly=false",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "unreadOnly",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/notifications/1/read?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "notifications",
+                "1",
+                "read"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/notifications/read-all?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "notifications",
+                "read-all"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10. Analytics",
+      "item": [
+        {
+          "name": "Analytics Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/analytics/overview?therapist_id={{therapist_id}}&period=month",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "analytics",
+                "overview"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "period",
+                  "value": "month",
+                  "description": "Options: week, month, year"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Session Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/analytics/sessions?therapist_id={{therapist_id}}&period=month",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "analytics",
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "period",
+                  "value": "month"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revenue Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/analytics/revenue?therapist_id={{therapist_id}}&period=month",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "analytics",
+                "revenue"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "period",
+                  "value": "month"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11. Settings",
+      "item": [
+        {
+          "name": "Get Availability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/availability?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Availability",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"schedule\": {\n    \"monday\": [\"09:00-17:00\"],\n    \"tuesday\": [\"09:00-17:00\"],\n    \"wednesday\": [\"09:00-17:00\"],\n    \"thursday\": [\"09:00-17:00\"],\n    \"friday\": [\"09:00-15:00\"],\n    \"saturday\": [],\n    \"sunday\": []\n  },\n  \"timezone\": \"Africa/Kampala\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/availability",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "availability"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pricing",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/pricing?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "pricing"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Pricing",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapist_id}},\n  \"sessionTypes\": [\n    {\n      \"type\": \"Individual Session\",\n      \"duration\": 60,\n      \"price\": 50000,\n      \"currency\": \"UGX\"\n    },\n    {\n      \"type\": \"Couples Session\",\n      \"duration\": 90,\n      \"price\": 75000,\n      \"currency\": \"UGX\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/pricing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "pricing"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12. Reviews & Transactions",
+      "item": [
+        {
+          "name": "Get Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/reviews?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "rating",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/transactions?therapist_id={{therapist_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "13. Utilities",
+      "item": [
+        {
+          "name": "Global Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/search?therapist_id={{therapist_id}}&query=john&type=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}"
+                },
+                {
+                  "key": "query",
+                  "value": "john"
+                },
+                {
+                  "key": "type",
+                  "value": "all",
+                  "description": "Options: all, clients, appointments, groups"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{x_api_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapist_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/th/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "upload"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          "// x-api-key header is automatically added from collection variables"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://server.innersparkafrica.us"
+    },
+    {
+      "key": "therapist_id",
+      "value": "52863268761"
+    },
+    {
+      "key": "client_id",
+      "value": "15844831294"
+    },
+    {
+      "key": "x_api_key",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwdWJsaWNfaWQiOiIyNDgwNTAxOCIsImV4cCI6MTc1MzY4NjA0NH0.Fi6CV5CvMuYQo-N-PbhaUdLdWZGM_tbubnkruNVaZik",
+      "description": "x-api-key header value (JWT token for API authentication)"
+    },
+    {
+      "key": "auth_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "description": "Optional: JWT Bearer token if also required"
+    },
+    {
+      "key": "group_id",
+      "value": "1001"
+    },
+    {
+      "key": "event_id",
+      "value": "1"
+    },
+    {
+      "key": "message_id",
+      "value": "1"
+    }
+  ]
+}

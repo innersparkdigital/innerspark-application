@@ -1,75 +1,67 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import { getGroups } from '../../api/therapist';
 
-// Mock data for support groups
-const mockGroups = [
-  {
-    id: '1',
-    name: 'Anxiety Support Circle',
-    description: 'A safe space for managing anxiety',
-    members: 12,
-    nextSession: 'Today, 3:00 PM',
-    status: 'active',
-    icon: '🧘',
-  },
-  {
-    id: '2',
-    name: 'Depression Recovery Group',
-    description: 'Journey together towards healing',
-    members: 8,
-    nextSession: 'Tomorrow, 10:00 AM',
-    status: 'active',
-    icon: '🌱',
-  },
-  {
-    id: '3',
-    name: 'Stress Management Workshop',
-    description: 'Learn coping strategies',
-    members: 15,
-    nextSession: 'Friday, 2:00 PM',
-    status: 'scheduled',
-    icon: '🧠',
-  },
-  {
-    id: '4',
-    name: 'Mindfulness & Meditation',
-    description: 'Practice presence and calm',
-    members: 20,
-    nextSession: 'Saturday, 9:00 AM',
-    status: 'scheduled',
-    icon: '🕉️',
-  },
-];
+
 
 const THGroupsScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('active');
   const [refreshing, setRefreshing] = useState(false);
 
+  useEffect(() => {
+    loadGroups();
+  }, []);
+
+  const loadGroups = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+
+      const response: any = await getGroups(therapistId);
+
+      if (response?.data?.groups) {
+        setGroups(response.data.groups);
+      } else {
+        setGroups([]);
+      }
+    } catch (error) {
+      console.error('Failed to load groups:', error);
+      setGroups([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    // TODO: Add API calls here to fetch:
-    // - Groups list (active, scheduled, archived)
-    // - Group stats (active groups, total members)
-    // - Group details (members count, next session, status)
-    // - Member details for each group
-    // Example:
-    // await fetchGroups(selectedTab);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
+    await loadGroups();
+    setRefreshing(false);
   };
+
+  const getFilteredGroups = () => {
+    return groups.filter((group: any) =>
+      selectedTab === 'active' ? group.status === 'active' :
+        selectedTab === 'scheduled' ? group.status === 'scheduled' :
+          group.status === 'archived'
+    );
+  };
+
+  const filteredGroups = getFilteredGroups();
+  const totalMembers = groups.reduce((sum: number, g: any) => sum + (g.members || 0), 0);
 
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      
+
       <ISGenericHeader
         title="Support Groups"
         navigation={navigation}
@@ -92,11 +84,11 @@ const THGroupsScreen = ({ navigation }: any) => {
         {/* Stats Overview */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>4</Text>
+            <Text style={styles.statNumber}>{groups.filter((g: any) => g.status === 'active').length}</Text>
             <Text style={styles.statLabel}>Active Groups</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>55</Text>
+            <Text style={styles.statNumber}>{totalMembers}</Text>
             <Text style={styles.statLabel}>Total Members</Text>
           </View>
         </View>
@@ -131,57 +123,73 @@ const THGroupsScreen = ({ navigation }: any) => {
 
         {/* Groups List */}
         <View style={styles.groupsList}>
-          {mockGroups.map((group) => (
-            <TouchableOpacity 
-              key={group.id} 
-              style={styles.groupCard}
-              onPress={() => navigation.navigate('THGroupDetailsScreen', { group })}
-              activeOpacity={0.7}
-            >
-              <View style={styles.groupHeader}>
-                <View style={styles.groupIconContainer}>
-                  <Text style={styles.groupIcon}>{group.icon}</Text>
+          {loading ? (
+            <View style={{ padding: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={appColors.AppBlue} />
+              <Text style={{ marginTop: 10, color: appColors.grey3 }}>Loading groups...</Text>
+            </View>
+          ) : filteredGroups.length === 0 ? (
+            <View style={{ padding: 60, alignItems: 'center' }}>
+              <Icon type="material" name="people-outline" size={80} color={appColors.grey4} />
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: appColors.grey2, marginTop: 20 }}>No Groups</Text>
+              <Text style={{ fontSize: 14, color: appColors.grey3, marginTop: 8, textAlign: 'center' }}>
+                {selectedTab === 'active' ? 'No active support groups yet.' :
+                  selectedTab === 'scheduled' ? 'No scheduled groups.' :
+                    'No archived groups.'}
+              </Text>
+            </View>
+          ) : (
+            filteredGroups.map((group: any) => (
+              <TouchableOpacity
+                key={group.id}
+                style={styles.groupCard}
+                onPress={() => navigation.navigate('THGroupDetailsScreen', { group })}
+                activeOpacity={0.7}
+              >
+                <View style={styles.groupHeader}>
+                  <View style={styles.groupIconContainer}>
+                    <Text style={styles.groupIcon}>{group.icon}</Text>
+                  </View>
+                  <View style={styles.groupInfo}>
+                    <Text style={styles.groupName}>{group.name}</Text>
+                    <Text style={styles.groupDescription}>{group.description}</Text>
+                  </View>
                 </View>
-                <View style={styles.groupInfo}>
-                  <Text style={styles.groupName}>{group.name}</Text>
-                  <Text style={styles.groupDescription}>{group.description}</Text>
-                </View>
-              </View>
 
-              <View style={styles.groupMeta}>
-                <View style={styles.metaItem}>
-                  <Icon type="material" name="people" size={16} color={appColors.grey3} />
-                  <Text style={styles.metaText}>{group.members} members</Text>
+                <View style={styles.groupMeta}>
+                  <View style={styles.metaItem}>
+                    <Icon type="material" name="people" size={16} color={appColors.grey3} />
+                    <Text style={styles.metaText}>{group.members} members</Text>
+                  </View>
+                  <Text style={styles.metaSeparator}>•</Text>
+                  <View style={styles.metaItem}>
+                    <Icon type="material" name="schedule" size={16} color={appColors.grey3} />
+                    <Text style={styles.metaText}>{group.nextSession}</Text>
+                  </View>
                 </View>
-                <Text style={styles.metaSeparator}>•</Text>
-                <View style={styles.metaItem}>
-                  <Icon type="material" name="schedule" size={16} color={appColors.grey3} />
-                  <Text style={styles.metaText}>{group.nextSession}</Text>
-                </View>
-              </View>
 
-              <View style={styles.groupActions}>
-                <TouchableOpacity 
-                  style={styles.actionButton}
-                  onPress={() => navigation.navigate('THGroupChatScreen', { group })}
-                  activeOpacity={0.7}
-                >
-                  <Icon type="material" name="message" size={18} color={appColors.AppBlue} />
-                  <Text style={styles.actionButtonText}>Message</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.actionButton, styles.actionButtonPrimary]}
-                  onPress={() => navigation.navigate('THGroupDetailsScreen', { group })}
-                  activeOpacity={0.7}
-                >
-                  <Icon type="material" name="play-circle-filled" size={18} color="#FFFFFF" />
-                  <Text style={[styles.actionButtonText, styles.actionButtonTextPrimary]}>
-                    Start Session
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.groupActions}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('THGroupChatScreen', { group })}
+                    activeOpacity={0.7}
+                  >
+                    <Icon type="material" name="message" size={18} color={appColors.AppBlue} />
+                    <Text style={styles.actionButtonText}>Message</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.actionButtonPrimary]}
+                    onPress={() => navigation.navigate('THGroupDetailsScreen', { group })}
+                    activeOpacity={0.7}
+                  >
+                    <Icon type="material" name="play-circle-filled" size={18} color="#FFFFFF" />
+                    <Text style={[styles.actionButtonText, styles.actionButtonTextPrimary]}>
+                      Start Session
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            )))}
         </View>
       </ScrollView>
     </SafeAreaView>

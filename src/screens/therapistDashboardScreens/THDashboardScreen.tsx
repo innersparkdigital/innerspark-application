@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image, RefreshControl } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/themed';
 import { useSelector } from 'react-redux';
@@ -7,31 +7,44 @@ import { appColors, appFonts } from '../../global/Styles';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getFirstName } from '../../global/LHShortcuts';
 import { appImages } from '../../global/Data';
+import { getDashboardStats } from '../../api/therapist';
 
 const THDashboardScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  const [unreadNotifications] = useState(3); // Mock unread count
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+
+      const response = await getDashboardStats(therapistId);
+
+      if (response?.data) {
+        setDashboardStats(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard stats:', error);
+      // Keep showing UI with zero values on error
+      setDashboardStats({});
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // TODO: Add API calls here to fetch:
-    // - Dashboard stats (appointments, requests, groups, messages)
-    // - User details
-    // - Notifications count
-    // Example:
-    // await Promise.all([
-    //   fetchDashboardStats(),
-    //   fetchNotifications(),
-    // ]);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
+    await loadDashboardData();
+    setRefreshing(false);
   };
 
-  // Dashboard cards configuration with stats
+  // Dashboard cards configuration with stats from API
   const dashboardCards = [
     {
       id: 1,
@@ -40,7 +53,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       icon: 'calendar-today',
       color: appColors.AppBlue,
       screen: 'THAppointments',
-      count: '5',
+      count: String(dashboardStats?.todayAppointments || 0),
       badge: 'upcoming',
     },
     {
@@ -50,7 +63,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       icon: 'person-add',
       color: '#FF9800',
       screen: 'THRequestsScreen',
-      count: '3',
+      count: String(dashboardStats?.pendingRequests || 0),
       badge: 'new',
     },
     {
@@ -60,7 +73,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       icon: 'people',
       color: '#9C27B0',
       screen: 'THGroups',
-      count: '8',
+      count: String(dashboardStats?.activeGroups || 0),
       badge: null,
     },
     {
@@ -70,7 +83,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       icon: 'message',
       color: appColors.AppGreen,
       screen: 'THChats',
-      count: '12',
+      count: String(dashboardStats?.unreadMessages || 0),
       badge: 'new',
     },
   ];
@@ -96,7 +109,7 @@ const THDashboardScreen = ({ navigation }: any) => {
           </View>
         )}
       </View>
-      
+
       <View style={styles.cardContent}>
         <Text style={styles.cardCount}>{item.count}</Text>
         <Text style={styles.cardTitle}>{item.title}</Text>
@@ -122,8 +135,8 @@ const THDashboardScreen = ({ navigation }: any) => {
       <View style={styles.header}>
         {/* Top row with logo and notification icon */}
         <View style={styles.headerTopRow}>
-          <Image 
-            source={appImages.logoRecWhite} 
+          <Image
+            source={appImages.logoRecWhite}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -134,9 +147,9 @@ const THDashboardScreen = ({ navigation }: any) => {
           >
             <View style={styles.notificationIconContainer}>
               <Icon name="notifications" type="material" color={appColors.CardBackground} size={26} />
-              {unreadNotifications > 0 && (
+              {(dashboardStats?.unreadMessages || 0) > 0 && (
                 <Badge
-                  value={unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  value={(dashboardStats?.unreadMessages || 0) > 99 ? '99+' : (dashboardStats?.unreadMessages || 0)}
                   status="error"
                   containerStyle={styles.badgeContainer}
                   textStyle={styles.badgeText}
@@ -145,7 +158,7 @@ const THDashboardScreen = ({ navigation }: any) => {
             </View>
           </TouchableOpacity>
         </View>
-        
+
         {/* Greeting Section */}
         <View style={styles.greetingSection}>
           <Text style={styles.greeting}>
@@ -157,17 +170,17 @@ const THDashboardScreen = ({ navigation }: any) => {
         {/* Quick Stats Row */}
         <View style={styles.quickStatsRow}>
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatNumber}>5</Text>
+            <Text style={styles.quickStatNumber}>{dashboardStats?.todayAppointments || 0}</Text>
             <Text style={styles.quickStatLabel}>Today</Text>
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatNumber}>3</Text>
+            <Text style={styles.quickStatNumber}>{dashboardStats?.pendingRequests || 0}</Text>
             <Text style={styles.quickStatLabel}>Pending</Text>
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatNumber}>45</Text>
+            <Text style={styles.quickStatNumber}>{dashboardStats?.totalClients || 0}</Text>
             <Text style={styles.quickStatLabel}>Clients</Text>
           </View>
         </View>

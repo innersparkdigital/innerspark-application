@@ -1,7 +1,7 @@
 /**
  * Therapist Transaction History Screen
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,9 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getTransactions } from '../../../api/therapist';
+import { useSelector } from 'react-redux';
+import { ActivityIndicator } from 'react-native';
 
 interface Transaction {
   id: string;
@@ -26,18 +29,31 @@ interface Transaction {
 }
 
 const THTransactionHistoryScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'completed' | 'pending' | 'failed'>('all');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [transactions] = useState<Transaction[]>([
-    { id: '1', client: 'John Doe', amount: '280,000', date: 'Oct 20, 2025', time: '10:30 AM', status: 'completed', sessionType: 'Individual Session' },
-    { id: '2', client: 'Sarah Williams', amount: '420,000', date: 'Oct 19, 2025', time: '2:00 PM', status: 'completed', sessionType: 'Couples Therapy' },
-    { id: '3', client: 'Michael Brown', amount: '280,000', date: 'Oct 18, 2025', time: '11:00 AM', status: 'pending', sessionType: 'Individual Session' },
-    { id: '4', client: 'Emily Chen', amount: '140,000', date: 'Oct 17, 2025', time: '4:30 PM', status: 'completed', sessionType: 'Group Session' },
-    { id: '5', client: 'David Martinez', amount: '175,000', date: 'Oct 16, 2025', time: '9:00 AM', status: 'completed', sessionType: 'Initial Consultation' },
-    { id: '6', client: 'Lisa Anderson', amount: '280,000', date: 'Oct 15, 2025', time: '1:00 PM', status: 'completed', sessionType: 'Individual Session' },
-    { id: '7', client: 'James Wilson', amount: '420,000', date: 'Oct 14, 2025', time: '3:00 PM', status: 'failed', sessionType: 'Couples Therapy' },
-    { id: '8', client: 'Maria Garcia', amount: '140,000', date: 'Oct 13, 2025', time: '10:00 AM', status: 'completed', sessionType: 'Group Session' },
-  ]);
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      const response: any = await getTransactions(therapistId);
+
+      if (response?.data?.transactions) {
+        setTransactions(response.data.transactions);
+      }
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+      // Fallback to empty list or keep current
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredTransactions = transactions.filter((transaction) => {
     if (selectedFilter === 'all') return true;
@@ -147,24 +163,31 @@ const THTransactionHistoryScreen = ({ navigation }: any) => {
         </View>
 
         {/* Transactions List */}
-        <FlatList
-          data={filteredTransactions}
-          renderItem={renderTransaction}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Icon type="material" name="receipt-long" size={60} color={appColors.grey3} />
-              <Text style={styles.emptyText}>No transactions found</Text>
-              <Text style={styles.emptySubtext}>
-                {selectedFilter === 'all'
-                  ? 'Your transaction history will appear here'
-                  : `No ${selectedFilter} transactions`}
-              </Text>
-            </View>
-          }
-        />
+        {loading ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={appColors.AppBlue} />
+            <Text style={{ marginTop: 10, color: appColors.grey3 }}>Loading transactions...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredTransactions}
+            renderItem={renderTransaction}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Icon type="material" name="receipt-long" size={60} color={appColors.grey3} />
+                <Text style={styles.emptyText}>No transactions found</Text>
+                <Text style={styles.emptySubtext}>
+                  {selectedFilter === 'all'
+                    ? 'Your transaction history will appear here'
+                    : `No ${selectedFilter} transactions`}
+                </Text>
+              </View>
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );

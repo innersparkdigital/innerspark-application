@@ -19,3 +19,19 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Force dependency resolution for ML Kit to support 16KB page size
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.mlkit:barcode-scanning:17.3.0'
+            force 'com.google.mlkit:face-detection:16.1.7'
+            // Force older play-services versions if needed to match ML Kit versions, 
+            // but usually just forcing the main mlkit lib is enough. 
+            // Adding play-services just in case, based on typical transitive deps.
+            force 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.0'
+            force 'com.google.android.gms:play-services-mlkit-face-detection:17.1.0'
+            force 'com.google.android.gms:play-services-mlkit-text-recognition:19.0.0'
+        }
+    }
+}

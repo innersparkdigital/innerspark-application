@@ -5,26 +5,55 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getGroupById, getGroupMembers } from '../../../api/therapist';
+import { ActivityIndicator } from 'react-native';
+import { useSelector } from 'react-redux';
 
 const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const { group } = route.params || {};
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedTab, setSelectedTab] = useState('overview');
+  const [groupDetails, setGroupDetails] = useState<any>(group || {});
+  const [members, setMembers] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock members data
-  const members = [
-    { id: '1', name: 'John Doe', avatar: '👨', status: 'active', joinedDate: 'Jan 2025', attendance: '90%' },
-    { id: '2', name: 'Sarah Williams', avatar: '👩', status: 'active', joinedDate: 'Jan 2025', attendance: '85%' },
-    { id: '3', name: 'Michael Brown', avatar: '👨‍💼', status: 'active', joinedDate: 'Dec 2024', attendance: '95%' },
-    { id: '4', name: 'Emily Chen', avatar: '👩‍💼', status: 'active', joinedDate: 'Dec 2024', attendance: '88%' },
-    { id: '5', name: 'David Martinez', avatar: '👨‍🦱', status: 'inactive', joinedDate: 'Nov 2024', attendance: '45%' },
-  ];
+  React.useEffect(() => {
+    loadGroupDetails();
+  }, [group?.id]);
 
-  // Mock sessions data
-  const sessions = [
-    { id: '1', date: 'Today, 3:00 PM', topic: 'Managing Anxiety Triggers', duration: '60 min', status: 'upcoming' },
-    { id: '2', date: 'Jan 18, 2:00 PM', topic: 'Breathing Techniques', duration: '60 min', status: 'completed' },
-    { id: '3', date: 'Jan 11, 3:00 PM', topic: 'Introduction & Goals', duration: '90 min', status: 'completed' },
-  ];
+  const loadGroupDetails = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      if (group?.id) {
+        // Fetch group details
+        const groupResponse: any = await getGroupById(group.id, therapistId);
+        if (groupResponse?.data) {
+          setGroupDetails({ ...groupDetails, ...groupResponse.data });
+        }
+
+        // Fetch members (if API supports separate call, or it comes with group)
+        // Check if api provides getGroupMembers
+        try {
+          const membersResponse: any = await getGroupMembers(group.id, therapistId);
+          if (membersResponse?.data?.members) {
+            setMembers(membersResponse.data.members);
+          }
+        } catch (e) { console.log('Members fetch fallback'); }
+
+        // Mock sessions for now if API doesn't provide them yet
+        setSessions([
+          { id: '1', date: 'Today, 3:00 PM', topic: 'Managing Anxiety Triggers', duration: '60 min', status: 'upcoming' },
+          { id: '2', date: 'Jan 18, 2:00 PM', topic: 'Breathing Techniques', duration: '60 min', status: 'completed' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to load group details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStartSession = () => {
     Alert.alert(
@@ -94,8 +123,8 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      <ISGenericHeader 
-        title={group?.name || 'Group Details'} 
+      <ISGenericHeader
+        title={group?.name || 'Group Details'}
         navigation={navigation}
         hasRightIcon={true}
         rightIconName="edit"
@@ -110,7 +139,7 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
           </View>
           <Text style={styles.groupName}>{group?.name}</Text>
           <Text style={styles.groupDescription}>{group?.description}</Text>
-          
+
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Icon type="material" name="people" size={20} color={appColors.AppBlue} />
@@ -202,7 +231,7 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
 
         {selectedTab === 'members' && (
           <View style={styles.tabContent}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.viewAllButton}
               onPress={() => navigation.navigate('THGroupMembersScreen', { group })}
             >

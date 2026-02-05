@@ -1,7 +1,7 @@
 /**
  * Therapist Performance Analytics Screen
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,38 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getDashboardStats } from '../../../api/therapist';
+import { useSelector } from 'react-redux';
+import { ActivityIndicator } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
 const THAnalyticsScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, [selectedPeriod]);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      // Pass selectedPeriod if API supports it, otherwise get general stats
+      const response: any = await getDashboardStats(therapistId);
+
+      if (response?.data) {
+        setStats(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const periods = [
     { key: 'week' as const, label: 'Week' },
@@ -28,10 +55,38 @@ const THAnalyticsScreen = ({ navigation }: any) => {
   ];
 
   const keyMetrics = [
-    { label: 'Total Sessions', value: '156', change: '+12%', trend: 'up', icon: 'event', color: appColors.AppBlue },
-    { label: 'Active Clients', value: '45', change: '+8%', trend: 'up', icon: 'people', color: appColors.AppGreen },
-    { label: 'Avg Rating', value: '4.9', change: '+0.2', trend: 'up', icon: 'star', color: '#FFD700' },
-    { label: 'Revenue', value: '$12.4K', change: '+15%', trend: 'up', icon: 'attach-money', color: '#4CAF50' },
+    {
+      label: 'Total Sessions',
+      value: stats?.appointments?.toString() || '0',
+      change: '+12%',
+      trend: 'up',
+      icon: 'event',
+      color: appColors.AppBlue
+    },
+    {
+      label: 'Active Clients',
+      value: stats?.clients?.toString() || '0',
+      change: '+8%',
+      trend: 'up',
+      icon: 'people',
+      color: appColors.AppGreen
+    },
+    {
+      label: 'Avg Rating',
+      value: stats?.rating?.toString() || '4.9',
+      change: '+0.2',
+      trend: 'up',
+      icon: 'star',
+      color: '#FFD700'
+    },
+    {
+      label: 'Revenue',
+      value: stats?.revenue ? `UGX ${stats.revenue.toLocaleString()}` : 'UGX 0',
+      change: '+15%',
+      trend: 'up',
+      icon: 'attach-money',
+      color: '#4CAF50'
+    },
   ];
 
   const sessionStats = [
@@ -238,7 +293,7 @@ const THAnalyticsScreen = ({ navigation }: any) => {
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.insightCard}>
             <View style={styles.insightIcon}>
               <Icon type="material" name="trending-up" size={24} color={appColors.AppGreen} />

@@ -5,28 +5,27 @@
 
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useSelector } from 'react-redux';
-import { testAllGetEndpoints } from '../api/client/clientApiTestHelper';
+import { testAllTherapistGetEndpoints } from '../api/therapist/therapistApiTestHelper';
 
 const DevTestScreen = () => {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const userId = useSelector(state => state.userData.userDetails.userId);
+  const therapistId = '52863268761';
 
   const runTests = async () => {
     setLoading(true);
-    const testResults = await testAllGetEndpoints(userId);
+    const testResults = await testAllTherapistGetEndpoints(therapistId);
     setResults(testResults);
     setLoading(false);
   };
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Client API Test Screen</Text>
-      <Text style={styles.subtitle}>User ID: {userId}</Text>
+      <Text style={styles.title}>Therapist API Test Screen</Text>
+      <Text style={styles.subtitle}>Therapist ID: {therapistId}</Text>
 
-      <TouchableOpacity 
-        style={styles.button} 
+      <TouchableOpacity
+        style={styles.button}
         onPress={runTests}
         disabled={loading}
       >
@@ -44,7 +43,7 @@ const DevTestScreen = () => {
           <Text style={styles.failed}>
             ❌ Failed: {results.failed.length}
           </Text>
-          
+
           {results.failed.length > 0 && (
             <View style={styles.failedList}>
               <Text style={styles.failedTitle}>Failed Tests:</Text>
@@ -75,9 +74,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
   subtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
-  button: { 
-    backgroundColor: '#007AFF', 
-    padding: 15, 
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 20,
@@ -96,11 +95,3 @@ const styles = StyleSheet.create({
 });
 
 export default DevTestScreen;
-
-
-
-
-
-
-
-

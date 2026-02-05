@@ -19,6 +19,13 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { useSelector } from 'react-redux';
+import {
+  getGroupMessages,
+  sendGroupMessage,
+  sendAnnouncement,
+  deleteGroupMessage
+} from '../../../api/therapist/groups';
 
 interface GroupMessage {
   id: string;
@@ -33,49 +40,10 @@ interface GroupMessage {
 
 const THGroupChatScreen = ({ navigation, route }: any) => {
   const { group } = route.params || {};
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<GroupMessage[]>([
-    {
-      id: '1',
-      senderId: 'therapist_1',
-      senderName: 'You',
-      senderRole: 'therapist',
-      content: 'Welcome everyone to today\'s session. Let\'s start by sharing how you\'re feeling.',
-      timestamp: '10:00 AM',
-      isOwn: true,
-      type: 'announcement',
-    },
-    {
-      id: '2',
-      senderId: 'member_1',
-      senderName: 'John Doe',
-      senderRole: 'member',
-      content: 'Hi everyone! I\'ve been practicing the breathing exercises and they really help.',
-      timestamp: '10:02 AM',
-      isOwn: false,
-      type: 'text',
-    },
-    {
-      id: '3',
-      senderId: 'member_2',
-      senderName: 'Sarah Williams',
-      senderRole: 'member',
-      content: 'That\'s great to hear! I\'ve been struggling a bit this week.',
-      timestamp: '10:03 AM',
-      isOwn: false,
-      type: 'text',
-    },
-    {
-      id: '4',
-      senderId: 'therapist_1',
-      senderName: 'You',
-      senderRole: 'therapist',
-      content: 'It\'s okay to have difficult days. What matters is that you\'re here trying.',
-      timestamp: '10:04 AM',
-      isOwn: true,
-      type: 'text',
-    },
-  ]);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const [showModTools, setShowModTools] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
@@ -83,25 +51,45 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    loadMessages();
+  }, []);
+
+  const loadMessages = async () => {
+    if (!group?.id) return;
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      const res: any = await getGroupMessages(group.id, therapistId);
+      if (res?.data?.messages) {
+        setMessages(res.data.messages);
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
   }, [messages]);
 
-  const handleSend = () => {
-    if (message.trim()) {
-      const newMessage: GroupMessage = {
-        id: Date.now().toString(),
-        senderId: 'therapist_1',
-        senderName: 'You',
-        senderRole: 'therapist',
-        content: message.trim(),
-        timestamp: 'Just now',
-        isOwn: true,
-        type: 'text',
-      };
-      setMessages([...messages, newMessage]);
-      setMessage('');
+  const handleSend = async () => {
+    if (message.trim() && group?.id) {
+      try {
+        const therapistId = userDetails?.id || '52863268761';
+        const content = message.trim();
+        setMessage(''); // clear immediately for UX
+
+        await sendGroupMessage(group.id, therapistId, content);
+        // Refresh messages (or ideally socket push)
+        loadMessages();
+      } catch (e) {
+        console.error(e);
+        Alert.alert('Error', 'Failed to send message');
+      }
     }
   };
 
@@ -109,21 +97,20 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
     setShowAnnouncementModal(true);
   };
 
-  const sendAnnouncement = () => {
-    if (announcementText.trim()) {
-      const announcement: GroupMessage = {
-        id: Date.now().toString(),
-        senderId: 'therapist_1',
-        senderName: 'You',
-        senderRole: 'therapist',
-        content: announcementText.trim(),
-        timestamp: 'Just now',
-        isOwn: true,
-        type: 'announcement',
-      };
-      setMessages([...messages, announcement]);
-      setAnnouncementText('');
-      setShowAnnouncementModal(false);
+  const sendAnnouncementAction = async () => {
+    if (announcementText.trim() && group?.id) {
+      try {
+        const therapistId = userDetails?.id || '52863268761';
+        const content = announcementText.trim();
+        setAnnouncementText('');
+        setShowAnnouncementModal(false);
+
+        await sendAnnouncement(group.id, therapistId, content);
+        loadMessages();
+      } catch (e) {
+        console.error(e);
+        Alert.alert('Error', 'Failed to send announcement');
+      }
     }
   };
 
@@ -153,8 +140,19 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setMessages(messages.filter((m) => m.id !== messageId));
+          onPress: async () => {
+            try {
+              const therapistId = userDetails?.id || '52863268761';
+              // Optimistic update
+              setMessages(messages.filter((m) => m.id !== messageId));
+              if (group?.id) {
+                await deleteGroupMessage(group.id, messageId, therapistId);
+              }
+            } catch (e) {
+              console.error(e);
+              Alert.alert('Error', 'Failed to delete message');
+              loadMessages();
+            }
           },
         },
       ]
@@ -334,7 +332,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
               <Icon type="material" name="campaign" size={24} color={appColors.AppBlue} />
               <Text style={styles.modalTitle}>Send Announcement</Text>
             </View>
-            
+
             <Text style={styles.modalDescription}>
               This message will be highlighted for all group members
             </Text>
@@ -370,7 +368,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
                   styles.modalButtonSend,
                   !announcementText.trim() && styles.modalButtonDisabled,
                 ]}
-                onPress={sendAnnouncement}
+                onPress={sendAnnouncementAction}
                 disabled={!announcementText.trim()}
               >
                 <Icon type="material" name="send" size={18} color="#FFFFFF" />
