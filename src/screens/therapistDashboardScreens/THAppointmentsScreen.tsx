@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
+import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getAppointments } from '../../api/therapist';
@@ -24,7 +25,7 @@ const THAppointmentsScreen = ({ navigation }: any) => {
   const loadAppointments = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
 
       const response = await getAppointments(therapistId);
       const resData = response?.data as any;
@@ -223,7 +224,10 @@ const THAppointmentsScreen = ({ navigation }: any) => {
               >
                 <View style={styles.appointmentLeft}>
                   <View style={styles.avatarContainer}>
-                    <Text style={styles.avatarEmoji}>{appointment.avatar}</Text>
+                    <Image
+                      source={appointment?.avatar?.startsWith('http') ? { uri: appointment.avatar } : appImages.avatarPlaceholder}
+                      style={styles.avatarImage}
+                    />
                   </View>
                   <View style={styles.appointmentInfo}>
                     <Text style={styles.clientName}>{appointment.clientName}</Text>
@@ -354,8 +358,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  avatarEmoji: {
-    fontSize: 24,
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   appointmentInfo: {
     flex: 1,

@@ -23,7 +23,7 @@ export const appColors = {
     AppOrange: "#EE7810", // base color 
     AppGreen: "#64D64E",
     AppLightGray: "#F6F6F6",
-    AppGray: "#5e6977", 
+    AppGray: "#5e6977",
 
     DoffeeGreen: "#5170FF",
     DoffeeYellow: "#FFC12F",
@@ -48,8 +48,8 @@ export const appColors = {
     YoTeal4: '#64D64E',
     YoTealFade: '#E7F6DC',
     YoTealDark: '#64D64E',
-    
-}
+
+} as const;
 
 
 // LH App global fonts
@@ -66,7 +66,7 @@ export const appFonts = {
     bodyTextExtraBold: 'RobotoSlabExtraBold',
     bodyTextBold: 'RobotoSlabBold',
     bodyTextSemiBold: 'RobotoSlabSemiBold',
-    bodyTextMedium: 'RobotoSlabMedium', 
+    bodyTextMedium: 'RobotoSlabMedium',
     bodyTextRegular: 'RobotoSlabRegular',
     bodyTextLight: 'RobotoSlabLight',
     bodyTextThin: 'RobotoSlabThin',
@@ -76,7 +76,7 @@ export const appFonts = {
     buttonTextMedium: 'RobotoSlabMedium',
     buttonTextLight: 'RobotoSlabLight',
     buttonTextThin: 'RobotoSlabThin',
-}
+} as const;
 
 // some parameters
 export const parameters = {
@@ -89,135 +89,135 @@ export const parameters = {
     headerHeightXL: 70,
     headerHeightXXL: 80,
 
-    doffeeButtonXL : {
-        backgroundColor:appColors.black,
-        alignContent:"center",
-        justifyContent:"center",
-        borderRadius:10,
-        borderWidth:1, 
-        borderColor:appColors.AppBlue,
-        height:50,
-        paddingHorizontal:20,
+    doffeeButtonXL: {
+        backgroundColor: appColors.black,
+        alignContent: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: appColors.AppBlue,
+        height: 50,
+        paddingHorizontal: 20,
     },
 
     doffeeButtonXLTitle: {
-        color:appColors.CardBackground,
-        fontSize:16,  
-        fontWeight:"700",
+        color: appColors.CardBackground,
+        fontSize: 16,
+        fontWeight: "700",
         fontFamily: appFonts.buttonTextBold,
-        alignItems:"center",
-        justifyContent:"center",
-        marginTop:-3,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: -3,
     },
 
     // App Button - Blue
-    appButtonXLBlue : {
-        backgroundColor:appColors.AppBlue,
-        alignContent:"center",
-        justifyContent:"center",
-        borderRadius:10,
-        borderWidth:1, 
-        borderColor:appColors.grey4,
-        height:50,
-        paddingHorizontal:20,
+    appButtonXLBlue: {
+        backgroundColor: appColors.AppBlue,
+        alignContent: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: appColors.grey4,
+        height: 50,
+        paddingHorizontal: 20,
     },
 
     appButtonXLTitleBlue: {
-        color:appColors.CardBackground,
-        fontSize:16,  
-        fontWeight:"700",
+        color: appColors.CardBackground,
+        fontSize: 16,
+        fontWeight: "700",
         fontFamily: appFonts.buttonTextBold,
-        alignItems:"center",
-        justifyContent:"center",
-        marginTop:-3,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: -3,
     },
 
-    appButtonXL : {
-        backgroundColor:appColors.black,
-        alignContent:"center",
-        justifyContent:"center",
-        borderRadius:10,
-        borderWidth:1, 
-        borderColor:appColors.AppBlue,
-        height:50,
-        paddingHorizontal:20,
+    appButtonXL: {
+        backgroundColor: appColors.black,
+        alignContent: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: appColors.AppBlue,
+        height: 50,
+        paddingHorizontal: 20,
     },
 
     appButtonXLTitle: {
-        color:appColors.CardBackground,
-        fontSize:16,  
-        fontWeight:"700",
+        color: appColors.CardBackground,
+        fontSize: 16,
+        fontWeight: "700",
         fontFamily: appFonts.buttonTextBold,
-        alignItems:"center",
-        justifyContent:"center",
-        marginTop:-3,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: -3,
     },
 
-    appButtonXLOutline : {
-        backgroundColor:appColors.CardBackground,
-        alignContent:"center",
-        justifyContent:"center",
-        borderRadius:10,
-        borderWidth:1, 
-        borderColor:appColors.AppBlue,
-        height:50,
-        paddingHorizontal:20,
+    appButtonXLOutline: {
+        backgroundColor: appColors.CardBackground,
+        alignContent: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: appColors.AppBlue,
+        height: 50,
+        paddingHorizontal: 20,
     },
 
-    appButtonXLOutlineTitle : { 
-        color:appColors.AppBlue,
-        fontSize:16,  
-        fontWeight:"700",
+    appButtonXLOutlineTitle: {
+        color: appColors.AppBlue,
+        fontSize: 16,
+        fontWeight: "700",
         fontFamily: appFonts.buttonTextBold,
-        alignItems:"center",
-        justifyContent:"center",
-        marginTop:-3,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: -3,
     },
 
     appModalContainer: {
-        flex:1,
-        backgroundColor:appColors.CardBackground,
-        padding:20,
-        borderTopRightRadius:25,
-        borderTopLeftRadius:25,
+        flex: 1,
+        backgroundColor: appColors.CardBackground,
+        padding: 20,
+        borderTopRightRadius: 25,
+        borderTopLeftRadius: 25,
     },
 
     styledButton: {
-        backgroundColor:"#1AA382",
-        alignContent:"center",
-        justifyContent:"center",
-        borderRadius:10,
-        borderWidth:1, 
-        borderColor:"#ff8c52",
-        height:50,
-        paddingHorizontal:20,
-        width:'100%',
+        backgroundColor: "#1AA382",
+        alignContent: "center",
+        justifyContent: "center",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#ff8c52",
+        height: 50,
+        paddingHorizontal: 20,
+        width: '100%',
     },
 
     buttonTitle: {
-        color:"white",
-        fontSize:20,  
-        fontWeight:"700",
+        color: "white",
+        fontSize: 20,
+        fontWeight: "700",
         fontFamily: appFonts.buttonTextBold,
-        alignItems:"center",
-        justifyContent:"center",
-        marginTop:-3,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: -3,
     },
 
     yoModalContainerCenter: {
-        backgroundColor:appColors.CardBackground,
-        padding:20,
-        borderRadius:10,
+        backgroundColor: appColors.CardBackground,
+        padding: 20,
+        borderRadius: 10,
         justifyContent: 'center',
         marginHorizontal: 25,
     },
 
     doffeeModalContainer: {
-        flex:1,
-        backgroundColor:appColors.CardBackground,
-        padding:20,
-        borderTopRightRadius:25,
-        borderTopLeftRadius:25,
+        flex: 1,
+        backgroundColor: appColors.CardBackground,
+        padding: 20,
+        borderTopRightRadius: 25,
+        borderTopLeftRadius: 25,
     },
 
-}
+} as const;

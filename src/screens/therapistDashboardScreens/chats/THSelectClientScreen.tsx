@@ -10,11 +10,13 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { getClients } from '../../../api/therapist';
@@ -41,7 +43,7 @@ const THSelectClientScreen = ({ navigation }: any) => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       // Fetch active clients from the clients API
       const res: any = await getClients(therapistId, { status: 'active' });
 
@@ -115,7 +117,10 @@ const THSelectClientScreen = ({ navigation }: any) => {
     >
       <View style={styles.clientLeft}>
         <View style={styles.avatarContainer}>
-          <Text style={styles.avatarEmoji}>{item.avatar}</Text>
+          <Image
+            source={item?.avatar?.startsWith('http') ? { uri: item.avatar } : appImages.avatarPlaceholder}
+            style={styles.avatarImage}
+          />
           {item.status === 'active' && <View style={styles.onlineIndicator} />}
         </View>
         <View style={styles.clientInfo}>
@@ -268,8 +273,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
     position: 'relative',
   },
-  avatarEmoji: {
-    fontSize: 24,
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   onlineIndicator: {
     position: 'absolute',

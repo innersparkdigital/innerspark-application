@@ -10,10 +10,12 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 
@@ -57,7 +59,10 @@ const THAddClientNoteScreen = ({ navigation, route }: any) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Client Info Card */}
         <View style={styles.clientCard}>
-          <Text style={styles.clientAvatar}>{client?.avatar || '👤'}</Text>
+          <Image
+            source={client?.avatar?.startsWith('http') ? { uri: client.avatar } : appImages.avatarPlaceholder}
+            style={styles.clientAvatar}
+          />
           <View style={styles.clientInfo}>
             <Text style={styles.clientName}>{client?.name || 'Client'}</Text>
             <Text style={styles.clientLabel}>Creating note for this client</Text>
@@ -189,7 +194,9 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   clientAvatar: {
-    fontSize: 40,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 12,
   },
   clientInfo: {

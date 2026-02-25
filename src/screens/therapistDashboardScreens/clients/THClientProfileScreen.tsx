@@ -8,14 +8,17 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { getClientProfile } from '../../../api/therapist';
-import { ActivityIndicator } from 'react-native';
 import { useSelector } from 'react-redux';
 
 const THClientProfileScreen = ({ navigation, route }: any) => {
@@ -23,10 +26,16 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'notes'>(initialTab || 'overview');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // State for data
-  const [clientDetails, setClientDetails] = useState<any>(client || {
-    id: '1', name: 'Loading...', email: '', phone: '', avatar: '👤'
+  const [clientDetails, setClientDetails] = useState<any>({
+    ...client,
+    id: client?.id || client?.clientId || '1',
+    name: client?.name || client?.clientName || 'Loading...',
+    email: client?.email || '',
+    phone: client?.phone || '',
+    avatar: client?.avatar || '👤'
   });
   const [sessions, setSessions] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
@@ -38,7 +47,7 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       if (client?.id) {
         const response: any = await getClientProfile(client.id, therapistId);
         if (response?.data) {
@@ -47,7 +56,10 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
             ...clientDetails,
             ...response.data,
             phone: response.data.phoneNumber || response.data.phone || clientDetails.phone,
-            age: response.data.age || clientDetails.age || 'N/A'
+            age: response.data.age || clientDetails.age || 'N/A',
+            totalSessions: response.data.stats?.totalSessions ?? 0,
+            upcomingSessions: response.data.stats?.nextAppointment ? 1 : 0, // Using 1 as a generic indicator if nextAppointment exists
+            lastSession: response.data.stats?.lastSession ?? 'N/A',
           });
           if (response.data.sessions) setSessions(response.data.sessions);
           if (response.data.notes) setNotes(response.data.notes);
@@ -58,8 +70,14 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
       console.error('Client Profile Error:', errorMessage);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadProfile();
+  }, [client?.id]);
 
   const renderOverview = () => (
     <View>
@@ -119,9 +137,9 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
           <View style={styles.infoRow}>
             <Icon type="material" name="contact-emergency" size={20} color={appColors.grey3} />
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>{clientDetails.emergencyContact.name}</Text>
-              <Text style={styles.infoValue}>{clientDetails.emergencyContact.relationship}</Text>
-              <Text style={styles.infoValue}>{clientDetails.emergencyContact.phone}</Text>
+              <Text style={styles.infoLabel}>{clientDetails?.emergencyContact?.name || 'Not provided'}</Text>
+              <Text style={styles.infoValue}>{clientDetails?.emergencyContact?.relationship || 'N/A'}</Text>
+              <Text style={styles.infoValue}>{clientDetails?.emergencyContact?.phone || 'N/A'}</Text>
             </View>
           </View>
         </View>
@@ -140,7 +158,14 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => navigation.navigate('THChatConversationScreen', { client: clientDetails })}
+            onPress={() => navigation.navigate('THChatConversationScreen', {
+              chat: {
+                id: clientDetails.id,
+                clientName: clientDetails.name || clientDetails.clientName,
+                avatar: clientDetails.avatar,
+                online: false
+              }
+            })}
           >
             <Icon type="material" name="chat" size={24} color={appColors.AppGreen} />
             <Text style={styles.actionText}>Message</Text>
@@ -159,30 +184,38 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
 
   const renderSessions = () => (
     <View style={styles.section}>
-      {sessions.map((session) => (
-        <View key={session.id} style={styles.sessionCard}>
-          <View style={styles.sessionHeader}>
-            <View style={styles.sessionLeft}>
-              <Text style={styles.sessionDate}>{session.date}</Text>
-              <Text style={styles.sessionType}>{session.type} • {session.duration}</Text>
-            </View>
-            <View style={[
-              styles.statusBadge,
-              session.status === 'Completed' ? styles.statusCompleted : styles.statusUpcoming
-            ]}>
-              <Text style={[
-                styles.statusText,
-                session.status === 'Completed' ? styles.statusTextCompleted : styles.statusTextUpcoming
+      {sessions.length > 0 ? (
+        sessions.map((session) => (
+          <View key={session.id} style={styles.sessionCard}>
+            <View style={styles.sessionHeader}>
+              <View style={styles.sessionLeft}>
+                <Text style={styles.sessionDate}>{session.date}</Text>
+                <Text style={styles.sessionType}>{session.type} • {session.duration}</Text>
+              </View>
+              <View style={[
+                styles.statusBadge,
+                session.status === 'Completed' ? styles.statusCompleted : styles.statusUpcoming
               ]}>
-                {session.status}
-              </Text>
+                <Text style={[
+                  styles.statusText,
+                  session.status === 'Completed' ? styles.statusTextCompleted : styles.statusTextUpcoming
+                ]}>
+                  {session.status}
+                </Text>
+              </View>
             </View>
+            {session.notes ? (
+              <Text style={styles.sessionNotes}>{session.notes}</Text>
+            ) : null}
           </View>
-          {session.notes ? (
-            <Text style={styles.sessionNotes}>{session.notes}</Text>
-          ) : null}
+        ))
+      ) : (
+        <View style={styles.emptyStateContainer}>
+          <Icon type="material" name="event-busy" size={60} color={appColors.grey3} />
+          <Text style={styles.emptyStateTitle}>No Sessions Yet</Text>
+          <Text style={styles.emptyStateText}>This client doesn't have any recorded sessions.</Text>
         </View>
-      ))}
+      )}
     </View>
   );
 
@@ -198,15 +231,23 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
         <Text style={styles.addNoteButtonText}>Add New Note</Text>
       </TouchableOpacity>
 
-      {notes.map((note) => (
-        <View key={note.id} style={styles.noteCard}>
-          <View style={styles.noteHeader}>
-            <Text style={styles.noteTitle}>{note.title}</Text>
-            <Text style={styles.noteDate}>{note.date}</Text>
+      {notes.length > 0 ? (
+        notes.map((note) => (
+          <View key={note.id} style={styles.noteCard}>
+            <View style={styles.noteHeader}>
+              <Text style={styles.noteTitle}>{note.title}</Text>
+              <Text style={styles.noteDate}>{note.date}</Text>
+            </View>
+            <Text style={styles.noteContent}>{note.content}</Text>
           </View>
-          <Text style={styles.noteContent}>{note.content}</Text>
+        ))
+      ) : (
+        <View style={styles.emptyStateContainer}>
+          <Icon type="material" name="note-add" size={60} color={appColors.grey3} />
+          <Text style={styles.emptyStateTitle}>No Notes Found</Text>
+          <Text style={styles.emptyStateText}>You haven't added any notes for this client yet.</Text>
         </View>
-      ))}
+      )}
     </View>
   );
 
@@ -215,14 +256,23 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
       <ISStatusBar />
       <ISGenericHeader title="Client Profile" navigation={navigation} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
+        }
+      >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <Text style={styles.avatar}>{clientDetails.avatar}</Text>
-          <Text style={styles.name}>{clientDetails.name}</Text>
+          <Image
+            source={clientDetails?.avatar?.startsWith('http') ? { uri: clientDetails.avatar } : appImages.avatarPlaceholder}
+            style={styles.avatar}
+          />
+          <Text style={styles.name}>{clientDetails.name || clientDetails.clientName || 'Unknown'}</Text>
           <View style={[styles.statusBadge, styles.statusActive]}>
             <View style={styles.statusDot} />
-            <Text style={styles.statusActiveText}>{clientDetails.status}</Text>
+            <Text style={styles.statusActiveText}>{clientDetails.status || 'Active'}</Text>
           </View>
         </View>
 
@@ -296,7 +346,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   avatar: {
-    fontSize: 64,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     marginBottom: 16,
   },
   name: {
@@ -560,6 +612,32 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: appColors.grey6,
+    borderStyle: 'dashed',
+    marginTop: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextBold,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });
 

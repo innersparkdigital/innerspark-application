@@ -24,7 +24,7 @@ import { APIInstance } from '../LHAPI';
  * // }
  */
 export const getDashboardStats = async (therapistId) => {
-    const response = await APIInstance.get('/th/dashboard/stats', {
+    const response = await APIInstance.get('th/dashboard/stats', {
         params: { therapist_id: therapistId }
     });
     return response.data;
@@ -57,7 +57,7 @@ export const getDashboardStats = async (therapistId) => {
  * // }
  */
 export const getTherapistProfile = async (therapistId) => {
-    const response = await APIInstance.get('/th/profile', {
+    const response = await APIInstance.get('th/profile', {
         params: { therapist_id: therapistId }
     });
     return response.data;
@@ -76,8 +76,9 @@ export const getTherapistProfile = async (therapistId) => {
  * });
  */
 export const updateTherapistProfile = async (therapistId, updateData) => {
-    const response = await APIInstance.put('/th/profile', updateData, {
-        params: { therapist_id: therapistId }
+    const response = await APIInstance.put('th/profile', {
+        therapist_id: therapistId,
+        ...updateData
     });
     return response.data;
 };

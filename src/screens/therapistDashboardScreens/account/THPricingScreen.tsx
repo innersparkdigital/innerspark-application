@@ -1,7 +1,7 @@
 /**
  * Therapist Pricing & Payments Management Screen
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,10 @@ import { Icon, Button } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
-import { getPricingRates, getEarningsBreakdown } from '../../../api/therapist/earnings';
-import { useSelector } from 'react-redux';
+import { getPricingRates } from '../../../api/therapist/earnings';
+import { getAnalyticsOverview, getRevenueAnalytics } from '../../../api/therapist/analytics';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateRevenueAnalytics } from '../../../features/therapist/analyticsSlice';
 
 interface SessionRate {
   type: string;
@@ -29,9 +31,11 @@ interface SessionRate {
 }
 
 const THPricingScreen = ({ navigation }: any) => {
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const therapistRevenueRedux = useSelector((state: any) => state.therapistAnalytics.revenueAnalytics);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!therapistRevenueRedux);
 
   const [rates, setRates] = useState<SessionRate[]>([
     { type: 'Individual Session', duration: '60 min', price: '280,000', icon: 'person', color: appColors.AppBlue },
@@ -43,19 +47,27 @@ const THPricingScreen = ({ navigation }: any) => {
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [summaryData, setSummaryData] = useState<any>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (therapistRevenueRedux) {
+      setSummaryData({
+        ...therapistRevenueRedux,
+        total: therapistRevenueRedux.totalRevenue || therapistRevenueRedux.total,
+        pendingPayout: therapistRevenueRedux.pendingPayments || therapistRevenueRedux.pendingPayout
+      });
+    }
     loadPricingData();
   }, []);
 
   const loadPricingData = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       const today = new Date();
 
-      const [pricingRes, earningsRes] = await Promise.all([
+      const [pricingRes, analyticsRes, revenueRes] = await Promise.all([
         getPricingRates(therapistId).catch(e => ({ error: e })),
-        getEarningsBreakdown(therapistId, today.getMonth() + 1, today.getFullYear()).catch(e => ({ error: e }))
+        getAnalyticsOverview(therapistId, 'month').catch(e => ({ error: e })),
+        getRevenueAnalytics(therapistId, 'month').catch(e => ({ error: e }))
       ]);
 
       if (pricingRes && !(pricingRes as any).error) {
@@ -75,12 +87,22 @@ const THPricingScreen = ({ navigation }: any) => {
         }
       }
 
-      if (earningsRes && !(earningsRes as any).error) {
-        const eData = (earningsRes as any).data;
-        setSummaryData(eData);
-        // Note: The API currently returns breakdown byType/byWeek, but not a raw transactions list
-        // If a transactions array existed, we'd map it here. For now, keeping the mock list structure but empty if API connects
+      const mergedSummary: any = {};
+
+      if (analyticsRes && !(analyticsRes as any).error) {
+        const aData = (analyticsRes as any).data;
+        mergedSummary.sessionCount = aData?.sessions?.total || 0;
       }
+
+      if (revenueRes && !(revenueRes as any).error) {
+        const rData = (revenueRes as any).data;
+        mergedSummary.total = rData?.totalRevenue || 0;
+        mergedSummary.currency = rData?.currency || 'UGX';
+        mergedSummary.pendingPayout = rData?.pendingPayments || 0;
+      }
+
+      setSummaryData(mergedSummary);
+      dispatch(updateRevenueAnalytics(mergedSummary));
 
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to load pricing data';
@@ -104,22 +126,22 @@ const THPricingScreen = ({ navigation }: any) => {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>This Month</Text>
           <Text style={styles.summaryAmount}>
-            {summaryData?.currency || 'UGX'} {(summaryData?.total || 11340000).toLocaleString()}
+            {summaryData?.currency || 'UGX'} {(summaryData?.total || 0).toLocaleString()}
           </Text>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Sessions</Text>
-              <Text style={styles.summaryValue}>{summaryData?.sessionCount || 42}</Text>
+              <Text style={styles.summaryValue}>{summaryData?.sessionCount ?? 0}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Avg. Rate</Text>
-              <Text style={styles.summaryValue}>{summaryData?.total ? Math.round(summaryData.total / (summaryData.sessionCount || 1)).toLocaleString() : '270K'}</Text>
+              <Text style={styles.summaryValue}>{summaryData?.total && summaryData.sessionCount ? Math.round(summaryData.total / summaryData.sessionCount).toLocaleString() : '0'}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Pending</Text>
-              <Text style={styles.summaryValue}>{summaryData?.pendingPayout ? summaryData.pendingPayout.toLocaleString() : '840K'}</Text>
+              <Text style={styles.summaryValue}>{summaryData?.pendingPayout ? summaryData.pendingPayout.toLocaleString() : '0'}</Text>
             </View>
           </View>
         </View>

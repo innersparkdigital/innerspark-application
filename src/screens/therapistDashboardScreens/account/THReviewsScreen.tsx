@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -41,6 +42,7 @@ const THReviewsScreen = ({ navigation }: any) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadReviews();
@@ -49,7 +51,7 @@ const THReviewsScreen = ({ navigation }: any) => {
   const loadReviews = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       // If we want to use the API filter, we pass rating: selectedFilter !== 'all' ? selectedFilter : undefined
       const filters = selectedFilter !== 'all' ? { rating: parseInt(selectedFilter) as 1 | 2 | 3 | 4 | 5 } : {};
       const response: any = await getReviews(therapistId, filters);
@@ -63,8 +65,14 @@ const THReviewsScreen = ({ navigation }: any) => {
       console.error('Reviews Error:', errorMessage);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadReviews();
+  }, [selectedFilter]);
 
   // Compute safe UI fallbacks for summary
   const averageRating = summary?.averageRating || 0;
@@ -120,7 +128,13 @@ const THReviewsScreen = ({ navigation }: any) => {
       <ISStatusBar />
       <ISGenericHeader title="Reviews & Ratings" navigation={navigation} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
+        }
+      >
         {/* Rating Summary */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryLeft}>

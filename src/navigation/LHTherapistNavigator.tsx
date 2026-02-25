@@ -22,6 +22,9 @@ import THPricingScreen from '../screens/therapistDashboardScreens/account/THPric
 import THAnalyticsScreen from '../screens/therapistDashboardScreens/account/THAnalyticsScreen';
 import THReviewsScreen from '../screens/therapistDashboardScreens/account/THReviewsScreen';
 import THTransactionHistoryScreen from '../screens/therapistDashboardScreens/account/THTransactionHistoryScreen';
+import THEventsScreen from '../screens/therapistDashboardScreens/THEventsScreen';
+import THCreateEventScreen from '../screens/therapistDashboardScreens/events/THCreateEventScreen';
+import THEventDetailsScreen from '../screens/therapistDashboardScreens/events/THEventDetailsScreen';
 
 // Import shared screens from the main app
 import AboutAppScreen from '../screens/AboutAppScreen';
@@ -194,6 +197,30 @@ const LHTherapistNavigator = () => {
       <THStack.Screen
         name="THTransactionHistoryScreen"
         component={THTransactionHistoryScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+
+      <THStack.Screen
+        name="THEventsScreen"
+        component={THEventsScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+
+      <THStack.Screen
+        name="THCreateEventScreen"
+        component={THCreateEventScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+
+      <THStack.Screen
+        name="THEventDetailsScreen"
+        component={THEventDetailsScreen}
         options={{
           ...TransitionPresets.SlideFromRightIOS,
         }}

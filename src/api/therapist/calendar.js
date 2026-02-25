@@ -33,8 +33,20 @@ import { APIInstance } from '../LHAPI';
  * // }
  */
 export const getAvailabilitySlots = async (therapistId, filters = {}) => {
-    const response = await APIInstance.get('/th/availability', {
+    const response = await APIInstance.get('th/availability', {
         params: { therapist_id: therapistId, ...filters }
+    });
+    return response.data;
+};
+
+/**
+ * Get current availability schedule (JSON object format)
+ * @param {string} therapistId - Therapist ID
+ * @returns {Promise<{success: boolean, data: {availability: Object, breakDuration: number, timezone: string}}>} Availability schedule
+ */
+export const getAvailability = async (therapistId) => {
+    const response = await APIInstance.get('th/availability', {
+        params: { therapist_id: therapistId }
     });
     return response.data;
 };
@@ -68,7 +80,7 @@ export const getAvailabilitySlots = async (therapistId, filters = {}) => {
  * // }
  */
 export const createAvailabilitySlot = async (slotData) => {
-    const response = await APIInstance.post('/th/availability', slotData);
+    const response = await APIInstance.post('th/availability', slotData);
     return response.data;
 };
 
@@ -79,7 +91,7 @@ export const createAvailabilitySlot = async (slotData) => {
  * @returns {Promise<{success: boolean, message: string, data: Object}>} Updated slot
  */
 export const updateAvailabilitySlot = async (slotId, updateData) => {
-    const response = await APIInstance.put(`/th/availability/${slotId}`, updateData);
+    const response = await APIInstance.put(`th/availability/${slotId}`, updateData);
     return response.data;
 };
 
@@ -90,7 +102,7 @@ export const updateAvailabilitySlot = async (slotId, updateData) => {
  * @returns {Promise<{success: boolean, message: string}>} Deletion confirmation
  */
 export const deleteAvailabilitySlot = async (slotId, therapistId) => {
-    const response = await APIInstance.delete(`/th/availability/${slotId}`, {
+    const response = await APIInstance.delete(`th/availability/${slotId}`, {
         params: { therapist_id: therapistId }
     });
     return response.data;
@@ -109,7 +121,7 @@ export const deleteAvailabilitySlot = async (slotId, therapistId) => {
  * // Returns list of booked time slots with appointment details
  */
 export const getBookedSlots = async (therapistId, filters = {}) => {
-    const response = await APIInstance.get('/th/availability/booked', {
+    const response = await APIInstance.get('th/availability/booked', {
         params: { therapist_id: therapistId, ...filters }
     });
     return response.data;
@@ -137,7 +149,7 @@ export const getBookedSlots = async (therapistId, filters = {}) => {
  * // }
  */
 export const getWeeklyAvailability = async (therapistId, weekStart) => {
-    const response = await APIInstance.get('/th/availability/weekly', {
+    const response = await APIInstance.get('th/availability/weekly', {
         params: { therapist_id: therapistId, weekStart }
     });
     return response.data;
@@ -156,10 +168,20 @@ export const getWeeklyAvailability = async (therapistId, weekStart) => {
  * // Returns: { success: true, message: "...", data: { slotsCreated: 2 } }
  */
 export const bulkUpdateAvailability = async (therapistId, slots) => {
-    const response = await APIInstance.post('/th/availability/bulk', {
+    const response = await APIInstance.post('th/availability/bulk', {
         therapist_id: therapistId,
         slots
     });
+    return response.data;
+};
+
+/**
+ * Update availability schedule using PUT format
+ * @param {Object} payload - The full availability payload including therapist_id
+ * @returns {Promise<{success: boolean}>} Availability update confirmation
+ */
+export const updateAvailability = async (payload) => {
+    const response = await APIInstance.put('th/availability', payload);
     return response.data;
 };
 
@@ -182,7 +204,7 @@ export const bulkUpdateAvailability = async (therapistId, slots) => {
  * // Returns: { success: true, message: "...", data: { blockId: "block_001" } }
  */
 export const blockTimeSlot = async (therapistId, slotData) => {
-    const response = await APIInstance.post('/th/availability/block', {
+    const response = await APIInstance.post('th/availability/block', {
         therapist_id: therapistId,
         ...slotData
     });
@@ -196,7 +218,7 @@ export const blockTimeSlot = async (therapistId, slotData) => {
  * @returns {Promise<{success: boolean, message: string}>} Unblock confirmation
  */
 export const unblockTimeSlot = async (slotId, therapistId) => {
-    const response = await APIInstance.delete(`/th/availability/block/${slotId}`, {
+    const response = await APIInstance.delete(`th/availability/block/${slotId}`, {
         params: { therapist_id: therapistId }
     });
     return response.data;

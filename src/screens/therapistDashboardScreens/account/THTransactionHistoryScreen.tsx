@@ -33,6 +33,7 @@ const THTransactionHistoryScreen = ({ navigation }: any) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'completed' | 'pending' | 'failed'>('all');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadTransactions();
@@ -41,7 +42,7 @@ const THTransactionHistoryScreen = ({ navigation }: any) => {
   const loadTransactions = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       const response: any = await getTransactions(therapistId);
 
       if (response?.data?.transactions) {
@@ -52,8 +53,14 @@ const THTransactionHistoryScreen = ({ navigation }: any) => {
       console.error('Transactions Error:', errorMessage);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadTransactions();
+  }, []);
 
   const filteredTransactions = transactions.filter((transaction) => {
     if (selectedFilter === 'all') return true;
@@ -175,6 +182,8 @@ const THTransactionHistoryScreen = ({ navigation }: any) => {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Icon type="material" name="receipt-long" size={60} color={appColors.grey3} />

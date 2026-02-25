@@ -36,7 +36,7 @@ import { APIInstance } from '../LHAPI';
  * // }
  */
 export const getAppointments = async (therapistId, filters = {}) => {
-    const response = await APIInstance.get('/th/appointments', {
+    const response = await APIInstance.get('th/appointments', {
         params: { therapist_id: therapistId, ...filters }
     });
     return response.data;
@@ -114,7 +114,7 @@ export const getAppointmentById = async (appointmentId, therapistId) => {
  * // }
  */
 export const createAppointment = async (appointmentData) => {
-    const response = await APIInstance.post('/th/appointments', appointmentData);
+    const response = await APIInstance.post('th/appointments', appointmentData);
     return response.data;
 };
 

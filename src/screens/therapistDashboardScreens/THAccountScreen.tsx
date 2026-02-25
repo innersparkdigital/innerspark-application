@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, BottomSheet } from '@rneui/themed';
 import { useSelector, useDispatch } from 'react-redux';
@@ -12,6 +12,8 @@ import ISStatusBar from '../../components/ISStatusBar';
 const THAccountScreen = ({ navigation }: any) => {
   const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const analyticsOverview = useSelector((state: any) => state.therapistAnalytics.overview);
+  const therapistProfile = useSelector((state: any) => state.therapistDashboard.profile);
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
 
   /** Signout current user */
@@ -63,9 +65,16 @@ const THAccountScreen = ({ navigation }: any) => {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {userDetails?.firstName?.[0]}{userDetails?.lastName?.[0]}
-            </Text>
+            {userDetails?.avatar || userDetails?.profilePicture ? (
+              <Image
+                source={{ uri: userDetails?.avatar || userDetails?.profilePicture }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {userDetails?.firstName?.[0] || ''}{userDetails?.lastName?.[0] || ''}
+              </Text>
+            )}
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>
@@ -75,7 +84,7 @@ const THAccountScreen = ({ navigation }: any) => {
             <View style={styles.badgeContainer}>
               <View style={styles.badge}>
                 <Icon type="material" name="verified" size={14} color={appColors.AppGreen} />
-                <Text style={styles.badgeText}>Verified Therapist</Text>
+                <Text style={styles.badgeText}>{therapistProfile?.specialization || 'Verified Therapist'}</Text>
               </View>
             </View>
           </View>
@@ -84,15 +93,15 @@ const THAccountScreen = ({ navigation }: any) => {
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>156</Text>
+            <Text style={styles.statNumber}>{analyticsOverview?.sessions?.total || 0}</Text>
             <Text style={styles.statLabel}>Sessions</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>4.9</Text>
+            <Text style={styles.statNumber}>{analyticsOverview?.rating?.average || '0.0'}</Text>
             <Text style={styles.statLabel}>Rating</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>45</Text>
+            <Text style={styles.statNumber}>{analyticsOverview?.clients?.total || 0}</Text>
             <Text style={styles.statLabel}>Clients</Text>
           </View>
         </View>
@@ -263,6 +272,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
     fontFamily: appFonts.headerTextBold,
+  },
+  avatarImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
   },
   profileInfo: {
     flex: 1,

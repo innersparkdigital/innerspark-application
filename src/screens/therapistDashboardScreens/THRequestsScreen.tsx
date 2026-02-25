@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -30,6 +31,7 @@ const THRequestsScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   React.useEffect(() => {
     loadRequests();
@@ -38,7 +40,7 @@ const THRequestsScreen = ({ navigation }: any) => {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       const response: any = await getRequests(therapistId, { status: 'pending' });
 
       if (response?.data) {
@@ -53,8 +55,14 @@ const THRequestsScreen = ({ navigation }: any) => {
       setRequests([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadRequests();
+  }, []);
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -95,7 +103,7 @@ const THRequestsScreen = ({ navigation }: any) => {
           text: 'Accept',
           onPress: async () => {
             try {
-              const therapistId = userDetails?.userId || '52863268761';
+              const therapistId = userDetails?.userId;
               // Optimistic update
               setRequests(requests.filter((r) => r.id !== requestId));
               await acceptRequest(requestId.toString(), therapistId);
@@ -127,7 +135,7 @@ const THRequestsScreen = ({ navigation }: any) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const therapistId = userDetails?.userId || '52863268761';
+              const therapistId = userDetails?.userId;
               // Optimistic update
               setRequests(requests.filter((r) => r.id !== requestId));
               await declineRequest(requestId.toString(), therapistId);
@@ -238,6 +246,9 @@ const THRequestsScreen = ({ navigation }: any) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
+        }
       >
         {/* Info Card */}
         <View style={styles.infoCard}>

@@ -17,7 +17,7 @@ export const authToken = AUTH_TOKEN; // API Auth Token
 
 // Main API instance for versioned endpoints (/api/v1/*)
 export const APIInstance = axios.create({
-    baseURL: baseUrlRoot + baseUrlV1,
+    baseURL: baseUrlRoot + baseUrlV1 + '/',
     timeout: 30000, // 30 second timeout to prevent 524 errors
     headers: {
         'x-api-key': authToken,

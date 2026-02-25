@@ -24,7 +24,7 @@ const THNotificationsScreen = ({ navigation }: any) => {
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
 
       const response: any = await getNotifications(therapistId);
 
@@ -50,7 +50,7 @@ const THNotificationsScreen = ({ navigation }: any) => {
 
   const markAsRead = async (id: string) => {
     try {
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       // Optimistic update
       setNotifications(notifications.map(notif =>
         notif.id === id ? { ...notif, read: true } : notif
@@ -65,7 +65,7 @@ const THNotificationsScreen = ({ navigation }: any) => {
 
   const markAllAsRead = async () => {
     try {
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       // Optimistic update
       setNotifications(notifications.map(notif => ({ ...notif, read: true })));
       await markAllNotificationsAsRead(therapistId);

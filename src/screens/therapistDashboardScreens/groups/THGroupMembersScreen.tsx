@@ -2,10 +2,11 @@
  * Therapist Group Members Management Screen
  */
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, TextInput, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { useSelector } from 'react-redux';
@@ -45,7 +46,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
     if (!group?.id) return;
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       const response: any = await getGroupMembers(group.id, therapistId, { filter: selectedFilter });
       if (response?.data?.members) {
         setMembers(response.data.members);
@@ -166,7 +167,10 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
     >
       <View style={styles.memberLeft}>
         <View style={styles.memberAvatar}>
-          <Text style={styles.memberAvatarText}>{item.avatar}</Text>
+          <Image
+            source={item?.avatar?.startsWith('http') ? { uri: item.avatar } : appImages.avatarPlaceholder}
+            style={styles.memberAvatarImage}
+          />
           {item.status === 'active' && <View style={styles.onlineDot} />}
         </View>
         <View style={styles.memberInfo}>
@@ -393,8 +397,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
     position: 'relative',
   },
-  memberAvatarText: {
-    fontSize: 24,
+  memberAvatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   onlineDot: {
     position: 'absolute',

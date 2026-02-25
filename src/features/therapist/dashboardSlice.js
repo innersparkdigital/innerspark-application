@@ -34,6 +34,9 @@ export const dashboardSlice = createSlice({
             },
             sessionsToday: 0,
         },
+        profile: null,
+        upcomingEventsCount: 0,
+        availability: null,
         loading: false,
         lastUpdated: null,
     },
@@ -45,6 +48,16 @@ export const dashboardSlice = createSlice({
 
         updateDashboardLoading: (state, action) => {
             state.loading = action.payload;
+        },
+
+        updateAvailability: (state, action) => {
+            state.availability = action.payload;
+        },
+        updateTherapistProfile: (state, action) => {
+            state.profile = action.payload;
+        },
+        updateUpcomingEventsCount: (state, action) => {
+            state.upcomingEventsCount = action.payload;
         },
 
         updateAppointmentStats: (state, action) => {
@@ -73,6 +86,9 @@ export const dashboardSlice = createSlice({
 export const {
     updateDashboardStats,
     updateDashboardLoading,
+    updateAvailability,
+    updateTherapistProfile,
+    updateUpcomingEventsCount,
     updateAppointmentStats,
     updateRequestStats,
     updateGroupStats,

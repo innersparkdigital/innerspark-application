@@ -3,10 +3,11 @@
  * No notes or chat features - just basic information
  */
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 
@@ -22,10 +23,13 @@ const THGroupMemberProfileScreen = ({ navigation, route }: any) => {
         {/* Member Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.avatarLarge}>
-            <Text style={styles.avatarLargeText}>{member?.avatar || '👤'}</Text>
+            <Image
+              source={member?.avatar?.startsWith('http') ? { uri: member.avatar } : appImages.avatarPlaceholder}
+              style={styles.avatarLargeImage}
+            />
           </View>
           <Text style={styles.memberName}>{member?.name || 'Member'}</Text>
-          
+
           {member?.role === 'moderator' && (
             <View style={styles.moderatorBadge}>
               <Icon type="material" name="shield" size={16} color={appColors.AppBlue} />
@@ -42,8 +46,8 @@ const THGroupMemberProfileScreen = ({ navigation, route }: any) => {
                     member?.status === 'active'
                       ? appColors.AppGreen
                       : member?.status === 'muted'
-                      ? '#FF9800'
-                      : appColors.grey3,
+                        ? '#FF9800'
+                        : appColors.grey3,
                 },
               ]}
             />
@@ -51,8 +55,8 @@ const THGroupMemberProfileScreen = ({ navigation, route }: any) => {
               {member?.status === 'active'
                 ? 'Active'
                 : member?.status === 'muted'
-                ? 'Muted'
-                : 'Inactive'}
+                  ? 'Muted'
+                  : 'Inactive'}
             </Text>
           </View>
         </View>
@@ -108,8 +112,8 @@ const THGroupMemberProfileScreen = ({ navigation, route }: any) => {
                 {member?.status === 'active'
                   ? 'Active'
                   : member?.status === 'muted'
-                  ? 'Muted (5 min)'
-                  : 'Inactive'}
+                    ? 'Muted (5 min)'
+                    : 'Inactive'}
               </Text>
             </View>
           </View>
@@ -201,8 +205,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  avatarLargeText: {
-    fontSize: 48,
+  avatarLargeImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   memberName: {
     fontSize: 24,

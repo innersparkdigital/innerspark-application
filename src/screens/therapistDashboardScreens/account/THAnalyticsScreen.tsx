@@ -9,6 +9,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -16,18 +17,21 @@ import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { getAnalyticsOverview, getSessionAnalytics, getRevenueAnalytics } from '../../../api/therapist';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { ActivityIndicator } from 'react-native';
+import { updateAnalyticsOverview as updateAnalyticsAction, updateSessionAnalytics, updateRevenueAnalytics } from '../../../features/therapist/analyticsSlice';
 
 const { width } = Dimensions.get('window');
 
 const THAnalyticsScreen = ({ navigation }: any) => {
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [stats, setStats] = useState<any>(null);
   const [sessionData, setSessionData] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -36,7 +40,7 @@ const THAnalyticsScreen = ({ navigation }: any) => {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
 
       const [overviewRes, sessionRes, revenueRes] = await Promise.all([
         getAnalyticsOverview(therapistId, selectedPeriod).catch(e => ({ error: e })),
@@ -44,17 +48,32 @@ const THAnalyticsScreen = ({ navigation }: any) => {
         getRevenueAnalytics(therapistId, selectedPeriod).catch(e => ({ error: e }))
       ]);
 
-      if (overviewRes && !(overviewRes as any).error) setStats((overviewRes as any).data);
-      if (sessionRes && !(sessionRes as any).error) setSessionData((sessionRes as any).data);
-      if (revenueRes && !(revenueRes as any).error) setRevenueData((revenueRes as any).data);
+      if (overviewRes && !(overviewRes as any).error) {
+        setStats((overviewRes as any).data);
+        dispatch(updateAnalyticsAction((overviewRes as any).data));
+      }
+      if (sessionRes && !(sessionRes as any).error) {
+        setSessionData((sessionRes as any).data);
+        dispatch(updateSessionAnalytics((sessionRes as any).data));
+      }
+      if (revenueRes && !(revenueRes as any).error) {
+        setRevenueData((revenueRes as any).data);
+        dispatch(updateRevenueAnalytics((revenueRes as any).data));
+      }
 
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to load analytics';
       console.error('Analytics Error:', errorMessage);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadStats();
+  }, [selectedPeriod]);
 
   const periods = [
     { key: 'week' as const, label: 'Week' },
@@ -97,29 +116,24 @@ const THAnalyticsScreen = ({ navigation }: any) => {
     },
   ];
 
-  const sessionStats = [
-    { day: 'Mon', sessions: 8, height: 80 },
-    { day: 'Tue', sessions: 6, height: 60 },
-    { day: 'Wed', sessions: 10, height: 100 },
-    { day: 'Thu', sessions: 7, height: 70 },
-    { day: 'Fri', sessions: 9, height: 90 },
-    { day: 'Sat', sessions: 4, height: 40 },
-    { day: 'Sun', sessions: 2, height: 20 },
-  ];
+  const sessionStats = (sessionData?.sessionsByDay || [
+    { day: 'Mon', count: 0 },
+    { day: 'Tue', count: 0 },
+    { day: 'Wed', count: 0 },
+    { day: 'Thu', count: 0 },
+    { day: 'Fri', count: 0 },
+    { day: 'Sat', count: 0 },
+    { day: 'Sun', count: 0 },
+  ]).map((d: any) => {
+    const maxCount = Math.max(...(sessionData?.sessionsByDay || [{ count: 0 }]).map((s: any) => s.count || 0), 5);
+    return {
+      day: d.day,
+      sessions: d.count || 0,
+      height: Math.max(((d.count || 0) / maxCount) * 120, 2), // Scale to chart height
+    };
+  });
 
-  const clientRetention = [
-    { label: 'New Clients', value: 12, percentage: 27, color: appColors.AppBlue },
-    { label: 'Returning', value: 28, percentage: 62, color: appColors.AppGreen },
-    { label: 'Inactive', value: 5, percentage: 11, color: appColors.grey4 },
-  ];
-
-  const popularTimes = [
-    { time: '9:00 AM', bookings: 15, percentage: 85 },
-    { time: '11:00 AM', bookings: 18, percentage: 100 },
-    { time: '2:00 PM', bookings: 12, percentage: 67 },
-    { time: '4:00 PM', bookings: 14, percentage: 78 },
-    { time: '6:00 PM', bookings: 8, percentage: 44 },
-  ];
+  const popularTimes: any[] = []; // Hide for now as backend doesn't provide this yet
 
   const totalTypeSessions = sessionData?.totalSessions || 1; // Prevent div by zero
   const sessionTypes = [
@@ -148,7 +162,13 @@ const THAnalyticsScreen = ({ navigation }: any) => {
       <ISStatusBar />
       <ISGenericHeader title="Performance Analytics" navigation={navigation} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
+        }
+      >
         {/* Period Selector */}
         <View style={styles.periodSelector}>
           {periods.map((period) => (
@@ -158,7 +178,10 @@ const THAnalyticsScreen = ({ navigation }: any) => {
                 styles.periodButton,
                 selectedPeriod === period.key && styles.periodButtonActive,
               ]}
-              onPress={() => setSelectedPeriod(period.key)}
+              onPress={() => {
+                if (!loading) setSelectedPeriod(period.key);
+              }}
+              disabled={loading}
             >
               <Text
                 style={[
@@ -171,6 +194,13 @@ const THAnalyticsScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           ))}
         </View>
+
+        {loading && !refreshing && (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color={appColors.AppBlue} />
+            <Text style={styles.loaderText}>Loading {selectedPeriod} stats...</Text>
+          </View>
+        )}
 
         {/* Key Metrics */}
         <View style={styles.metricsGrid}>
@@ -203,10 +233,10 @@ const THAnalyticsScreen = ({ navigation }: any) => {
 
         {/* Sessions Chart */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sessions This Week</Text>
+          <Text style={styles.sectionTitle}>Sessions This {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)}</Text>
           <View style={styles.chartCard}>
             <View style={styles.chart}>
-              {sessionStats.map((stat, index) => (
+              {sessionStats.map((stat: any, index: number) => (
                 <View key={index} style={styles.chartBar}>
                   <Text style={styles.chartValue}>{stat.sessions}</Text>
                   <View style={styles.barContainer}>
@@ -225,61 +255,8 @@ const THAnalyticsScreen = ({ navigation }: any) => {
               ))}
             </View>
             <View style={styles.chartFooter}>
-              <Text style={styles.chartFooterText}>Total: 46 sessions</Text>
+              <Text style={styles.chartFooterText}>Total: {stats?.sessions?.total || 0} sessions</Text>
             </View>
-          </View>
-        </View>
-
-        {/* Client Retention */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Client Retention</Text>
-          <View style={styles.retentionCard}>
-            {clientRetention.map((item, index) => (
-              <View key={index} style={styles.retentionRow}>
-                <View style={styles.retentionLeft}>
-                  <View style={[styles.retentionDot, { backgroundColor: item.color }]} />
-                  <Text style={styles.retentionLabel}>{item.label}</Text>
-                </View>
-                <View style={styles.retentionRight}>
-                  <View style={styles.retentionBarContainer}>
-                    <View
-                      style={[
-                        styles.retentionBar,
-                        {
-                          width: `${item.percentage}%`,
-                          backgroundColor: item.color,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.retentionValue}>{item.value}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Popular Times */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Most Popular Times</Text>
-          <View style={styles.timesCard}>
-            {popularTimes.map((time, index) => (
-              <View key={index} style={styles.timeRow}>
-                <Text style={styles.timeLabel}>{time.time}</Text>
-                <View style={styles.timeBarContainer}>
-                  <View
-                    style={[
-                      styles.timeBar,
-                      {
-                        width: `${time.percentage}%`,
-                        backgroundColor: appColors.AppBlue,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.timeValue}>{time.bookings}</Text>
-              </View>
-            ))}
           </View>
         </View>
 
@@ -299,36 +276,9 @@ const THAnalyticsScreen = ({ navigation }: any) => {
                 </View>
               </View>
             ))}
-          </View>
-        </View>
-
-        {/* Insights */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Insights</Text>
-          <View style={styles.insightCard}>
-            <View style={styles.insightIcon}>
-              <Icon type="material" name="lightbulb" size={24} color="#FFD700" />
-            </View>
-            <View style={styles.insightContent}>
-              <Text style={styles.insightTitle}>Peak Performance</Text>
-              <Text style={styles.insightText}>
-                Your busiest day is Wednesday with an average of 10 sessions. Consider adjusting
-                your availability on slower days.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.insightCard}>
-            <View style={styles.insightIcon}>
-              <Icon type="material" name="trending-up" size={24} color={appColors.AppGreen} />
-            </View>
-            <View style={styles.insightContent}>
-              <Text style={styles.insightTitle}>Growing Practice</Text>
-              <Text style={styles.insightText}>
-                Your client base has grown by 15% this month. Great work maintaining high
-                satisfaction ratings!
-              </Text>
-            </View>
+            {sessionTypes.every(t => t.count === 0) && (
+              <Text style={styles.emptyText}>No sessions recorded for this period</Text>
+            )}
           </View>
         </View>
 
@@ -490,104 +440,6 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
   },
-  retentionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  retentionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  retentionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    width: 100,
-  },
-  retentionDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  retentionLabel: {
-    fontSize: 14,
-    color: appColors.grey2,
-    fontFamily: appFonts.bodyTextRegular,
-  },
-  retentionRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-  },
-  retentionBarContainer: {
-    flex: 1,
-    height: 8,
-    backgroundColor: appColors.grey6,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  retentionBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  retentionValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: appColors.grey1,
-    fontFamily: appFonts.bodyTextMedium,
-    width: 30,
-    textAlign: 'right',
-  },
-  timesCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
-  },
-  timeLabel: {
-    fontSize: 14,
-    color: appColors.grey2,
-    fontFamily: appFonts.bodyTextRegular,
-    width: 80,
-  },
-  timeBarContainer: {
-    flex: 1,
-    height: 8,
-    backgroundColor: appColors.grey6,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  timeBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  timeValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: appColors.grey1,
-    fontFamily: appFonts.bodyTextMedium,
-    width: 30,
-    textAlign: 'right',
-  },
   typesCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -637,42 +489,24 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
   },
-  insightCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  insightIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFD700' + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  insightContent: {
-    flex: 1,
-  },
-  insightTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.headerTextBold,
-    marginBottom: 6,
-  },
-  insightText: {
+  emptyText: {
     fontSize: 14,
-    color: appColors.grey2,
+    color: appColors.grey4,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
+    textAlign: 'center',
+    paddingVertical: 20,
+    fontStyle: 'italic',
+  },
+  loaderContainer: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
   },
 });
 

@@ -2,17 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/themed';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getFirstName } from '../../global/LHShortcuts';
 import { appImages } from '../../global/Data';
-import { getDashboardStats } from '../../api/therapist';
+import { getDashboardStats, getAvailability, getAnalyticsOverview, getRevenueAnalytics, getTherapistProfile, getEvents } from '../../api/therapist';
+import { updateDashboardStats, updateAvailability, updateTherapistProfile, updateUpcomingEventsCount } from '../../features/therapist/dashboardSlice';
+import { updateRevenueAnalytics } from '../../features/therapist/analyticsSlice';
 
 const THDashboardScreen = ({ navigation }: any) => {
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  const [dashboardStats, setDashboardStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const dashboardStats = useSelector((state: any) => state.therapistDashboard.stats);
+  const upcomingEventsCount = useSelector((state: any) => state.therapistDashboard.upcomingEventsCount);
+  const [loading, setLoading] = useState(!dashboardStats);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -30,23 +34,67 @@ const THDashboardScreen = ({ navigation }: any) => {
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      if (!dashboardStats) setLoading(true);
+      const therapistId = userDetails?.userId;
 
       const response = await getDashboardStats(therapistId);
 
       if (response?.data) {
-        setDashboardStats(normalizeStats(response.data));
+        dispatch(updateDashboardStats(normalizeStats(response.data)));
       } else {
-        setDashboardStats(normalizeStats({}));
+        dispatch(updateDashboardStats(normalizeStats({})));
       }
+
+      // Kick off background loading for other screen states
+      backgroundLoadData(therapistId);
+
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to load dashboard stats';
       console.error('Dashboard Stats Error:', errorMessage);
-      // Keep showing UI with zero values on error
-      setDashboardStats(normalizeStats({}));
+      if (!dashboardStats) dispatch(updateDashboardStats(normalizeStats({})));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const backgroundLoadData = async (therapistId: string) => {
+    try {
+      // 1. Load Availability Schedule
+      getAvailability(therapistId).then(res => {
+        if (res?.success) dispatch(updateAvailability(res.data));
+      }).catch(err => console.error('BG Load Availability Error:', err));
+
+      // 2. Load Revenue/Analytics for Pricing Screen
+      Promise.all([
+        getAnalyticsOverview(therapistId, 'month'),
+        getRevenueAnalytics(therapistId, 'month')
+      ]).then(([overviewRes, revenueRes]: [any, any]) => {
+        const mergedSummary: any = {};
+        if (overviewRes?.success) {
+          mergedSummary.sessionCount = (overviewRes.data as any)?.sessions?.total || 0;
+        }
+        if (revenueRes?.success) {
+          mergedSummary.total = (revenueRes.data as any)?.totalRevenue || 0;
+          mergedSummary.currency = (revenueRes.data as any)?.currency || 'UGX';
+          mergedSummary.pendingPayout = (revenueRes.data as any)?.pendingPayments || 0;
+        }
+        dispatch(updateRevenueAnalytics(mergedSummary));
+      }).catch(err => console.error('BG Load Revenue Error:', err));
+
+      // 3. Load Professional Profile
+      getTherapistProfile(therapistId).then(res => {
+        if (res?.success) dispatch(updateTherapistProfile(res.data));
+      }).catch(err => console.error('BG Load Profile Error:', err));
+
+      // 4. Load Upcoming Events Count
+      getEvents(therapistId, { status: 'upcoming', limit: 1 }).then(res => {
+        if (res?.success) {
+          dispatch(updateUpcomingEventsCount((res.data as any)?.stats?.upcomingEvents || 0));
+        }
+      }).catch(err => console.error('BG Load Events Error:', err));
+
+    } catch (error) {
+      console.error('Background Load Error:', error);
     }
   };
 
@@ -97,6 +145,16 @@ const THDashboardScreen = ({ navigation }: any) => {
       screen: 'THChats',
       count: String(dashboardStats?.unreadMessages || 0),
       badge: 'new',
+    },
+    {
+      id: 5,
+      title: 'Events',
+      subtitle: 'Upcoming',
+      icon: 'event-available',
+      color: '#E91E63',
+      screen: 'THEventsScreen',
+      count: String(upcomingEventsCount || 0),
+      badge: null,
     },
   ];
 

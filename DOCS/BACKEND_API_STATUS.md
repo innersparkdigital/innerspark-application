@@ -270,13 +270,10 @@ Status: 404 ❌
 
 ### **14. Notifications**
 ```
-PUT /api/v1/client/notifications/{notificationId}/read
+PUT /api/v1/client/notifications/
 Body: { user_id }
 Status: 404 ❌
 
-PUT /api/v1/client/notifications/read-all
-Body: { user_id }
-Status: 404 ❌
 ```
 
 ---

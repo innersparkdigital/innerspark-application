@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
+import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getConversations } from '../../api/therapist';
@@ -13,6 +14,7 @@ const THChatsScreen = ({ navigation }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadConversations();
@@ -21,7 +23,7 @@ const THChatsScreen = ({ navigation }: any) => {
   const loadConversations = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       const response: any = await getConversations(therapistId);
 
       if (response?.data?.conversations) {
@@ -44,8 +46,14 @@ const THChatsScreen = ({ navigation }: any) => {
       setChats([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadConversations();
+  }, []);
 
   const handleNewMessage = () => {
     navigation.navigate('THSelectClientScreen');
@@ -83,6 +91,9 @@ const THChatsScreen = ({ navigation }: any) => {
           style={styles.chatsList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={filteredChats.length === 0 ? styles.emptyListContent : { paddingBottom: 80 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
+          }
         >
           {filteredChats.length > 0 ? (
             filteredChats.map((chat) => (
@@ -93,7 +104,10 @@ const THChatsScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
               >
                 <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarEmoji}>{chat.avatar}</Text>
+                  <Image
+                    source={chat?.avatar?.startsWith('http') ? { uri: chat.avatar } : appImages.avatarPlaceholder}
+                    style={styles.avatarImage}
+                  />
                   {chat.online && <View style={styles.onlineIndicator} />}
                 </View>
 
@@ -196,8 +210,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
     position: 'relative',
   },
-  avatarEmoji: {
-    fontSize: 24,
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   onlineIndicator: {
     position: 'absolute',

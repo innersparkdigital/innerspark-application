@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { getGroupById, getGroupMembers } from '../../../api/therapist';
@@ -25,7 +26,7 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const loadGroupDetails = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       if (group?.id) {
         // Fetch group details
         const groupResponse: any = await getGroupById(group.id, therapistId);
@@ -105,7 +106,10 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
     <TouchableOpacity style={styles.memberCard}>
       <View style={styles.memberLeft}>
         <View style={styles.memberAvatar}>
-          <Text style={styles.memberAvatarText}>{item.avatar}</Text>
+          <Image
+            source={item?.avatar?.startsWith('http') ? { uri: item.avatar } : appImages.avatarPlaceholder}
+            style={styles.memberAvatarImage}
+          />
         </View>
         <View style={styles.memberInfo}>
           <Text style={styles.memberName}>{item.name}</Text>
@@ -500,8 +504,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  memberAvatarText: {
-    fontSize: 24,
+  memberAvatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   memberInfo: {
     flex: 1,

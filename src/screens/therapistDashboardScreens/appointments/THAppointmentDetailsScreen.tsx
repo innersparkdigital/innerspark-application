@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISConfirmationModal from '../../../components/ISConfirmationModal';
@@ -12,6 +13,24 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const [showActions, setShowActions] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const getBannerProps = () => {
+    const status = appointment?.status?.toLowerCase() || '';
+    switch (status) {
+      case 'completed':
+        return { color: appColors.AppGreen, icon: 'check-circle', text: 'Completed Session' };
+      case 'cancelled':
+        return { color: '#F44336', icon: 'cancel', text: 'Cancelled Appointment' };
+      case 'pending':
+        return { color: '#FF9800', icon: 'schedule', text: 'Pending Request' };
+      case 'upcoming':
+      case 'scheduled':
+      default:
+        return { color: appColors.AppBlue, icon: 'event', text: 'Scheduled Appointment' };
+    }
+  };
+
+  const bannerProps = getBannerProps();
 
   const handleStartSession = () => {
     setShowStartModal(true);
@@ -24,10 +43,10 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
       name: appointment.clientName,
       avatar: appointment.avatar,
     };
-    navigation.navigate('THScheduleAppointmentScreen', { 
+    navigation.navigate('THScheduleAppointmentScreen', {
       client: clientData,
       isReschedule: true,
-      existingAppointment: appointment 
+      existingAppointment: appointment
     });
   };
 
@@ -38,7 +57,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const handleViewClientProfile = () => {
     // Navigate to client profile with client data
     const clientData = {
-      id: appointment.id,
+      id: appointment.clientId,
       name: appointment.clientName,
       avatar: appointment.avatar,
     };
@@ -52,7 +71,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
 
   const handleAddNote = () => {
     const clientData = {
-      id: appointment.id,
+      id: appointment.clientId,
       name: appointment.clientName,
       avatar: appointment.avatar,
     };
@@ -61,7 +80,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
 
   const handleViewNotes = () => {
     const clientData = {
-      id: appointment.id,
+      id: appointment.clientId,
       name: appointment.clientName,
       avatar: appointment.avatar,
     };
@@ -75,11 +94,9 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Status Banner */}
-        <View style={[styles.statusBanner, { backgroundColor: appColors.AppGreen }]}>
-          <Icon type="material" name="event" color="#FFFFFF" size={24} />
-          <Text style={styles.statusBannerText}>
-            {appointment.status === 'upcoming' ? 'Upcoming Appointment' : 'Scheduled Appointment'}
-          </Text>
+        <View style={[styles.statusBanner, { backgroundColor: bannerProps.color }]}>
+          <Icon type="material" name={bannerProps.icon} color="#FFFFFF" size={24} />
+          <Text style={styles.statusBannerText}>{bannerProps.text}</Text>
         </View>
 
         {/* Client Info Card */}
@@ -90,10 +107,13 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
               <Text style={styles.viewProfileLink}>View Profile</Text>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.clientInfo}>
             <View style={styles.avatarLarge}>
-              <Text style={styles.avatarLargeText}>{appointment.avatar}</Text>
+              <Image
+                source={appointment?.avatar?.startsWith('http') ? { uri: appointment.avatar } : appImages.avatarPlaceholder}
+                style={styles.avatarLargeImage}
+              />
             </View>
             <View style={styles.clientDetails}>
               <Text style={styles.clientName}>{appointment.clientName}</Text>
@@ -115,7 +135,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
         {/* Appointment Details Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Appointment Details</Text>
-          
+
           <View style={styles.detailRow}>
             <Icon type="material" name="calendar-today" size={20} color={appColors.AppBlue} />
             <View style={styles.detailContent}>
@@ -154,7 +174,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
         {/* Quick Actions */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Quick Actions</Text>
-          
+
           <TouchableOpacity style={styles.actionButton} onPress={handleSendMessage}>
             <Icon type="material" name="message" size={20} color={appColors.AppBlue} />
             <Text style={styles.actionButtonText}>Send Message to Client</Text>
@@ -190,13 +210,13 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             <Icon type="material" name="play-circle-filled" size={24} color="#FFFFFF" />
             <Text style={styles.startButtonText}>Start Session</Text>
           </TouchableOpacity>
-          
+
           <View style={styles.secondaryActions}>
             <TouchableOpacity style={styles.secondaryButton} onPress={handleReschedule}>
               <Icon type="material" name="schedule" size={20} color={appColors.AppBlue} />
               <Text style={styles.secondaryButtonText}>Reschedule</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={[styles.secondaryButton, styles.cancelButton]} onPress={handleCancel}>
               <Icon type="material" name="cancel" size={20} color="#F44336" />
               <Text style={[styles.secondaryButtonText, styles.cancelButtonText]}>Cancel</Text>
@@ -305,8 +325,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  avatarLargeText: {
-    fontSize: 40,
+  avatarLargeImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   clientDetails: {
     flex: 1,

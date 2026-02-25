@@ -57,7 +57,7 @@ const THCreateEventScreen = ({ navigation, route }: any) => {
         if (!description.trim()) { Alert.alert('Error', 'Please enter a description'); return; }
 
         try {
-            const therapistId = userDetails?.userId || '52863268761';
+            const therapistId = userDetails?.userId;
 
             // Format time to HH:MM
             const formatTime = (d: Date) => d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });

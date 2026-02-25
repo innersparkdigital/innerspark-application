@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/themed';
@@ -21,8 +22,8 @@ import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISConfirmationModal from '../../../components/ISConfirmationModal';
 import {
-  getWeeklyAvailability,
-  bulkUpdateAvailability,
+  getAvailability,
+  updateAvailability,
   blockTimeSlot,
   unblockTimeSlot,
   getAvailabilitySlots
@@ -31,8 +32,9 @@ import {
   getTherapistProfile,
   updateTherapistProfile
 } from '../../../api/therapist/dashboard';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { ActivityIndicator } from 'react-native';
+import { updateAvailability as updateAvailabilityAction } from '../../../features/therapist/dashboardSlice';
 
 interface DaySchedule {
   day: string;
@@ -42,9 +44,12 @@ interface DaySchedule {
 }
 
 const THAvailabilityScreen = ({ navigation }: any) => {
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  const therapistId = userDetails?.userId || '52863268761';
+  const therapistAvailabilityRedux = useSelector((state: any) => state.therapistDashboard.availability);
+  const therapistId = userDetails?.userId;
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Initialize with default schedule
   const [schedule, setSchedule] = useState<DaySchedule[]>([
@@ -60,6 +65,7 @@ const THAvailabilityScreen = ({ navigation }: any) => {
   const [sessionDuration, setSessionDuration] = useState('60');
   const [breakDuration, setBreakDuration] = useState('15');
   const [acceptNewClients, setAcceptNewClients] = useState(true);
+  const [timezone, setTimezone] = useState('Africa/Kampala');
 
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
@@ -85,12 +91,58 @@ const THAvailabilityScreen = ({ navigation }: any) => {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showAdminControlModal, setShowAdminControlModal] = useState(false);
   useEffect(() => {
+    // If we have data in Redux, pre-populate to make it feel fast
+    if (therapistAvailabilityRedux) {
+      const availData = therapistAvailabilityRedux.availability || therapistAvailabilityRedux.schedule;
+      if (availData) {
+        setSchedule([
+          { day: 'Monday', enabled: !!availData.monday?.length, ...extractTime(availData.monday?.[0]) },
+          { day: 'Tuesday', enabled: !!availData.tuesday?.length, ...extractTime(availData.tuesday?.[0]) },
+          { day: 'Wednesday', enabled: !!availData.wednesday?.length, ...extractTime(availData.wednesday?.[0]) },
+          { day: 'Thursday', enabled: !!availData.thursday?.length, ...extractTime(availData.thursday?.[0]) },
+          { day: 'Friday', enabled: !!availData.friday?.length, ...extractTime(availData.friday?.[0]) },
+          { day: 'Saturday', enabled: !!availData.saturday?.length, ...extractTime(availData.saturday?.[0]) },
+          { day: 'Sunday', enabled: !!availData.sunday?.length, ...extractTime(availData.sunday?.[0]) },
+        ]);
+      }
+      if (therapistAvailabilityRedux.breakDuration) setBreakDuration(therapistAvailabilityRedux.breakDuration.toString());
+      if (therapistAvailabilityRedux.sessionDuration) setSessionDuration(therapistAvailabilityRedux.sessionDuration.toString());
+      setLoading(false);
+    }
     loadData();
   }, [therapistId]);
 
-  const loadData = async () => {
+  const parse24to12 = (time24: string) => {
+    let [hours, minutes] = time24.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  const extractTime = (timeRangeString: string | undefined | null) => {
+    if (!timeRangeString) return { startTime: '09:00 AM', endTime: '05:00 PM' };
+    const [start24, end24] = timeRangeString.split('-');
+    return {
+      startTime: parse24to12(start24) || '09:00 AM',
+      endTime: parse24to12(end24) || '05:00 PM'
+    };
+  };
+
+  const format12to24 = (time12: string) => {
+    const [time, period] = time12.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  const loadData = async (isRefreshing = false) => {
     try {
-      setLoading(true);
+      if (isRefreshing) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       // 1. Get Profile Settings
       const profileRes: any = await getTherapistProfile(therapistId);
       if (profileRes?.data) {
@@ -101,25 +153,31 @@ const THAvailabilityScreen = ({ navigation }: any) => {
         // But we'll try getWeeklyAvailability first below
       }
 
-      // 2. Get Weekly Schedule (using current week)
-      const today = new Date().toISOString().split('T')[0];
-      const scheduleRes: any = await getWeeklyAvailability(therapistId, today);
-      if (scheduleRes?.data?.days) {
-        const d = scheduleRes.data.days;
+      // 2. Get Weekly Schedule
+      const scheduleRes: any = await getAvailability(therapistId);
+      const availData = scheduleRes?.data?.availability || scheduleRes?.data?.schedule;
+
+      if (availData) {
+        // The API returns { "monday": ["09:00-17:00"], "tuesday": [] }
         const mappedSchedule = [
-          { day: 'Monday', enabled: d.monday?.length > 0, startTime: d.monday?.[0]?.startTime || '09:00 AM', endTime: d.monday?.[0]?.endTime || '05:00 PM' },
-          { day: 'Tuesday', enabled: d.tuesday?.length > 0, startTime: d.tuesday?.[0]?.startTime || '09:00 AM', endTime: d.tuesday?.[0]?.endTime || '05:00 PM' },
-          { day: 'Wednesday', enabled: d.wednesday?.length > 0, startTime: d.wednesday?.[0]?.startTime || '09:00 AM', endTime: d.wednesday?.[0]?.endTime || '05:00 PM' },
-          { day: 'Thursday', enabled: d.thursday?.length > 0, startTime: d.thursday?.[0]?.startTime || '09:00 AM', endTime: d.thursday?.[0]?.endTime || '05:00 PM' },
-          { day: 'Friday', enabled: d.friday?.length > 0, startTime: d.friday?.[0]?.startTime || '09:00 AM', endTime: d.friday?.[0]?.endTime || '05:00 PM' },
-          { day: 'Saturday', enabled: d.saturday?.length > 0, startTime: d.saturday?.[0]?.startTime || '10:00 AM', endTime: d.saturday?.[0]?.endTime || '02:00 PM' },
-          { day: 'Sunday', enabled: d.sunday?.length > 0, startTime: d.sunday?.[0]?.startTime || '10:00 AM', endTime: d.sunday?.[0]?.endTime || '02:00 PM' },
+          { day: 'Monday', enabled: !!availData.monday?.length, ...extractTime(availData.monday?.[0]) },
+          { day: 'Tuesday', enabled: !!availData.tuesday?.length, ...extractTime(availData.tuesday?.[0]) },
+          { day: 'Wednesday', enabled: !!availData.wednesday?.length, ...extractTime(availData.wednesday?.[0]) },
+          { day: 'Thursday', enabled: !!availData.thursday?.length, ...extractTime(availData.thursday?.[0]) },
+          { day: 'Friday', enabled: !!availData.friday?.length, ...extractTime(availData.friday?.[0]) },
+          { day: 'Saturday', enabled: !!availData.saturday?.length, ...extractTime(availData.saturday?.[0]) },
+          { day: 'Sunday', enabled: !!availData.sunday?.length, ...extractTime(availData.sunday?.[0]) },
         ];
 
-        // Only set if we actually got days back to avoid overriding good defaults with emptiness
-        if (Object.values(d).some((arr: any) => arr && arr.length > 0)) {
-          setSchedule(mappedSchedule);
-        }
+        setSchedule(mappedSchedule);
+        // Sync with Redux
+        dispatch(updateAvailabilityAction(scheduleRes.data));
+      }
+      if (scheduleRes?.data?.breakDuration !== undefined) {
+        setBreakDuration(scheduleRes.data.breakDuration.toString());
+      }
+      if (scheduleRes?.data?.timezone) {
+        setTimezone(scheduleRes.data.timezone);
       }
 
       // 3. Get Time Off (Blocked Slots)
@@ -140,8 +198,13 @@ const THAvailabilityScreen = ({ navigation }: any) => {
       console.error('Failed to load availability:', errorMessage);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    loadData(true);
+  }, [therapistId]);
   const toggleDay = (index: number) => {
     const newSchedule = [...schedule];
     newSchedule[index].enabled = !newSchedule[index].enabled;
@@ -226,21 +289,28 @@ const THAvailabilityScreen = ({ navigation }: any) => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      // 1. Save Profile Settings
-      await updateTherapistProfile(therapistId, {
-        sessionDuration: parseInt(sessionDuration),
+      // 1. Save Availability
+      const availabilityPayload: any = {
+        therapist_id: therapistId,
+        availability: {},
+        timezone: timezone,
         breakDuration: parseInt(breakDuration),
+        // Adding session duration and accept new clients if the backend supports them here
+        sessionDuration: parseInt(sessionDuration),
         acceptingNewClients: acceptNewClients
+      };
+
+      schedule.forEach(d => {
+        const dayKey = d.day.toLowerCase();
+        if (d.enabled) {
+          availabilityPayload.availability[dayKey] = [`${format12to24(d.startTime)}-${format12to24(d.endTime)}`];
+        } else {
+          availabilityPayload.availability[dayKey] = [];
+        }
       });
 
-      // 2. Save Schedule
-      const slotsToSave = schedule.filter(d => d.enabled).map(d => ({
-        date: d.day, // The API bulk update accepts date or day mapping
-        startTime: d.startTime,
-        endTime: d.endTime
-      }));
-
-      await bulkUpdateAvailability(therapistId, slotsToSave);
+      await updateAvailability(availabilityPayload);
+      dispatch(updateAvailabilityAction(availabilityPayload));
       setShowSaveModal(true);
 
     } catch (error: any) {
@@ -299,13 +369,35 @@ const THAvailabilityScreen = ({ navigation }: any) => {
       <ISStatusBar />
       <ISGenericHeader title="Availability & Hours" navigation={navigation} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      >
         {/* Info Card */}
         <View style={styles.infoCard}>
-          <Icon type="material" name="info-outline" size={20} color={appColors.AppBlue} />
-          <Text style={styles.infoText}>
-            Set your working hours to help clients book sessions at convenient times
-          </Text>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              <Icon type="material" name="info-outline" size={18} color={appColors.AppBlue} />
+              <Text style={[styles.infoText, { fontWeight: 'bold', marginLeft: 6 }]}>Schedule Info</Text>
+            </View>
+            <Text style={styles.infoText}>
+              Set your working hours to help clients book sessions at convenient times.
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+              <Icon type="material" name="public" size={16} color={appColors.AppGreen} />
+              <Text style={[styles.infoText, { color: appColors.AppGreen, marginLeft: 4 }]}>
+                Timezone: {timezone}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Weekly Schedule */}
@@ -696,7 +788,10 @@ const THAvailabilityScreen = ({ navigation }: any) => {
                       setTimeOffPeriods(prev => [...prev, newPeriod]);
                     }
                   }).catch((error: any) => {
-                    const errorMessage = error.backendMessage || error.message || 'Failed to block time';
+                    let errorMessage = error.backendMessage || error.message || 'Failed to block time';
+                    if (error.response?.status === 404) {
+                      errorMessage = 'Something went wrong!';
+                    }
                     Alert.alert('Error', errorMessage);
                     console.error('Block Time Error:', errorMessage);
                   });
@@ -731,7 +826,10 @@ const THAvailabilityScreen = ({ navigation }: any) => {
                 setTimeOffPeriods(timeOffPeriods.filter(p => p.id !== periodToDelete));
               })
               .catch((error: any) => {
-                const errorMessage = error.backendMessage || error.message || 'Failed to remove time off';
+                let errorMessage = error.backendMessage || error.message || 'Failed to remove time off';
+                if (error.response?.status === 404) {
+                  errorMessage = 'Something went wrong!';
+                }
                 Alert.alert('Error', errorMessage);
                 console.error('Unblock Time Error:', errorMessage);
               });

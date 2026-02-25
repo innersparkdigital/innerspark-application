@@ -11,17 +11,21 @@ import {
   TextInput,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
 import { appColors, appFonts } from '../../../global/Styles';
+import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { createAppointment, updateAppointment } from '../../../api/therapist/appointments';
 import { getClients } from '../../../api/therapist/clients';
+import { getPricingRates } from '../../../api/therapist/earnings';
+import { updateTherapistSessionTypes } from '../../../features/user/userDataSlice';
 
 const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   const preSelectedClient = route.params?.client;
@@ -29,11 +33,14 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   const existingAppointment = route.params?.existingAppointment;
 
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const therapistSessionTypes = useSelector((state: any) => state.userData.therapistSessionTypes || []);
+  const dispatch = useDispatch();
+
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [selectedClient, setSelectedClient] = useState(preSelectedClient || null);
-  const [sessionType, setSessionType] = useState<'individual' | 'couples' | 'consultation'>(
+  const [sessionType, setSessionType] = useState<string>(
     existingAppointment?.type?.toLowerCase() || 'individual'
   );
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -44,11 +51,27 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
   React.useEffect(() => {
     loadClients();
+    loadSessionTypes();
   }, []);
+
+  const loadSessionTypes = async () => {
+    if (therapistSessionTypes.length > 0) return; // Already loaded
+
+    try {
+      const therapistId = userDetails?.userId;
+      if (!therapistId) return;
+      const res: any = await getPricingRates(therapistId);
+      if (res?.data?.sessionTypes) {
+        dispatch(updateTherapistSessionTypes(res.data.sessionTypes));
+      }
+    } catch (error) {
+      console.error('Failed to load session types:', error);
+    }
+  };
 
   const loadClients = async () => {
     try {
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       const res: any = await getClients(therapistId, { status: 'active' });
       if (res?.data?.clients) {
         setClients(res.data.clients);
@@ -63,10 +86,10 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
 
-  const sessionTypes = [
-    { id: 'individual' as const, label: 'Individual', icon: 'person', color: appColors.AppBlue, rate: 'UGX 280,000' },
-    { id: 'couples' as const, label: 'Couples', icon: 'people', color: '#E91E63', rate: 'UGX 420,000' },
-    { id: 'consultation' as const, label: 'Consultation', icon: 'chat', color: appColors.AppGreen, rate: 'UGX 175,000' },
+  const showSessionTypes = therapistSessionTypes.length > 0 ? therapistSessionTypes : [
+    { id: 'individual', type: 'Individual', duration: 60, price: 280000, currency: 'UGX' },
+    { id: 'couples', type: 'Couples', duration: 90, price: 420000, currency: 'UGX' },
+    { id: 'consultation', type: 'Consultation', duration: 30, price: 175000, currency: 'UGX' },
   ];
 
   const formatDate = (date: Date) => {
@@ -99,13 +122,13 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
 
       // Prepare payload (simplified)
       const payload = {
         therapist_id: therapistId,
         clientId: selectedClient.id,
-        type: sessionTypes.find(t => t.id === sessionType)?.label || 'Session',
+        type: showSessionTypes.find((t: any) => t.id === sessionType || t.type === sessionType)?.type || 'Session',
         date: selectedDate.toISOString().split('T')[0],
         time: formatTime(selectedDate), // API expects HH:MM, formatTime returns human readable.
         // In real app use date-fns/moment to format consistently
@@ -134,7 +157,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
     }
   };
 
-  const selectedSessionType = sessionTypes.find(t => t.id === sessionType);
+  const selectedSessionType = showSessionTypes.find((t: any) => t.id === sessionType || t.type === sessionType);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -154,7 +177,10 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
           >
             {selectedClient ? (
               <>
-                <Text style={styles.clientAvatar}>{selectedClient.avatar}</Text>
+                <Image
+                  source={selectedClient?.avatar?.startsWith('http') ? { uri: selectedClient.avatar } : appImages.avatarPlaceholder}
+                  style={styles.clientAvatar}
+                />
                 <View style={styles.clientInfo}>
                   <Text style={styles.clientName}>{selectedClient.name}</Text>
                   <Text style={styles.clientLastSession}>Last session: {selectedClient.lastSession}</Text>
@@ -174,37 +200,52 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
         {/* Session Type */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Session Type</Text>
-          <View style={styles.typeContainer}>
-            {sessionTypes.map((type) => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.typeCard,
-                  sessionType === type.id && {
-                    backgroundColor: type.color + '20',
-                    borderColor: type.color
-                  }
-                ]}
-                onPress={() => setSessionType(type.id)}
-              >
-                <Icon
-                  type="material"
-                  name={type.icon}
-                  size={28}
-                  color={sessionType === type.id ? type.color : appColors.grey3}
-                />
-                <Text
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.typeContainer}
+          >
+            {showSessionTypes.map((type: any, index: number) => {
+              const typeId = type.id || type.type; // support existing object shapes or custom response
+              const isSelected = sessionType === typeId;
+              // Map colors appropriately or use a fallback. We can use index to alternate colors.
+              const colors = [appColors.AppBlue, '#E91E63', appColors.AppGreen, '#FF9800', '#9C27B0'];
+              const typeColor = type.color || colors[index % colors.length];
+              const iconName = type.icon || (type.type?.toLowerCase().includes('couple') ? 'people' : type.type?.toLowerCase().includes('consult') ? 'chat' : 'person');
+
+              return (
+                <TouchableOpacity
+                  key={typeId}
                   style={[
-                    styles.typeLabel,
-                    sessionType === type.id && { color: type.color, fontWeight: 'bold' }
+                    styles.typeCard,
+                    isSelected && {
+                      backgroundColor: typeColor + '20',
+                      borderColor: typeColor,
+                    },
                   ]}
+                  onPress={() => setSessionType(typeId)}
                 >
-                  {type.label}
-                </Text>
-                <Text style={styles.typeRate}>{type.rate}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  <Icon
+                    type="material"
+                    name={iconName}
+                    size={28}
+                    color={isSelected ? typeColor : appColors.grey3}
+                  />
+                  <Text
+                    style={[
+                      styles.typeLabel,
+                      isSelected && { color: typeColor, fontWeight: 'bold' }
+                    ]}
+                  >
+                    {type.label || type.type}
+                  </Text>
+                  <Text style={styles.typeRate}>
+                    {type.rate || `${type.currency || 'UGX'} ${type.price?.toLocaleString()}`}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* Date & Time */}
@@ -399,7 +440,10 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
                     setShowClientPicker(false);
                   }}
                 >
-                  <Text style={styles.clientOptionAvatar}>{client.avatar}</Text>
+                  <Image
+                    source={client?.avatar?.startsWith('http') ? { uri: client.avatar } : appImages.avatarPlaceholder}
+                    style={styles.clientOptionAvatar}
+                  />
                   <View style={styles.clientOptionInfo}>
                     <Text style={styles.clientOptionName}>{client.name}</Text>
                     <Text style={styles.clientOptionLastSession}>Last session: {client.lastSession}</Text>
@@ -574,7 +618,9 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   clientAvatar: {
-    fontSize: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   clientInfo: {
     flex: 1,
@@ -601,15 +647,17 @@ const styles = StyleSheet.create({
   typeContainer: {
     flexDirection: 'row',
     gap: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
   },
   typeCard: {
-    flex: 1,
-    alignItems: 'center',
+    width: 140, // fixed width so they align uniformly across the scroll view
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: appColors.grey6,
+    borderRadius: 16,
     padding: 16,
+    alignItems: 'center',
     gap: 8,
   },
   typeLabel: {
@@ -617,6 +665,7 @@ const styles = StyleSheet.create({
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextMedium,
     fontWeight: '600',
+    textAlign: 'center',
   },
   typeRate: {
     fontSize: 12,
@@ -812,7 +861,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   clientOptionAvatar: {
-    fontSize: 32,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   clientOptionInfo: {
     flex: 1,

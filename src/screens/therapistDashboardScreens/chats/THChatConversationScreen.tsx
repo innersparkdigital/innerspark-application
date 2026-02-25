@@ -31,7 +31,7 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
     loadMessages();
     // Optional: mark chat as read when opening
     if (chat?.id) {
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       markChatAsRead(chat.id, therapistId).catch(console.error);
     }
   }, [chat?.id]);
@@ -46,7 +46,7 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       if (!chat?.id) return;
 
       const response: any = await getChatMessages(chat.id, therapistId);
@@ -87,7 +87,7 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
     setMessage('');
 
     try {
-      const therapistId = userDetails?.userId || '52863268761';
+      const therapistId = userDetails?.userId;
       const response: any = await sendMessage(chat.id, therapistId, messageToSend);
 
       if (response?.success) {
