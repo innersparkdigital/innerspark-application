@@ -8,6 +8,14 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { useSelector } from 'react-redux';
+import {
+  getGroupMembers,
+  updateGroupMemberRole,
+  muteGroupMember,
+  unmuteGroupMember,
+  removeGroupMember
+} from '../../../api/therapist';
 
 interface Member {
   id: string;
@@ -25,58 +33,32 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'inactive' | 'muted'>(filter || 'all');
 
-  const [members, setMembers] = useState<Member[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      avatar: '👨',
-      status: 'active',
-      joinedDate: 'Jan 2025',
-      attendance: '90%',
-      lastActive: '2 min ago',
-      role: 'member',
-    },
-    {
-      id: '2',
-      name: 'Sarah Williams',
-      avatar: '👩',
-      status: 'active',
-      joinedDate: 'Jan 2025',
-      attendance: '85%',
-      lastActive: '5 min ago',
-      role: 'moderator',
-    },
-    {
-      id: '3',
-      name: 'Michael Brown',
-      avatar: '👨‍💼',
-      status: 'active',
-      joinedDate: 'Dec 2024',
-      attendance: '95%',
-      lastActive: '1 hour ago',
-      role: 'member',
-    },
-    {
-      id: '4',
-      name: 'Emily Chen',
-      avatar: '👩‍💼',
-      status: 'muted',
-      joinedDate: 'Dec 2024',
-      attendance: '88%',
-      lastActive: '3 hours ago',
-      role: 'member',
-    },
-    {
-      id: '5',
-      name: 'David Martinez',
-      avatar: '👨‍🦱',
-      status: 'inactive',
-      joinedDate: 'Nov 2024',
-      attendance: '45%',
-      lastActive: '2 days ago',
-      role: 'member',
-    },
-  ]);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const [loading, setLoading] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  React.useEffect(() => {
+    loadMembers();
+  }, []);
+
+  const loadMembers = async () => {
+    if (!group?.id) return;
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      const response: any = await getGroupMembers(group.id, therapistId, { filter: selectedFilter });
+      if (response?.data?.members) {
+        setMembers(response.data.members);
+      } else {
+        setMembers([]);
+      }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load members';
+      console.error('Group Members Error:', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredMembers = members.filter((member) => {
     const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -93,25 +75,27 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
     if (member.role === 'member') {
       actions.push({
         text: 'Make Moderator',
-        onPress: () => {
-          setMembers(
-            members.map((m) =>
-              m.id === member.id ? { ...m, role: 'moderator' as const } : m
-            )
-          );
-          Alert.alert('Success', `${member.name} is now a moderator`);
+        onPress: async () => {
+          try {
+            await updateGroupMemberRole(group.id, member.id, 'moderator');
+            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'moderator' as const } : m));
+            Alert.alert('Success', `${member.name} is now a moderator`);
+          } catch (error: any) {
+            Alert.alert('Error', error.backendMessage || 'Failed to update role');
+          }
         },
       });
     } else {
       actions.push({
         text: 'Remove Moderator',
-        onPress: () => {
-          setMembers(
-            members.map((m) =>
-              m.id === member.id ? { ...m, role: 'member' as const } : m
-            )
-          );
-          Alert.alert('Success', `${member.name} is no longer a moderator`);
+        onPress: async () => {
+          try {
+            await updateGroupMemberRole(group.id, member.id, 'member');
+            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'member' as const } : m));
+            Alert.alert('Success', `${member.name} is no longer a moderator`);
+          } catch (error: any) {
+            Alert.alert('Error', error.backendMessage || 'Failed to update role');
+          }
         },
       });
     }
@@ -119,25 +103,27 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
     if (member.status === 'muted') {
       actions.push({
         text: 'Unmute',
-        onPress: () => {
-          setMembers(
-            members.map((m) =>
-              m.id === member.id ? { ...m, status: 'active' as const } : m
-            )
-          );
-          Alert.alert('Success', `${member.name} has been unmuted`);
+        onPress: async () => {
+          try {
+            await unmuteGroupMember(group.id, member.id);
+            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'active' as const } : m));
+            Alert.alert('Success', `${member.name} has been unmuted`);
+          } catch (error: any) {
+            Alert.alert('Error', error.backendMessage || 'Failed to unmute member');
+          }
         },
       });
     } else {
       actions.push({
-        text: 'Mute',
-        onPress: () => {
-          setMembers(
-            members.map((m) =>
-              m.id === member.id ? { ...m, status: 'muted' as const } : m
-            )
-          );
-          Alert.alert('Success', `${member.name} has been muted`);
+        text: 'Mute (5m)',
+        onPress: async () => {
+          try {
+            await muteGroupMember(group.id, member.id, 300); // Mute for 5 minutes
+            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'muted' as const } : m));
+            Alert.alert('Success', `${member.name} has been muted`);
+          } catch (error: any) {
+            Alert.alert('Error', error.backendMessage || 'Failed to mute member');
+          }
         },
       });
     }
@@ -153,9 +139,14 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
             {
               text: 'Remove',
               style: 'destructive',
-              onPress: () => {
-                setMembers(members.filter((m) => m.id !== member.id));
-                Alert.alert('Success', `${member.name} has been removed`);
+              onPress: async () => {
+                try {
+                  await removeGroupMember(group.id, member.id);
+                  setMembers((prev) => prev.filter((m) => m.id !== member.id));
+                  Alert.alert('Success', `${member.name} has been removed`);
+                } catch (error: any) {
+                  Alert.alert('Error', error.backendMessage || 'Failed to remove member');
+                }
               },
             },
           ]
@@ -205,8 +196,8 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
                 item.status === 'active'
                   ? appColors.AppGreen + '20'
                   : item.status === 'muted'
-                  ? '#FF9800' + '20'
-                  : appColors.grey6,
+                    ? '#FF9800' + '20'
+                    : appColors.grey6,
             },
           ]}
         >
@@ -218,8 +209,8 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
                   item.status === 'active'
                     ? appColors.AppGreen
                     : item.status === 'muted'
-                    ? '#FF9800'
-                    : appColors.grey3,
+                      ? '#FF9800'
+                      : appColors.grey3,
               },
             ]}
           >

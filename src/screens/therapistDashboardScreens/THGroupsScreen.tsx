@@ -29,12 +29,25 @@ const THGroupsScreen = ({ navigation }: any) => {
       const response: any = await getGroups(therapistId);
 
       if (response?.data?.groups) {
-        setGroups(response.data.groups);
+        const mappedGroups = response.data.groups.map((g: any) => {
+          let nextSessionStr = 'No upcoming sessions';
+          if (g.nextSession && typeof g.nextSession === 'object' && g.nextSession.date) {
+            nextSessionStr = `${g.nextSession.date} at ${g.nextSession.time || ''}`;
+          } else if (typeof g.nextSession === 'string') {
+            nextSessionStr = g.nextSession;
+          }
+          return {
+            ...g,
+            nextSession: nextSessionStr
+          };
+        });
+        setGroups(mappedGroups);
       } else {
         setGroups([]);
       }
-    } catch (error) {
-      console.error('Failed to load groups:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load groups';
+      console.error('Groups Error:', errorMessage);
       setGroups([]);
     } finally {
       setLoading(false);

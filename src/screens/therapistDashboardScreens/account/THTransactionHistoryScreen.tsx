@@ -47,9 +47,9 @@ const THTransactionHistoryScreen = ({ navigation }: any) => {
       if (response?.data?.transactions) {
         setTransactions(response.data.transactions);
       }
-    } catch (error) {
-      console.error('Failed to load transactions:', error);
-      // Fallback to empty list or keep current
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load transactions';
+      console.error('Transactions Error:', errorMessage);
     } finally {
       setLoading(false);
     }

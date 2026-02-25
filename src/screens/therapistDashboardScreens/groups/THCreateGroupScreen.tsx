@@ -17,7 +17,7 @@ import { appColors, appFonts, parameters } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { useSelector } from 'react-redux';
-import { createGroup, updateGroup } from '../../../api/therapist/groups';
+import { createGroup, updateGroup } from '../../../api/therapist';
 
 const THCreateGroupScreen = ({ navigation, route }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -52,7 +52,7 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
         description: description.trim(),
         icon: selectedIcon,
         maxMembers: parseInt(maxMembers) || 20,
-        privacy: isPrivate ? 'private' : 'public',
+        privacy: isPrivate ? 'private' as const : 'public' as const,
         requireApproval: requireApproval,
         guidelines: ["Respect confidentiality", "Be supportive", "Attend regularly"] // Default guidelines
       };
@@ -68,9 +68,10 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to save group. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to save group. Please try again.';
+      console.error('Create Group Error:', errorMessage);
+      Alert.alert('Error', errorMessage);
     }
   };
 

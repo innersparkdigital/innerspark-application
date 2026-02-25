@@ -3,19 +3,19 @@
  */
 import React, { useCallback, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    Image, 
-    TouchableOpacity, 
-    Linking, 
-    Alert, 
-    Pressable, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    Linking,
+    Alert,
+    Pressable,
     ScrollView,
 
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
@@ -32,36 +32,36 @@ const appVersion = VersionInfo.appVersion;
 
 
 // Returns a touchable opacity button that opens a url on press
-const OpenURLButton = ({ url, children }) => {
+const OpenURLButton = ({ url, children }: any) => {
     const handlePress = useCallback(async () => {
-  
-      // Checking if the link is supported for links with custom URL scheme.
-      const supported = await Linking.canOpenURL(url);
-  
-      if (supported) {
-        // Opening the link with some app, if the URL scheme is "http" the web link should be opened
-        // by some browser in the mobile
-        await Linking.openURL(url);
-      } else {
-        Alert.alert(`Don't know how to open this URL: ${url}`);
-      }
-  
+
+        // Checking if the link is supported for links with custom URL scheme.
+        const supported = await Linking.canOpenURL(url);
+
+        if (supported) {
+            // Opening the link with some app, if the URL scheme is "http" the web link should be opened
+            // by some browser in the mobile
+            await Linking.openURL(url);
+        } else {
+            Alert.alert(`Don't know how to open this URL: ${url}`);
+        }
+
     }, [url]);
-  
+
     return <TouchableOpacity onPress={handlePress}>{children}</TouchableOpacity>;
 };
 
 
-export default function AboutAppScreen({ navigation }){
+export default function AboutAppScreen({ navigation }: any) {
     const toast = useToast();
 
     // Toast Notifications
-    const notifyWithToast = (description) => { toast.show({ description: description, }) }
+    const notifyWithToast = (description: any) => { toast.show({ description: description, }) }
 
-    return(
+    return (
         <SafeAreaView style={styles.container}>
             {/* Custom Header */}
-            <ISGenericHeader 
+            <ISGenericHeader
                 navigation={navigation}
                 title="About"
             />
@@ -69,11 +69,11 @@ export default function AboutAppScreen({ navigation }){
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Hero Section */}
                 <View style={styles.heroSection}>
-                    <View style={{ margin:20 }}>  
+                    <View style={{ margin: 20 }}>
                         <View style={styles.logoContainer}>
-                            <Image 
-                                style={styles.logoImage} 
-                                source={appImages.logoRecBlue} 
+                            <Image
+                                style={styles.logoImage}
+                                source={appImages.logoRecBlue}
                             />
                         </View>
                         <View style={styles.descriptionCard}>
@@ -87,7 +87,7 @@ export default function AboutAppScreen({ navigation }){
                 {/* Quick Actions */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Quick Actions</Text>
-                    
+
                     <OpenURLButton url={appLinks.appWebsite}>
                         <View style={styles.actionRow}>
                             <View style={styles.actionIconContainer}>
@@ -159,10 +159,8 @@ export default function AboutAppScreen({ navigation }){
                 </View>
 
 
-                {/* App Version */}
                 <View style={styles.versionContainer}>
                     <Text style={styles.versionText}>Innerspark v{appVersion}</Text>
-                    <Text style={styles.buildText}>Build 2024.03.001</Text>
                 </View>
 
                 <View style={styles.bottomSpacing} />

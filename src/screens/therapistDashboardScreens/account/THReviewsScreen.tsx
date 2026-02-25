@@ -39,44 +39,48 @@ const THReviewsScreen = ({ navigation }: any) => {
   const [replyText, setReplyText] = useState('');
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadReviews();
-  }, []);
+  }, [selectedFilter]);
 
   const loadReviews = async () => {
     try {
       setLoading(true);
       const therapistId = userDetails?.id || '52863268761';
-      const response: any = await getReviews(therapistId);
+      // If we want to use the API filter, we pass rating: selectedFilter !== 'all' ? selectedFilter : undefined
+      const filters = selectedFilter !== 'all' ? { rating: parseInt(selectedFilter) as 1 | 2 | 3 | 4 | 5 } : {};
+      const response: any = await getReviews(therapistId, filters);
 
-      if (response?.data?.reviews) {
-        setReviews(response.data.reviews);
+      if (response?.data) {
+        if (response.data.reviews) setReviews(response.data.reviews);
+        if (response.data.summary) setSummary(response.data.summary);
       }
-    } catch (error) {
-      console.error('Failed to load reviews:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load reviews';
+      console.error('Reviews Error:', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const ratingDistribution = [
-    { stars: 5, count: 42, percentage: 84 },
-    { stars: 4, count: 6, percentage: 12 },
-    { stars: 3, count: 2, percentage: 4 },
-    { stars: 2, count: 0, percentage: 0 },
-    { stars: 1, count: 0, percentage: 0 },
-  ];
+  // Compute safe UI fallbacks for summary
+  const averageRating = summary?.averageRating || 0;
+  const totalReviews = summary?.totalReviews || 0;
+  const dist = summary?.distribution || { "5": 0, "4": 0, "3": 0, "2": 0, "1": 0 };
 
-  const totalReviews = ratingDistribution.reduce((sum, item) => sum + item.count, 0);
-  const averageRating = 4.9;
+  const ratingDistribution = [5, 4, 3, 2, 1].map(stars => ({
+    stars,
+    count: dist[stars.toString()] || 0,
+    percentage: totalReviews > 0 ? Math.round(((dist[stars.toString()] || 0) / totalReviews) * 100) : 0
+  }));
 
   const filteredReviews = reviews.filter((review) => {
-    const matchesFilter = selectedFilter === 'all' || review.rating === parseInt(selectedFilter);
     const matchesSearch = review.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.clientName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
   const handleReply = (reviewId: string) => {

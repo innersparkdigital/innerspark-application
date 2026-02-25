@@ -30,26 +30,43 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
         // Fetch group details
         const groupResponse: any = await getGroupById(group.id, therapistId);
         if (groupResponse?.data) {
-          setGroupDetails({ ...groupDetails, ...groupResponse.data });
+          const apiGroup = groupResponse.data;
+
+          let nextSessionStr = 'No upcoming sessions';
+          if (apiGroup.nextSession && typeof apiGroup.nextSession === 'object' && apiGroup.nextSession.date) {
+            nextSessionStr = `${apiGroup.nextSession.date} at ${apiGroup.nextSession.time || ''}`;
+          } else if (typeof apiGroup.nextSession === 'string') {
+            nextSessionStr = apiGroup.nextSession;
+          }
+
+          setGroupDetails({
+            ...groupDetails,
+            ...apiGroup,
+            nextSession: nextSessionStr
+          });
+
+          if (apiGroup.sessions && Array.isArray(apiGroup.sessions)) {
+            setSessions(apiGroup.sessions);
+          }
+          if (apiGroup.members && Array.isArray(apiGroup.members)) {
+            setMembers(apiGroup.members);
+          }
         }
 
-        // Fetch members (if API supports separate call, or it comes with group)
-        // Check if api provides getGroupMembers
+        // Fetch members if not included in group profile
         try {
           const membersResponse: any = await getGroupMembers(group.id, therapistId);
           if (membersResponse?.data?.members) {
             setMembers(membersResponse.data.members);
           }
-        } catch (e) { console.log('Members fetch fallback'); }
+        } catch (e) {
+          console.log('Members fetch fallback or not implemented');
+        }
 
-        // Mock sessions for now if API doesn't provide them yet
-        setSessions([
-          { id: '1', date: 'Today, 3:00 PM', topic: 'Managing Anxiety Triggers', duration: '60 min', status: 'upcoming' },
-          { id: '2', date: 'Jan 18, 2:00 PM', topic: 'Breathing Techniques', duration: '60 min', status: 'completed' },
-        ]);
       }
-    } catch (error) {
-      console.error('Failed to load group details:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load group details';
+      console.error('Group Details Error:', errorMessage);
     } finally {
       setLoading(false);
     }

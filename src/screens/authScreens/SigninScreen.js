@@ -62,14 +62,15 @@ export default function SigninScreen({ navigation }) {
 
     // Therapist Test Data 
     const therapistTestData = {
-        userId: 'TestTherapist-001',
-        firstName: 'Hellen',
-        lastName: 'Mugyenyi',
-        email: 'therapist@innerspark.test',
-        phone: '+256700111222',
+        userId: '79784672620',
+        firstName: 'Isabella',
+        lastName: 'Nakato',
+        email: "isabella.nak@juakaly.com",
+        phone: '+256702211671',
         role: 'therapist',
         email_verified: 1,
         phone_verified: 1,
+        profileImage: null,
     };
 
     // Toggle Password Handler

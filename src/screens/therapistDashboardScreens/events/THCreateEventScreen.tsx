@@ -19,7 +19,7 @@ import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
-import { createEvent, updateEvent } from '../../../api/therapist/events';
+import { createEvent, updateEvent } from '../../../api/therapist';
 
 const THCreateEventScreen = ({ navigation, route }: any) => {
     const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -96,9 +96,10 @@ const THCreateEventScreen = ({ navigation, route }: any) => {
                     { text: 'OK', onPress: () => navigation.goBack() }
                 ]);
             }
-        } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'Failed to save event');
+        } catch (error: any) {
+            const errorMessage = error.backendMessage || error.message || 'Failed to save event';
+            console.error('Create Event Error:', errorMessage);
+            Alert.alert('Error', errorMessage);
         }
     };
 

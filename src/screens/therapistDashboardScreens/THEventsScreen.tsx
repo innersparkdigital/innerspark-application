@@ -42,8 +42,9 @@ const THEventsScreen = ({ navigation }: any) => {
             } else {
                 setEvents([]);
             }
-        } catch (error) {
-            console.error('Failed to load events:', error);
+        } catch (error: any) {
+            const errorMessage = error.backendMessage || error.message || 'Failed to load events';
+            console.error('Events Error:', errorMessage);
             setEvents([]);
         } finally {
             setLoading(false);

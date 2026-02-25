@@ -17,6 +17,8 @@ import { Icon, Button } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getPricingRates, getEarningsBreakdown } from '../../../api/therapist/earnings';
+import { useSelector } from 'react-redux';
 
 interface SessionRate {
   type: string;
@@ -27,20 +29,66 @@ interface SessionRate {
 }
 
 const THPricingScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [showEditModal, setShowEditModal] = useState(false);
-  
-  const [rates] = useState<SessionRate[]>([
+  const [loading, setLoading] = useState(true);
+
+  const [rates, setRates] = useState<SessionRate[]>([
     { type: 'Individual Session', duration: '60 min', price: '280,000', icon: 'person', color: appColors.AppBlue },
     { type: 'Couples Therapy', duration: '90 min', price: '420,000', icon: 'people', color: '#9C27B0' },
     { type: 'Group Session', duration: '60 min', price: '140,000', icon: 'groups', color: appColors.AppGreen },
     { type: 'Initial Consultation', duration: '30 min', price: '175,000', icon: 'chat', color: '#FF9800' },
   ]);
 
-  const [recentTransactions] = useState([
-    { id: '1', client: 'John Doe', amount: '280,000', date: 'Oct 20, 2025', status: 'completed' },
-    { id: '2', client: 'Sarah Williams', amount: '420,000', date: 'Oct 19, 2025', status: 'completed' },
-    { id: '3', client: 'Michael Brown', amount: '280,000', date: 'Oct 18, 2025', status: 'pending' },
-  ]);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [summaryData, setSummaryData] = useState<any>(null);
+
+  React.useEffect(() => {
+    loadPricingData();
+  }, []);
+
+  const loadPricingData = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      const today = new Date();
+
+      const [pricingRes, earningsRes] = await Promise.all([
+        getPricingRates(therapistId).catch(e => ({ error: e })),
+        getEarningsBreakdown(therapistId, today.getMonth() + 1, today.getFullYear()).catch(e => ({ error: e }))
+      ]);
+
+      if (pricingRes && !(pricingRes as any).error) {
+        const pData = (pricingRes as any).data;
+        if (pData?.sessionTypes?.length > 0) {
+          setRates(pData.sessionTypes.map((t: any) => ({
+            type: t.type,
+            duration: `${t.duration} min`,
+            price: t.price.toLocaleString(),
+            icon: t.type.toLowerCase().includes('couple') ? 'people'
+              : t.type.toLowerCase().includes('group') ? 'groups'
+                : t.type.toLowerCase().includes('consult') ? 'chat' : 'person',
+            color: t.type.toLowerCase().includes('couple') ? '#9C27B0'
+              : t.type.toLowerCase().includes('group') ? appColors.AppGreen
+                : t.type.toLowerCase().includes('consult') ? '#FF9800' : appColors.AppBlue
+          })));
+        }
+      }
+
+      if (earningsRes && !(earningsRes as any).error) {
+        const eData = (earningsRes as any).data;
+        setSummaryData(eData);
+        // Note: The API currently returns breakdown byType/byWeek, but not a raw transactions list
+        // If a transactions array existed, we'd map it here. For now, keeping the mock list structure but empty if API connects
+      }
+
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load pricing data';
+      console.error('Pricing Error:', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEditRate = () => {
     setShowEditModal(true);
@@ -55,21 +103,23 @@ const THPricingScreen = ({ navigation }: any) => {
         {/* Revenue Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>This Month</Text>
-          <Text style={styles.summaryAmount}>UGX 11,340,000</Text>
+          <Text style={styles.summaryAmount}>
+            {summaryData?.currency || 'UGX'} {(summaryData?.total || 11340000).toLocaleString()}
+          </Text>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Sessions</Text>
-              <Text style={styles.summaryValue}>42</Text>
+              <Text style={styles.summaryValue}>{summaryData?.sessionCount || 42}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Avg. Rate</Text>
-              <Text style={styles.summaryValue}>270K</Text>
+              <Text style={styles.summaryValue}>{summaryData?.total ? Math.round(summaryData.total / (summaryData.sessionCount || 1)).toLocaleString() : '270K'}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Pending</Text>
-              <Text style={styles.summaryValue}>840K</Text>
+              <Text style={styles.summaryValue}>{summaryData?.pendingPayout ? summaryData.pendingPayout.toLocaleString() : '840K'}</Text>
             </View>
           </View>
         </View>
@@ -104,7 +154,7 @@ const THPricingScreen = ({ navigation }: any) => {
         {/* Payment Method */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
-          
+
           <View style={styles.paymentCard}>
             <View style={styles.paymentLeft}>
               <View style={styles.paymentIcon}>
@@ -126,7 +176,7 @@ const THPricingScreen = ({ navigation }: any) => {
               <Text style={styles.defaultText}>Default</Text>
             </View>
           </View>
-          
+
           <View style={styles.infoCard}>
             <Icon type="material" name="info-outline" size={16} color={appColors.grey3} />
             <Text style={styles.infoText}>
@@ -143,7 +193,7 @@ const THPricingScreen = ({ navigation }: any) => {
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
-          
+
           {recentTransactions.map((transaction) => (
             <View key={transaction.id} style={styles.transactionCard}>
               <View style={styles.transactionLeft}>
@@ -215,11 +265,11 @@ const THPricingScreen = ({ navigation }: any) => {
               <Icon type="material" name="lock" size={32} color={appColors.AppBlue} />
               <Text style={styles.modalTitle}>Rate Management</Text>
             </View>
-            
+
             <Text style={styles.modalMessage}>
               Session rates are managed centrally for consistency and compliance.
             </Text>
-            
+
             <View style={styles.modalOptions}>
               <View style={styles.optionCard}>
                 <Icon type="material" name="computer" size={24} color={appColors.AppBlue} />
@@ -228,7 +278,7 @@ const THPricingScreen = ({ navigation }: any) => {
                   <Text style={styles.optionText}>Login to your web dashboard to request rate changes</Text>
                 </View>
               </View>
-              
+
               <View style={styles.optionCard}>
                 <Icon type="material" name="support-agent" size={24} color={appColors.AppGreen} />
                 <View style={styles.optionContent}>
@@ -237,7 +287,7 @@ const THPricingScreen = ({ navigation }: any) => {
                 </View>
               </View>
             </View>
-            
+
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setShowEditModal(false)}

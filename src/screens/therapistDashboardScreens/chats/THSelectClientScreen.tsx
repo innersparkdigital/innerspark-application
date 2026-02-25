@@ -1,7 +1,7 @@
 /**
  * Therapist Select Client Screen - Choose a client to start a conversation
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getClients } from '../../../api/therapist';
 
 interface Client {
   id: string;
@@ -27,75 +29,43 @@ interface Client {
 }
 
 const THSelectClientScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [searchQuery, setSearchQuery] = useState('');
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock clients data
-  const [clients] = useState<Client[]>([
-    {
-      id: '1',
-      name: 'John Doe',
-      avatar: '👨',
-      lastSession: '2 days ago',
-      status: 'active',
-      hasExistingChat: true,
-    },
-    {
-      id: '2',
-      name: 'Sarah Williams',
-      avatar: '👩',
-      lastSession: '1 week ago',
-      status: 'active',
-      hasExistingChat: true,
-    },
-    {
-      id: '3',
-      name: 'Michael Brown',
-      avatar: '👨‍💼',
-      lastSession: '3 days ago',
-      status: 'active',
-      hasExistingChat: true,
-    },
-    {
-      id: '4',
-      name: 'Emily Chen',
-      avatar: '👩‍💼',
-      lastSession: '5 days ago',
-      status: 'active',
-      hasExistingChat: true,
-    },
-    {
-      id: '5',
-      name: 'David Martinez',
-      avatar: '👨‍🦱',
-      lastSession: '1 week ago',
-      status: 'active',
-      hasExistingChat: true,
-    },
-    {
-      id: '6',
-      name: 'Lisa Anderson',
-      avatar: '👩‍🦰',
-      lastSession: '2 weeks ago',
-      status: 'active',
-      hasExistingChat: false,
-    },
-    {
-      id: '7',
-      name: 'James Wilson',
-      avatar: '👨‍🦳',
-      lastSession: '3 weeks ago',
-      status: 'inactive',
-      hasExistingChat: false,
-    },
-    {
-      id: '8',
-      name: 'Maria Garcia',
-      avatar: '👩‍🦱',
-      lastSession: '1 month ago',
-      status: 'inactive',
-      hasExistingChat: false,
-    },
-  ]);
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      // Fetch active clients from the clients API
+      const res: any = await getClients(therapistId, { status: 'active' });
+
+      if (res?.data?.clients) {
+        const mappedClients: Client[] = res.data.clients.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          avatar: c.avatar || '�',
+          lastSession: c.lastSessionDate ? new Date(c.lastSessionDate).toLocaleDateString() : 'No previous session',
+          status: c.status || 'active',
+          hasExistingChat: false // In a real app we might cross-reference active chats here, but default to false to allow starting new conversation
+        }));
+        setClients(mappedClients);
+      } else {
+        setClients([]);
+      }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load clients';
+      console.error('Clients API Error:', errorMessage);
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(searchQuery.toLowerCase())

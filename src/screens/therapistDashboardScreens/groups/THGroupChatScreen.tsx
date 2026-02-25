@@ -63,7 +63,10 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
       if (res?.data?.messages) {
         setMessages(res.data.messages);
       }
-    } catch (e) { console.error(e); }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load messages';
+      console.error('Group Messages Error:', errorMessage);
+    }
     finally { setLoading(false); }
   };
 
@@ -86,9 +89,10 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
         await sendGroupMessage(group.id, therapistId, content);
         // Refresh messages (or ideally socket push)
         loadMessages();
-      } catch (e) {
-        console.error(e);
-        Alert.alert('Error', 'Failed to send message');
+      } catch (error: any) {
+        const errorMessage = error.backendMessage || error.message || 'Failed to send message';
+        console.error('Send Message Error:', errorMessage);
+        Alert.alert('Error', errorMessage);
       }
     }
   };
@@ -107,9 +111,10 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
 
         await sendAnnouncement(group.id, therapistId, content);
         loadMessages();
-      } catch (e) {
-        console.error(e);
-        Alert.alert('Error', 'Failed to send announcement');
+      } catch (error: any) {
+        const errorMessage = error.backendMessage || error.message || 'Failed to send announcement';
+        console.error('Announcement Error:', errorMessage);
+        Alert.alert('Error', errorMessage);
       }
     }
   };
@@ -148,9 +153,10 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
               if (group?.id) {
                 await deleteGroupMessage(group.id, messageId, therapistId);
               }
-            } catch (e) {
-              console.error(e);
-              Alert.alert('Error', 'Failed to delete message');
+            } catch (error: any) {
+              const errorMessage = error.backendMessage || error.message || 'Failed to delete message';
+              console.error('Delete Message Error:', errorMessage);
+              Alert.alert('Error', errorMessage);
               loadMessages();
             }
           },

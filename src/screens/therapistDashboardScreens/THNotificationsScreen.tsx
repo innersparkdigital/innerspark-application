@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
@@ -32,8 +33,9 @@ const THNotificationsScreen = ({ navigation }: any) => {
       } else {
         setNotifications([]);
       }
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load notifications';
+      console.error('Failed to load notifications:', errorMessage);
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -54,8 +56,9 @@ const THNotificationsScreen = ({ navigation }: any) => {
         notif.id === id ? { ...notif, read: true } : notif
       ));
       await markNotificationAsRead(id, therapistId);
-    } catch (error) {
-      console.error('Failed to mark notification read:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to mark notification read';
+      console.error('Failed to mark notification read:', errorMessage);
       // Revert or show error if needed, but for read status silent fail is often acceptable
     }
   };
@@ -66,9 +69,27 @@ const THNotificationsScreen = ({ navigation }: any) => {
       // Optimistic update
       setNotifications(notifications.map(notif => ({ ...notif, read: true })));
       await markAllNotificationsAsRead(therapistId);
-    } catch (error) {
-      console.error('Failed to mark all read:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to mark all read';
+      console.error('Failed to mark all read:', errorMessage);
     }
+  };
+
+  const deleteNotification = (id: string) => {
+    // Optimistic remove (assuming backend handles decay or we'd add a DELETE endpoint later)
+    setNotifications(notifications.filter(notif => notif.id !== id));
+  };
+
+  const renderRightActions = (id: string) => {
+    return (
+      <TouchableOpacity
+        style={styles.deleteAction}
+        onPress={() => deleteNotification(id)}
+      >
+        <Icon type="material" name="delete-outline" size={28} color="#FFFFFF" />
+        <Text style={styles.deleteActionText}>Dismiss</Text>
+      </TouchableOpacity>
+    );
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -98,34 +119,47 @@ const THNotificationsScreen = ({ navigation }: any) => {
         {/* Notifications List */}
         <ScrollView style={styles.notificationsList} showsVerticalScrollIndicator={false}>
           {notifications.map((notification) => (
-            <TouchableOpacity
+            <Swipeable
               key={notification.id}
-              style={[
-                styles.notificationCard,
-                !notification.read && styles.notificationCardUnread
-              ]}
-              onPress={() => markAsRead(notification.id)}
+              renderRightActions={() => renderRightActions(notification.id)}
+              overshootRight={false}
+              containerStyle={styles.swipeableContainer}
             >
-              <View style={[styles.iconContainer, { backgroundColor: notification.iconColor + '20' }]}>
-                <Icon
-                  type="material"
-                  name={notification.icon}
-                  size={24}
-                  color={notification.iconColor}
-                />
-              </View>
-
-              <View style={styles.notificationContent}>
-                <View style={styles.notificationHeader}>
-                  <Text style={styles.notificationTitle}>{notification.title}</Text>
-                  {!notification.read && <View style={styles.unreadDot} />}
+              <TouchableOpacity
+                style={[
+                  styles.notificationCard,
+                  !notification.read && styles.notificationCardUnread
+                ]}
+                onPress={() => markAsRead(notification.id)}
+                activeOpacity={1}
+              >
+                <View style={[styles.iconContainer, { backgroundColor: notification.iconColor + '20' }]}>
+                  <Icon
+                    type="material"
+                    name={notification.icon}
+                    size={24}
+                    color={notification.iconColor}
+                  />
                 </View>
-                <Text style={styles.notificationMessage} numberOfLines={2}>
-                  {notification.message}
-                </Text>
-                <Text style={styles.notificationTime}>{notification.time}</Text>
-              </View>
-            </TouchableOpacity>
+
+                <View style={styles.notificationContent}>
+                  <View style={styles.notificationHeader}>
+                    <Text style={styles.notificationTitle}>{notification.title}</Text>
+                    {!notification.read && <View style={styles.unreadDot} />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.notificationMessage,
+                      !notification.read && styles.notificationMessageUnread
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {notification.message}
+                  </Text>
+                  <Text style={styles.notificationTime}>{notification.time}</Text>
+                </View>
+              </TouchableOpacity>
+            </Swipeable>
           ))}
 
           {/* Empty State */}
@@ -255,6 +289,29 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
     paddingHorizontal: 40,
+  },
+  swipeableContainer: {
+    marginBottom: 12,
+  },
+  deleteAction: {
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+    borderRadius: 12,
+  },
+  deleteActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: appFonts.bodyTextMedium,
+    marginTop: 4,
+  },
+  notificationMessageUnread: {
+    color: appColors.grey1,
+    fontWeight: '600',
+    fontFamily: appFonts.bodyTextMedium,
   },
 });
 

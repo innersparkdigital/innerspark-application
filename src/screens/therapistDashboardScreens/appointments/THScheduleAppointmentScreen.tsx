@@ -53,7 +53,9 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
       if (res?.data?.clients) {
         setClients(res.data.clients);
       }
-    } catch (e) { console.error(e); }
+    } catch (error: any) {
+      console.error('Failed to load clients:', error.backendMessage || error.message);
+    }
   };
 
   const [showClientPicker, setShowClientPicker] = useState(false);
@@ -123,9 +125,10 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to schedule appointment. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || 'Failed to schedule appointment. Please try again.';
+      Alert.alert('Error', errorMessage);
+      console.error('Schedule Error:', error);
     } finally {
       setLoading(false);
     }

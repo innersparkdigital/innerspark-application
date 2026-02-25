@@ -27,14 +27,16 @@ const THAppointmentsScreen = ({ navigation }: any) => {
       const therapistId = userDetails?.id || '52863268761';
 
       const response = await getAppointments(therapistId);
+      const resData = response?.data as any;
 
-      if (response?.data?.appointments) {
-        setAppointments(response.data.appointments);
+      if (resData?.appointments) {
+        setAppointments(resData.appointments);
       } else {
         setAppointments([]);
       }
-    } catch (error) {
-      console.error('Failed to load appointments:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load appointments';
+      console.error('Appointments Error:', errorMessage);
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -146,38 +148,58 @@ const THAppointmentsScreen = ({ navigation }: any) => {
         <View style={styles.appointmentsSection}>
           <Text style={styles.sectionTitle}>Scheduled Appointments</Text>
 
-          {filteredAppointments.map((appointment: any) => (
-            <TouchableOpacity
-              key={appointment.id}
-              style={styles.appointmentCard}
-              onPress={() => navigation.navigate('THAppointmentDetailsScreen', { appointment })}
-              activeOpacity={0.7}
-            >
-              <View style={styles.appointmentLeft}>
-                <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarEmoji}>{appointment.avatar}</Text>
-                </View>
-                <View style={styles.appointmentInfo}>
-                  <Text style={styles.clientName}>{appointment.clientName}</Text>
-                  <Text style={styles.appointmentType}>{appointment.type}</Text>
-                  <View style={styles.timeRow}>
-                    <Icon type="material" name="access-time" size={14} color={appColors.grey3} />
-                    <Text style={styles.timeText}>
-                      {appointment.date} • {appointment.time} • {appointment.duration}
-                    </Text>
+          {filteredAppointments.length === 0 && !loading ? (
+            <View style={styles.emptyStateContainer}>
+              <Icon type="material" name="event-busy" size={64} color={appColors.grey5} />
+              <Text style={styles.emptyStateTitle}>No Appointments</Text>
+              <Text style={styles.emptyStateSubtitle}>
+                {selectedFilter === 'today'
+                  ? "You don't have any appointments scheduled for today."
+                  : selectedFilter === 'upcoming'
+                    ? "You have no upcoming appointments scheduled."
+                    : "You don't have any appointments yet."}
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyStateButton}
+                onPress={() => navigation.navigate('THScheduleAppointmentScreen')}
+              >
+                <Text style={styles.emptyStateButtonText}>Schedule Session</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            filteredAppointments.map((appointment: any) => (
+              <TouchableOpacity
+                key={appointment.id}
+                style={styles.appointmentCard}
+                onPress={() => navigation.navigate('THAppointmentDetailsScreen', { appointment })}
+                activeOpacity={0.7}
+              >
+                <View style={styles.appointmentLeft}>
+                  <View style={styles.avatarContainer}>
+                    <Text style={styles.avatarEmoji}>{appointment.avatar}</Text>
+                  </View>
+                  <View style={styles.appointmentInfo}>
+                    <Text style={styles.clientName}>{appointment.clientName}</Text>
+                    <Text style={styles.appointmentType}>{appointment.type}</Text>
+                    <View style={styles.timeRow}>
+                      <Icon type="material" name="access-time" size={14} color={appColors.grey3} />
+                      <Text style={styles.timeText}>
+                        {appointment.date} • {appointment.time} • {appointment.duration}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-              <View style={styles.appointmentRight}>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(appointment.status) + '20' }]}>
-                  <Text style={[styles.statusText, { color: getStatusColor(appointment.status) }]}>
-                    {appointment.status}
-                  </Text>
+                <View style={styles.appointmentRight}>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(appointment.status) + '20' }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(appointment.status) }]}>
+                      {appointment.status}
+                    </Text>
+                  </View>
+                  <Icon type="material" name="chevron-right" size={24} color={appColors.grey3} />
                 </View>
-                <Icon type="material" name="chevron-right" size={24} color={appColors.grey3} />
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -328,6 +350,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
     textTransform: 'capitalize',
+  },
+  emptyStateContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  emptyStateButton: {
+    backgroundColor: appColors.AppBlue + '15',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: appColors.AppBlue,
+  },
+  emptyStateButtonText: {
+    color: appColors.AppBlue,
+    fontSize: 15,
+    fontWeight: 'bold',
+    fontFamily: appFonts.bodyTextBold,
   },
 });
 

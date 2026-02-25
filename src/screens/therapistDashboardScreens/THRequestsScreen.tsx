@@ -15,35 +15,16 @@ import ISStatusBar from '../../components/ISStatusBar';
 
 import { useSelector } from 'react-redux';
 import { getRequests, acceptRequest, declineRequest } from '../../api/therapist';
-const mockRequests = [
-  {
-    id: 1,
-    clientName: 'John Doe',
-    requestType: 'Chat Session',
-    description: 'Seeking support for anxiety management',
-    timestamp: '2 hours ago',
-    urgency: 'medium',
-    avatar: null,
-  },
-  {
-    id: 2,
-    clientName: 'Jane Smith',
-    requestType: 'Support Group',
-    description: 'Would like to join depression support group',
-    timestamp: '5 hours ago',
-    urgency: 'low',
-    avatar: null,
-  },
-  {
-    id: 3,
-    clientName: 'Mike Johnson',
-    requestType: 'Chat Session',
-    description: 'Urgent: Experiencing panic attacks',
-    timestamp: '30 minutes ago',
-    urgency: 'high',
-    avatar: null,
-  },
-];
+// Data Mapping helper
+const mapRequestData = (req: any) => ({
+  id: req.id,
+  clientName: req.clientName,
+  requestType: req.type, // Map 'type' to 'requestType'
+  description: req.reason, // Map 'reason' to 'description'
+  timestamp: req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'Just now', // Handle missing timestamp gracefully
+  urgency: req.urgency,
+  avatar: req.clientAvatar,
+});
 
 const THRequestsScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -61,17 +42,15 @@ const THRequestsScreen = ({ navigation }: any) => {
       const response: any = await getRequests(therapistId, { status: 'pending' });
 
       if (response?.data) {
-        // Handle both array directly or nested data
-        setRequests(Array.isArray(response.data) ? response.data : response.data.requests || []);
+        const rawArray = Array.isArray(response.data) ? response.data : response.data.requests || [];
+        setRequests(rawArray.map(mapRequestData));
       } else {
         setRequests([]);
       }
-    } catch (error) {
-      console.error('Failed to load requests:', error);
-      // Fallback to empty only, do not show mock data in production integration
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load requests';
+      console.error('Requests Error:', errorMessage);
       setRequests([]);
-    } catch (error) {
-      console.error('Failed to load requests:', error);
     } finally {
       setLoading(false);
     }
@@ -121,9 +100,10 @@ const THRequestsScreen = ({ navigation }: any) => {
               setRequests(requests.filter((r) => r.id !== requestId));
               await acceptRequest(requestId.toString(), therapistId);
               Alert.alert('Success', 'Request accepted! You can now chat with the client.');
-            } catch (e) {
-              console.error(e);
-              Alert.alert('Error', 'Failed to accept request');
+            } catch (error: any) {
+              console.error(error);
+              const errorMessage = error.backendMessage || 'Failed to accept request';
+              Alert.alert('Error', errorMessage);
               // Could revert state here if needed
               loadRequests();
             }
@@ -151,9 +131,10 @@ const THRequestsScreen = ({ navigation }: any) => {
               // Optimistic update
               setRequests(requests.filter((r) => r.id !== requestId));
               await declineRequest(requestId.toString(), therapistId);
-            } catch (e) {
-              console.error(e);
-              Alert.alert('Error', 'Failed to decline request');
+            } catch (error: any) {
+              console.error(error);
+              const errorMessage = error.backendMessage || 'Failed to decline request';
+              Alert.alert('Error', errorMessage);
               loadRequests();
             }
           },

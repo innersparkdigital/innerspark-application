@@ -1,71 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
-
-// Mock data for chats
-const mockChats = [
-  {
-    id: '1',
-    clientName: 'John Doe',
-    lastMessage: 'Thank you for the session today',
-    time: '2m ago',
-    unread: 2,
-    online: true,
-    avatar: '👨',
-  },
-  {
-    id: '2',
-    clientName: 'Sarah Williams',
-    lastMessage: 'Can we reschedule tomorrow?',
-    time: '15m ago',
-    unread: 1,
-    online: true,
-    avatar: '👩',
-  },
-  {
-    id: '3',
-    clientName: 'Michael Brown',
-    lastMessage: 'I\'ve been practicing the techniques',
-    time: '1h ago',
-    unread: 0,
-    online: false,
-    avatar: '👨‍💼',
-  },
-  {
-    id: '4',
-    clientName: 'Emily Chen',
-    lastMessage: 'Looking forward to our next session',
-    time: '3h ago',
-    unread: 0,
-    online: false,
-    avatar: '👩‍💼',
-  },
-  {
-    id: '5',
-    clientName: 'David Martinez',
-    lastMessage: 'The breathing exercises really helped',
-    time: 'Yesterday',
-    unread: 0,
-    online: false,
-    avatar: '👨‍🦱',
-  },
-];
+import { getConversations } from '../../api/therapist';
 
 const THChatsScreen = ({ navigation }: any) => {
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [searchQuery, setSearchQuery] = useState('');
+  const [chats, setChats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      const response: any = await getConversations(therapistId);
+
+      if (response?.data?.conversations) {
+        const mappedChats = response.data.conversations.map((conv: any) => ({
+          id: conv.clientId, // Required for navigation to works using the clientId
+          clientName: conv.clientName,
+          lastMessage: conv.lastMessage,
+          time: new Date(conv.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          unread: conv.unreadCount,
+          online: conv.isOnline,
+          avatar: conv.clientAvatar || '👤',
+        }));
+        setChats(mappedChats);
+      } else {
+        setChats([]);
+      }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load conversations';
+      console.error('Chats Error:', errorMessage);
+      setChats([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNewMessage = () => {
     navigation.navigate('THSelectClientScreen');
   };
 
+  // Filter based on search query
+  const filteredChats = chats.filter(chat =>
+    chat.clientName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      
+
       <ISGenericHeader
         title="Chats"
         navigation={navigation}
@@ -85,41 +79,57 @@ const THChatsScreen = ({ navigation }: any) => {
         </View>
 
         {/* Chats List */}
-        <ScrollView style={styles.chatsList} showsVerticalScrollIndicator={false}>
-          {mockChats.map((chat) => (
-            <TouchableOpacity 
-              key={chat.id} 
-              style={styles.chatCard}
-              onPress={() => navigation.navigate('THChatConversationScreen', { chat })}
-              activeOpacity={0.7}
-            >
-              <View style={styles.avatarContainer}>
-                <Text style={styles.avatarEmoji}>{chat.avatar}</Text>
-                {chat.online && <View style={styles.onlineIndicator} />}
-              </View>
+        <ScrollView
+          style={styles.chatsList}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={filteredChats.length === 0 ? styles.emptyListContent : { paddingBottom: 80 }}
+        >
+          {filteredChats.length > 0 ? (
+            filteredChats.map((chat) => (
+              <TouchableOpacity
+                key={chat.id}
+                style={styles.chatCard}
+                onPress={() => navigation.navigate('THChatConversationScreen', { chat })}
+                activeOpacity={0.7}
+              >
+                <View style={styles.avatarContainer}>
+                  <Text style={styles.avatarEmoji}>{chat.avatar}</Text>
+                  {chat.online && <View style={styles.onlineIndicator} />}
+                </View>
 
-              <View style={styles.chatInfo}>
-                <View style={styles.chatHeader}>
-                  <Text style={styles.clientName}>{chat.clientName}</Text>
-                  <Text style={styles.timeText}>{chat.time}</Text>
+                <View style={styles.chatInfo}>
+                  <View style={styles.chatHeader}>
+                    <Text style={styles.clientName}>{chat.clientName}</Text>
+                    <Text style={styles.timeText}>{chat.time}</Text>
+                  </View>
+                  <View style={styles.messageRow}>
+                    <Text style={styles.lastMessage} numberOfLines={1}>
+                      {chat.lastMessage}
+                    </Text>
+                    {chat.unread > 0 && (
+                      <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadText}>{chat.unread}</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
-                <View style={styles.messageRow}>
-                  <Text style={styles.lastMessage} numberOfLines={1}>
-                    {chat.lastMessage}
-                  </Text>
-                  {chat.unread > 0 && (
-                    <View style={styles.unreadBadge}>
-                      <Text style={styles.unreadText}>{chat.unread}</Text>
-                    </View>
-                  )}
-                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            !loading ? (
+              <View style={styles.emptyStateContainer}>
+                <Icon type="material" name="chat-bubble-outline" size={60} color={appColors.grey4} />
+                <Text style={styles.emptyStateTitle}>No Conversations</Text>
+                <Text style={styles.emptyStateText}>
+                  {searchQuery.trim() ? "No chats match your search." : "You don't have any active conversations. Start a new chat to connect with your clients."}
+                </Text>
               </View>
-            </TouchableOpacity>
-          ))}
+            ) : null
+          )}
         </ScrollView>
 
         {/* Floating Action Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.fab}
           onPress={handleNewMessage}
           activeOpacity={0.8}
@@ -262,6 +272,30 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+  },
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontFamily: appFonts.headerTextBold,
+    color: appColors.grey2,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontFamily: appFonts.bodyTextRegular,
+    color: appColors.grey3,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

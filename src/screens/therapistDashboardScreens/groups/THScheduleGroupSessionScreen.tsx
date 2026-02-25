@@ -18,10 +18,12 @@ import DatePicker from 'react-native-date-picker';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { scheduleGroupSession } from '../../../api/therapist';
 
 const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
   const { group } = route.params;
 
+  const [isLoading, setIsLoading] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -29,7 +31,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
   const [maxParticipants, setMaxParticipants] = useState(group.members?.toString() || '20');
   const [sessionType, setSessionType] = useState<'in-person' | 'virtual' | 'hybrid'>('virtual');
   const [meetingLink, setMeetingLink] = useState('');
-  
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
@@ -41,23 +43,23 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
   ];
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
-  const handleSchedule = () => {
+  const handleSchedule = async () => {
     if (!sessionTitle.trim()) {
       Alert.alert('Missing Information', 'Please enter a session title');
       return;
@@ -68,16 +70,38 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
       return;
     }
 
-    Alert.alert(
-      'Session Scheduled',
-      `${sessionTitle} has been scheduled for ${formatDate(selectedDate)} at ${formatTime(selectedDate)}`,
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]
-    );
+    setIsLoading(true);
+    try {
+      const sessionData = {
+        date: selectedDate.toISOString().split('T')[0],
+        time: selectedDate.toTimeString().split(' ')[0],
+        topic: sessionTitle.trim(),
+        description: sessionDescription.trim(),
+        duration: parseInt(duration),
+        type: sessionType,
+        meetingLink: meetingLink.trim(),
+        maxParticipants: parseInt(maxParticipants)
+      };
+
+      await scheduleGroupSession(group.id, sessionData);
+
+      Alert.alert(
+        'Session Scheduled',
+        `${sessionTitle} has been scheduled for ${formatDate(selectedDate)} at ${formatTime(selectedDate)}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to schedule session';
+      console.error('Schedule Session Error:', errorMessage);
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -135,7 +159,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
               <Icon type="material" name="calendar-today" size={20} color={appColors.AppBlue} />
               <Text style={styles.dateTimeText}>{formatDate(selectedDate)}</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={styles.dateTimeButton}
               onPress={() => setShowTimePicker(true)}
@@ -168,9 +192,9 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
                 key={type.id}
                 style={[
                   styles.typeButton,
-                  sessionType === type.id && { 
+                  sessionType === type.id && {
                     backgroundColor: type.color + '20',
-                    borderColor: type.color 
+                    borderColor: type.color
                   }
                 ]}
                 onPress={() => setSessionType(type.id)}
@@ -233,10 +257,11 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
       {/* Schedule Button */}
       <View style={styles.footer}>
         <Button
-          title="Schedule Session"
+          title={isLoading ? 'Scheduling...' : 'Schedule Session'}
           buttonStyle={styles.scheduleButton}
           titleStyle={styles.scheduleButtonText}
           onPress={handleSchedule}
+          disabled={isLoading}
         />
       </View>
 
@@ -252,7 +277,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Select Date</Text>
             </View>
-            
+
             <DatePicker
               date={selectedDate}
               onDateChange={setSelectedDate}
@@ -260,7 +285,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
               minimumDate={new Date()}
               theme="light"
             />
-            
+
             <View style={styles.pickerButtons}>
               <TouchableOpacity
                 style={[styles.pickerButton, styles.cancelButton]}
@@ -291,7 +316,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Select Time</Text>
             </View>
-            
+
             <DatePicker
               date={selectedDate}
               onDateChange={setSelectedDate}
@@ -299,7 +324,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
               minuteInterval={15}
               theme="light"
             />
-            
+
             <View style={styles.pickerButtons}>
               <TouchableOpacity
                 style={[styles.pickerButton, styles.cancelButton]}
@@ -330,7 +355,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
             <View style={styles.pickerHeader}>
               <Text style={styles.pickerTitle}>Session Duration</Text>
             </View>
-            
+
             <ScrollView style={styles.durationList}>
               {['30', '45', '60', '90', '120'].map((mins) => (
                 <TouchableOpacity

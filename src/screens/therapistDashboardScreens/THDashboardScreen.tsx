@@ -19,6 +19,15 @@ const THDashboardScreen = ({ navigation }: any) => {
     loadDashboardData();
   }, []);
 
+  // Normalize backend response to flat shape the UI expects
+  const normalizeStats = (data: any) => ({
+    todayAppointments: data?.todayAppointments ?? data?.appointments?.today ?? 0,
+    pendingRequests: data?.pendingRequests ?? data?.requests?.pending ?? 0,
+    activeGroups: data?.activeGroups ?? data?.groups?.active ?? 0,
+    unreadMessages: data?.unreadMessages ?? data?.messages?.unread ?? 0,
+    totalClients: data?.totalClients ?? data?.clients?.total ?? 0,
+  });
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -27,12 +36,15 @@ const THDashboardScreen = ({ navigation }: any) => {
       const response = await getDashboardStats(therapistId);
 
       if (response?.data) {
-        setDashboardStats(response.data);
+        setDashboardStats(normalizeStats(response.data));
+      } else {
+        setDashboardStats(normalizeStats({}));
       }
-    } catch (error) {
-      console.error('Failed to load dashboard stats:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load dashboard stats';
+      console.error('Dashboard Stats Error:', errorMessage);
       // Keep showing UI with zero values on error
-      setDashboardStats({});
+      setDashboardStats(normalizeStats({}));
     } finally {
       setLoading(false);
     }

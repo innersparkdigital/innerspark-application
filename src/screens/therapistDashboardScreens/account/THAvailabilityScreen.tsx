@@ -105,10 +105,21 @@ const THAvailabilityScreen = ({ navigation }: any) => {
       const today = new Date().toISOString().split('T')[0];
       const scheduleRes: any = await getWeeklyAvailability(therapistId, today);
       if (scheduleRes?.data?.days) {
-        // Transform API days object (monday, tuesday...) to array format
-        // This is a simplification; in a real app, we'd map this carefully
-        // For now, we'll keep the default schedule if API returns generic structure
-        // But we mark enabled status
+        const d = scheduleRes.data.days;
+        const mappedSchedule = [
+          { day: 'Monday', enabled: d.monday?.length > 0, startTime: d.monday?.[0]?.startTime || '09:00 AM', endTime: d.monday?.[0]?.endTime || '05:00 PM' },
+          { day: 'Tuesday', enabled: d.tuesday?.length > 0, startTime: d.tuesday?.[0]?.startTime || '09:00 AM', endTime: d.tuesday?.[0]?.endTime || '05:00 PM' },
+          { day: 'Wednesday', enabled: d.wednesday?.length > 0, startTime: d.wednesday?.[0]?.startTime || '09:00 AM', endTime: d.wednesday?.[0]?.endTime || '05:00 PM' },
+          { day: 'Thursday', enabled: d.thursday?.length > 0, startTime: d.thursday?.[0]?.startTime || '09:00 AM', endTime: d.thursday?.[0]?.endTime || '05:00 PM' },
+          { day: 'Friday', enabled: d.friday?.length > 0, startTime: d.friday?.[0]?.startTime || '09:00 AM', endTime: d.friday?.[0]?.endTime || '05:00 PM' },
+          { day: 'Saturday', enabled: d.saturday?.length > 0, startTime: d.saturday?.[0]?.startTime || '10:00 AM', endTime: d.saturday?.[0]?.endTime || '02:00 PM' },
+          { day: 'Sunday', enabled: d.sunday?.length > 0, startTime: d.sunday?.[0]?.startTime || '10:00 AM', endTime: d.sunday?.[0]?.endTime || '02:00 PM' },
+        ];
+
+        // Only set if we actually got days back to avoid overriding good defaults with emptiness
+        if (Object.values(d).some((arr: any) => arr && arr.length > 0)) {
+          setSchedule(mappedSchedule);
+        }
       }
 
       // 3. Get Time Off (Blocked Slots)
@@ -124,8 +135,9 @@ const THAvailabilityScreen = ({ navigation }: any) => {
         // Group consecutive dates if needed, or just display list
         setTimeOffPeriods(blocks);
       }
-    } catch (e) {
-      console.error('Failed to load availability:', e);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load availability';
+      console.error('Failed to load availability:', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -222,19 +234,19 @@ const THAvailabilityScreen = ({ navigation }: any) => {
       });
 
       // 2. Save Schedule
-      // Transform schedule array to API format slots or just send the structure
-      // For this demo, we assume bulkUpdateAvailability handles the logic
       const slotsToSave = schedule.filter(d => d.enabled).map(d => ({
-        day: d.day.toLowerCase(),
-        startTime: d.startTime, // Ensure format matches API expected (HH:MM)
+        date: d.day, // The API bulk update accepts date or day mapping
+        startTime: d.startTime,
         endTime: d.endTime
       }));
-      await bulkUpdateAvailability(therapistId, slotsToSave);
 
+      await bulkUpdateAvailability(therapistId, slotsToSave);
       setShowSaveModal(true);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save changes');
-      console.error(e);
+
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to save changes';
+      Alert.alert('Error', errorMessage);
+      console.error('Save Availability Error:', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -683,7 +695,11 @@ const THAvailabilityScreen = ({ navigation }: any) => {
                       newPeriod.id = res.data.id || newPeriod.id;
                       setTimeOffPeriods(prev => [...prev, newPeriod]);
                     }
-                  }).catch(e => console.error(e));
+                  }).catch((error: any) => {
+                    const errorMessage = error.backendMessage || error.message || 'Failed to block time';
+                    Alert.alert('Error', errorMessage);
+                    console.error('Block Time Error:', errorMessage);
+                  });
 
                   // Optimistic update
                   setTimeOffPeriods(prev => [...prev, newPeriod]);
@@ -714,9 +730,10 @@ const THAvailabilityScreen = ({ navigation }: any) => {
               .then(() => {
                 setTimeOffPeriods(timeOffPeriods.filter(p => p.id !== periodToDelete));
               })
-              .catch(e => {
-                // Optimistic delete or show error
-                Alert.alert('Error', 'Failed to remove time off');
+              .catch((error: any) => {
+                const errorMessage = error.backendMessage || error.message || 'Failed to remove time off';
+                Alert.alert('Error', errorMessage);
+                console.error('Unblock Time Error:', errorMessage);
               });
           }
           setShowDeleteModal(false);

@@ -24,7 +24,7 @@ export * from './events';
 export * from './groups';
 
 // Group Members
-export * from './groupMembers';
+// (consolidated into groups.js to prevent duplicate getGroupMembers export collision)
 
 // Session Notes
 export * from './sessionNotes';

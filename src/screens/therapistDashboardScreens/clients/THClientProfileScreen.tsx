@@ -42,13 +42,20 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
       if (client?.id) {
         const response: any = await getClientProfile(client.id, therapistId);
         if (response?.data) {
-          if (response.data.client) setClientDetails({ ...clientDetails, ...response.data.client });
+          // Map properties gracefully from response.data directly
+          setClientDetails({
+            ...clientDetails,
+            ...response.data,
+            phone: response.data.phoneNumber || response.data.phone || clientDetails.phone,
+            age: response.data.age || clientDetails.age || 'N/A'
+          });
           if (response.data.sessions) setSessions(response.data.sessions);
           if (response.data.notes) setNotes(response.data.notes);
         }
       }
-    } catch (error) {
-      console.error('Failed to load client profile:', error);
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load client profile';
+      console.error('Client Profile Error:', errorMessage);
     } finally {
       setLoading(false);
     }

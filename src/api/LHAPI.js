@@ -16,7 +16,7 @@ export const baseUrlV1 = API_VERSION; // API Version
 export const authToken = AUTH_TOKEN; // API Auth Token
 
 // Main API instance for versioned endpoints (/api/v1/*)
-export const APIInstance = axios.create({ 
+export const APIInstance = axios.create({
     baseURL: baseUrlRoot + baseUrlV1,
     timeout: 30000, // 30 second timeout to prevent 524 errors
     headers: {
@@ -77,22 +77,35 @@ APIInstance.interceptors.request.use(
 APIInstance.interceptors.response.use(
     (response) => response,
     (error) => {
+        // Handle custom backend errors
+        if (error.response && error.response.data) {
+            const backendData = error.response.data;
+            if (backendData.message) {
+                error.backendMessage = backendData.message;
+            }
+            if (backendData.success !== undefined) {
+                error.isBackendError = !backendData.success;
+            }
+        }
+
         // Handle common errors globally
         if (error.response) {
             const { status } = error.response;
-            
+
             if (status === 401) {
                 console.error('Unauthorized - Token may be invalid');
                 // TODO: Redirect to login or refresh token
             } else if (status === 403) {
                 console.error('Forbidden - Access denied');
+            } else if (status === 404) {
+                console.error(`Not Found - ${error.backendMessage || 'Resource does not exist'}`);
             } else if (status === 500) {
                 console.error('Server Error - Please try again later');
             }
         } else if (error.request) {
             console.error('Network Error - No response received');
         }
-        
+
         return Promise.reject(error);
     }
 );
@@ -117,22 +130,35 @@ AuthInstance.interceptors.request.use(
 AuthInstance.interceptors.response.use(
     (response) => response,
     (error) => {
+        // Handle custom backend errors
+        if (error.response && error.response.data) {
+            const backendData = error.response.data;
+            if (backendData.message) {
+                error.backendMessage = backendData.message;
+            }
+            if (backendData.success !== undefined) {
+                error.isBackendError = !backendData.success;
+            }
+        }
+
         // Handle common errors globally
         if (error.response) {
             const { status } = error.response;
-            
+
             if (status === 401) {
                 console.error('Unauthorized - Token may be invalid');
             } else if (status === 403) {
                 console.error('Forbidden - Access denied');
+            } else if (status === 404) {
+                console.error(`Not Found - ${error.backendMessage || 'Resource does not exist'}`);
             } else if (status === 500) {
                 console.error('Server Error - Please try again later');
             }
         } else if (error.request) {
             console.error('Network Error - No response received');
         }
-        
+
         return Promise.reject(error);
     }
 );
- 
+

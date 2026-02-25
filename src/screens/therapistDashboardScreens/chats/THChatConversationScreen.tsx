@@ -1,77 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TextInput, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import { getChatMessages, sendMessage, markChatAsRead } from '../../../api/therapist';
 
 const THChatConversationScreen = ({ navigation, route }: any) => {
   const { chat } = route.params || {};
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      text: 'Hi Dr. Smith, I wanted to follow up on our last session.',
-      sender: 'client',
-      timestamp: '10:30 AM',
-      date: 'Today',
-    },
-    {
-      id: '2',
-      text: 'Hello! Of course, how have you been feeling since then?',
-      sender: 'therapist',
-      timestamp: '10:32 AM',
-      date: 'Today',
-    },
-    {
-      id: '3',
-      text: 'I\'ve been practicing the breathing exercises you taught me.',
-      sender: 'client',
-      timestamp: '10:33 AM',
-      date: 'Today',
-    },
-    {
-      id: '4',
-      text: 'They really help when I feel anxious.',
-      sender: 'client',
-      timestamp: '10:33 AM',
-      date: 'Today',
-    },
-    {
-      id: '5',
-      text: 'That\'s wonderful to hear! I\'m glad the techniques are working for you. Have you noticed any patterns in when the anxiety occurs?',
-      sender: 'therapist',
-      timestamp: '10:35 AM',
-      date: 'Today',
-    },
-    {
-      id: '6',
-      text: 'Usually in the mornings before work.',
-      sender: 'client',
-      timestamp: '10:36 AM',
-      date: 'Today',
-    },
-    {
-      id: '7',
-      text: 'Thank you for the session today',
-      sender: 'client',
-      timestamp: '2m ago',
-      date: 'Today',
-    },
-  ]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    loadMessages();
+    // Optional: mark chat as read when opening
+    if (chat?.id) {
+      const therapistId = userDetails?.id || '52863268761';
+      markChatAsRead(chat.id, therapistId).catch(console.error);
+    }
+  }, [chat?.id]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -80,17 +43,63 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
     }, 100);
   }, [messages]);
 
-  const handleSend = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: Date.now().toString(),
-        text: message.trim(),
-        sender: 'therapist',
-        timestamp: 'Just now',
-        date: 'Today',
-      };
-      setMessages([...messages, newMessage]);
-      setMessage('');
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.id || '52863268761';
+      if (!chat?.id) return;
+
+      const response: any = await getChatMessages(chat.id, therapistId);
+
+      if (response?.data?.messages) {
+        const mappedMessages = response.data.messages.map((msg: any) => ({
+          id: msg.id,
+          text: msg.content,
+          sender: msg.senderType, // 'client' or 'therapist'
+          timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Unknown',
+        }));
+        // API likely returns newest first or oldest first. Assuming we want it in chronological order for FlatList standard rendering
+        setMessages(mappedMessages);
+      } else {
+        setMessages([]);
+      }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load messages';
+      console.error('Messages Error:', errorMessage);
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!message.trim() || !chat?.id) return;
+
+    // UI Optimistic Update
+    const newMessage = {
+      id: Date.now().toString(),
+      text: message.trim(),
+      sender: 'therapist',
+      timestamp: 'Sending...',
+    };
+    setMessages([...messages, newMessage]);
+    const messageToSend = message.trim();
+    setMessage('');
+
+    try {
+      const therapistId = userDetails?.id || '52863268761';
+      const response: any = await sendMessage(chat.id, therapistId, messageToSend);
+
+      if (response?.success) {
+        // Optionally refresh the whole list or just update the timestamp
+        // loadMessages(); 
+      }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || 'Failed to send message';
+      Alert.alert('Error', errorMessage);
+      console.error('Send Error:', error);
+      // Remove the optimistic message if it failed
+      setMessages(msgs => msgs.filter(m => m.id !== newMessage.id));
     }
   };
 
@@ -108,7 +117,7 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
 
   const renderMessage = ({ item }: any) => {
     const isTherapist = item.sender === 'therapist';
-    
+
     return (
       <View style={[styles.messageContainer, isTherapist ? styles.therapistMessage : styles.clientMessage]}>
         <View style={[styles.messageBubble, isTherapist ? styles.therapistBubble : styles.clientBubble]}>
@@ -126,15 +135,15 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ISStatusBar />
-      <ISGenericHeader 
-        title={chat?.clientName || 'Chat'} 
+      <ISGenericHeader
+        title={chat?.clientName || 'Chat'}
         navigation={navigation}
         hasRightIcon={true}
         rightIconName="info"
         rightIconOnPress={handleViewClientProfile}
       />
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -163,9 +172,23 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesList}
+          contentContainerStyle={[
+            styles.messagesList,
+            messages.length === 0 && styles.emptyListContent
+          ]}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.emptyStateContainer}>
+                <Icon type="material" name="chat" size={60} color={appColors.AppBlue + '40'} />
+                <Text style={styles.emptyStateTitle}>No Messages Yet</Text>
+                <Text style={styles.emptyStateText}>
+                  Send a message to start the conversation with {chat?.clientName || 'this client'}.
+                </Text>
+              </View>
+            ) : null
+          }
         />
 
         {/* Input Area */}
@@ -173,7 +196,7 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
           <TouchableOpacity style={styles.attachButton}>
             <Icon type="material" name="attach-file" size={24} color={appColors.grey3} />
           </TouchableOpacity>
-          
+
           <TextInput
             style={styles.input}
             placeholder="Type a message..."
@@ -183,17 +206,17 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
             multiline
             maxLength={500}
           />
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.sendButton, message.trim() ? styles.sendButtonActive : null]}
             onPress={handleSend}
             disabled={!message.trim()}
           >
-            <Icon 
-              type="material" 
-              name="send" 
-              size={24} 
-              color={message.trim() ? '#FFFFFF' : appColors.grey3} 
+            <Icon
+              type="material"
+              name="send"
+              size={24}
+              color={message.trim() ? '#FFFFFF' : appColors.grey3}
             />
           </TouchableOpacity>
         </View>
@@ -328,6 +351,30 @@ const styles = StyleSheet.create({
   },
   sendButtonActive: {
     backgroundColor: appColors.AppBlue,
+  },
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontFamily: appFonts.headerTextBold,
+    color: appColors.grey2,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontFamily: appFonts.bodyTextRegular,
+    color: appColors.grey3,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

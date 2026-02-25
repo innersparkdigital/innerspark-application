@@ -15,7 +15,7 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
-import { getDashboardStats } from '../../../api/therapist';
+import { getAnalyticsOverview, getSessionAnalytics, getRevenueAnalytics } from '../../../api/therapist';
 import { useSelector } from 'react-redux';
 import { ActivityIndicator } from 'react-native';
 
@@ -25,6 +25,8 @@ const THAnalyticsScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [stats, setStats] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [revenueData, setRevenueData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,14 +37,20 @@ const THAnalyticsScreen = ({ navigation }: any) => {
     try {
       setLoading(true);
       const therapistId = userDetails?.id || '52863268761';
-      // Pass selectedPeriod if API supports it, otherwise get general stats
-      const response: any = await getDashboardStats(therapistId);
 
-      if (response?.data) {
-        setStats(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
+      const [overviewRes, sessionRes, revenueRes] = await Promise.all([
+        getAnalyticsOverview(therapistId, selectedPeriod).catch(e => ({ error: e })),
+        getSessionAnalytics(therapistId, selectedPeriod).catch(e => ({ error: e })),
+        getRevenueAnalytics(therapistId, selectedPeriod).catch(e => ({ error: e }))
+      ]);
+
+      if (overviewRes && !(overviewRes as any).error) setStats((overviewRes as any).data);
+      if (sessionRes && !(sessionRes as any).error) setSessionData((sessionRes as any).data);
+      if (revenueRes && !(revenueRes as any).error) setRevenueData((revenueRes as any).data);
+
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to load analytics';
+      console.error('Analytics Error:', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -57,33 +65,33 @@ const THAnalyticsScreen = ({ navigation }: any) => {
   const keyMetrics = [
     {
       label: 'Total Sessions',
-      value: stats?.appointments?.toString() || '0',
-      change: '+12%',
-      trend: 'up',
+      value: stats?.sessions?.total?.toString() || '0',
+      change: stats?.sessions?.trend || '0%',
+      trend: (stats?.sessions?.trend || '').startsWith('-') ? 'down' : 'up',
       icon: 'event',
       color: appColors.AppBlue
     },
     {
       label: 'Active Clients',
-      value: stats?.clients?.toString() || '0',
-      change: '+8%',
-      trend: 'up',
+      value: stats?.clients?.active?.toString() || '0',
+      change: stats?.clients?.trend || '0%',
+      trend: (stats?.clients?.trend || '').startsWith('-') ? 'down' : 'up',
       icon: 'people',
       color: appColors.AppGreen
     },
     {
       label: 'Avg Rating',
-      value: stats?.rating?.toString() || '4.9',
-      change: '+0.2',
+      value: stats?.rating?.average?.toString() || '0.0',
+      change: 'N/A', // Not provided by trend usually for rating
       trend: 'up',
       icon: 'star',
       color: '#FFD700'
     },
     {
       label: 'Revenue',
-      value: stats?.revenue ? `UGX ${stats.revenue.toLocaleString()}` : 'UGX 0',
-      change: '+15%',
-      trend: 'up',
+      value: revenueData?.totalRevenue ? `${revenueData.currency || 'UGX'} ${revenueData.totalRevenue.toLocaleString()}` : 'UGX 0',
+      change: revenueData?.trend || '0%',
+      trend: (revenueData?.trend || '').startsWith('-') ? 'down' : 'up',
       icon: 'attach-money',
       color: '#4CAF50'
     },
@@ -113,10 +121,26 @@ const THAnalyticsScreen = ({ navigation }: any) => {
     { time: '6:00 PM', bookings: 8, percentage: 44 },
   ];
 
+  const totalTypeSessions = sessionData?.totalSessions || 1; // Prevent div by zero
   const sessionTypes = [
-    { type: 'Individual', count: 98, percentage: 63, color: appColors.AppBlue },
-    { type: 'Couples', count: 32, percentage: 21, color: '#9C27B0' },
-    { type: 'Group', count: 26, percentage: 16, color: appColors.AppGreen },
+    {
+      type: 'Individual',
+      count: sessionData?.sessionsByType?.individual || 0,
+      percentage: Math.round(((sessionData?.sessionsByType?.individual || 0) / totalTypeSessions) * 100) || 0,
+      color: appColors.AppBlue
+    },
+    {
+      type: 'Couples',
+      count: sessionData?.sessionsByType?.couple || 0,
+      percentage: Math.round(((sessionData?.sessionsByType?.couple || 0) / totalTypeSessions) * 100) || 0,
+      color: '#9C27B0'
+    },
+    {
+      type: 'Group',
+      count: sessionData?.sessionsByType?.group || 0,
+      percentage: Math.round(((sessionData?.sessionsByType?.group || 0) / totalTypeSessions) * 100) || 0,
+      color: appColors.AppGreen
+    },
   ];
 
   return (

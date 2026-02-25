@@ -142,6 +142,20 @@ export const getGroupMessages = async (groupId, therapistId, page = 1, limit = 5
 };
 
 /**
+ * Get list of group members
+ * @param {string} groupId - Group ID
+ * @param {string} therapistId - Therapist ID
+ * @param {Object} filters - Optional filters
+ * @returns {Promise<{success: boolean, data: Object}>} Group members
+ */
+export const getGroupMembers = async (groupId, therapistId, filters = {}) => {
+    const response = await APIInstance.get(`/th/groups/${groupId}/members`, {
+        params: { therapist_id: therapistId, ...filters }
+    });
+    return response.data;
+};
+
+/**
  * Send group message
  * @param {string} groupId - Group ID
  * @param {string} therapistId - Therapist ID
@@ -194,5 +208,109 @@ export const deleteGroupMessage = async (groupId, messageId, therapistId) => {
     const response = await APIInstance.delete(`/th/groups/${groupId}/messages/${messageId}`, {
         params: { therapist_id: therapistId }
     });
+    return response.data;
+};
+
+// ==========================================
+// GROUP MEMBERS
+// ==========================================
+
+/**
+ * Get detailed member profile (group context only)
+ * @param {string} groupId 
+ * @param {string} memberId 
+ * @param {string} therapistId 
+ */
+export const getGroupMemberDetails = async (groupId, memberId, therapistId) => {
+    const response = await APIInstance.get(`/th/groups/${groupId}/members/${memberId}`, {
+        params: { therapist_id: therapistId }
+    });
+    return response.data;
+};
+
+/**
+ * Update member role (make/remove moderator)
+ * @param {string} groupId 
+ * @param {string} memberId 
+ * @param {string} role 'member' | 'moderator'
+ */
+export const updateGroupMemberRole = async (groupId, memberId, role) => {
+    const response = await APIInstance.put(`/th/groups/${groupId}/members/${memberId}/role`, { role });
+    return response.data;
+};
+
+/**
+ * Mute a member temporarily
+ * @param {string} groupId 
+ * @param {string} memberId 
+ * @param {number} duration in seconds
+ */
+export const muteGroupMember = async (groupId, memberId, duration) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/members/${memberId}/mute`, { duration });
+    return response.data;
+};
+
+/**
+ * Unmute a member
+ * @param {string} groupId 
+ * @param {string} memberId 
+ */
+export const unmuteGroupMember = async (groupId, memberId) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/members/${memberId}/unmute`);
+    return response.data;
+};
+
+/**
+ * Remove a member from the group
+ * @param {string} groupId 
+ * @param {string} memberId 
+ */
+export const removeGroupMember = async (groupId, memberId) => {
+    const response = await APIInstance.delete(`/th/groups/${groupId}/members/${memberId}`);
+    return response.data;
+};
+
+// ==========================================
+// GROUP SESSIONS
+// ==========================================
+
+/**
+ * Schedule a new group session
+ * @param {string} groupId 
+ * @param {Object} sessionData {date, time, topic, duration, meetingLink}
+ */
+export const scheduleGroupSession = async (groupId, sessionData) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/sessions`, sessionData);
+    return response.data;
+};
+
+/**
+ * Start a group session
+ * @param {string} groupId 
+ * @param {string} sessionId 
+ */
+export const startGroupSession = async (groupId, sessionId) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/sessions/${sessionId}/start`);
+    return response.data;
+};
+
+/**
+ * Update session details
+ * @param {string} groupId 
+ * @param {string} sessionId 
+ * @param {Object} sessionData {date, time, topic}
+ */
+export const updateGroupSession = async (groupId, sessionId, sessionData) => {
+    const response = await APIInstance.put(`/th/groups/${groupId}/sessions/${sessionId}`, sessionData);
+    return response.data;
+};
+
+/**
+ * Cancel a session
+ * @param {string} groupId 
+ * @param {string} sessionId 
+ */
+export const cancelGroupSession = async (groupId, sessionId) => {
+    const response = await APIInstance.delete(`/th/groups/${groupId}/sessions/${sessionId}`);
     return response.data;
 };
