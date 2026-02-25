@@ -41,7 +41,7 @@ const THTransactionHistoryScreen = ({ navigation }: any) => {
   const loadTransactions = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const response: any = await getTransactions(therapistId);
 
       if (response?.data?.transactions) {

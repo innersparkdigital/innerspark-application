@@ -31,7 +31,7 @@ const THDashboardScreen = ({ navigation }: any) => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
 
       const response = await getDashboardStats(therapistId);
 

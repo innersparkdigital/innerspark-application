@@ -25,7 +25,7 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const loadGroupDetails = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       if (group?.id) {
         // Fetch group details
         const groupResponse: any = await getGroupById(group.id, therapistId);

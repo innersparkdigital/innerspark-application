@@ -58,7 +58,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
     if (!group?.id) return;
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const res: any = await getGroupMessages(group.id, therapistId);
       if (res?.data?.messages) {
         setMessages(res.data.messages);
@@ -82,7 +82,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   const handleSend = async () => {
     if (message.trim() && group?.id) {
       try {
-        const therapistId = userDetails?.id || '52863268761';
+        const therapistId = userDetails?.userId || '52863268761';
         const content = message.trim();
         setMessage(''); // clear immediately for UX
 
@@ -104,7 +104,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   const sendAnnouncementAction = async () => {
     if (announcementText.trim() && group?.id) {
       try {
-        const therapistId = userDetails?.id || '52863268761';
+        const therapistId = userDetails?.userId || '52863268761';
         const content = announcementText.trim();
         setAnnouncementText('');
         setShowAnnouncementModal(false);
@@ -147,7 +147,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const therapistId = userDetails?.id || '52863268761';
+              const therapistId = userDetails?.userId || '52863268761';
               // Optimistic update
               setMessages(messages.filter((m) => m.id !== messageId));
               if (group?.id) {

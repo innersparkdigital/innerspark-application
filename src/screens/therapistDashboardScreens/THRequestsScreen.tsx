@@ -38,7 +38,7 @@ const THRequestsScreen = ({ navigation }: any) => {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const response: any = await getRequests(therapistId, { status: 'pending' });
 
       if (response?.data) {
@@ -95,7 +95,7 @@ const THRequestsScreen = ({ navigation }: any) => {
           text: 'Accept',
           onPress: async () => {
             try {
-              const therapistId = userDetails?.id || '52863268761';
+              const therapistId = userDetails?.userId || '52863268761';
               // Optimistic update
               setRequests(requests.filter((r) => r.id !== requestId));
               await acceptRequest(requestId.toString(), therapistId);
@@ -127,7 +127,7 @@ const THRequestsScreen = ({ navigation }: any) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const therapistId = userDetails?.id || '52863268761';
+              const therapistId = userDetails?.userId || '52863268761';
               // Optimistic update
               setRequests(requests.filter((r) => r.id !== requestId));
               await declineRequest(requestId.toString(), therapistId);

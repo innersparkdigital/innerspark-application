@@ -43,7 +43,7 @@ interface DaySchedule {
 
 const THAvailabilityScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  const therapistId = userDetails?.id || '52863268761';
+  const therapistId = userDetails?.userId || '52863268761';
   const [loading, setLoading] = useState(true);
 
   // Initialize with default schedule

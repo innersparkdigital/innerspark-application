@@ -49,7 +49,7 @@ const THReviewsScreen = ({ navigation }: any) => {
   const loadReviews = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       // If we want to use the API filter, we pass rating: selectedFilter !== 'all' ? selectedFilter : undefined
       const filters = selectedFilter !== 'all' ? { rating: parseInt(selectedFilter) as 1 | 2 | 3 | 4 | 5 } : {};
       const response: any = await getReviews(therapistId, filters);

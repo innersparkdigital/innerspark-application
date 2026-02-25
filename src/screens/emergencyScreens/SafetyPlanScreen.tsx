@@ -48,8 +48,8 @@ interface SafetyPlanScreenProps {
 const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const dispatch = useDispatch();
-  const userId = useSelector((state: any) => state.userData.userDetails?.id);
-  
+  const userId = useSelector((state: any) => state.userData.userDetails?.userId);
+
   const [safetyPlan, setSafetyPlan] = useState<SafetyPlanData>({
     warningSignsPersonal: [],
     warningSignsCrisis: [],
@@ -107,7 +107,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
       };
 
       // Check if plan has any data
-      const hasData = Object.values(mappedPlan).some(value => 
+      const hasData = Object.values(mappedPlan).some(value =>
         Array.isArray(value) ? value.length > 0 : value !== ''
       );
 
@@ -122,11 +122,11 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
       }
     } catch (error: any) {
       console.error('❌ Error loading safety plan:', error);
-      
+
       // Fallback to mock data on error
       setSafetyPlan(mockSafetyPlan);
       dispatch(setSafetyPlanRedux(mockSafetyPlan)); // ✅ Redux dispatch
-      
+
       toast.show({
         description: 'Using offline safety plan. Some features may be limited.',
         duration: 3000,
@@ -141,7 +141,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
     await loadSafetyPlan();
     setIsRefreshing(false);
   };
-  
+
 
   const handleCall = (phone: string, name: string) => {
     const cleanNumber = phone.replace(/[^0-9]/g, '');
@@ -178,7 +178,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
           <Text style={styles.listItemText}>{sign}</Text>
         </View>
       ))}
-      
+
       <Text style={[styles.subsectionTitle, { marginTop: 20 }]}>Crisis Warning Signs</Text>
       <Text style={styles.subsectionDescription}>
         More serious signs that indicate immediate help may be needed
@@ -226,7 +226,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       ))}
-      
+
       <Text style={[styles.subsectionTitle, { marginTop: 20 }]}>Professional Contacts</Text>
       <Text style={styles.subsectionDescription}>
         Mental health professionals and counselors
@@ -326,7 +326,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} />
-      
+
       {/* Header */}
       <ISGenericHeader
         title="Safety Plan"
@@ -337,39 +337,39 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
       {/* Section Tabs */}
       <View style={styles.tabsWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
-        {sections.map((section) => (
-          <TouchableOpacity
-            key={section.key}
-            style={[
-              styles.tab,
-              activeSection === section.key && styles.activeTab
-            ]}
-            onPress={() => setActiveSection(section.key)}
-          >
-            <Icon 
-              name={section.icon} 
-              type="material" 
-              color={activeSection === section.key ? appColors.AppBlue : appColors.grey3} 
-              size={18} 
-            />
-            <Text style={[
-              styles.tabText,
-              activeSection === section.key && styles.activeTabText
-            ]}>
-              {section.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+          {sections.map((section) => (
+            <TouchableOpacity
+              key={section.key}
+              style={[
+                styles.tab,
+                activeSection === section.key && styles.activeTab
+              ]}
+              onPress={() => setActiveSection(section.key)}
+            >
+              <Icon
+                name={section.icon}
+                type="material"
+                color={activeSection === section.key ? appColors.AppBlue : appColors.grey3}
+                size={18}
+              />
+              <Text style={[
+                styles.tabText,
+                activeSection === section.key && styles.activeTabText
+              ]}>
+                {section.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
       </View>
 
       {/* Content */}
-      <KeyboardAvoidingView 
-        style={styles.content} 
+      <KeyboardAvoidingView
+        style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
-          style={styles.scrollView} 
+        <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

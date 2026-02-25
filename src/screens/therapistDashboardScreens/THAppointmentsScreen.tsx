@@ -24,7 +24,7 @@ const THAppointmentsScreen = ({ navigation }: any) => {
   const loadAppointments = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
 
       const response = await getAppointments(therapistId);
       const resData = response?.data as any;
@@ -64,7 +64,54 @@ const THAppointmentsScreen = ({ navigation }: any) => {
     return appointments;
   };
 
+  const getStats = () => {
+    let todayCount = 0;
+    let weekCount = 0;
+    let monthCount = 0;
+
+    if (!appointments || appointments.length === 0) {
+      return { today: 0, week: 0, month: 0 };
+    }
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    appointments.forEach((apt: any) => {
+      let aptDateObj;
+      if (apt.date === todayStr || apt.date?.includes('Today')) {
+        todayCount++;
+        aptDateObj = now;
+      } else if (apt.date) {
+        aptDateObj = new Date(apt.date);
+      }
+
+      if (aptDateObj) {
+        // Only count valid dates inside ranges
+        if (aptDateObj >= startOfWeek && aptDateObj <= endOfWeek) {
+          weekCount++;
+        }
+        if (aptDateObj >= startOfMonth && aptDateObj <= endOfMonth) {
+          monthCount++;
+        }
+      }
+    });
+
+    return { today: todayCount, week: weekCount, month: monthCount };
+  };
+
   const filteredAppointments = getFilteredAppointments();
+  const currentStats = getStats();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -103,15 +150,15 @@ const THAppointmentsScreen = ({ navigation }: any) => {
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>8</Text>
+            <Text style={styles.statNumber}>{currentStats.today}</Text>
             <Text style={styles.statLabel}>Today</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>24</Text>
+            <Text style={styles.statNumber}>{currentStats.week}</Text>
             <Text style={styles.statLabel}>This Week</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>96</Text>
+            <Text style={styles.statNumber}>{currentStats.month}</Text>
             <Text style={styles.statLabel}>This Month</Text>
           </View>
         </View>

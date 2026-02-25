@@ -21,7 +21,7 @@ const THChatsScreen = ({ navigation }: any) => {
   const loadConversations = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const response: any = await getConversations(therapistId);
 
       if (response?.data?.conversations) {

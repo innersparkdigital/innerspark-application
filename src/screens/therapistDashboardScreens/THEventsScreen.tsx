@@ -34,7 +34,7 @@ const THEventsScreen = ({ navigation }: any) => {
     const loadEvents = async () => {
         try {
             setLoading(true);
-            const therapistId = userDetails?.id || '52863268761';
+            const therapistId = userDetails?.userId || '52863268761';
             const response: any = await getEvents(therapistId);
 
             if (response?.data?.events) {

@@ -48,7 +48,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
   const loadClients = async () => {
     try {
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const res: any = await getClients(therapistId, { status: 'active' });
       if (res?.data?.clients) {
         setClients(res.data.clients);
@@ -99,7 +99,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
 
       // Prepare payload (simplified)
       const payload = {

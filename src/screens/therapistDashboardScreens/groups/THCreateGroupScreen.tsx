@@ -45,7 +45,7 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
     }
 
     try {
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const groupData = {
         therapist_id: therapistId,
         name: groupName.trim(),

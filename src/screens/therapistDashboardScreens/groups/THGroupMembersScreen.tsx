@@ -45,7 +45,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
     if (!group?.id) return;
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const response: any = await getGroupMembers(group.id, therapistId, { filter: selectedFilter });
       if (response?.data?.members) {
         setMembers(response.data.members);

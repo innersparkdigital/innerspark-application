@@ -41,7 +41,7 @@ const THSelectClientScreen = ({ navigation }: any) => {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       // Fetch active clients from the clients API
       const res: any = await getClients(therapistId, { status: 'active' });
 

@@ -21,11 +21,11 @@ import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import ISGenericHeader from '../../components/ISGenericHeader';
-import { 
-  getEmergencyContacts, 
-  addEmergencyContact as addEmergencyContactAPI, 
+import {
+  getEmergencyContacts,
+  addEmergencyContact as addEmergencyContactAPI,
   deleteEmergencyContact as deleteEmergencyContactAPI,
-  getCrisisLines 
+  getCrisisLines
 } from '../../api/client/emergency';
 import { mockEmergencyContacts, mockCrisisLines } from '../../global/MockData';
 import { isValidName, isValidPhoneNumber, isValidRelationship } from '../../global/LHValidators';
@@ -63,8 +63,8 @@ interface CrisisLine {
 const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const dispatch = useDispatch();
-  const userId = useSelector((state: any) => state.userData.userDetails?.id);
-  
+  const userId = useSelector((state: any) => state.userData.userDetails?.userId);
+
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [crisisLines, setCrisisLines] = useState<CrisisLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,11 +138,11 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
       }
     } catch (error: any) {
       console.error('❌ Error loading emergency data:', error);
-      
+
       // Fallback to empty contacts (not mock data)
       setContacts([]);
       setCrisisLines(mockCrisisLines);
-      
+
       toast.show({
         description: 'Failed to load emergency contacts. Please try again.',
         duration: 3000,
@@ -254,7 +254,7 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
       dispatch(addEmergencyContactRedux(addedContact)); // ✅ Redux dispatch
       setNewContact({ name: '', relationship: '', phone: '', email: '' });
       setShowAddModal(false);
-      
+
       toast.show({
         description: 'Emergency contact added successfully',
         duration: 2000,
@@ -308,7 +308,7 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
     // ⚠️ MISSING ENDPOINT: setPrimaryContact(userId, contactId)
     // Using local state update only
     console.log('⚠️ MISSING API: setPrimaryContact - using local state only');
-    
+
     setContacts(contacts.map(c => ({
       ...c,
       isPrimary: c.id === id,
@@ -376,9 +376,9 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
       <ISGenericHeader
         title="Emergency Contacts"
         navigation={navigation}
-              />
+      />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -453,11 +453,11 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
                 <React.Fragment key={line.id}>
                   {index > 0 && <View style={styles.separator} />}
                   <View style={styles.hotlineItem}>
-                    <Icon 
-                      name={line.icon || 'phone-in-talk'} 
-                      type="material" 
-                      color={line.color || '#F44336'} 
-                      size={24} 
+                    <Icon
+                      name={line.icon || 'phone-in-talk'}
+                      type="material"
+                      color={line.color || '#F44336'}
+                      size={24}
                     />
                     <View style={styles.hotlineInfo}>
                       <Text style={styles.hotlineName}>{line.name}</Text>

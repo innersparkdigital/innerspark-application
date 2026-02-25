@@ -50,7 +50,7 @@ const THPricingScreen = ({ navigation }: any) => {
   const loadPricingData = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       const today = new Date();
 
       const [pricingRes, earningsRes] = await Promise.all([

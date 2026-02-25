@@ -38,7 +38,7 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const therapistId = userDetails?.id || '52863268761';
+      const therapistId = userDetails?.userId || '52863268761';
       if (client?.id) {
         const response: any = await getClientProfile(client.id, therapistId);
         if (response?.data) {
