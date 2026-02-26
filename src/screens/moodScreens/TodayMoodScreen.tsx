@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
@@ -21,6 +20,7 @@ import MoodCheckInCard from '../../components/MoodCheckInCard';
 import { moodOptions as globalMoodOptions } from '../../global/Data';
 import { selectHasCheckedInToday, selectTodayMoodData, selectExtendedMoodStats, selectMoodSubmitting } from '../../features/mood/moodSlice';
 import { saveMoodCheckIn } from '../../utils/moodCheckInManager';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface MoodEntry {
   id: string;
@@ -41,12 +41,13 @@ interface TodayMoodScreenProps {
 const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const toast = useToast();
+  const alert = useISAlert();
   const preSelectedMood = route?.params?.preSelectedMood;
   const [selectedMood, setSelectedMood] = useState<number | null>(preSelectedMood?.id || null);
   const [moodNote, setMoodNote] = useState('');
   const [selectedMoodObj, setSelectedMoodObj] = useState<any>(preSelectedMood || null);
   const [isTypingReflection, setIsTypingReflection] = useState(false);
-  
+
   // Get mood data from Redux
   const hasCheckedInToday = useSelector(selectHasCheckedInToday);
   const todayEntry = useSelector(selectTodayMoodData);
@@ -145,19 +146,20 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         // Check if milestone was reached
         const isMilestone = result.data.isMilestone || false;
         const newStreak = result.data.currentStreak || currentStreak + 1;
-        const milestoneMessage = isMilestone 
-          ? '\n\n🎁 Milestone reached! Check your rewards.' 
+        const milestoneMessage = isMilestone
+          ? '\n\n🎁 Milestone reached! Check your rewards.'
           : '';
 
         // Show success message focused on streak
-        Alert.alert(
-          '🎉 Mood Logged Successfully!',
-          `Current streak: ${newStreak} day${newStreak === 1 ? '' : 's'}${milestoneMessage}`,
-          [
+        alert.show({
+          type: 'success',
+          title: '🎉 Mood Logged Successfully!',
+          message: `Current streak: ${newStreak} day${newStreak === 1 ? '' : 's'}${milestoneMessage}`,
+          actions: [
             { text: 'View History', onPress: () => navigation.navigate('MoodHistoryScreen') },
-            { text: 'Great!', style: 'default', onPress: () => navigation.goBack() }
-          ]
-        );
+            { text: 'Great!', onPress: () => navigation.goBack() },
+          ],
+        });
 
         // Reset form
         setSelectedMood(null);
@@ -195,7 +197,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
           <Text style={styles.todayTitle}>Today's Mood</Text>
           <Text style={styles.todayTime}>Logged at {formatTime(todayEntry.timestamp)}</Text>
         </View>
-        
+
         <View style={styles.todayMoodDisplay}>
           <Text style={styles.todayEmoji}>{todayEntry.emoji}</Text>
           <View style={styles.todayMoodInfo}>
@@ -231,14 +233,14 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         <Text style={styles.statValue}>{currentStreak}</Text>
         <Text style={styles.statLabel}>Day Streak</Text>
       </View>
-      
+
       <View style={styles.statCard}>
         <Icon name="emoji-events" type="material" color="#FFD700" size={24} />
         <Text style={styles.statValue}>{currentStreak >= 30 ? '3/3' : currentStreak >= 14 ? '2/3' : currentStreak >= 7 ? '1/3' : '0/3'}</Text>
         <Text style={styles.statLabel}>Milestones</Text>
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.statCard}
         onPress={() => navigation.navigate('MoodHistoryScreen')}
       >
@@ -253,14 +255,14 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daily Mood Check-in</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.historyButton}
           onPress={() => navigation.navigate('MoodHistoryScreen')}
         >
@@ -350,6 +352,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
           </View>
         )}
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

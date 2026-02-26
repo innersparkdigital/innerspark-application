@@ -10,7 +10,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Linking,
   Modal,
   ActivityIndicator,
@@ -30,6 +29,7 @@ import { getEventById, registerForEvent, unregisterFromEvent, getMyEvents } from
 import { useSelector, useDispatch } from 'react-redux';
 import { addRegisteredEventId, removeRegisteredEventId, selectIsEventRegistered } from '../../features/events/eventsSlice';
 import { UPLOADS_BASE_URL } from '../../config/env';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 
 interface Event {
@@ -71,14 +71,15 @@ interface EventDetailScreenProps {
 const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route }) => {
   const { event: passedEvent, eventId } = route.params;
   const toast = useToast();
+  const alert = useISAlert();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
-  
+
   // State for event data
   const [event, setEvent] = useState<Event | null>(passedEvent || null);
   const [isLoadingEvent, setIsLoadingEvent] = useState(!passedEvent);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   // Get registration status from Redux store (single source of truth)
   const isRegistered = useSelector(selectIsEventRegistered(event?.id || 0));
   const [isLoading, setIsLoading] = useState(false);
@@ -150,9 +151,9 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
       console.log('🔄 Loading event details for ID:', eventId);
       const response = await getEventById(eventId.toString());
       console.log('✅ Event data loaded:', response);
-      
+
       const eventData = response.data;
-      
+
       // Map API response to Event interface
       const mappedEvent: Event = {
         id: eventData.id,
@@ -176,9 +177,9 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         registrationDeadline: eventData.registrationDeadline,
         schedule: eventData.schedule,
       };
-      
+
       setEvent(mappedEvent);
-      
+
       // Update Redux store with registration status from API
       if (mappedEvent.isRegistered) {
         dispatch(addRegisteredEventId(mappedEvent.id));
@@ -192,7 +193,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         status: error.response?.status,
         stack: error.stack,
       });
-      
+
       // Only show user-friendly message in toast
       const userMessage = error.response?.data?.message || 'Failed to load event. Please try again.';
       toast.show({
@@ -207,7 +208,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
 
   const handleRefresh = async () => {
     if (isRefreshing) return; // Prevent multiple simultaneous refreshes
-    
+
     setIsRefreshing(true);
     try {
       await loadEventData();
@@ -218,7 +219,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
 
   const handleRegistration = async () => {
     if (!event) return;
-    
+
     if (!isRegistered && event.availableSeats === 0) {
       toast.show({
         description: 'Sorry, this event is sold out.',
@@ -233,15 +234,15 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
       try {
         console.log('🔄 Unregistering from event:', event.id);
         await unregisterFromEvent(event.id.toString(), userId);
-        
+
         // Update Redux store immediately
         dispatch(removeRegisteredEventId(event.id));
-        
+
         toast.show({
           description: 'Successfully unregistered from event',
           duration: 3000,
         });
-        
+
         // Reload event data to update seat count
         await loadEventData();
       } catch (error: any) {
@@ -251,7 +252,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
           status: error.response?.status,
           stack: error.stack,
         });
-        
+
         // Only show user-friendly message in toast
         const userMessage = error.response?.data?.message || 'Unregistration failed. Please try again.';
         toast.show({
@@ -275,20 +276,20 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
 
   const processRegistration = async (paymentMethod: string = 'free', phoneNumber?: string) => {
     if (!event) return;
-    
+
     setIsLoading(true);
     try {
       console.log('🔄 Registering for event:', event.id);
       await registerForEvent(event.id.toString(), userId, paymentMethod, phoneNumber || '');
-      
+
       // Update Redux store immediately
       dispatch(addRegisteredEventId(event.id));
-      
+
       toast.show({
         description: 'Successfully registered for event!',
         duration: 3000,
       });
-      
+
       // Reload event data to update seat count
       await loadEventData();
     } catch (error: any) {
@@ -298,29 +299,29 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         status: error.response?.status,
         stack: error.stack,
       });
-      
+
       // Check if this might be a duplicate registration error
       const responseData = error.response?.data;
-      const isDuplicateRegistration = 
+      const isDuplicateRegistration =
         (responseData?.message?.toLowerCase().includes('already registered')) ||
         (responseData?.details?.toLowerCase().includes('duplicate entry'));
-      
+
       if (isDuplicateRegistration) {
         // Verify actual registration status by checking myEvents
         try {
           console.log('🔍 Verifying registration status from myEvents...');
           const myEventsResponse = await getMyEvents(userId);
           const myEvents = myEventsResponse.data?.events || [];
-          
+
           // Check if event exists AND is not cancelled
           const registration = myEvents.find((e: any) => e.id === event.id);
           const isActuallyRegistered = registration && registration.status !== 'cancelled';
-          
+
           console.log('✅ Verification result:', isActuallyRegistered ? 'REGISTERED' : 'NOT REGISTERED');
           if (registration) {
             console.log('   Registration status:', registration.status);
           }
-          
+
           if (isActuallyRegistered) {
             // User is actually registered (and not cancelled)
             dispatch(addRegisteredEventId(event.id));
@@ -336,7 +337,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
               duration: 3000,
             });
           }
-          
+
           // Reload event data to sync seat count
           await loadEventData();
         } catch (verifyError) {
@@ -454,19 +455,19 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
 
   // Add to Calendar (hidden for now)
   const handleAddToCalendar = () => {
-    Alert.alert(
-      'Add to Calendar',
-      'This will open your calendar app to add the event.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Add', onPress: () => {
-          toast.show({
-            description: 'Calendar integration coming soon!',
-            duration: 2000,
-          });
-        }},
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Add to Calendar',
+      message: 'This will open your calendar app to add the event.',
+      confirmText: 'Add',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        toast.show({
+          description: 'Calendar integration coming soon!',
+          duration: 2000,
+        });
+      },
+    });
   };
 
   const handleLocationPress = () => {
@@ -499,7 +500,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         color: appColors.AppGray,
       };
     }
-    
+
     if (isLoading) {
       return {
         title: 'Processing...',
@@ -507,7 +508,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         color: appColors.AppGray,
       };
     }
-    
+
     if (isRegistered) {
       return {
         title: 'Unregister',
@@ -515,7 +516,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         color: '#F44336',
       };
     }
-    
+
     if (event.availableSeats === 0) {
       return {
         title: 'Sold Out',
@@ -523,7 +524,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         color: appColors.AppGray,
       };
     }
-    
+
     return {
       title: event.price === 0 ? 'Register for Free' : `Register - ${event.currency} ${event.price.toLocaleString()}`,
       disabled: false,
@@ -538,10 +539,10 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-        
+
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -563,25 +564,25 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header (Blue) */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Event Details</Text>
-        <TouchableOpacity 
-          style={styles.shareButton} 
+        <TouchableOpacity
+          style={styles.shareButton}
           onPress={handleRefresh}
           disabled={isRefreshing}
         >
-          <Icon 
-            name="refresh" 
-            type="material" 
-            color={appColors.CardBackground} 
+          <Icon
+            name="refresh"
+            type="material"
+            color={appColors.CardBackground}
             size={24}
             style={isRefreshing ? { opacity: 0.5 } : {}}
           />
@@ -608,7 +609,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
           </View>
 
           <Text style={styles.eventTitle}>{event.title}</Text>
-          
+
           {/* Event Meta Info */}
           <View style={styles.metaContainer}>
             <View style={styles.metaItem}>
@@ -617,11 +618,11 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
             </View>
 
             <TouchableOpacity style={styles.metaItem} onPress={handleLocationPress}>
-              <Icon 
-                name={event.isOnline ? 'videocam' : 'location-on'} 
-                type="material" 
-                color={appColors.AppBlue} 
-                size={20} 
+              <Icon
+                name={event.isOnline ? 'videocam' : 'location-on'}
+                type="material"
+                color={appColors.AppBlue}
+                size={20}
               />
               <Text style={[styles.metaText, event.locationLink && styles.linkText]}>
                 {event.isOnline ? 'Online Event' : event.location}
@@ -739,7 +740,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         onChangeMmOtp={(t) => { setMmOtp(t); if (mmError) setMmError(''); }}
         onChangeMmStep={(s) => setMmStep(s)}
         onResendOtp={async () => {
-          await new Promise<void>((resolve)=> setTimeout(()=> resolve(), 700));
+          await new Promise<void>((resolve) => setTimeout(() => resolve(), 700));
           setMmOtp('');
           setMmError('');
           setMmOtpAttempts(0);
@@ -755,6 +756,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         buttonText="Close"
         onClose={() => { setShowSuccessModal(false); resetToMyEvents(); }}
       />
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

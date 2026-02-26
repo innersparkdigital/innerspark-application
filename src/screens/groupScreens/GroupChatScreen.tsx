@@ -19,7 +19,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
@@ -32,6 +31,7 @@ import { useSelector } from 'react-redux';
 import { getGroupMessages, sendGroupMessage } from '../../api/client/groups';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface GroupMessage {
   id: string;
@@ -60,16 +60,17 @@ interface GroupChatScreenProps {
 
 const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const flatListRef = useRef<FlatList>(null);
-  
+
   // Route params with defaults
-  const { 
-    groupId, 
-    groupName, 
+  const {
+    groupId,
+    groupName,
     groupIcon = 'groups',
     groupDescription,
-    memberCount, 
+    memberCount,
     userRole = 'member',
     privacyMode = true, // Default to privacy ON
     showModeration = false,
@@ -88,7 +89,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   useEffect(() => {
     loadMessages();
     simulateSocketEvents();
-    
+
     return () => {
       handleSocketLeave();
     };
@@ -131,7 +132,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       markMessagesAsSeen();
     } catch (error: any) {
       console.error('❌ Error loading messages:', error);
-      
+
       // Empty state on error - no mock fallback
       setMessages([]);
       setIsLoading(false);
@@ -182,9 +183,9 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   };
 
   const markMessagesAsSeen = () => {
-    setMessages(prev => 
-      prev.map(msg => 
-        !msg.isOwn && !msg.isSeen 
+    setMessages(prev =>
+      prev.map(msg =>
+        !msg.isOwn && !msg.isSeen
           ? { ...msg, isSeen: true }
           : msg
       )
@@ -233,25 +234,25 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
         prev.map(msg =>
           msg.id === tempId
             ? {
-                ...msg,
-                id: response.message?.id || response.id || tempId,
-                isDelivered: true,
-              }
+              ...msg,
+              id: response.message?.id || response.id || tempId,
+              isDelivered: true,
+            }
             : msg
         )
       );
       setIsSending(false);
     } catch (error: any) {
       console.error('❌ Error sending message:', error);
-      
+
       // Remove failed message or mark as failed
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
-      
+
       toast.show({
         description: error.response?.data?.error || 'Failed to send message. Please try again.',
         duration: 3000,
       });
-      
+
       // Restore message text so user can retry
       setMessageText(messageContent);
       setIsSending(false);
@@ -260,7 +261,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
   const handleTyping = (text: string) => {
     setMessageText(text);
-    
+
     if (text.length > 0 && !isTyping) {
       setIsTyping(true);
     } else if (text.length === 0 && isTyping) {
@@ -269,32 +270,28 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => {
-            setMessages(prev => prev.filter(msg => msg.id !== messageId));
-            toast.show({
-              description: 'Message deleted',
-              duration: 2000,
-            });
-          }
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Message',
+      message: 'Are you sure you want to delete this message?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        toast.show({
+          description: 'Message deleted',
+          duration: 2000,
+        });
+      },
+    });
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
@@ -309,8 +306,8 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     } else if (date.toDateString() === yesterday.toDateString()) {
       return 'Yesterday';
     } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
       });
@@ -319,10 +316,10 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
   const shouldShowDateSeparator = (currentMessage: GroupMessage, previousMessage?: GroupMessage) => {
     if (!previousMessage) return true;
-    
+
     const currentDate = new Date(currentMessage.createdAt).toDateString();
     const previousDate = new Date(previousMessage.createdAt).toDateString();
-    
+
     return currentDate !== previousDate;
   };
 
@@ -345,22 +342,22 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     if (message.senderRole === 'therapist') {
       return message.senderName;
     }
-    
+
     // Show own name
     if (message.isOwn) {
       return 'You';
     }
-    
+
     // Privacy mode: show anonymous names for members
     if (privacyMode && message.senderRole === 'member') {
       return `Member ${message.anonymousId || '?'}`;
     }
-    
+
     // Moderators: show name with badge
     if (message.senderRole === 'moderator') {
       return privacyMode ? `Member ${message.anonymousId || '?'}` : message.senderName;
     }
-    
+
     // Default: show real name
     return message.senderName;
   };
@@ -441,7 +438,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
             </Text>
           </View>
         )}
-        
+
         <View style={[
           styles.messageContainer,
           item.isOwn ? styles.ownMessageContainer : styles.otherMessageContainer
@@ -456,7 +453,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               containerStyle={styles.messageAvatar}
             />
           )}
-          
+
           <TouchableOpacity
             style={[
               styles.messageBubble,
@@ -474,14 +471,14 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
                 {item.senderRole === 'moderator' && !privacyMode && ' (Moderator)'}
               </Text>
             )}
-            
+
             <Text style={[
               styles.messageText,
               item.isOwn ? styles.ownMessageText : styles.otherMessageText
             ]}>
               {item.content}
             </Text>
-            
+
             <View style={styles.messageFooter}>
               <Text style={[
                 styles.messageTime,
@@ -489,7 +486,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               ]}>
                 {formatTime(item.createdAt)}
               </Text>
-              
+
               {item.isOwn && (
                 <View style={styles.messageStatus}>
                   {!item.isDelivered ? (
@@ -537,10 +534,10 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
         hasRightIcon={true}
         rightIconName="info"
         rightIconOnPress={() => {
-          navigation.navigate('GroupDetailScreen', { 
-            group: { 
-              id: groupId, 
-              name: groupName, 
+          navigation.navigate('GroupDetailScreen', {
+            group: {
+              id: groupId,
+              name: groupName,
               icon: groupIcon,
               description: groupDescription,
               memberCount: memberCount,
@@ -553,7 +550,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               maxMembers: route.params?.maxMembers || 20,
               meetingSchedule: route.params?.meetingSchedule,
               isJoined: true, // User is in chat, so they've joined
-            } 
+            }
           });
         }}
       />
@@ -569,7 +566,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       )}
 
       {/* Messages */}
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -585,10 +582,10 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           onContentSizeChange={scrollToBottom}
           ListHeaderComponent={renderGroupInfoHeader}
           refreshControl={
-            <RefreshControl 
-              refreshing={isRefreshing} 
-              onRefresh={handleRefresh} 
-              colors={[appColors.AppBlue]} 
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[appColors.AppBlue]}
             />
           }
         />
@@ -607,7 +604,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               multiline
               maxLength={1000}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.sendButton,
                 messageText.trim() && isOnline ? styles.sendButtonActive : styles.sendButtonInactive
@@ -615,16 +612,17 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               onPress={handleSendMessage}
               disabled={!messageText.trim() || isSending || !isOnline}
             >
-              <Icon 
-                name="send" 
-                type="material" 
-                color={messageText.trim() && isOnline ? appColors.CardBackground : appColors.grey3} 
-                size={20} 
+              <Icon
+                name="send"
+                type="material"
+                color={messageText.trim() && isOnline ? appColors.CardBackground : appColors.grey3}
+                size={20}
               />
             </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

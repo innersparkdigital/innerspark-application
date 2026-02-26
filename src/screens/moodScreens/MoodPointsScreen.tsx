@@ -9,13 +9,13 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface PointsTransaction {
   id: string;
@@ -44,6 +44,7 @@ interface MoodPointsScreenProps {
 
 const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const [pointsBalance, setPointsBalance] = useState(0);
   const [transactions, setTransactions] = useState<PointsTransaction[]>([]);
   const [redemptionOptions, setRedemptionOptions] = useState<RedemptionOption[]>([]);
@@ -202,14 +203,14 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
       return;
     }
 
-    Alert.alert(
-      'Redeem Points',
-      `Redeem ${option.pointsRequired} points for "${option.title}"?\n\nThis will give you ${option.discountAmount.toLocaleString()} UGX discount on your next purchase.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Redeem', onPress: () => processRedemption(option) }
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Redeem Points',
+      message: `Redeem ${option.pointsRequired} points for "${option.title}"?\n\nThis will give you ${option.discountAmount.toLocaleString()} UGX discount on your next purchase.`,
+      confirmText: 'Redeem',
+      cancelText: 'Cancel',
+      onConfirm: () => processRedemption(option),
+    });
   };
 
   const processRedemption = async (option: RedemptionOption) => {
@@ -273,7 +274,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
       <Text style={styles.balanceSubtitle}>
         Earned from daily mood check-ins • 500 points per check-in
       </Text>
-      
+
       <View style={styles.balanceActions}>
         <TouchableOpacity
           style={styles.actionButton}
@@ -282,7 +283,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           <Icon name="mood" type="material" color={appColors.AppBlue} size={20} />
           <Text style={styles.actionButtonText}>Daily Check-in</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => setSelectedTab('redeem')}
@@ -297,21 +298,21 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
   const TransactionItem: React.FC<{ item: PointsTransaction }> = ({ item }) => (
     <View style={styles.transactionItem}>
       <View style={styles.transactionIcon}>
-        <Icon 
-          name={item.type === 'earned' ? 'add' : 'remove'} 
-          type="material" 
-          color={item.type === 'earned' ? '#4CAF50' : '#F44336'} 
-          size={20} 
+        <Icon
+          name={item.type === 'earned' ? 'add' : 'remove'}
+          type="material"
+          color={item.type === 'earned' ? '#4CAF50' : '#F44336'}
+          size={20}
         />
       </View>
-      
+
       <View style={styles.transactionInfo}>
         <Text style={styles.transactionDescription}>{item.description}</Text>
         <Text style={styles.transactionDate}>
           {formatDate(item.date)} at {formatTime(item.timestamp)}
         </Text>
       </View>
-      
+
       <Text style={[
         styles.transactionAmount,
         { color: item.type === 'earned' ? '#4CAF50' : '#F44336' }
@@ -324,14 +325,14 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
   const RedemptionItem: React.FC<{ item: RedemptionOption }> = ({ item }) => (
     <View style={[styles.redemptionItem, !item.available && styles.unavailableItem]}>
       <View style={styles.redemptionIcon}>
-        <Icon 
-          name={item.icon} 
-          type="material" 
-          color={item.available ? appColors.AppBlue : appColors.grey3} 
-          size={24} 
+        <Icon
+          name={item.icon}
+          type="material"
+          color={item.available ? appColors.AppBlue : appColors.grey3}
+          size={24}
         />
       </View>
-      
+
       <View style={styles.redemptionInfo}>
         <Text style={[styles.redemptionTitle, !item.available && styles.unavailableText]}>
           {item.title}
@@ -346,7 +347,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           </Text>
         </View>
       </View>
-      
+
       <TouchableOpacity
         style={[
           styles.redeemButton,
@@ -377,11 +378,11 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           style={[styles.tab, selectedTab === tab.key && styles.activeTab]}
           onPress={() => setSelectedTab(tab.key as any)}
         >
-          <Icon 
-            name={tab.icon} 
-            type="material" 
-            color={selectedTab === tab.key ? appColors.AppBlue : appColors.grey3} 
-            size={20} 
+          <Icon
+            name={tab.icon}
+            type="material"
+            color={selectedTab === tab.key ? appColors.AppBlue : appColors.grey3}
+            size={20}
           />
           <Text style={[
             styles.tabText,
@@ -480,14 +481,14 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Loyalty Points</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
         >
@@ -512,6 +513,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
         }
         showsVerticalScrollIndicator={false}
       />
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

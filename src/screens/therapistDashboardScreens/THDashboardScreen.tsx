@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/themed';
 import { useSelector, useDispatch } from 'react-redux';
@@ -10,33 +10,40 @@ import { appImages } from '../../global/Data';
 import { getDashboardStats, getAvailability, getAnalyticsOverview, getRevenueAnalytics, getTherapistProfile, getEvents } from '../../api/therapist';
 import { updateDashboardStats, updateAvailability, updateTherapistProfile, updateUpcomingEventsCount } from '../../features/therapist/dashboardSlice';
 import { updateRevenueAnalytics } from '../../features/therapist/analyticsSlice';
+import { useFocusEffect } from '@react-navigation/native';
 
 const THDashboardScreen = ({ navigation }: any) => {
   const dispatch = useDispatch();
+  const { width } = useWindowDimensions();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const dashboardStats = useSelector((state: any) => state.therapistDashboard.stats);
   const upcomingEventsCount = useSelector((state: any) => state.therapistDashboard.upcomingEventsCount);
   const [loading, setLoading] = useState(!dashboardStats);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Responsive scaling factor (based on standard 375 width)
+  const scale = width / 375;
+  const normalizeSize = (size: number) => Math.round(size * scale);
+
   useEffect(() => {
     loadDashboardData();
   }, []);
 
   // Normalize backend response to flat shape the UI expects
-  const normalizeStats = (data: any) => ({
-    todayAppointments: data?.todayAppointments ?? data?.appointments?.today ?? 0,
-    pendingRequests: data?.pendingRequests ?? data?.requests?.pending ?? 0,
-    activeGroups: data?.activeGroups ?? data?.groups?.active ?? 0,
-    unreadMessages: data?.unreadMessages ?? data?.messages?.unread ?? 0,
-    totalClients: data?.totalClients ?? data?.clients?.total ?? 0,
-  });
+  const normalizeStats = useCallback((data: any) => ({
+    todayAppointments: data?.todayAppointments ?? data?.appointments?.today ?? data?.sessionsToday ?? data?.appointment_count ?? 0,
+    pendingRequests: data?.pendingRequests ?? data?.requests?.pending ?? data?.request_count ?? 0,
+    activeGroups: data?.activeGroups ?? data?.groups?.active ?? data?.group_count ?? 0,
+    unreadMessages: data?.unreadMessages ?? data?.messages?.unread ?? data?.unread_count ?? 0,
+    totalClients: data?.totalClients ?? data?.clients?.total ?? data?.client_count ?? 0,
+  }), []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
+    const therapistId = userDetails?.userId;
+    if (!therapistId) return;
+
     try {
       if (!dashboardStats) setLoading(true);
-      const therapistId = userDetails?.userId;
-
       const response = await getDashboardStats(therapistId);
 
       if (response?.data) {
@@ -49,15 +56,20 @@ const THDashboardScreen = ({ navigation }: any) => {
       backgroundLoadData(therapistId);
 
     } catch (error: any) {
-      const errorMessage = error.backendMessage || error.message || 'Failed to load dashboard stats';
-      console.error('Dashboard Stats Error:', errorMessage);
+      console.error('Dashboard Stats Error:', error.message);
       if (!dashboardStats) dispatch(updateDashboardStats(normalizeStats({})));
     } finally {
       setLoading(false);
     }
-  };
+  }, [userDetails?.userId, dashboardStats, normalizeStats, dispatch]);
 
-  const backgroundLoadData = async (therapistId: string) => {
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+    }, [loadDashboardData])
+  );
+
+  const backgroundLoadData = useCallback(async (therapistId: string) => {
     try {
       // 1. Load Availability Schedule
       getAvailability(therapistId).then(res => {
@@ -96,7 +108,7 @@ const THDashboardScreen = ({ navigation }: any) => {
     } catch (error) {
       console.error('Background Load Error:', error);
     }
-  };
+  }, [dispatch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -105,7 +117,7 @@ const THDashboardScreen = ({ navigation }: any) => {
   };
 
   // Dashboard cards configuration with stats from API
-  const dashboardCards = [
+  const dashboardCards = useMemo(() => [
     {
       id: 1,
       title: 'Appointments',
@@ -114,7 +126,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       color: appColors.AppBlue,
       screen: 'THAppointments',
       count: String(dashboardStats?.todayAppointments || 0),
-      badge: 'upcoming',
+      badge: (dashboardStats?.todayAppointments || 0) > 0 ? 'today' : null,
     },
     {
       id: 2,
@@ -124,7 +136,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       color: '#FF9800',
       screen: 'THRequestsScreen',
       count: String(dashboardStats?.pendingRequests || 0),
-      badge: 'new',
+      badge: (dashboardStats?.pendingRequests || 0) > 0 ? 'new' : null,
     },
     {
       id: 3,
@@ -144,7 +156,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       color: appColors.AppGreen,
       screen: 'THChats',
       count: String(dashboardStats?.unreadMessages || 0),
-      badge: 'new',
+      badge: (dashboardStats?.unreadMessages || 0) > 0 ? 'new' : null,
     },
     {
       id: 5,
@@ -154,45 +166,59 @@ const THDashboardScreen = ({ navigation }: any) => {
       color: '#E91E63',
       screen: 'THEventsScreen',
       count: String(upcomingEventsCount || 0),
-      badge: null,
+      badge: upcomingEventsCount > 0 ? 'live' : null,
     },
-  ];
+  ], [dashboardStats, upcomingEventsCount]);
 
-  const DashboardCard = ({ item }: any) => (
+  const DashboardCard = ({ item, isFullWidth }: { item: any, isFullWidth: boolean }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[
+        styles.card,
+        isFullWidth && styles.fullWidthCard
+      ]}
       onPress={() => navigation.navigate(item.screen)}
       activeOpacity={0.7}
     >
-      <View style={styles.cardHeader}>
-        <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+      <View style={[styles.cardLayout, isFullWidth && styles.fullWidthLayout]}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+            <Icon
+              type="material"
+              name={item.icon}
+              color={item.color}
+              size={normalizeSize(22)}
+            />
+          </View>
+          {item.badge && !isFullWidth && (
+            <View style={[styles.badge, { backgroundColor: item.badge === 'new' ? '#F44336' : '#FF9800' }]}>
+              <Text style={styles.badgeTextSmall}>{item.badge}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={[styles.cardContent, isFullWidth && styles.fullWidthContent]}>
+          <View style={isFullWidth && styles.fullWidthCountContainer}>
+            <Text style={[styles.cardCount, isFullWidth && styles.fullWidthCardCount]}>{item.count}</Text>
+            {item.badge && isFullWidth && (
+              <View style={[styles.badge, { backgroundColor: item.badge === 'new' ? '#F44336' : '#FF9800', marginLeft: 8 }]}>
+                <Text style={styles.badgeTextSmall}>{item.badge}</Text>
+              </View>
+            )}
+          </View>
+          <View>
+            <Text style={[styles.cardTitle, isFullWidth && styles.fullWidthCardTitle]}>{item.title}</Text>
+            <Text style={[styles.cardSubtitle, isFullWidth && styles.fullWidthCardSubtitle]}>{item.subtitle}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.cardFooter, isFullWidth && styles.fullWidthCardFooter]}>
           <Icon
             type="material"
-            name={item.icon}
+            name="arrow-forward"
             color={item.color}
-            size={24}
+            size={normalizeSize(16)}
           />
         </View>
-        {item.badge && (
-          <View style={[styles.badge, { backgroundColor: item.badge === 'new' ? '#F44336' : '#FF9800' }]}>
-            <Text style={styles.badgeTextSmall}>{item.badge}</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.cardContent}>
-        <Text style={styles.cardCount}>{item.count}</Text>
-        <Text style={styles.cardTitle}>{item.title}</Text>
-        <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
-      </View>
-
-      <View style={styles.cardFooter}>
-        <Icon
-          type="material"
-          name="arrow-forward"
-          color={item.color}
-          size={18}
-        />
       </View>
     </TouchableOpacity>
   );
@@ -202,7 +228,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       <ISStatusBar />
 
       {/* Blue Header Section */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: normalizeSize(20), paddingBottom: normalizeSize(30) }]}>
         {/* Top row with logo and notification icon */}
         <View style={styles.headerTopRow}>
           <Image
@@ -216,7 +242,7 @@ const THDashboardScreen = ({ navigation }: any) => {
             activeOpacity={0.7}
           >
             <View style={styles.notificationIconContainer}>
-              <Icon name="notifications" type="material" color={appColors.CardBackground} size={26} />
+              <Icon name="notifications" type="material" color={appColors.CardBackground} size={normalizeSize(26)} />
               {(dashboardStats?.unreadMessages || 0) > 0 && (
                 <Badge
                   value={(dashboardStats?.unreadMessages || 0) > 99 ? '99+' : (dashboardStats?.unreadMessages || 0)}
@@ -231,27 +257,27 @@ const THDashboardScreen = ({ navigation }: any) => {
 
         {/* Greeting Section */}
         <View style={styles.greetingSection}>
-          <Text style={styles.greeting}>
-            Hello Dr. {getFirstName(userDetails?.firstName) || 'Therapist'} 👋
+          <Text style={[styles.greeting, { fontSize: normalizeSize(24) }]}>
+            Hello {getFirstName(userDetails?.firstName) || 'Therapist'} 👋
           </Text>
-          <Text style={styles.subtitle}>Here's what's happening with your practice</Text>
+          <Text style={[styles.subtitle, { fontSize: normalizeSize(14) }]}>Here's what's happening with your practice</Text>
         </View>
 
         {/* Quick Stats Row */}
         <View style={styles.quickStatsRow}>
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatNumber}>{dashboardStats?.todayAppointments || 0}</Text>
-            <Text style={styles.quickStatLabel}>Today</Text>
+            <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.todayAppointments || 0}</Text>
+            <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Today</Text>
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatNumber}>{dashboardStats?.pendingRequests || 0}</Text>
-            <Text style={styles.quickStatLabel}>Pending</Text>
+            <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.pendingRequests || 0}</Text>
+            <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Pending</Text>
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <Text style={styles.quickStatNumber}>{dashboardStats?.totalClients || 0}</Text>
-            <Text style={styles.quickStatLabel}>Clients</Text>
+            <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.totalClients || 0}</Text>
+            <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Clients</Text>
           </View>
         </View>
       </View>
@@ -271,9 +297,11 @@ const THDashboardScreen = ({ navigation }: any) => {
       >
         {/* Dashboard Cards Grid */}
         <View style={styles.cardsGrid}>
-          {dashboardCards.map((item) => (
-            <DashboardCard key={item.id} item={item} />
-          ))}
+          {dashboardCards.map((item, index) => {
+            const isLast = index === dashboardCards.length - 1;
+            const isFullWidth = isLast && (index + 1) % 2 !== 0;
+            return <DashboardCard key={item.id} item={item} isFullWidth={isFullWidth} />;
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -288,8 +316,6 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 8,
@@ -302,11 +328,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   logo: {
-    width: 160,
-    height: 40,
+    width: 140,
+    height: 36,
   },
   iconButton: {
     padding: 8,
@@ -322,108 +348,115 @@ const styles = StyleSheet.create({
     right: -6,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
   },
   greetingSection: {
     marginBottom: 20,
   },
   greeting: {
-    fontSize: 26,
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 6,
-    letterSpacing: 0.3,
+    marginBottom: 4,
+    letterSpacing: 0.2,
   },
   subtitle: {
-    fontSize: 14,
     color: appColors.CardBackground,
     fontFamily: appFonts.bodyTextRegular,
-    opacity: 0.92,
-    lineHeight: 20,
+    opacity: 0.9,
+    lineHeight: 18,
   },
   quickStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginTop: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
   },
   quickStatItem: {
     flex: 1,
     alignItems: 'center',
   },
   quickStatNumber: {
-    fontSize: 24,
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   quickStatLabel: {
-    fontSize: 11,
     color: appColors.CardBackground,
     fontFamily: appFonts.bodyTextRegular,
-    opacity: 0.85,
+    opacity: 0.8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
   quickStatDivider: {
     width: 1,
-    height: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    height: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 30,
+    paddingBottom: 20,
   },
   cardsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 12,
   },
   card: {
     width: '48%',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 18,
-    padding: 14,
-    elevation: 3,
+    borderRadius: 16,
+    padding: 12,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    minHeight: 145,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    minHeight: 130,
+  },
+  fullWidthCard: {
+    width: '100%',
+    minHeight: 90,
+  },
+  cardLayout: {
+    flex: 1,
+  },
+  fullWidthLayout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   badge: {
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
     alignSelf: 'flex-start',
   },
   badgeTextSmall: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#FFFFFF',
     fontFamily: appFonts.bodyTextBold,
@@ -431,33 +464,56 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flex: 1,
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  fullWidthContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    marginBottom: 0,
+  },
+  fullWidthCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 50,
   },
   cardCount: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 3,
-    lineHeight: 32,
+    marginBottom: 2,
+    lineHeight: 28,
+  },
+  fullWidthCardCount: {
+    marginBottom: 0,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextSemiBold,
     marginBottom: 1,
+  },
+  fullWidthCardTitle: {
+    fontSize: 15,
   },
   cardSubtitle: {
     fontSize: 10,
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
   },
+  fullWidthCardSubtitle: {
+    fontSize: 11,
+  },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingTop: 6,
+    paddingTop: 4,
+  },
+  fullWidthCardFooter: {
+    paddingTop: 0,
   },
 });
 

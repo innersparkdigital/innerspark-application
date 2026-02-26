@@ -69,7 +69,7 @@ import {
  * @param {string} therapistId - Test therapist ID
  * @returns {Promise<Object>} Test results with passed/failed arrays
  */
-export const testAllTherapistGetEndpoints = async (therapistId) => {
+export const testAllTherapistGetEndpoints = async (therapistId, appointmentId, clientId, eventId, groupId, assessmentId, messageId, chatId, notificationId) => {
     // Import here to avoid circular dependencies
     const { baseUrl } = require('../LHAPI');
 
@@ -85,35 +85,35 @@ export const testAllTherapistGetEndpoints = async (therapistId) => {
 
         // Appointments (2 GET endpoints from 6 total)
         { name: 'Appointments List', fn: () => getAppointments(therapistId, {}) },
-        { name: 'Appointment Details', fn: () => getAppointmentById('test-appt-id', therapistId) },
+        { name: 'Appointment Details', fn: () => getAppointmentById('test-appt-id', appointmentId) },
 
         // Clients (2 endpoints)
         { name: 'Clients List', fn: () => getClients(therapistId, {}) },
-        { name: 'Client Profile', fn: () => getClientProfile('test-client-id', therapistId) },
+        { name: 'Client Profile', fn: () => getClientProfile('test-client-id', clientId) },
 
         // Messages (2 GET endpoints from 4 total)
         { name: 'Conversations', fn: () => getConversations(therapistId) },
-        { name: 'Chat Messages', fn: () => getChatMessages('test-client-id', therapistId, 1, 50) },
+        { name: 'Chat Messages', fn: () => getChatMessages('test-client-id', clientId, 1, 50) },
 
         // Session Notes (2 GET endpoints from 5 total)
-        { name: 'Session Notes', fn: () => getSessionNotes('test-client-id', therapistId) },
+        { name: 'Session Notes', fn: () => getSessionNotes('test-client-id', clientId) },
 
         // Events (3 GET endpoints from 9 total)
         { name: 'Events List', fn: () => getEvents(therapistId, {}) },
-        { name: 'Event Details', fn: () => getEventById('test-event-id', therapistId) },
-        { name: 'Event Attendees', fn: () => getEventAttendees('test-event-id', therapistId) },
+        { name: 'Event Details', fn: () => getEventById('test-event-id', eventId) },
+        { name: 'Event Attendees', fn: () => getEventAttendees('test-event-id', eventId) },
 
         // Groups (3 GET endpoints from 9 total)
         { name: 'Groups List', fn: () => getGroups(therapistId, {}) },
-        { name: 'Group Details', fn: () => getGroupById('test-group-id', therapistId) },
-        { name: 'Group Messages', fn: () => getGroupMessages('test-group-id', therapistId, 1, 50) },
+        { name: 'Group Details', fn: () => getGroupById('test-group-id', groupId) },
+        { name: 'Group Messages', fn: () => getGroupMessages('test-group-id', groupId, 1, 50) },
 
         // Group Members (2 GET endpoints from 6 total)
-        { name: 'Group Members', fn: () => getGroupMembers('test-group-id', therapistId, {}) },
+        { name: 'Group Members', fn: () => getGroupMembers('test-group-id', groupId, {}) },
 
         // Assessments (2 GET endpoints from 7 total)
         { name: 'Assessments List', fn: () => getAssessments(therapistId, {}) },
-        { name: 'Assessment Details', fn: () => getAssessmentById('test-assessment-id', therapistId) },
+        { name: 'Assessment Details', fn: () => getAssessmentById('test-assessment-id', assessmentId) },
 
         // Calendar (2 GET endpoints from 9 total)
         { name: 'Availability Slots', fn: () => getAvailabilitySlots(therapistId, {}) },

@@ -9,19 +9,20 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/themed';
 import { appColors, appFonts, parameters } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { useSelector } from 'react-redux';
 import { createGroup, updateGroup } from '../../../api/therapist';
 
 const THCreateGroupScreen = ({ navigation, route }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const { group } = route.params || {};
+  const alert = useISAlert();
   const isEditing = !!group;
 
   const [groupName, setGroupName] = useState(group?.name || '');
@@ -35,12 +36,12 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
 
   const handleSave = async () => {
     if (!groupName.trim()) {
-      Alert.alert('Error', 'Please enter a group name');
+      alert.show({ type: 'warning', title: 'Missing Name', message: 'Please enter a group name' });
       return;
     }
 
     if (!description.trim()) {
-      Alert.alert('Error', 'Please enter a description');
+      alert.show({ type: 'warning', title: 'Missing Description', message: 'Please enter a description' });
       return;
     }
 
@@ -59,19 +60,25 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
 
       if (isEditing && group?.id) {
         await updateGroup(group.id, groupData);
-        Alert.alert('Success', 'Group updated successfully!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        alert.show({
+          type: 'success',
+          title: 'Updated',
+          message: 'Group updated successfully!',
+          onConfirm: () => navigation.goBack()
+        });
       } else {
         await createGroup(groupData);
-        Alert.alert('Success', 'Group created successfully!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        alert.show({
+          type: 'success',
+          title: 'Created',
+          message: 'Group created successfully!',
+          onConfirm: () => navigation.goBack()
+        });
       }
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to save group. Please try again.';
       console.error('Create Group Error:', errorMessage);
-      Alert.alert('Error', errorMessage);
+      alert.show({ type: 'error', title: 'Error', message: errorMessage });
     }
   };
 
@@ -254,6 +261,7 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
           onPress={handleSave}
         />
       </View>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

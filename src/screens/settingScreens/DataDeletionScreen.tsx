@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
@@ -18,6 +17,7 @@ import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { deleteUserData } from '../../api/client/account';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DataDeletionScreenProps {
   navigation: NavigationProp<any>;
@@ -37,6 +37,7 @@ interface DataCategory {
 
 const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isDeleting, setIsDeleting] = useState(false);
   const [dataCategories, setDataCategories] = useState<DataCategory[]>([
@@ -137,7 +138,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
 
   const handleDeleteData = async () => {
     const selectedCategories = dataCategories.filter(cat => cat.selected);
-    
+
     if (selectedCategories.length === 0) {
       toast.show({
         description: 'Please select at least one data category to delete',
@@ -148,50 +149,46 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
 
     const categoryNames = selectedCategories.map(cat => cat.title).join(', ');
 
-    Alert.alert(
-      'Confirm Data Deletion',
-      `You are about to permanently delete:\n\n${categoryNames}\n\nThis action cannot be undone. Are you sure?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              const categoryIds = selectedCategories.map(cat => cat.id);
-              const response = await deleteUserData(userId, categoryIds);
-              
-              if (response.success) {
-                toast.show({
-                  description: response.message || `Successfully deleted ${selectedCategories.length} data categories`,
-                  duration: 3000,
-                });
-                
-                setDataCategories(prev =>
-                  prev.map(cat => ({ ...cat, selected: false }))
-                );
-                
-                navigation.goBack();
-              } else {
-                toast.show({
-                  description: response.message || 'Failed to delete data',
-                  duration: 3000,
-                });
-              }
-            } catch (error: any) {
-              console.error('Error deleting data:', error);
-              toast.show({
-                description: error.response?.data?.message || 'Failed to delete data. Please try again.',
-                duration: 3000,
-              });
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Confirm Data Deletion',
+      message: `You are about to permanently delete:\n\n${categoryNames}\n\nThis action cannot be undone. Are you sure?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setIsDeleting(true);
+        try {
+          const categoryIds = selectedCategories.map(cat => cat.id);
+          const response = await deleteUserData(userId, categoryIds);
+
+          if (response.success) {
+            toast.show({
+              description: response.message || `Successfully deleted ${selectedCategories.length} data categories`,
+              duration: 3000,
+            });
+
+            setDataCategories(prev =>
+              prev.map(cat => ({ ...cat, selected: false }))
+            );
+
+            navigation.goBack();
+          } else {
+            toast.show({
+              description: response.message || 'Failed to delete data',
+              duration: 3000,
+            });
+          }
+        } catch (error: any) {
+          console.error('Error deleting data:', error);
+          toast.show({
+            description: error.response?.data?.message || 'Failed to delete data. Please try again.',
+            duration: 3000,
+          });
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+    });
   };
 
   const renderDataCategory = (category: DataCategory) => (
@@ -253,9 +250,9 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
       <ISGenericHeader
         title="Delete My Data"
         navigation={navigation}
-              />
+      />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -293,7 +290,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={styles.categoriesContainer}>
             {dataCategories.map(renderDataCategory)}
           </View>
@@ -302,7 +299,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
         {/* Alternative Options */}
         <View style={styles.alternativesCard}>
           <Text style={styles.alternativesTitle}>Consider These Alternatives</Text>
-          
+
           <TouchableOpacity
             style={styles.alternativeItem}
             onPress={() => navigation.navigate('DataExportScreen')}
@@ -355,6 +352,7 @@ const DataDeletionScreen: React.FC<DataDeletionScreenProps> = ({ navigation }) =
           This action cannot be undone
         </Text>
       </View>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

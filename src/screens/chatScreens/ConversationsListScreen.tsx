@@ -9,7 +9,6 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
@@ -18,6 +17,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { loadConversations, refreshConversations } from '../../utils/chatManager';
 import { selectConversations, selectChatLoading, selectChatRefreshing } from '../../features/chat/chatSlice';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface Conversation {
   id: string;
@@ -38,6 +38,7 @@ interface ConversationsListScreenProps {
 
 const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const conversations = useSelector(selectConversations);
@@ -63,7 +64,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   };
 
   const handleOpenConversation = (conversation: Conversation) => {
-    navigation.navigate('DMThreadScreen', { 
+    navigation.navigate('DMThreadScreen', {
       partnerId: conversation.partnerId,
       partnerName: conversation.partnerName,
       partnerAvatar: conversation.partnerAvatar,
@@ -73,24 +74,20 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   };
 
   const handleDeleteConversation = (conversationId: string, partnerName: string) => {
-    Alert.alert(
-      'Delete Conversation',
-      `Are you sure you want to delete your conversation with ${partnerName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => {
-            // TODO: Implement delete conversation API call
-            toast.show({
-              description: 'Conversation deleted',
-              duration: 2000,
-            });
-          }
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Conversation',
+      message: `Are you sure you want to delete your conversation with ${partnerName}?`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        // TODO: Implement delete conversation API call
+        toast.show({
+          description: 'Conversation deleted',
+          duration: 2000,
+        });
+      },
+    });
   };
 
   const getAvatarInitials = (name: string) => {
@@ -98,7 +95,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   };
 
   const renderConversationItem = ({ item }: { item: Conversation }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.conversationItem}
       onPress={() => handleOpenConversation(item)}
       onLongPress={() => handleDeleteConversation(item.id, item.partnerName)}
@@ -133,11 +130,11 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
         </View>
 
         <View style={styles.conversationBody}>
-          <Text 
+          <Text
             style={[
               styles.lastMessage,
               item.unreadCount > 0 && styles.unreadMessage
-            ]} 
+            ]}
             numberOfLines={1}
           >
             {item.lastMessage}
@@ -165,7 +162,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
       <Text style={styles.emptySubtitle}>
         Start a conversation with your therapist
       </Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.startChatButton}
         onPress={() => navigation.navigate('NewMessageScreen')}
       >
@@ -211,6 +208,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
         showsVerticalScrollIndicator={false}
         contentContainerStyle={conversations.length === 0 ? styles.emptyContainer : undefined}
       />
+      <ISAlert ref={alert.ref} />
     </View>
   );
 };

@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Share,
-  Alert,
   RefreshControl,
   Dimensions,
 } from 'react-native';
@@ -25,6 +24,7 @@ import {
   selectReportsRefreshing,
 } from '../../features/reports/reportsSlice';
 import { loadWeeklyReport, refreshWeeklyReport, sendReportEmail } from '../../utils/reportsManager';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface WeeklyReport {
   id: string;
@@ -69,7 +69,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) => {
   const toast = useToast();
-  
+  const alert = useISAlert();
+
   // Get report from Redux
   const weeklyReport = useSelector(selectCurrentReport) as WeeklyReport | null;
   const isLoading = useSelector(selectReportsLoading);
@@ -121,32 +122,29 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
       return;
     }
 
-    Alert.alert(
-      'Email Report',
-      'Your weekly report will be sent to your registered email address.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Send Email', 
-          onPress: async () => {
-            const userId = 'current_user_id';
-            const result = await sendReportEmail(userId, weeklyReport.id);
-            
-            if (result.success) {
-              toast.show({
-                description: 'Weekly report sent to your email!',
-                duration: 3000,
-              });
-            } else {
-              toast.show({
-                description: result.error || 'Failed to send email',
-                duration: 3000,
-              });
-            }
-          }
+    alert.show({
+      type: 'confirm',
+      title: 'Email Report',
+      message: 'Your weekly report will be sent to your registered email address.',
+      confirmText: 'Send Email',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        const userId = 'current_user_id';
+        const result = await sendReportEmail(userId, weeklyReport.id);
+
+        if (result.success) {
+          toast.show({
+            description: 'Weekly report sent to your email!',
+            duration: 3000,
+          });
+        } else {
+          toast.show({
+            description: result.error || 'Failed to send email',
+            duration: 3000,
+          });
         }
-      ]
-    );
+      },
+    });
   };
 
   const formatDateRange = () => {
@@ -204,9 +202,9 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Mood Summary</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('ReportDetailScreen', { 
-              reportId: weeklyReport.id, 
-              section: 'mood' 
+            onPress={() => navigation.navigate('ReportDetailScreen', {
+              reportId: weeklyReport.id,
+              section: 'mood'
             })}
           >
             <Text style={styles.viewDetailsText}>View Details</Text>
@@ -237,11 +235,11 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
               <Text style={styles.moodEmoji}>{mood.emoji}</Text>
               <Text style={styles.moodName}>{mood.mood}</Text>
               <View style={styles.progressBarContainer}>
-                <View 
+                <View
                   style={[
-                    styles.progressBar, 
+                    styles.progressBar,
                     { width: `${mood.percentage}%` }
-                  ]} 
+                  ]}
                 />
               </View>
               <Text style={styles.moodPercentage}>{mood.percentage}%</Text>
@@ -261,9 +259,9 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Journaling Insights</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('ReportDetailScreen', { 
-              reportId: weeklyReport.id, 
-              section: 'journaling' 
+            onPress={() => navigation.navigate('ReportDetailScreen', {
+              reportId: weeklyReport.id,
+              section: 'journaling'
             })}
           >
             <Text style={styles.viewDetailsText}>View Details</Text>
@@ -322,9 +320,9 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Activities & Goals</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('ReportDetailScreen', { 
-              reportId: weeklyReport.id, 
-              section: 'activities' 
+            onPress={() => navigation.navigate('ReportDetailScreen', {
+              reportId: weeklyReport.id,
+              section: 'activities'
             })}
           >
             <Text style={styles.viewDetailsText}>View Details</Text>
@@ -358,9 +356,9 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>Personalized Recommendations</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('ReportDetailScreen', { 
-              reportId: weeklyReport.id, 
-              section: 'recommendations' 
+            onPress={() => navigation.navigate('ReportDetailScreen', {
+              reportId: weeklyReport.id,
+              section: 'recommendations'
             })}
           >
             <Text style={styles.viewDetailsText}>View All</Text>
@@ -412,7 +410,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -421,7 +419,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
           <Text style={styles.headerTitle}>Weekly Report</Text>
           <View style={styles.placeholder} />
         </View>
-        
+
         <ScrollView style={styles.scrollView}>
           <View style={styles.loadingContainer}>
             <Skeleton animation="pulse" width="100%" height={120} style={{ marginBottom: 20 }} />
@@ -439,14 +437,14 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Weekly Report</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.refreshButton}
             onPress={handleRefresh}
           >
@@ -454,7 +452,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.emptyContainer}
           refreshControl={
@@ -488,14 +486,14 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Weekly Report</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
         >
@@ -503,7 +501,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         refreshControl={
           <RefreshControl
@@ -532,6 +530,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

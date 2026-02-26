@@ -21,6 +21,8 @@ import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { submitFeedback } from '../../api/client/feedback';
+import { validateSendFeedback, SendFeedbackErrors } from '../../global/LHValidators';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface SendFeedbackScreenProps {
   navigation: NavigationProp<any>;
@@ -31,12 +33,28 @@ type FeedbackType = 'bug' | 'feature' | 'improvement' | 'compliment' | 'other';
 const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  
+
   const [selectedType, setSelectedType] = useState<FeedbackType>('improvement');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<SendFeedbackErrors>({});
+  const alert = useISAlert();
+
+  const handleFieldChange = (field: string, value: any) => {
+    if (field === 'subject') setSubject(value);
+    if (field === 'message') setMessage(value);
+    if (field === 'email') setEmail(value);
+
+    if (errors[field as keyof SendFeedbackErrors]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field as keyof SendFeedbackErrors];
+        return newErrors;
+      });
+    }
+  };
 
   const feedbackTypes = [
     { id: 'bug' as FeedbackType, label: 'Bug Report', icon: 'bug-report', color: '#F44336' },
@@ -47,27 +65,26 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
   ];
 
   const handleSubmit = async () => {
-    if (!subject.trim()) {
-      toast.show({
-        description: 'Please enter a subject',
-        duration: 2000,
-      });
+    const feedbackData = {
+      type: selectedType,
+      subject: subject.trim(),
+      message: message.trim(),
+      email: email.trim(),
+    };
+
+    const formErrors = validateSendFeedback(feedbackData);
+
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
       return;
     }
 
-    if (!message.trim()) {
-      toast.show({
-        description: 'Please enter your feedback message',
-        duration: 2000,
-      });
-      return;
-    }
-
+    setErrors({});
     setIsSubmitting(true);
 
     try {
       const userId = userDetails?.userId || 'guest_user';
-      
+
       await submitFeedback(userId, {
         type: selectedType,
         subject: subject.trim(),
@@ -80,12 +97,12 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
         description: 'Thank you! Your feedback has been submitted successfully.',
         duration: 3000,
       });
-      
+
       // Reset form
       setSubject('');
       setMessage('');
       setEmail('');
-      
+
       // Navigate back after a short delay
       setTimeout(() => {
         navigation.goBack();
@@ -112,7 +129,7 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
@@ -161,29 +178,30 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
           {/* Subject Input */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>SUBJECT</Text>
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.subject ? styles.inputError : {}]}>
               <TextInput
                 style={styles.input}
                 placeholder="Brief summary of your feedback"
                 placeholderTextColor={appColors.grey4}
                 value={subject}
-                onChangeText={setSubject}
+                onChangeText={(text) => handleFieldChange('subject', text)}
                 maxLength={100}
               />
               <Text style={styles.charCount}>{subject.length}/100</Text>
             </View>
+            {errors.subject && <Text style={styles.fieldErrorText}>{errors.subject}</Text>}
           </View>
 
           {/* Message Input */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>MESSAGE</Text>
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.message ? styles.inputError : {}]}>
               <TextInput
                 style={[styles.input, styles.messageInput]}
                 placeholder="Please provide detailed feedback..."
                 placeholderTextColor={appColors.grey4}
                 value={message}
-                onChangeText={setMessage}
+                onChangeText={(text) => handleFieldChange('message', text)}
                 multiline
                 numberOfLines={8}
                 textAlignVertical="top"
@@ -191,23 +209,25 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
               />
               <Text style={styles.charCount}>{message.length}/1000</Text>
             </View>
+            {errors.message && <Text style={styles.fieldErrorText}>{errors.message}</Text>}
           </View>
 
           {/* Optional Email */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>EMAIL (OPTIONAL)</Text>
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, errors.email ? styles.inputError : {}]}>
               <Icon name="email" type="material" color={appColors.grey4} size={20} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, styles.emailInput]}
                 placeholder="your.email@example.com"
                 placeholderTextColor={appColors.grey4}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => handleFieldChange('email', text)}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
             </View>
+            {errors.email && <Text style={styles.fieldErrorText}>{errors.email}</Text>}
             <Text style={styles.helperText}>
               We'll only use this to follow up on your feedback if needed
             </Text>
@@ -248,6 +268,7 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
           <View style={styles.bottomSpacing} />
         </ScrollView>
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };
@@ -317,7 +338,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   typeButtonActive: {
-    backgroundColor: appColors.C,
+    backgroundColor: appColors.AppBlue + '10',
   },
   typeLabel: {
     fontSize: 13,
@@ -405,6 +426,17 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  fieldErrorText: {
+    fontSize: 12,
+    color: '#F44336',
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 6,
+    marginLeft: 4,
+  },
+  inputError: {
+    borderColor: '#F44336',
+    borderWidth: 1.5,
   },
 });
 

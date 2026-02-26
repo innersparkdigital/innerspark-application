@@ -10,11 +10,21 @@ import { testAllTherapistGetEndpoints } from '../api/therapist/therapistApiTestH
 const DevTestScreen = () => {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const therapistId = '52863268761';
+  // const therapistId = '52863268761';
+  const therapistId = '79784672620'; // new therapist
+  const appointmentId = '3';
+  const clientId = '62275791680';
+  const eventId = '77509844410';
+  const groupId = '1001';
+  const assessmentId = '1234567890';
+  const messageId = '1';
+  const chatId = '62275791680';
+  const notificationId = '1';
+
 
   const runTests = async () => {
     setLoading(true);
-    const testResults = await testAllTherapistGetEndpoints(therapistId);
+    const testResults = await testAllTherapistGetEndpoints(therapistId, appointmentId, clientId, eventId, groupId, assessmentId);
     setResults(testResults);
     setLoading(false);
   };

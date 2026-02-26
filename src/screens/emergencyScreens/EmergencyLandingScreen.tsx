@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
-  Alert,
   RefreshControl,
   Dimensions,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface EmergencyContact {
   id: string;
@@ -47,6 +47,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
@@ -153,20 +154,16 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
     try {
       const phoneUrl = `tel:${phone}`;
       const canOpen = await Linking.canOpenURL(phoneUrl);
-      
+
       if (canOpen) {
-        Alert.alert(
-          'Emergency Call',
-          `Call ${name} at ${phone}?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Call Now', 
-              style: 'destructive',
-              onPress: () => Linking.openURL(phoneUrl)
-            }
-          ]
-        );
+        alert.show({
+          type: 'confirm',
+          title: 'Emergency Call',
+          message: `Call ${name} at ${phone}?`,
+          confirmText: 'Call Now',
+          cancelText: 'Cancel',
+          onConfirm: () => Linking.openURL(phoneUrl),
+        });
       } else {
         toast.show({
           description: 'Unable to make calls on this device',
@@ -205,14 +202,14 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
     { key: 'youth', label: 'Youth Support', icon: 'child-care' },
   ];
 
-  const filteredCrisisLines = selectedCategory === 'all' 
-    ? crisisLines 
+  const filteredCrisisLines = selectedCategory === 'all'
+    ? crisisLines
     : crisisLines.filter(line => line.category === selectedCategory);
 
   const QuickActionsCard: React.FC = () => (
     <View style={styles.quickActionsCard}>
       <Text style={styles.cardTitle}>Quick Emergency Actions</Text>
-      
+
       <View style={styles.quickActionsGrid}>
         <TouchableOpacity style={styles.quickActionButton} onPress={handlePanicButton}>
           <View style={[styles.quickActionIcon, { backgroundColor: '#F44336' }]}>
@@ -221,8 +218,8 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
           <Text style={styles.quickActionText}>Panic Button</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.quickActionButton} 
+        <TouchableOpacity
+          style={styles.quickActionButton}
           onPress={() => emergencyContacts.length > 0 && handleCall(emergencyContacts[0].phone, emergencyContacts[0].name)}
         >
           <View style={[styles.quickActionIcon, { backgroundColor: '#FF9800' }]}>
@@ -274,7 +271,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
               <Text style={styles.lastContact}>Last contact: {contact.lastContact}</Text>
             )}
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.callButton}
             onPress={() => handleCall(contact.phone, contact.name)}
           >
@@ -288,7 +285,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
   const CrisisLinesCard: React.FC = () => (
     <View style={styles.crisisLinesCard}>
       <Text style={styles.cardTitle}>Crisis Support Lines</Text>
-      
+
       {/* Category Filter */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilter}>
         {categories.map((category) => (
@@ -300,11 +297,11 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
             ]}
             onPress={() => setSelectedCategory(category.key)}
           >
-            <Icon 
-              name={category.icon} 
-              type="material" 
-              color={selectedCategory === category.key ? '#FFF' : appColors.grey3} 
-              size={16} 
+            <Icon
+              name={category.icon}
+              type="material"
+              color={selectedCategory === category.key ? '#FFF' : appColors.grey3}
+              size={16}
             />
             <Text style={[
               styles.categoryText,
@@ -333,7 +330,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
               <Text style={styles.crisisLineLocation}>📍 {line.location}</Text>
             </View>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.crisisCallButton}
             onPress={() => handleCall(line.phone, line.name)}
           >
@@ -349,7 +346,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -358,7 +355,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
           <Text style={styles.headerTitle}>Emergency Help</Text>
           <View style={styles.placeholder} />
         </View>
-        
+
         <ScrollView style={styles.scrollView}>
           <View style={styles.loadingContainer}>
             <Skeleton animation="pulse" width="100%" height={120} style={{ marginBottom: 20 }} />
@@ -374,14 +371,14 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Emergency Help</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
         >
@@ -396,7 +393,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
           <Text style={styles.bannerTitle}>Need immediate help?</Text>
           <Text style={styles.bannerSubtitle}>If you're in immediate danger, call emergency services</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.emergencyCallButton}
           onPress={() => handleCall('911', 'Emergency Services')}
         >
@@ -404,7 +401,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         refreshControl={
           <RefreshControl
@@ -418,9 +415,10 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
         <QuickActionsCard />
         <EmergencyContactsCard />
         <CrisisLinesCard />
-        
+
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

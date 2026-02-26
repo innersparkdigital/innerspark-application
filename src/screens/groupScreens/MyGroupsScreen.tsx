@@ -9,7 +9,6 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   ActionSheetIOS,
   Platform,
 } from 'react-native';
@@ -19,6 +18,7 @@ import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getMyGroups, leaveGroup } from '../../api/client/groups';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface MyGroup {
   id: string;
@@ -42,6 +42,7 @@ interface MyGroupsScreenProps {
 
 const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [myGroups, setMyGroups] = useState<MyGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,7 +108,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
       console.log('📞 Calling getMyGroups API (MyGroupsScreen)...');
       const response = await getMyGroups(userId);
       console.log('✅ My Groups API Response (MyGroupsScreen):', JSON.stringify(response, null, 2));
-      
+
       const apiGroups = response.data?.groups || [];
       const mappedGroups: MyGroup[] = apiGroups.map((group: any) => ({
         id: group.id?.toString() || group._id?.toString(),
@@ -124,7 +125,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
         isActive: group.isActive || group.is_active !== false,
         role: group.role || group.userRole || group.user_role || 'member',
       }));
-      
+
       setMyGroups(mappedGroups);
       console.log('✅ Mapped My Groups:', mappedGroups.length);
     } catch (error: any) {
@@ -148,7 +149,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
 
   // Handle open chat
   const handleOpenChat = (group: MyGroup) => {
-    navigation.navigate('GroupChatScreen', { 
+    navigation.navigate('GroupChatScreen', {
       groupId: group.id,
       groupName: group.name,
       groupIcon: group.icon,
@@ -164,54 +165,50 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
 
   // Handle leave group
   const handleLeaveGroup = (group: MyGroup) => {
-    Alert.alert(
-      'Leave Group',
-      `Are you sure you want to leave "${group.name}"? You can rejoin later if there's space.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Leave', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('📞 Calling leaveGroup API...');
-              console.log('Group ID:', group.id);
-              console.log('User ID:', userId);
+    alert.show({
+      type: 'destructive',
+      title: 'Leave Group',
+      message: `Are you sure you want to leave "${group.name}"? You can rejoin later if there's space.`,
+      confirmText: 'Leave',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          console.log('📞 Calling leaveGroup API...');
+          console.log('Group ID:', group.id);
+          console.log('User ID:', userId);
 
-              // Call API to leave group
-              const response = await leaveGroup(group.id, userId, '', '');
-              console.log('✅ Leave group response:', response);
+          // Call API to leave group
+          const response = await leaveGroup(group.id, userId, '', '');
+          console.log('✅ Leave group response:', response);
 
-              // Remove group from list
-              setMyGroups(prev => prev.filter(g => g.id !== group.id));
-              
-              toast.show({
-                description: response.message || `You have left ${group.name}`,
-                duration: 3000,
-              });
+          // Remove group from list
+          setMyGroups(prev => prev.filter(g => g.id !== group.id));
 
-              // Reload groups to get fresh data
-              await loadMyGroups();
-            } catch (error: any) {
-              console.error('❌ Error leaving group:', error);
-              
-              // Handle specific error cases
-              if (error.response?.data?.error) {
-                toast.show({
-                  description: error.response.data.error,
-                  duration: 3000,
-                });
-              } else {
-                toast.show({
-                  description: 'Failed to leave group. Please try again.',
-                  duration: 3000,
-                });
-              }
-            }
+          toast.show({
+            description: response.message || `You have left ${group.name}`,
+            duration: 3000,
+          });
+
+          // Reload groups to get fresh data
+          await loadMyGroups();
+        } catch (error: any) {
+          console.error('❌ Error leaving group:', error);
+
+          // Handle specific error cases
+          if (error.response?.data?.error) {
+            toast.show({
+              description: error.response.data.error,
+              duration: 3000,
+            });
+          } else {
+            toast.show({
+              description: 'Failed to leave group. Please try again.',
+              duration: 3000,
+            });
           }
-        },
-      ]
-    );
+        }
+      },
+    });
   };
 
   // Handle group menu
@@ -232,20 +229,17 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
         }
       );
     } else {
-      // Android - use Alert
-      Alert.alert(
-        group.name,
-        'Choose an action',
-        [
+      // Android - use ISAlert with actions
+      alert.show({
+        type: 'confirm',
+        title: group.name,
+        message: 'Choose an action',
+        actions: [
           { text: 'View Details', onPress: () => handleGroupDetails(group) },
-          { 
-            text: 'Leave Group', 
-            style: 'destructive',
-            onPress: () => handleLeaveGroup(group) 
-          },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
+          { text: 'Leave Group', onPress: () => handleLeaveGroup(group), style: 'destructive' },
+        ],
+        cancelText: 'Cancel',
+      });
     }
   };
 
@@ -273,7 +267,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
 
   // Render group card
   const renderGroupCard = ({ item }: { item: MyGroup }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
         styles.groupCard,
         !item.isActive && styles.inactiveGroupCard
@@ -285,11 +279,11 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
           styles.groupIconContainer,
           { backgroundColor: getCategoryColor(item.category) + '20' }
         ]}>
-          <Icon 
-            name={item.icon} 
-            type="material" 
-            color={getCategoryColor(item.category)} 
-            size={28} 
+          <Icon
+            name={item.icon}
+            type="material"
+            color={getCategoryColor(item.category)}
+            size={28}
           />
           {item.role === 'moderator' && (
             <View style={styles.moderatorBadge}>
@@ -297,7 +291,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
             </View>
           )}
         </View>
-        
+
         <View style={styles.groupInfo}>
           <View style={styles.groupTitleRow}>
             <Text style={styles.groupName} numberOfLines={1}>{item.name}</Text>
@@ -309,13 +303,13 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
               </View>
             )}
           </View>
-          
+
           <Text style={styles.lastActivity}>
             {formatLastActivity(item.lastActivity)}
           </Text>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.moreButton}
           onPress={() => handleGroupMenu(item)}
         >
@@ -348,7 +342,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
         </View>
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.detailsButton}
             onPress={() => handleGroupDetails(item)}
           >
@@ -356,7 +350,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
             <Text style={styles.detailsButtonText}>Details</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.chatButton,
               { backgroundColor: getCategoryColor(item.category) }
@@ -455,6 +449,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={myGroups.length === 0 ? styles.emptyContainer : styles.listContainer}
       />
+      <ISAlert ref={alert.ref} />
     </View>
   );
 };

@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Linking,
   ActivityIndicator,
   RefreshControl,
@@ -29,6 +28,7 @@ import {
 } from '../../api/client/emergency';
 import { mockEmergencyContacts, mockCrisisLines } from '../../global/MockData';
 import { isValidName, isValidPhoneNumber, isValidRelationship } from '../../global/LHValidators';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import {
   setEmergencyContacts as setEmergencyContactsRedux,
   addEmergencyContact as addEmergencyContactRedux,
@@ -62,6 +62,7 @@ interface CrisisLine {
 
 const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails?.userId);
 
@@ -159,19 +160,16 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
   };
 
   const handleCall = (phone: string, name: string) => {
-    Alert.alert(
-      'Call Emergency Contact',
-      `Call ${name} at ${phone}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Call',
-          onPress: () => {
-            Linking.openURL(`tel:${phone.replace(/\s/g, '')}`);
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Call Emergency Contact',
+      message: `Call ${name} at ${phone}?`,
+      confirmText: 'Call',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        Linking.openURL(`tel:${phone.replace(/\s/g, '')}`);
+      },
+    });
   };
 
   const handleAddContact = async () => {
@@ -271,37 +269,33 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
   };
 
   const handleDeleteContact = (id: string) => {
-    Alert.alert(
-      'Delete Contact',
-      'Are you sure you want to remove this emergency contact?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('📞 Calling deleteEmergencyContact API...');
-              await deleteEmergencyContactAPI(id, userId);
-              console.log('✅ Contact deleted successfully');
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Contact',
+      message: 'Are you sure you want to remove this emergency contact?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          console.log('📞 Calling deleteEmergencyContact API...');
+          await deleteEmergencyContactAPI(id, userId);
+          console.log('✅ Contact deleted successfully');
 
-              setContacts(contacts.filter(c => c.id !== id));
-              dispatch(deleteEmergencyContactRedux(id)); // ✅ Redux dispatch
-              toast.show({
-                description: 'Contact removed',
-                duration: 2000,
-              });
-            } catch (error: any) {
-              console.error('❌ Error deleting contact:', error);
-              toast.show({
-                description: error.response?.data?.error || 'Failed to delete contact. Please try again.',
-                duration: 3000,
-              });
-            }
-          },
-        },
-      ]
-    );
+          setContacts(contacts.filter(c => c.id !== id));
+          dispatch(deleteEmergencyContactRedux(id)); // ✅ Redux dispatch
+          toast.show({
+            description: 'Contact removed',
+            duration: 2000,
+          });
+        } catch (error: any) {
+          console.error('❌ Error deleting contact:', error);
+          toast.show({
+            description: error.response?.data?.error || 'Failed to delete contact. Please try again.',
+            duration: 3000,
+          });
+        }
+      },
+    });
   };
 
   const handleSetPrimary = (id: string) => {
@@ -543,6 +537,7 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
           </View>
         </View>
       </Overlay>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

@@ -9,7 +9,6 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton } from '@rneui/base';
@@ -22,6 +21,7 @@ import { useToast } from 'native-base';
 import { getBillingHistory } from '../../api/client/subscriptions';
 import { mockPaymentMethods } from '../../global/MockData';
 import { setBillingHistory } from '../../features/subscription/subscriptionSlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface Invoice {
   id: string;
@@ -52,6 +52,7 @@ interface BillingHistoryScreenProps {
 
 const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -98,13 +99,13 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
           billingPeriod: invoice.billing_period || invoice.billingPeriod,
           downloadUrl: invoice.download_url || invoice.downloadUrl,
         }));
-        
+
         if (page === 1) {
           setInvoices(mappedInvoices);
         } else {
           setInvoices(prev => [...prev, ...mappedInvoices]);
         }
-        
+
         // Check if there are more pages
         const currentPage = pagination.currentPage || page;
         const totalPages = pagination.totalPages || 1;
@@ -120,9 +121,9 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       // ⚠️ MISSING ENDPOINT: getPaymentMethods(userId)
       // Build dynamic payment methods from Redux state
       console.log('ℹ️ Building payment methods from Redux state');
-      
+
       const dynamicPaymentMethods: PaymentMethod[] = [];
-      
+
       // Add Wellness Vault if user has balance
       if (walletBalance > 0) {
         dynamicPaymentMethods.push({
@@ -133,7 +134,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
           isDefault: true,
         });
       }
-      
+
       // Add Mobile Money if user has phone number
       if (userDetails?.phoneNumber) {
         const maskedPhone = userDetails.phoneNumber.replace(/\d(?=\d{4})/g, '*');
@@ -145,16 +146,16 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
           isDefault: dynamicPaymentMethods.length === 0, // Default if no wallet balance
         });
       }
-      
+
       setPaymentMethods(dynamicPaymentMethods);
     } catch (error: any) {
       console.error('❌ Error loading billing history:', error);
-      
+
       // On error, show empty state (not mock data)
       setInvoices([]);
       setPaymentMethods([]); // Empty payment methods on error
       setHasMore(false);
-      
+
       toast.show({
         description: 'Failed to load billing history. Please try again.',
         duration: 3000,
@@ -182,7 +183,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
     // ⚠️ MISSING ENDPOINT: downloadInvoice(userId, invoiceId)
     // Using local behavior only
     console.log('⚠️ MISSING API: downloadInvoice - using mock behavior');
-    
+
     toast.show({
       description: `Downloading ${invoice.invoiceNumber}... (offline mode)`,
       duration: 2000,
@@ -190,14 +191,14 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
   };
 
   const handleRetryPayment = (invoice: Invoice) => {
-    Alert.alert(
-      'Retry Payment',
-      `Retry payment for ${invoice.invoiceNumber}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Retry', onPress: () => processRetryPayment(invoice) }
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Retry Payment',
+      message: `Retry payment for ${invoice.invoiceNumber}?`,
+      confirmText: 'Retry',
+      cancelText: 'Cancel',
+      onConfirm: () => processRetryPayment(invoice),
+    });
   };
 
   const processRetryPayment = async (invoice: Invoice) => {
@@ -205,18 +206,18 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       // ⚠️ MISSING ENDPOINT: retryPayment(userId, invoiceId, paymentMethod)
       // Using local state update only
       console.log('⚠️ MISSING API: retryPayment - using mock behavior');
-      
+
       toast.show({
         description: 'Processing payment... (offline mode)',
         duration: 2000,
       });
-      
+
       // Update invoice status
       const updatedInvoices = invoices.map(inv =>
         inv.id === invoice.id ? { ...inv, status: 'paid' as const } : inv
       );
       setInvoices(updatedInvoices);
-      
+
       toast.show({
         description: 'Payment successful! (offline mode)',
         duration: 3000,
@@ -267,7 +268,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
     });
   };
 
-  const filteredInvoices = invoices.filter(invoice => 
+  const filteredInvoices = invoices.filter(invoice =>
     selectedFilter === 'all' || invoice.status === selectedFilter
   );
 
@@ -278,21 +279,21 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
           <Text style={styles.invoiceNumber}>{invoice.invoiceNumber}</Text>
           <Text style={styles.invoiceDate}>{formatDate(invoice.date)}</Text>
         </View>
-        
+
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(invoice.status) }]}>
-          <Icon 
-            name={getStatusIcon(invoice.status)} 
-            type="material" 
-            color={appColors.CardBackground} 
-            size={14} 
+          <Icon
+            name={getStatusIcon(invoice.status)}
+            type="material"
+            color={appColors.CardBackground}
+            size={14}
           />
           <Text style={styles.statusText}>{invoice.status?.toUpperCase() || 'UNKNOWN'}</Text>
         </View>
       </View>
-      
+
       <Text style={styles.invoiceDescription}>{invoice.description}</Text>
       <Text style={styles.billingPeriod}>{invoice.billingPeriod}</Text>
-      
+
       <View style={styles.invoiceDetails}>
         <View style={styles.amountContainer}>
           <Text style={styles.amount}>
@@ -300,12 +301,12 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
           </Text>
           <Text style={styles.paymentMethod}>via {invoice.paymentMethod}</Text>
         </View>
-        
+
         {invoice.status === 'pending' && (
           <Text style={styles.dueDate}>Due: {formatDate(invoice.dueDate)}</Text>
         )}
       </View>
-      
+
       <View style={styles.invoiceActions}>
         {invoice.downloadUrl && invoice.status === 'paid' && (
           <TouchableOpacity
@@ -316,7 +317,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
             <Text style={styles.downloadButtonText}>Download</Text>
           </TouchableOpacity>
         )}
-        
+
         {(invoice.status === 'failed' || invoice.status === 'overdue') && (
           <TouchableOpacity
             style={styles.retryButton}
@@ -350,7 +351,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       <Icon name="receipt-long" type="material" color={appColors.grey3} size={80} />
       <Text style={styles.emptyTitle}>No Invoices Found</Text>
       <Text style={styles.emptySubtitle}>
-        {selectedFilter === 'all' 
+        {selectedFilter === 'all'
           ? 'Your billing history will appear here'
           : `No ${selectedFilter} invoices found`}
       </Text>
@@ -386,11 +387,11 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       {paymentMethods.map((method) => (
         <View key={method.id} style={styles.paymentMethodItem}>
           <View style={styles.paymentMethodInfo}>
-            <Icon 
-              name={method.type === 'wellnessvault' ? 'account-balance-wallet' : 'phone-android'} 
-              type="material" 
-              color={appColors.AppBlue} 
-              size={24} 
+            <Icon
+              name={method.type === 'wellnessvault' ? 'account-balance-wallet' : 'phone-android'}
+              type="material"
+              color={appColors.AppBlue}
+              size={24}
             />
             <View style={styles.paymentMethodDetails}>
               <Text style={styles.paymentMethodName}>{method.name}</Text>
@@ -426,7 +427,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       <FlatList
         data={isLoading ? Array(5).fill({}) : filteredInvoices}
         keyExtractor={(item, index) => isLoading ? index.toString() : item.id}
-        renderItem={({ item }) => 
+        renderItem={({ item }) =>
           isLoading ? <InvoiceSkeleton /> : <InvoiceCard invoice={item} />
         }
         showsVerticalScrollIndicator={false}
@@ -448,6 +449,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
         }
         ListEmptyComponent={!isLoading ? <EmptyState /> : null}
       />
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

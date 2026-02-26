@@ -10,7 +10,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +21,7 @@ import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { getUserSettings } from '../../api/client/settings';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface SecuritySettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -44,6 +44,7 @@ interface SecuritySetting {
 
 const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,10 +59,10 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
   const fetchSecuritySettings = async () => {
     try {
       const response = await getUserSettings(userId);
-      
+
       if (response.success && response.data) {
         const settings = response.data;
-        
+
         setBiometricEnabled(settings.security?.biometricEnabled ?? true);
         setTwoFactorEnabled(settings.security?.twoFactorEnabled ?? false);
 
@@ -101,43 +102,36 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
 
   const handleTwoFactorToggle = (value: boolean) => {
     if (value) {
-      Alert.alert(
-        'Enable Two-Factor Authentication',
-        'You will need to verify your identity with a second factor (SMS or authenticator app) when logging in.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Enable',
-            onPress: () => {
-              setTwoFactorEnabled(true);
-              navigation.navigate('TwoFactorSetupScreen');
-            },
-          },
-        ]
-      );
+      alert.show({
+        type: 'confirm',
+        title: 'Enable Two-Factor Authentication',
+        message: 'You will need to verify your identity with a second factor (SMS or authenticator app) when logging in.',
+        confirmText: 'Enable',
+        cancelText: 'Cancel',
+        onConfirm: () => {
+          setTwoFactorEnabled(true);
+          navigation.navigate('TwoFactorSetupScreen');
+        },
+      });
     } else {
-      Alert.alert(
-        'Disable Two-Factor Authentication',
-        'This will make your account less secure. Are you sure?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Disable',
-            style: 'destructive',
-            onPress: () => {
-              setTwoFactorEnabled(false);
-              toast.show({
-                description: 'Two-factor authentication disabled',
-                duration: 2000,
-              });
-            },
-          },
-        ]
-      );
+      alert.show({
+        type: 'warning',
+        title: 'Disable Two-Factor Authentication',
+        message: 'This will make your account less secure. Are you sure?',
+        confirmText: 'Disable',
+        cancelText: 'Cancel',
+        onConfirm: () => {
+          setTwoFactorEnabled(false);
+          toast.show({
+            description: 'Two-factor authentication disabled',
+            duration: 2000,
+          });
+        },
+      });
     }
   };
 
- 
+
 
   // Security Settings 
   const securitySettings: SecuritySetting[] = [
@@ -170,7 +164,7 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
       switchValue: twoFactorEnabled,
       onSwitchChange: handleTwoFactorToggle,
     },
-   
+
   ];
 
   const renderSecurityItem = (item: SecuritySetting) => (
@@ -197,7 +191,7 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
           )}
         </View>
       </View>
-      
+
       <View style={styles.securityItemRight}>
         {item.badge && (
           <View style={styles.badge}>
@@ -286,6 +280,7 @@ const SecuritySettingsScreen: React.FC<SecuritySettingsScreenProps> = ({ navigat
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

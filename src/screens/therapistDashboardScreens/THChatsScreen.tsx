@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -8,6 +8,7 @@ import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getConversations } from '../../api/therapist';
+import { useFocusEffect } from '@react-navigation/native';
 
 const THChatsScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -19,6 +20,14 @@ const THChatsScreen = ({ navigation }: any) => {
   useEffect(() => {
     loadConversations();
   }, []);
+
+  // Reload conversations whenever this tab comes into focus
+  // (e.g. after sending messages, starting new chats, or returning from a conversation)
+  useFocusEffect(
+    useCallback(() => {
+      loadConversations();
+    }, [])
+  );
 
   const loadConversations = async () => {
     try {

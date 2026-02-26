@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -8,6 +8,7 @@ import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getAppointments } from '../../api/therapist';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 
@@ -21,6 +22,14 @@ const THAppointmentsScreen = ({ navigation }: any) => {
   useEffect(() => {
     loadAppointments();
   }, []);
+
+  // Reload appointments whenever this tab comes into focus
+  // (e.g. after scheduling, editing, or returning from details)
+  useFocusEffect(
+    useCallback(() => {
+      loadAppointments();
+    }, [])
+  );
 
   const loadAppointments = async () => {
     try {

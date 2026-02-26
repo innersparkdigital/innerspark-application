@@ -2,13 +2,14 @@
  * Therapist Group Members Management Screen
  */
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert, ISAlertAction } from '../../../components/alerts/ISAlert';
 import { useSelector } from 'react-redux';
 import {
   getGroupMembers,
@@ -37,6 +38,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [loading, setLoading] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
+  const alert = useISAlert();
 
   React.useEffect(() => {
     loadMembers();
@@ -68,8 +70,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
   });
 
   const handleMemberAction = (member: Member) => {
-    const actions = [
-      { text: 'Cancel', style: 'cancel' },
+    const actions: ISAlertAction[] = [
       { text: 'View Profile', onPress: () => navigation.navigate('THGroupMemberProfileScreen', { member }) },
     ];
 
@@ -80,9 +81,9 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
           try {
             await updateGroupMemberRole(group.id, member.id, 'moderator');
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'moderator' as const } : m));
-            Alert.alert('Success', `${member.name} is now a moderator`);
+            alert.show({ type: 'success', title: 'Success', message: `${member.name} is now a moderator` });
           } catch (error: any) {
-            Alert.alert('Error', error.backendMessage || 'Failed to update role');
+            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to update role' });
           }
         },
       });
@@ -93,9 +94,9 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
           try {
             await updateGroupMemberRole(group.id, member.id, 'member');
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'member' as const } : m));
-            Alert.alert('Success', `${member.name} is no longer a moderator`);
+            alert.show({ type: 'success', title: 'Success', message: `${member.name} is no longer a moderator` });
           } catch (error: any) {
-            Alert.alert('Error', error.backendMessage || 'Failed to update role');
+            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to update role' });
           }
         },
       });
@@ -103,27 +104,27 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
 
     if (member.status === 'muted') {
       actions.push({
-        text: 'Unmute',
+        text: 'Unmute Member',
         onPress: async () => {
           try {
             await unmuteGroupMember(group.id, member.id);
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'active' as const } : m));
-            Alert.alert('Success', `${member.name} has been unmuted`);
+            alert.show({ type: 'success', title: 'Success', message: `${member.name} has been unmuted` });
           } catch (error: any) {
-            Alert.alert('Error', error.backendMessage || 'Failed to unmute member');
+            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to unmute member' });
           }
         },
       });
     } else {
       actions.push({
-        text: 'Mute (5m)',
+        text: 'Mute Member (5m)',
         onPress: async () => {
           try {
             await muteGroupMember(group.id, member.id, 300); // Mute for 5 minutes
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'muted' as const } : m));
-            Alert.alert('Success', `${member.name} has been muted`);
+            alert.show({ type: 'success', title: 'Success', message: `${member.name} has been muted` });
           } catch (error: any) {
-            Alert.alert('Error', error.backendMessage || 'Failed to mute member');
+            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to mute member' });
           }
         },
       });
@@ -131,31 +132,35 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
 
     actions.push({
       text: 'Remove from Group',
+      style: 'destructive',
       onPress: () => {
-        Alert.alert(
-          'Remove Member',
-          `Are you sure you want to remove ${member.name} from the group?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Remove',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await removeGroupMember(group.id, member.id);
-                  setMembers((prev) => prev.filter((m) => m.id !== member.id));
-                  Alert.alert('Success', `${member.name} has been removed`);
-                } catch (error: any) {
-                  Alert.alert('Error', error.backendMessage || 'Failed to remove member');
-                }
-              },
-            },
-          ]
-        );
+        alert.show({
+          type: 'destructive',
+          title: 'Remove Member',
+          message: `Are you sure you want to remove ${member.name} from the group?`,
+          confirmText: 'Remove',
+          cancelText: 'Cancel',
+          onConfirm: async () => {
+            try {
+              await removeGroupMember(group.id, member.id);
+              setMembers((prev) => prev.filter((m) => m.id !== member.id));
+              alert.show({ type: 'success', title: 'Removed', message: `${member.name} has been removed` });
+            } catch (error: any) {
+              alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to remove member' });
+            }
+          },
+        });
       },
     });
 
-    Alert.alert('Manage Member', `What would you like to do with ${member.name}?`, actions as any);
+    actions.push({ text: 'Cancel', style: 'cancel' });
+
+    alert.show({
+      type: 'info',
+      title: 'Member Options',
+      message: `What would you like to do with ${member.name}?`,
+      actions: actions,
+    });
   };
 
 
@@ -305,6 +310,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
           }
         />
       </View>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

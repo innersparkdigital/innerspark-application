@@ -10,7 +10,6 @@ import {
     Image,
     TouchableOpacity,
     Linking,
-    Alert,
     Pressable,
     ScrollView,
 
@@ -25,6 +24,7 @@ import { appLinks, appContents } from '../global/Data';
 import HeaderBackButton from '../components/HeaderBackButton';
 import LHGenericHeader from '../components/LHGenericHeader';
 import ISGenericHeader from '../components/ISGenericHeader'; // generic header for Innerspark
+import ISAlert, { useISAlert } from '../components/alerts/ISAlert';
 
 
 // App version
@@ -32,7 +32,7 @@ const appVersion = VersionInfo.appVersion;
 
 
 // Returns a touchable opacity button that opens a url on press
-const OpenURLButton = ({ url, children }: any) => {
+const OpenURLButton = ({ url, children, alertRef }: any) => {
     const handlePress = useCallback(async () => {
 
         // Checking if the link is supported for links with custom URL scheme.
@@ -43,7 +43,12 @@ const OpenURLButton = ({ url, children }: any) => {
             // by some browser in the mobile
             await Linking.openURL(url);
         } else {
-            Alert.alert(`Don't know how to open this URL: ${url}`);
+            alertRef?.current?.show({
+                type: 'info',
+                title: 'Cannot Open URL',
+                message: `Don't know how to open this URL: ${url}`,
+                confirmText: 'OK',
+            });
         }
 
     }, [url]);
@@ -54,6 +59,7 @@ const OpenURLButton = ({ url, children }: any) => {
 
 export default function AboutAppScreen({ navigation }: any) {
     const toast = useToast();
+    const alert = useISAlert();
 
     // Toast Notifications
     const notifyWithToast = (description: any) => { toast.show({ description: description, }) }
@@ -88,7 +94,7 @@ export default function AboutAppScreen({ navigation }: any) {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Quick Actions</Text>
 
-                    <OpenURLButton url={appLinks.appWebsite}>
+                    <OpenURLButton url={appLinks.appWebsite} alertRef={alert.ref}>
                         <View style={styles.actionRow}>
                             <View style={styles.actionIconContainer}>
                                 <Icon type="material" name="language" color={appColors.AppBlue} size={24} />
@@ -101,7 +107,7 @@ export default function AboutAppScreen({ navigation }: any) {
                         </View>
                     </OpenURLButton>
 
-                    <OpenURLButton url={appLinks.appSupportEmail}>
+                    <OpenURLButton url={appLinks.appSupportEmail} alertRef={alert.ref}>
                         <View style={styles.actionRow}>
                             <View style={styles.actionIconContainer}>
                                 <Icon type="material" name="support-agent" color={appColors.AppBlue} size={24} />
@@ -114,7 +120,7 @@ export default function AboutAppScreen({ navigation }: any) {
                         </View>
                     </OpenURLButton>
 
-                    <OpenURLButton url={appLinks.appGooglePlayURL}>
+                    <OpenURLButton url={appLinks.appGooglePlayURL} alertRef={alert.ref}>
                         <View style={styles.actionRow}>
                             <View style={styles.actionIconContainer}>
                                 <Icon type="material" name="system-update" color={appColors.AppBlue} size={24} />
@@ -132,25 +138,25 @@ export default function AboutAppScreen({ navigation }: any) {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Connect With Us</Text>
                     <View style={styles.socialContainer}>
-                        <OpenURLButton url={appLinks.appLinkedIn}>
+                        <OpenURLButton url={appLinks.appLinkedIn} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
                                 <Icon type="material-community" name="linkedin" color={appColors.CardBackground} size={24} />
                             </View>
                         </OpenURLButton>
 
-                        <OpenURLButton url={appLinks.appFacebook}>
+                        <OpenURLButton url={appLinks.appFacebook} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
                                 <Icon type="material-community" name="facebook" color={appColors.CardBackground} size={24} />
                             </View>
                         </OpenURLButton>
 
-                        <OpenURLButton url={appLinks.appTwitter}>
+                        <OpenURLButton url={appLinks.appTwitter} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
                                 <Icon type="material-community" name="twitter" color={appColors.CardBackground} size={24} />
                             </View>
                         </OpenURLButton>
 
-                        <OpenURLButton url={appLinks.appInstagram}>
+                        <OpenURLButton url={appLinks.appInstagram} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
                                 <Icon type="material-community" name="instagram" color={appColors.CardBackground} size={24} />
                             </View>
@@ -165,6 +171,7 @@ export default function AboutAppScreen({ navigation }: any) {
 
                 <View style={styles.bottomSpacing} />
             </ScrollView>
+            <ISAlert ref={alert.ref} />
         </SafeAreaView>
     )
 }

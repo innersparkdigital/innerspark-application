@@ -10,7 +10,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +21,7 @@ import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { getPrivacySettings, updatePrivacySettings } from '../../api/client/settings';
 import { setPrivacySettings, updatePrivacySetting as updatePrivacySettingRedux, selectPrivacySettings } from '../../features/settings/userSettingsSlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface PrivacySettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -43,29 +43,30 @@ interface PrivacySetting {
 
 const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const privacySettings = useSelector(selectPrivacySettings);
-  
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Data Collection Settings (local UI state - not from backend)
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
   const [crashReportsEnabled, setCrashReportsEnabled] = useState(true);
   const [usageDataEnabled, setUsageDataEnabled] = useState(true);
   const [locationDataEnabled, setLocationDataEnabled] = useState(false);
-  
+
   // Profile Visibility (synced with Redux/backend)
   const [profilePublic, setProfilePublic] = useState(privacySettings.profileVisibility === 'public');
   const [showOnlineStatus, setShowOnlineStatus] = useState(privacySettings.showOnlineStatus);
   const [shareProgress, setShareProgress] = useState(privacySettings.shareProgress);
-  
+
   // Communication Privacy (synced with Redux/backend)
   const [allowMessages, setAllowMessages] = useState(privacySettings.allowMessages);
   const [allowGroupInvites, setAllowGroupInvites] = useState(privacySettings.allowGroupInvites);
   const [shareContactInfo, setShareContactInfo] = useState(privacySettings.shareContactInfo);
-  
+
   // Data Sharing (synced with Redux/backend)
   const [shareWithTherapists, setShareWithTherapists] = useState(true);
   const [shareForResearch, setShareForResearch] = useState(privacySettings.dataSharing);
@@ -157,23 +158,20 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
 
   const handleLocationToggle = (value: boolean) => {
     if (value) {
-      Alert.alert(
-        'Enable Location Data',
-        'This will help us provide location-based services like finding nearby therapists and support groups.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Enable',
-            onPress: () => {
-              setLocationDataEnabled(true);
-              toast.show({
-                description: 'Location data enabled',
-                duration: 2000,
-              });
-            },
-          },
-        ]
-      );
+      alert.show({
+        type: 'confirm',
+        title: 'Enable Location Data',
+        message: 'This will help us provide location-based services like finding nearby therapists and support groups.',
+        confirmText: 'Enable',
+        cancelText: 'Cancel',
+        onConfirm: () => {
+          setLocationDataEnabled(true);
+          toast.show({
+            description: 'Location data enabled',
+            duration: 2000,
+          });
+        },
+      });
     } else {
       setLocationDataEnabled(false);
       toast.show({
@@ -185,24 +183,21 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
 
   const handleResearchSharingToggle = (value: boolean) => {
     if (value) {
-      Alert.alert(
-        'Share Data for Research',
-        'Your anonymized data may be used for mental health research to improve services. No personal information will be shared.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Allow',
-            onPress: () => {
-              setShareForResearch(true);
-              updatePrivacySettingHandler('dataSharing', true);
-              toast.show({
-                description: 'Research data sharing enabled',
-                duration: 2000,
-              });
-            },
-          },
-        ]
-      );
+      alert.show({
+        type: 'info',
+        title: 'Share Data for Research',
+        message: 'Your anonymized data may be used for mental health research to improve services. No personal information will be shared.',
+        confirmText: 'Allow',
+        cancelText: 'Cancel',
+        onConfirm: () => {
+          setShareForResearch(true);
+          updatePrivacySettingHandler('dataSharing', true);
+          toast.show({
+            description: 'Research data sharing enabled',
+            duration: 2000,
+          });
+        },
+      });
     } else {
       setShareForResearch(false);
       updatePrivacySettingHandler('dataSharing', false);
@@ -358,7 +353,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
           )}
         </View>
       </View>
-      
+
       <View style={styles.privacyItemRight}>
         {item.isImportant && (
           <Icon
@@ -449,13 +444,13 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
           profileVisibilitySettings,
           'Manage who can see your profile and activity'
         )}
-        
+
         {renderSection(
           'Communication',
           communicationSettings,
           'Control how others can contact and interact with you'
         )}
-        
+
         {renderSection(
           'Privacy Tools',
           privacyActions,
@@ -464,6 +459,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
@@ -18,6 +17,7 @@ import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { requestDataExport } from '../../api/client/account';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DataExportScreenProps {
   navigation: NavigationProp<any>;
@@ -35,6 +35,7 @@ interface DataCategory {
 
 const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>('json');
@@ -120,7 +121,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
 
   const handleExport = async () => {
     const selectedCategories = dataCategories.filter(cat => cat.included);
-    
+
     if (selectedCategories.length === 0) {
       toast.show({
         description: 'Please select at least one data category to export',
@@ -129,44 +130,41 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       return;
     }
 
-    Alert.alert(
-      'Export Your Data',
-      `You're about to export ${selectedCategories.length} data categories in ${exportFormat.toUpperCase()} format. This may take a few moments.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Export',
-          onPress: async () => {
-            setIsExporting(true);
-            try {
-              const categoryIds = selectedCategories.map(cat => cat.id);
-              const response = await requestDataExport(userId, exportFormat, categoryIds);
-              
-              if (response.success) {
-                toast.show({
-                  description: response.message || 'Data export request submitted. Check your email for the download link.',
-                  duration: 5000,
-                });
-                navigation.goBack();
-              } else {
-                toast.show({
-                  description: response.message || 'Export failed. Please try again.',
-                  duration: 3000,
-                });
-              }
-            } catch (error: any) {
-              console.error('Error exporting data:', error);
-              toast.show({
-                description: error.response?.data?.message || 'Export failed. Please try again.',
-                duration: 3000,
-              });
-            } finally {
-              setIsExporting(false);
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Export Your Data',
+      message: `You're about to export ${selectedCategories.length} data categories in ${exportFormat.toUpperCase()} format. This may take a few moments.`,
+      confirmText: 'Export',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setIsExporting(true);
+        try {
+          const categoryIds = selectedCategories.map(cat => cat.id);
+          const response = await requestDataExport(userId, exportFormat, categoryIds);
+
+          if (response.success) {
+            toast.show({
+              description: response.message || 'Data export request submitted. Check your email for the download link.',
+              duration: 5000,
+            });
+            navigation.goBack();
+          } else {
+            toast.show({
+              description: response.message || 'Export failed. Please try again.',
+              duration: 3000,
+            });
+          }
+        } catch (error: any) {
+          console.error('Error exporting data:', error);
+          toast.show({
+            description: error.response?.data?.message || 'Export failed. Please try again.',
+            duration: 3000,
+          });
+        } finally {
+          setIsExporting(false);
+        }
+      },
+    });
   };
 
   const getTotalSize = () => {
@@ -214,9 +212,9 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
       <ISGenericHeader
         title="Export Your Data"
         navigation={navigation}
-              />
+      />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -324,7 +322,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={styles.categoriesContainer}>
             {dataCategories.map(renderDataCategory)}
           </View>
@@ -373,6 +371,7 @@ const DataExportScreen: React.FC<DataExportScreenProps> = ({ navigation }) => {
           disabled={isExporting}
         />
       </View>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

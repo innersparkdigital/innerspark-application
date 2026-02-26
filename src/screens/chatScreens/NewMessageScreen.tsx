@@ -9,7 +9,6 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
@@ -18,6 +17,7 @@ import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getTherapists } from '../../api/client/therapists';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface Contact {
   id: string;
@@ -36,6 +36,7 @@ interface NewMessageScreenProps {
 
 const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
@@ -59,7 +60,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
       console.log('📞 Calling getTherapists API...');
       const response = await getTherapists({ search: searchQuery });
       console.log('✅ Therapists API Response:', JSON.stringify(response, null, 2));
-      
+
       if (response.success && response.data?.therapists) {
         const apiTherapists = response.data.therapists;
         const mappedContacts: Contact[] = apiTherapists.map((therapist: any) => ({
@@ -72,7 +73,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           isOnline: therapist.isOnline || therapist.is_online || false,
           lastSeen: therapist.lastSeen || therapist.last_seen,
         }));
-        
+
         setContacts(mappedContacts);
         console.log('✅ Mapped Contacts:', mappedContacts.length);
       } else {
@@ -114,7 +115,11 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
     if (!selectedContact || !messageText.trim() || isSending) return;
 
     if (messageText.length > 1000) {
-      Alert.alert('Message too long', 'Please keep your message under 1000 characters.');
+      alert.show({
+        type: 'warning',
+        title: 'Message too long',
+        message: 'Please keep your message under 1000 characters.',
+      });
       return;
     }
 
@@ -140,14 +145,14 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
       }, 1000);
     } catch (error) {
       setIsSending(false);
-      Alert.alert(
-        'Failed to open conversation',
-        'Please check your connection and try again.',
-        [
-          { text: 'OK' },
-          { text: 'Retry', onPress: handleSendMessage },
-        ]
-      );
+      alert.show({
+        type: 'error',
+        title: 'Failed to open conversation',
+        message: 'Please check your connection and try again.',
+        confirmText: 'Retry',
+        cancelText: 'OK',
+        onConfirm: handleSendMessage,
+      });
     }
   };
 
@@ -156,7 +161,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   };
 
   const renderContactItem = ({ item }: { item: Contact }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
         styles.contactItem,
         selectedContact?.id === item.id && styles.selectedContactItem
@@ -191,13 +196,13 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
             </View>
           )}
         </View>
-        
+
         <Text style={styles.contactEmail}>{item.email}</Text>
-        
+
         {item.specialty && (
           <Text style={styles.contactSpecialty}>{item.specialty}</Text>
         )}
-        
+
         {!item.isOnline && item.lastSeen && (
           <Text style={styles.lastSeen}>Last seen {item.lastSeen}</Text>
         )}
@@ -223,7 +228,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -268,7 +273,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
         <Text style={styles.sectionTitle}>
           {searchQuery ? 'Search Results' : 'Available Contacts'}
         </Text>
-        
+
         <FlatList
           data={filteredContacts}
           renderItem={renderContactItem}
@@ -312,6 +317,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           />
         </View>
       )}
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Modal,
   RefreshControl,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { getReviews } from '../../../api/therapist';
 import { useSelector } from 'react-redux';
 import { ActivityIndicator } from 'react-native';
@@ -34,6 +34,7 @@ interface Review {
 
 const THReviewsScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const alert = useISAlert();
   const [selectedFilter, setSelectedFilter] = useState<'all' | '5' | '4' | '3' | '2' | '1'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
@@ -100,7 +101,7 @@ const THReviewsScreen = ({ navigation }: any) => {
   const submitReply = () => {
     if (replyText.trim()) {
       // TODO: Send reply to backend
-      Alert.alert('Success', 'Your response has been posted!');
+      alert.show({ type: 'success', title: 'Response Posted', message: 'Your response has been posted!' });
       setShowReplyModal(false);
       setReplyText('');
       setSelectedReviewId(null);
@@ -366,6 +367,7 @@ const THReviewsScreen = ({ navigation }: any) => {
           </View>
         </View>
       </Modal>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

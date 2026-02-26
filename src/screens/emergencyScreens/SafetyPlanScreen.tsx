@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Share,
   Linking,
   KeyboardAvoidingView,
@@ -28,6 +27,7 @@ import ISStatusBar from '../../components/ISStatusBar';
 import { getSafetyPlan, updateSafetyPlan } from '../../api/client/emergency';
 import { mockSafetyPlan } from '../../global/MockData';
 import { setSafetyPlan as setSafetyPlanRedux } from '../../features/emergency/emergencySlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface SafetyPlanData {
   warningSignsPersonal: string[];
@@ -47,6 +47,7 @@ interface SafetyPlanScreenProps {
 
 const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alertDialog = useISAlert();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails?.userId);
 
@@ -145,17 +146,14 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
 
   const handleCall = (phone: string, name: string) => {
     const cleanNumber = phone.replace(/[^0-9]/g, '');
-    Alert.alert(
-      'Call ' + name,
-      'Are you sure you want to call ' + phone + '?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Call',
-          onPress: () => Linking.openURL(`tel:${cleanNumber}`),
-        },
-      ]
-    );
+    alertDialog.show({
+      type: 'confirm',
+      title: 'Call ' + name,
+      message: 'Are you sure you want to call ' + phone + '?',
+      confirmText: 'Call',
+      cancelText: 'Cancel',
+      onConfirm: () => Linking.openURL(`tel:${cleanNumber}`),
+    });
   };
 
 
@@ -407,6 +405,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
         </ScrollView>
 
       </KeyboardAvoidingView>
+      <ISAlert ref={alertDialog.ref} />
     </SafeAreaView>
   );
 };

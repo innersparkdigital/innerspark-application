@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +19,7 @@ import ISGenericHeader from '../../components/ISGenericHeader';
 import { useSelector } from 'react-redux';
 import { getFullname } from '../../global/LHShortcuts';
 import { useFocusEffect } from '@react-navigation/native';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface AccountSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -52,9 +52,10 @@ interface AccountSetting {
 
 const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const userProfile = useSelector((state: any) => state.userData.userProfile);
-  
+
   const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(true);
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
 
@@ -82,7 +83,7 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
       const currentYear = new Date().getFullYear();
       return currentYear.toString();
     }
-    
+
     try {
       const date = new Date(dateString);
       const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
@@ -102,23 +103,19 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. All your data will be permanently deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => navigation.navigate('DeleteAccountScreen'),
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Account',
+      message: 'This action cannot be undone. All your data will be permanently deleted.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => navigation.navigate('DeleteAccountScreen'),
+    });
   };
 
-  
 
-// Security Settings
+
+  // Security Settings
   const securitySettings: AccountSetting[] = [
     {
       id: 'change_password',
@@ -129,8 +126,8 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
       hasChevron: true,
       onPress: handleChangePassword,
     },
-    
-    
+
+
   ];
 
   const accountActions: AccountSetting[] = [
@@ -190,7 +187,7 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
           )}
         </View>
       </View>
-      
+
       <View style={styles.settingRight}>
         {item.hasSwitch && (
           <Switch
@@ -219,7 +216,7 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
         navigation={navigation}
       />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -268,6 +265,7 @@ const AccountSettingsScreen: React.FC<AccountSettingsScreenProps> = ({ navigatio
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

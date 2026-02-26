@@ -9,7 +9,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -19,6 +18,8 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import { submitReview } from '../../utils/appointmentsManager';
+import { validatePostSessionFeedback, PostSessionFeedbackErrors } from '../../global/LHValidators';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface SessionDetails {
   id: string;
@@ -52,9 +53,9 @@ interface PostSessionFeedbackScreenProps {
   route: RouteProp<{ params: { sessionDetails?: SessionDetails; appointment?: any } }, 'params'>;
 }
 
-const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({ 
-  navigation, 
-  route 
+const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
+  navigation,
+  route
 }) => {
   // Handle both sessionDetails and appointment params
   const sessionDetails = route.params?.sessionDetails || route.params?.appointment || {
@@ -67,7 +68,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
     sessionType: 'individual' as const,
   };
   const toast = useToast();
-  
+
   const [feedback, setFeedback] = useState<FeedbackData>({
     overallRating: 5,
     therapistRating: 5,
@@ -85,39 +86,39 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [errors, setErrors] = useState<PostSessionFeedbackErrors>({});
+  const alert = useISAlert();
 
-  const validateForm = (): boolean => {
-    const errors: string[] = [];
-
-    if (feedback.whatWentWell.trim().length < 10) {
-      errors.push('Please provide more detail about what went well (minimum 10 characters)');
+  const handleFieldChange = (field: keyof FeedbackData, value: any) => {
+    setFeedback(prev => ({ ...prev, [field]: value }));
+    if (errors[field as keyof PostSessionFeedbackErrors]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field as keyof PostSessionFeedbackErrors];
+        return newErrors;
+      });
     }
-
-    if (feedback.goalProgress.trim().length < 5) {
-      errors.push('Please describe your progress toward goals');
-    }
-
-    if (feedback.recommendToOthers === null) {
-      errors.push('Please indicate if you would recommend this therapist');
-    }
-
-    if (feedback.overallRating < 1) {
-      errors.push('Please provide an overall rating');
-    }
-
-    setValidationErrors(errors);
-    return errors.length === 0;
   };
 
   const handleSubmitFeedback = async () => {
-    if (!validateForm()) {
-      toast.show({
-        description: 'Please complete all required fields',
-        duration: 3000,
-      });
+    // Validate using Zod
+    const formErrors = validatePostSessionFeedback(feedback as any);
+
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      // If many errors, show a general alert
+      if (Object.keys(formErrors).length > 2) {
+        alert.show({
+          type: 'warning',
+          title: 'Form Incomplete',
+          message: 'Please complete all required fields and ratings.',
+          confirmText: 'Review',
+        });
+      }
       return;
     }
+
+    setErrors({});
 
     setIsSubmitting(true);
     try {
@@ -134,7 +135,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
 
       // Submit review via API
       const result = await submitReview(sessionDetails.id, reviewData);
-      
+
       if (result.success) {
         // Log session data for wellness report
         const sessionLog = {
@@ -161,7 +162,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           duration: 3000,
         });
       }
-      
+
     } catch (error) {
       console.error('Error submitting feedback:', error);
       toast.show({
@@ -174,18 +175,14 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
   };
 
   const handleSkipFeedback = () => {
-    Alert.alert(
-      'Skip Feedback',
-      'Your feedback helps us improve our services. Are you sure you want to skip?',
-      [
-        { text: 'Continue Feedback', style: 'cancel' },
-        { 
-          text: 'Skip', 
-          style: 'destructive',
-          onPress: () => navigation.navigate('AppointmentsScreen')
-        }
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Skip Feedback',
+      message: 'Your feedback helps us improve our services. Are you sure you want to skip?',
+      confirmText: 'Skip',
+      cancelText: 'Continue',
+      onConfirm: () => navigation.navigate('AppointmentsScreen'),
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -209,9 +206,10 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
     value: number;
     onValueChange: (value: number) => void;
     labels: string[];
-  }> = ({ title, value, onValueChange, labels }) => (
+    error?: string;
+  }> = ({ title, value, onValueChange, labels, error }) => (
     <View style={styles.ratingContainer}>
-      <Text style={styles.ratingTitle}>{title}</Text>
+      <Text style={[styles.ratingTitle, error ? { color: '#C62828' } : {}]}>{title}</Text>
       <View style={styles.sliderContainer}>
         <Slider
           value={value}
@@ -241,25 +239,28 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           <Text style={styles.ratingLabel}>{labels[1]}</Text>
         </View>
       </View>
+      {error && <Text style={styles.fieldErrorText}>{error}</Text>}
     </View>
   );
 
   const RecommendationButtons: React.FC = () => (
     <View style={styles.recommendationContainer}>
-      <Text style={styles.sectionTitle}>Would you recommend this therapist to others?</Text>
+      <Text style={[styles.sectionTitle, errors.recommendToOthers ? { color: '#C62828' } : {}]}>
+        Would you recommend this therapist to others?
+      </Text>
       <View style={styles.recommendationButtons}>
         <TouchableOpacity
           style={[
             styles.recommendButton,
             feedback.recommendToOthers === true && styles.selectedRecommendButton
           ]}
-          onPress={() => setFeedback(prev => ({ ...prev, recommendToOthers: true }))}
+          onPress={() => handleFieldChange('recommendToOthers', true)}
         >
-          <Icon 
-            name="thumb-up" 
-            type="material" 
-            color={feedback.recommendToOthers === true ? appColors.CardBackground : appColors.AppBlue} 
-            size={20} 
+          <Icon
+            name="thumb-up"
+            type="material"
+            color={feedback.recommendToOthers === true ? appColors.CardBackground : appColors.AppBlue}
+            size={20}
           />
           <Text style={[
             styles.recommendButtonText,
@@ -274,13 +275,13 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
             styles.recommendButton,
             feedback.recommendToOthers === false && styles.selectedRecommendButton
           ]}
-          onPress={() => setFeedback(prev => ({ ...prev, recommendToOthers: false }))}
+          onPress={() => handleFieldChange('recommendToOthers', false)}
         >
-          <Icon 
-            name="thumb-down" 
-            type="material" 
-            color={feedback.recommendToOthers === false ? appColors.CardBackground : appColors.grey3} 
-            size={20} 
+          <Icon
+            name="thumb-down"
+            type="material"
+            color={feedback.recommendToOthers === false ? appColors.CardBackground : appColors.grey3}
+            size={20}
           />
           <Text style={[
             styles.recommendButtonText,
@@ -290,25 +291,26 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
+      {errors.recommendToOthers && <Text style={styles.fieldErrorText}>{errors.recommendToOthers}</Text>}
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Session Feedback</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.skipButton}
             onPress={handleSkipFeedback}
           >
@@ -331,105 +333,94 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
             </Text>
           </View>
 
-          {/* Validation Errors */}
-          {validationErrors.length > 0 && (
-            <View style={styles.errorContainer}>
-              {validationErrors.map((error, index) => (
-                <Text key={index} style={styles.errorText}>• {error}</Text>
-              ))}
-            </View>
-          )}
+          <ISAlert ref={alert.ref} />
 
           {/* Rating Sections */}
           <View style={styles.ratingsSection}>
-            
-          <RatingSlider
-            title="Overall Session Rating"
-            value={feedback.overallRating}
-            onValueChange={(value) => {
-              const numValue = Math.round(value);
-              setFeedback(prev => ({ ...prev, overallRating: numValue }));
-            }}
-            labels={['Poor', 'Excellent']}
-          />
 
-          <RatingSlider
-            title="Therapist Performance"
-            value={feedback.therapistRating}
-            onValueChange={(value) => {
-              const numValue = Math.round(value);
-              setFeedback(prev => ({ ...prev, therapistRating: numValue }));
-            }}
-            labels={['Poor', 'Excellent']}
-          />
+            <RatingSlider
+              title="Overall Session Rating"
+              value={feedback.overallRating}
+              onValueChange={(value) => handleFieldChange('overallRating', value)}
+              labels={['Poor', 'Excellent']}
+              error={errors.overallRating}
+            />
 
-          <RatingSlider
-            title="Session Effectiveness"
-            value={feedback.sessionEffectiveness}
-            onValueChange={(value) => {
-              const numValue = Math.round(value);
-              setFeedback(prev => ({ ...prev, sessionEffectiveness: numValue }));
-            }}
-            labels={['Not Helpful', 'Very Helpful']}
-          />
+            <RatingSlider
+              title="Therapist Performance"
+              value={feedback.therapistRating}
+              onValueChange={(value) => handleFieldChange('therapistRating', value)}
+              labels={['Poor', 'Excellent']}
+              error={errors.therapistRating}
+            />
 
-          <RatingSlider
-            title="Communication Quality"
-            value={feedback.communicationRating}
-            onValueChange={(value) => {
-              const numValue = Math.round(value);
-              setFeedback(prev => ({ ...prev, communicationRating: numValue }));
-            }}
-            labels={['Poor', 'Excellent']}
-          />
+            <RatingSlider
+              title="Session Effectiveness"
+              value={feedback.sessionEffectiveness}
+              onValueChange={(value) => handleFieldChange('sessionEffectiveness', value)}
+              labels={['Not Helpful', 'Very Helpful']}
+              error={errors.sessionEffectiveness}
+            />
 
-          <RatingSlider
-            title="Environment/Setting"
-            value={feedback.environmentRating}
-            onValueChange={(value) => {
-              const numValue = Math.round(value);
-              setFeedback(prev => ({ ...prev, environmentRating: numValue }));
-            }}
-            labels={['Poor', 'Excellent']}
-          />
-        </View>
+            <RatingSlider
+              title="Communication Quality"
+              value={feedback.communicationRating}
+              onValueChange={(value) => handleFieldChange('communicationRating', value)}
+              labels={['Poor', 'Excellent']}
+              error={errors.communicationRating}
+            />
 
-        {/* Text Feedback Sections */}
-        <View style={styles.textFeedbackSection}>
-          <Text style={styles.sectionTitle}>Detailed Feedback</Text>
+            <RatingSlider
+              title="Environment/Setting"
+              value={feedback.environmentRating}
+              onValueChange={(value) => handleFieldChange('environmentRating', value)}
+              labels={['Poor', 'Excellent']}
+              error={errors.environmentRating}
+            />
+          </View>
+
+          {/* Text Feedback Sections */}
+          <View style={styles.textFeedbackSection}>
+            <Text style={styles.sectionTitle}>Detailed Feedback</Text>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>What went well in this session? *</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, errors.whatWentWell ? styles.inputError : {}]}
                 multiline
                 numberOfLines={4}
                 placeholder="Describe what you found helpful or positive about this session..."
                 placeholderTextColor={appColors.grey3}
                 value={feedback.whatWentWell}
-                onChangeText={(text) => setFeedback(prev => ({ ...prev, whatWentWell: text }))}
+                onChangeText={(text) => handleFieldChange('whatWentWell', text)}
                 maxLength={500}
               />
-              <Text style={styles.characterCount}>
-                {feedback.whatWentWell.length}/500
-              </Text>
+              <View style={styles.inputFooter}>
+                {errors.whatWentWell ? <Text style={styles.fieldErrorTextInner}>{errors.whatWentWell}</Text> : <View />}
+                <Text style={styles.characterCount}>
+                  {feedback.whatWentWell.length}/500
+                </Text>
+              </View>
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Progress toward your goals *</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, errors.goalProgress ? styles.inputError : {}]}
                 multiline
                 numberOfLines={3}
                 placeholder="How did this session help you progress toward your mental health goals?"
                 placeholderTextColor={appColors.grey3}
                 value={feedback.goalProgress}
-                onChangeText={(text) => setFeedback(prev => ({ ...prev, goalProgress: text }))}
+                onChangeText={(text) => handleFieldChange('goalProgress', text)}
                 maxLength={300}
               />
-              <Text style={styles.characterCount}>
-                {feedback.goalProgress.length}/300
-              </Text>
+              <View style={styles.inputFooter}>
+                {errors.goalProgress ? <Text style={styles.fieldErrorTextInner}>{errors.goalProgress}</Text> : <View />}
+                <Text style={styles.characterCount}>
+                  {feedback.goalProgress.length}/300
+                </Text>
+              </View>
             </View>
 
             <View style={styles.inputContainer}>
@@ -441,7 +432,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 placeholder="What could be improved in future sessions?"
                 placeholderTextColor={appColors.grey3}
                 value={feedback.areasForImprovement}
-                onChangeText={(text) => setFeedback(prev => ({ ...prev, areasForImprovement: text }))}
+                onChangeText={(text) => handleFieldChange('areasForImprovement', text)}
                 maxLength={300}
               />
               <Text style={styles.characterCount}>
@@ -458,7 +449,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 placeholder="Any specific concerns you'd like to address?"
                 placeholderTextColor={appColors.grey3}
                 value={feedback.specificConcerns}
-                onChangeText={(text) => setFeedback(prev => ({ ...prev, specificConcerns: text }))}
+                onChangeText={(text) => handleFieldChange('specificConcerns', text)}
                 maxLength={300}
               />
               <Text style={styles.characterCount}>
@@ -475,7 +466,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 placeholder="Did you experience any technical problems during the online session?"
                 placeholderTextColor={appColors.grey3}
                 value={feedback.technicalIssues}
-                onChangeText={(text) => setFeedback(prev => ({ ...prev, technicalIssues: text }))}
+                onChangeText={(text) => handleFieldChange('technicalIssues', text)}
                 maxLength={200}
               />
               <Text style={styles.characterCount}>
@@ -491,7 +482,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           <View style={styles.followUpSection}>
             <TouchableOpacity
               style={styles.followUpToggle}
-              onPress={() => setFeedback(prev => ({ ...prev, followUpNeeded: !prev.followUpNeeded }))}
+              onPress={() => handleFieldChange('followUpNeeded', !feedback.followUpNeeded)}
             >
               <View style={[
                 styles.checkbox,
@@ -798,17 +789,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   submitSection: {
-    margin: 20,
-    marginTop: 0,
-    marginBottom: 40,
+    padding: 20,
+    backgroundColor: appColors.CardBackground,
   },
   submitButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 16,
+    borderRadius: 12,
+    height: 56,
   },
   submitButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -818,7 +808,28 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
     marginTop: 12,
-    lineHeight: 16,
+  },
+  fieldErrorText: {
+    fontSize: 12,
+    color: '#C62828',
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: 4,
+  },
+  fieldErrorTextInner: {
+    fontSize: 12,
+    color: '#C62828',
+    fontFamily: appFonts.headerTextRegular,
+    flex: 1,
+  },
+  inputFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  inputError: {
+    borderColor: '#F44336',
+    borderWidth: 1.5,
   },
 });
 

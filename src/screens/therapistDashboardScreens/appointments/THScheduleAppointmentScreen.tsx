@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Modal,
   Image,
 } from 'react-native';
@@ -20,6 +19,7 @@ import { appColors, appFonts } from '../../../global/Styles';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { createAppointment, updateAppointment } from '../../../api/therapist/appointments';
@@ -38,6 +38,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const alert = useISAlert();
 
   const [selectedClient, setSelectedClient] = useState(preSelectedClient || null);
   const [sessionType, setSessionType] = useState<string>(
@@ -111,12 +112,12 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
   const handleSchedule = async () => {
     if (!selectedClient) {
-      Alert.alert('Missing Information', 'Please select a client');
+      alert.show({ type: 'warning', title: 'Missing Client', message: 'Please select a client' });
       return;
     }
 
     if (meetingType === 'virtual' && !meetingLink.trim()) {
-      Alert.alert('Missing Information', 'Please enter a meeting link for virtual sessions');
+      alert.show({ type: 'warning', title: 'Link Required', message: 'Please enter a meeting link for virtual sessions' });
       return;
     }
 
@@ -139,18 +140,24 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
       if (isReschedule && existingAppointment?.id) {
         await updateAppointment(existingAppointment.id, payload);
-        Alert.alert('Success', 'Appointment rescheduled successfully', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        alert.show({
+          type: 'success',
+          title: 'Rescheduled',
+          message: 'Appointment rescheduled successfully',
+          onConfirm: () => navigation.goBack()
+        });
       } else {
         await createAppointment(payload);
-        Alert.alert('Success', `Session with ${selectedClient.name} scheduled successfully`, [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        alert.show({
+          type: 'success',
+          title: 'Scheduled',
+          message: `Session with ${selectedClient.name} scheduled successfully`,
+          onConfirm: () => navigation.goBack()
+        });
       }
     } catch (error: any) {
       const errorMessage = error.backendMessage || 'Failed to schedule appointment. Please try again.';
-      Alert.alert('Error', errorMessage);
+      alert.show({ type: 'error', title: 'Error', message: errorMessage });
       console.error('Schedule Error:', error);
     } finally {
       setLoading(false);
@@ -413,6 +420,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
           onPress={handleSchedule}
         />
       </View>
+      <ISAlert ref={alert.ref} />
 
       {/* Client Picker Modal */}
       <Modal

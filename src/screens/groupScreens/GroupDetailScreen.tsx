@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
@@ -18,6 +17,7 @@ import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getGroupById, joinGroup, leaveGroup } from '../../api/client/groups';
 import { mockGroupDetailMembers } from '../../global/MockData';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface GroupMember {
   id: string;
@@ -36,6 +36,7 @@ interface GroupDetailScreenProps {
 
 const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const { group } = route.params;
   const [groupDetails, setGroupDetails] = useState(group);
@@ -87,7 +88,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       setIsLoading(false);
     } catch (error: any) {
       console.error('❌ Error loading group details:', error);
-      
+
       // Fallback to mock data on error
       const membersWithTherapist = [
         {
@@ -112,14 +113,14 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
 
   const handleEnterChat = () => {
     if (userRole === 'none') {
-      Alert.alert(
-        'Join Group',
-        'You need to join this group to access the chat.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Join', onPress: handleJoinGroup },
-        ]
-      );
+      alert.show({
+        type: 'confirm',
+        title: 'Join Group',
+        message: 'You need to join this group to access the chat.',
+        confirmText: 'Join',
+        cancelText: 'Cancel',
+        onConfirm: handleJoinGroup,
+      });
       return;
     }
 
@@ -154,7 +155,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       // Update local state
       setUserRole('member');
       setGroupDetails({ ...groupDetails, isJoined: true });
-      
+
       // Reload group details
       await loadGroupDetails();
     } catch (error: any) {
@@ -167,38 +168,34 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
   };
 
   const handleLeaveGroup = () => {
-    Alert.alert(
-      'Leave Group',
-      `Are you sure you want to leave "${groupDetails.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('📞 Calling leaveGroup API from GroupDetailScreen...');
-              const response = await leaveGroup(groupDetails.id, userId, '', '');
-              console.log('✅ Leave group response:', response);
+    alert.show({
+      type: 'destructive',
+      title: 'Leave Group',
+      message: `Are you sure you want to leave "${groupDetails.name}"?`,
+      confirmText: 'Leave',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          console.log('📞 Calling leaveGroup API from GroupDetailScreen...');
+          const response = await leaveGroup(groupDetails.id, userId, '', '');
+          console.log('✅ Leave group response:', response);
 
-              toast.show({
-                description: response.message || `You have left ${groupDetails.name}`,
-                duration: 3000,
-              });
-              setUserRole('none');
-              setGroupDetails({ ...groupDetails, isJoined: false });
-              navigation.goBack();
-            } catch (error: any) {
-              console.error('❌ Error leaving group:', error);
-              toast.show({
-                description: error.response?.data?.error || 'Failed to leave group. Please try again.',
-                duration: 3000,
-              });
-            }
-          },
-        },
-      ]
-    );
+          toast.show({
+            description: response.message || `You have left ${groupDetails.name}`,
+            duration: 3000,
+          });
+          setUserRole('none');
+          setGroupDetails({ ...groupDetails, isJoined: false });
+          navigation.goBack();
+        } catch (error: any) {
+          console.error('❌ Error leaving group:', error);
+          toast.show({
+            description: error.response?.data?.error || 'Failed to leave group. Please try again.',
+            duration: 3000,
+          });
+        }
+      },
+    });
   };
 
   const getCategoryColor = (category: string) => {
@@ -273,16 +270,16 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
         <View style={styles.memberNameRow}>
           <Text style={styles.memberName}>{item.name}</Text>
           <View style={[styles.roleBadge, { backgroundColor: getRoleColor(item.role) }]}>
-            <Icon 
-              name={getRoleIcon(item.role)} 
-              type="material" 
-              color={appColors.CardBackground} 
-              size={12} 
+            <Icon
+              name={getRoleIcon(item.role)}
+              type="material"
+              color={appColors.CardBackground}
+              size={12}
             />
             <Text style={styles.roleText}>{item.role}</Text>
           </View>
         </View>
-        
+
         <Text style={styles.memberStatus}>
           {item.isOnline ? 'Online' : `Last seen ${item.lastSeen}`}
         </Text>
@@ -294,7 +291,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -302,9 +299,9 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Group Details</Text>
         {group?.id && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => navigation.navigate('GroupMessagesHistoryScreen', { 
+            onPress={() => navigation.navigate('GroupMessagesHistoryScreen', {
               groupId: group.id,
               groupName: group.name,
               userRole: userRole
@@ -322,11 +319,11 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
             styles.groupIconLarge,
             { backgroundColor: getCategoryColor(group.category) + '20' }
           ]}>
-            <Icon 
-              name={group.icon} 
-              type="material" 
-              color={getCategoryColor(group.category)} 
-              size={48} 
+            <Icon
+              name={group.icon}
+              type="material"
+              color={getCategoryColor(group.category)}
+              size={48}
             />
             {group.isPrivate && (
               <View style={styles.privateBadge}>
@@ -402,7 +399,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
-          
+
           <FlatList
             data={members.slice(0, 5)}
             renderItem={renderMemberItem}
@@ -468,6 +465,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           </View>
         )}
       </View>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

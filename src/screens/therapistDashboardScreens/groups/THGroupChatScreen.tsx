@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +18,7 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { useSelector } from 'react-redux';
 import {
   getGroupMessages,
@@ -44,6 +44,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const alert = useISAlert();
 
   const [showModTools, setShowModTools] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
@@ -92,7 +93,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
       } catch (error: any) {
         const errorMessage = error.backendMessage || error.message || 'Failed to send message';
         console.error('Send Message Error:', errorMessage);
-        Alert.alert('Error', errorMessage);
+        alert.show({ type: 'error', title: 'Error', message: errorMessage });
       }
     }
   };
@@ -114,55 +115,47 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
       } catch (error: any) {
         const errorMessage = error.backendMessage || error.message || 'Failed to send announcement';
         console.error('Announcement Error:', errorMessage);
-        Alert.alert('Error', errorMessage);
+        alert.show({ type: 'error', title: 'Error', message: errorMessage });
       }
     }
   };
 
   const handleMuteUser = (userId: string, userName: string) => {
-    Alert.alert(
-      'Mute User',
-      `Temporarily mute ${userName}? They won't be able to send messages for 5 minutes.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Mute',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Success', `${userName} has been muted for 5 minutes.`);
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'warning',
+      title: 'Mute User',
+      message: `Temporarily mute ${userName}? They won't be able to send messages for 5 minutes.`,
+      confirmText: 'Mute',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        alert.show({ type: 'success', title: 'User Muted', message: `${userName} has been muted for 5 minutes.` });
+      },
+    });
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const therapistId = userDetails?.userId;
-              // Optimistic update
-              setMessages(messages.filter((m) => m.id !== messageId));
-              if (group?.id) {
-                await deleteGroupMessage(group.id, messageId, therapistId);
-              }
-            } catch (error: any) {
-              const errorMessage = error.backendMessage || error.message || 'Failed to delete message';
-              console.error('Delete Message Error:', errorMessage);
-              Alert.alert('Error', errorMessage);
-              loadMessages();
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Message',
+      message: 'Are you sure you want to delete this message?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          const therapistId = userDetails?.userId;
+          // Optimistic update
+          setMessages(messages.filter((m) => m.id !== messageId));
+          if (group?.id) {
+            await deleteGroupMessage(group.id, messageId, therapistId);
+          }
+        } catch (error: any) {
+          const errorMessage = error.backendMessage || error.message || 'Failed to delete message';
+          console.error('Delete Message Error:', errorMessage);
+          alert.show({ type: 'error', title: 'Error', message: errorMessage });
+          loadMessages();
+        }
+      },
+    });
   };
 
   const handleViewMembers = () => {
@@ -200,15 +193,16 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
           if (item.isOwn) {
             handleDeleteMessage(item.id);
           } else {
-            Alert.alert(
-              'Moderation',
-              `What would you like to do?`,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete Message', onPress: () => handleDeleteMessage(item.id) },
+            alert.show({
+              type: 'info',
+              title: 'Moderation',
+              message: `What would you like to do?`,
+              actions: [
+                { text: 'Delete Message', style: 'destructive', onPress: () => handleDeleteMessage(item.id) },
                 { text: 'Mute User', onPress: () => handleMuteUser(item.senderId, item.senderName) },
+                { text: 'Cancel', style: 'cancel' }
               ]
-            );
+            });
           }
         }}
       >
@@ -384,6 +378,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
           </View>
         </View>
       </Modal>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -16,11 +15,13 @@ import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { getChatMessages, sendMessage, markChatAsRead } from '../../../api/therapist';
 
 const THChatConversationScreen = ({ navigation, route }: any) => {
   const { chat } = route.params || {};
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const alert = useISAlert();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +97,7 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
       }
     } catch (error: any) {
       const errorMessage = error.backendMessage || 'Failed to send message';
-      Alert.alert('Error', errorMessage);
+      alert.show({ type: 'error', title: 'Error', message: errorMessage });
       console.error('Send Error:', error);
       // Remove the optimistic message if it failed
       setMessages(msgs => msgs.filter(m => m.id !== newMessage.id));
@@ -221,6 +222,7 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

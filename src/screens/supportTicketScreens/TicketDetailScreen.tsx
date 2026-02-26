@@ -9,7 +9,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -20,6 +19,7 @@ import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadTicketById, addMessageToTicketAction, closeTicketAction, reopenTicketAction } from '../../utils/supportTicketsManager';
 import { selectCurrentTicket, selectTicketsLoading, selectTicketsSubmitting } from '../../features/supportTickets/supportTicketsSlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface TicketResponse {
   id: string;
@@ -49,10 +49,11 @@ interface TicketDetailScreenProps {
 const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const dispatch = useDispatch();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const flatListRef = useRef<FlatList>(null);
   const { ticketId } = route.params;
-  
+
   const currentTicket = useSelector(selectCurrentTicket);
   const isLoading = useSelector(selectTicketsLoading);
   const isSending = useSelector(selectTicketsSubmitting);
@@ -107,31 +108,28 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
   };
 
   const handleCloseTicket = async () => {
-    Alert.alert(
-      'Close Ticket',
-      'Are you sure you want to close this ticket?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Close',
-          onPress: async () => {
-            const result = await dispatch(closeTicketAction(userId, ticketId));
-            if (result.success) {
-              toast.show({
-                description: 'Ticket closed successfully',
-                duration: 2000,
-              });
-              navigation.goBack();
-            } else {
-              toast.show({
-                description: 'Failed to close ticket',
-                duration: 3000,
-              });
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'warning',
+      title: 'Close Ticket',
+      message: 'Are you sure you want to close this ticket?',
+      confirmText: 'Close',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        const result = await dispatch(closeTicketAction(userId, ticketId));
+        if (result.success) {
+          toast.show({
+            description: 'Ticket closed successfully',
+            duration: 2000,
+          });
+          navigation.goBack();
+        } else {
+          toast.show({
+            description: 'Failed to close ticket',
+            duration: 3000,
+          });
+        }
+      },
+    });
   };
 
   const handleReopenTicket = async () => {
@@ -163,9 +161,9 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'short', 
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -212,7 +210,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
             </View>
           )}
         </View>
-        
+
         <View style={[
           styles.responseContent,
           isUser ? styles.userResponseContent : styles.supportResponseContent
@@ -236,7 +234,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
           <Text style={styles.statusText}>{ticket.status}</Text>
         </View>
       </View>
-      
+
       <View style={styles.ticketMeta}>
         <View style={styles.metaItem}>
           <Icon name="confirmation-number" type="material" color={appColors.grey3} size={16} />
@@ -268,20 +266,20 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>Ticket Details</Text>
-        
+
         <View style={styles.headerSpacer} />
       </View>
 
       {/* Content */}
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -321,7 +319,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
                   multiline
                   maxLength={1000}
                 />
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
                     styles.sendButton,
                     newResponse.trim() ? styles.sendButtonActive : styles.sendButtonInactive
@@ -329,11 +327,11 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
                   onPress={handleSendResponse}
                   disabled={!newResponse.trim() || isSending}
                 >
-                  <Icon 
-                    name="send" 
-                    type="material" 
-                    color={newResponse.trim() ? appColors.CardBackground : appColors.grey3} 
-                    size={20} 
+                  <Icon
+                    name="send"
+                    type="material"
+                    color={newResponse.trim() ? appColors.CardBackground : appColors.grey3}
+                    size={20}
                   />
                 </TouchableOpacity>
               </View>
@@ -344,6 +342,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
           )}
         </View>
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

@@ -1,23 +1,22 @@
 /**
  * Account Screen - User account management and settings
  */
-import React, { useState, useRef, useEffect, useCallback }  from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { performLogout } from '../utils/authManager';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
-import { 
-  StatusBar,
-  ScrollView,
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  TouchableOpacity, 
-  Linking, 
-  Alert, 
-  Pressable,
-  ImageBackground,
+import {
+    StatusBar,
+    ScrollView,
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    Linking,
+    Pressable,
+    ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar, BottomSheet } from '@rneui/base';
@@ -26,39 +25,46 @@ import LHGenericHeader from '../components/LHGenericHeader';
 import { storeItemLS, removeItemLS, retrieveItemLS } from '../global/StorageActions';
 import { getFullname } from '../global/LHShortcuts';
 import ISStatusBar from '../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../components/alerts/ISAlert';
 
 // Returns a touchable opacity button that opens a url on press
-const OpenURLButton = ({ url, title }) => {
+const OpenURLButton = ({ url, title, alertRef }) => {
     const handlePress = useCallback(async () => {
-      // Checking if the link is supported for links with custom URL scheme.
-      const supported = await Linking.canOpenURL(url);
-  
-      if (supported) {
-        // Opening the link with some app, if the URL scheme is "http" the web link should be opened
-        // by some browser in the mobile
-        await Linking.openURL(url);
-      } else {
-        Alert.alert(`Don't know how to open this URL: ${url}`);
-      }
+        // Checking if the link is supported for links with custom URL scheme.
+        const supported = await Linking.canOpenURL(url);
+
+        if (supported) {
+            // Opening the link with some app, if the URL scheme is "http" the web link should be opened
+            // by some browser in the mobile
+            await Linking.openURL(url);
+        } else {
+            alertRef?.current?.show({
+                type: 'info',
+                title: 'Cannot Open URL',
+                message: `Don't know how to open this URL: ${url}`,
+                confirmText: 'OK',
+            });
+        }
     }, [url]);
-  
+
     return (
-        <Button 
-            title={title} 
-            buttonStyle={ parameters.appButtonXL }
-            titleStyle={ parameters.appButtonXLTitle } 
-            onPress={handlePress}  
-    />);
+        <Button
+            title={title}
+            buttonStyle={parameters.appButtonXL}
+            titleStyle={parameters.appButtonXLTitle}
+            onPress={handlePress}
+        />);
 };
 
-export default function AccountScreen({ navigation }){
-    
+export default function AccountScreen({ navigation }) {
+
     const toast = useToast(); // Toast notifications helper
     const dispatch = useDispatch();
+    const alert = useISAlert();
     const userToken = useSelector(state => state.user.userToken); // User token data (userId, email, name, phone)
     const userDetails = useSelector(state => state.userData.userDetails); // User details from redux store
     const userProfile = useSelector((state: any) => state.userData.userProfile);
-    
+
     const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
 
     // Toast Notifications
@@ -72,7 +78,7 @@ export default function AccountScreen({ navigation }){
     /** 
      * Signout current user
      * Uses authManager utility to perform comprehensive data wipe
-     */  
+     */
     const signOutHandler = () => {
         performLogout();
     }
@@ -94,160 +100,160 @@ export default function AccountScreen({ navigation }){
         </TouchableOpacity>
     );
 
-    return(
-      <SafeAreaView style={styles.container}>
-        <ISStatusBar />
-        
-        {/* Curved Header with Profile */}
-        <View style={styles.curvedHeader}>
-          <View style={styles.profileSection}>
-            <View style={styles.avatarContainer}>
-              <Avatar 
-                rounded 
-                size={90} 
-                source={userProfile?.profileImage || userDetails?.image || appImages.avatarDefault}
-                containerStyle={styles.avatarStyle}
-                avatarStyle={styles.avatarImageStyle}
-              />
-            </View>
-            <Text style={styles.userName}>
-              {getFullname(
-                userProfile?.firstName || userDetails?.firstName || '',
-                userProfile?.lastName || userDetails?.lastName || ''
-              ) || 'Jane Doe'}
-            </Text>
-            <Text style={styles.userEmail}>
-              {userProfile?.email || userDetails?.email || 'user@example.com'}
-            </Text>
-            <View style={styles.memberBadge}>
-              <Icon name="verified" type="material" color="#4CAF50" size={14} />
-              <Text style={styles.memberText}>Verified Member</Text>
-            </View>
-          </View>
-        </View>
-             
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-            
-            {/* Wellness Shortcuts */}
-            <View style={styles.shortcutsSection}>
-              <Text style={styles.shortcutsTitle}>Quick Actions</Text>
-              <View style={styles.shortcutsGrid}>
-                <TouchableOpacity 
-                  style={styles.shortcutCard}
-                  onPress={() => navigation.navigate('GoalsScreen')}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#FFC107' + '15' }]}>
-                    <Icon name="flag" type="material" color="#FFC107" size={24} />
-                  </View>
-                  <Text style={styles.shortcutText}>Goals</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.shortcutCard}
-                  onPress={() => navigation.navigate('AppointmentsScreen')}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#2196F3' + '15' }]}>
-                    <Icon name="event" type="material" color="#2196F3" size={24} />
-                  </View>
-                  <Text style={styles.shortcutText}>Appointments</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.shortcutCard}
-                  onPress={() => navigation.navigate('EventsScreen')}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.shortcutIconContainer, { backgroundColor: '#E91E63' + '15' }]}>
-                    <Icon name="celebration" type="material" color="#E91E63" size={24} />
-                  </View>
-                  <Text style={styles.shortcutText}>Events</Text>
-                </TouchableOpacity>
-              </View>
+    return (
+        <SafeAreaView style={styles.container}>
+            <ISStatusBar />
+
+            {/* Curved Header with Profile */}
+            <View style={styles.curvedHeader}>
+                <View style={styles.profileSection}>
+                    <View style={styles.avatarContainer}>
+                        <Avatar
+                            rounded
+                            size={90}
+                            source={userProfile?.profileImage || userDetails?.image || appImages.avatarDefault}
+                            containerStyle={styles.avatarStyle}
+                            avatarStyle={styles.avatarImageStyle}
+                        />
+                    </View>
+                    <Text style={styles.userName}>
+                        {getFullname(
+                            userProfile?.firstName || userDetails?.firstName || '',
+                            userProfile?.lastName || userDetails?.lastName || ''
+                        ) || 'Jane Doe'}
+                    </Text>
+                    <Text style={styles.userEmail}>
+                        {userProfile?.email || userDetails?.email || 'user@example.com'}
+                    </Text>
+                    <View style={styles.memberBadge}>
+                        <Icon name="verified" type="material" color="#4CAF50" size={14} />
+                        <Text style={styles.memberText}>Verified Member</Text>
+                    </View>
+                </View>
             </View>
 
-            {/* My Services Section */}
-            <View style={styles.menuSection}>
-                <Text style={styles.menuSectionTitle}>My Services</Text>
-                <MenuRow
-                    icon="card-membership"
-                    title="My Subscription"
-                    subtitle="Manage your plan and billing"
-                    onPress={() => navigation.navigate('ServicesScreen', { initialTab: 'subscription' })}
-                    iconColor="#FF9800"
-                />
-                
-                <MenuRow
-                    icon="event-available"
-                    title="My Events"
-                    subtitle="View registered events and workshops"
-                    onPress={() => navigation.navigate('EventsScreen')}
-                    iconColor="#E91E63"
-                    isLast={true}
-                />
-            </View>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
-            {/* Account Section */}
-            <View style={styles.menuSection}>
-                <Text style={styles.menuSectionTitle}>Account</Text>
-                <MenuRow
-                    icon="person"
-                    title="Profile"
-                    subtitle="Manage your personal information"
-                    onPress={() => navigation.navigate('ProfileScreen')}
-                    iconColor={appColors.AppBlue}
-                />
-                
-                <MenuRow
-                    icon="settings"
-                    title="Settings"
-                    subtitle="App preferences and configuration"
-                    onPress={() => navigation.navigate('SettingsScreen')}
-                    iconColor="#9C27B0"
-                />
-                
-                <MenuRow
-                    icon="assessment"
-                    title="My Weekly Report"
-                    subtitle="View your wellness progress"
-                    onPress={() => navigation.navigate('WeeklyReportScreen')}
-                    iconColor="#FF5722"
-                    isLast={true}
-                />
-            </View>
+                {/* Wellness Shortcuts */}
+                <View style={styles.shortcutsSection}>
+                    <Text style={styles.shortcutsTitle}>Quick Actions</Text>
+                    <View style={styles.shortcutsGrid}>
+                        <TouchableOpacity
+                            style={styles.shortcutCard}
+                            onPress={() => navigation.navigate('GoalsScreen')}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.shortcutIconContainer, { backgroundColor: '#FFC107' + '15' }]}>
+                                <Icon name="flag" type="material" color="#FFC107" size={24} />
+                            </View>
+                            <Text style={styles.shortcutText}>Goals</Text>
+                        </TouchableOpacity>
 
-            {/* Support Section */}
-            <View style={styles.menuSection}>
-                <Text style={styles.menuSectionTitle}>Support</Text>
-                <MenuRow
-                    icon="emergency"
-                    title="Emergency"
-                    subtitle="Crisis support and hotlines"
-                    onPress={() => navigation.navigate('EmergencyScreen')}
-                    iconColor="#F44336"
-                />
-                
-                <MenuRow
-                    icon="help"
-                    title="Help Center"
-                    subtitle="Get help and support"
-                    onPress={() => navigation.navigate('HelpCenterScreen')}
-                    iconColor="#00BCD4"
-                />
-                
-                <MenuRow
-                    icon="info"
-                    title="About App"
-                    subtitle="Version, terms, and privacy"
-                    onPress={() => navigation.navigate('AboutAppScreen')}
-                    iconColor="#607D8B"
-                    isLast={true}
-                />
-            </View>
+                        <TouchableOpacity
+                            style={styles.shortcutCard}
+                            onPress={() => navigation.navigate('AppointmentsScreen')}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.shortcutIconContainer, { backgroundColor: '#2196F3' + '15' }]}>
+                                <Icon name="event" type="material" color="#2196F3" size={24} />
+                            </View>
+                            <Text style={styles.shortcutText}>Appointments</Text>
+                        </TouchableOpacity>
 
-            {/* Test Section */}
-            {/* <View style={styles.logoutSection}>
+                        <TouchableOpacity
+                            style={styles.shortcutCard}
+                            onPress={() => navigation.navigate('EventsScreen')}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.shortcutIconContainer, { backgroundColor: '#E91E63' + '15' }]}>
+                                <Icon name="celebration" type="material" color="#E91E63" size={24} />
+                            </View>
+                            <Text style={styles.shortcutText}>Events</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* My Services Section */}
+                <View style={styles.menuSection}>
+                    <Text style={styles.menuSectionTitle}>My Services</Text>
+                    <MenuRow
+                        icon="card-membership"
+                        title="My Subscription"
+                        subtitle="Manage your plan and billing"
+                        onPress={() => navigation.navigate('ServicesScreen', { initialTab: 'subscription' })}
+                        iconColor="#FF9800"
+                    />
+
+                    <MenuRow
+                        icon="event-available"
+                        title="My Events"
+                        subtitle="View registered events and workshops"
+                        onPress={() => navigation.navigate('EventsScreen')}
+                        iconColor="#E91E63"
+                        isLast={true}
+                    />
+                </View>
+
+                {/* Account Section */}
+                <View style={styles.menuSection}>
+                    <Text style={styles.menuSectionTitle}>Account</Text>
+                    <MenuRow
+                        icon="person"
+                        title="Profile"
+                        subtitle="Manage your personal information"
+                        onPress={() => navigation.navigate('ProfileScreen')}
+                        iconColor={appColors.AppBlue}
+                    />
+
+                    <MenuRow
+                        icon="settings"
+                        title="Settings"
+                        subtitle="App preferences and configuration"
+                        onPress={() => navigation.navigate('SettingsScreen')}
+                        iconColor="#9C27B0"
+                    />
+
+                    <MenuRow
+                        icon="assessment"
+                        title="My Weekly Report"
+                        subtitle="View your wellness progress"
+                        onPress={() => navigation.navigate('WeeklyReportScreen')}
+                        iconColor="#FF5722"
+                        isLast={true}
+                    />
+                </View>
+
+                {/* Support Section */}
+                <View style={styles.menuSection}>
+                    <Text style={styles.menuSectionTitle}>Support</Text>
+                    <MenuRow
+                        icon="emergency"
+                        title="Emergency"
+                        subtitle="Crisis support and hotlines"
+                        onPress={() => navigation.navigate('EmergencyScreen')}
+                        iconColor="#F44336"
+                    />
+
+                    <MenuRow
+                        icon="help"
+                        title="Help Center"
+                        subtitle="Get help and support"
+                        onPress={() => navigation.navigate('HelpCenterScreen')}
+                        iconColor="#00BCD4"
+                    />
+
+                    <MenuRow
+                        icon="info"
+                        title="About App"
+                        subtitle="Version, terms, and privacy"
+                        onPress={() => navigation.navigate('AboutAppScreen')}
+                        iconColor="#607D8B"
+                        isLast={true}
+                    />
+                </View>
+
+                {/* Test Section */}
+                {/* <View style={styles.logoutSection}>
                 <TouchableOpacity 
                     style={styles.logoutButton}
                     onPress={() => navigation.navigate('DevTestScreen')}
@@ -260,94 +266,95 @@ export default function AccountScreen({ navigation }){
                 </TouchableOpacity>
             </View> */}
 
-            {/* Logout Section */}
-            <View style={styles.logoutSection}>
-                <TouchableOpacity 
-                    style={styles.logoutButton}
-                    onPress={() => setIsLogoutModalVisible(true)}
-                    activeOpacity={0.8}
-                >
-                    <View style={styles.logoutIconContainer}>
-                        <Icon name="logout" type="material" color="#F44336" size={22} />
-                    </View>
-                    <Text style={styles.logoutText}>Log Out</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.bottomSpacing} />
-        </ScrollView>
-
-        {/** Logout BottomSheet Modal */}
-        <BottomSheet
-            containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
-            modalProps = {{ presentationStyle:"overFullScreen", visible: isLogoutModalVisible, }}
-            onBackdropPress={ () => { setIsLogoutModalVisible(false); } }
-        >
-            <View style={ parameters.doffeeModalContainer }>
-                <View style={{ flex:1, justifyContent:"center", alignItems:"center", paddingVertical:20, }}>
-                    <Icon 
-                        type="material"
-                        name="logout"
-                        color={appColors.AppBlue}
-                        size={50}
-                    />
-                    <Text 
-                        style={{ 
-                            fontSize:18, 
-                            paddingVertical:15, 
-                            color:appColors.AppBlue, 
-                            textAlign:"center",
-                            fontFamily: appFonts.appTextBold,
-                        }}
-                    > 
-                        Are you sure you want to log out?
-                    </Text>
-                    <Text 
-                        style={{ 
-                            fontSize:14, 
-                            color:appColors.AppGray, 
-                            textAlign:"center",
-                            fontFamily: appFonts.appTextRegular,
-                            paddingHorizontal: 20,
-                        }}
-                    > 
-                        You'll need to sign in again to access your account.
-                    </Text>
+                {/* Logout Section */}
+                <View style={styles.logoutSection}>
+                    <TouchableOpacity
+                        style={styles.logoutButton}
+                        onPress={() => setIsLogoutModalVisible(true)}
+                        activeOpacity={0.8}
+                    >
+                        <View style={styles.logoutIconContainer}>
+                            <Icon name="logout" type="material" color="#F44336" size={22} />
+                        </View>
+                        <Text style={styles.logoutText}>Log Out</Text>
+                    </TouchableOpacity>
                 </View>
-                <View style={{ paddingVertical:5 }}></View>
-                <View style={{ flexDirection:'row' }}>
-                    <View style={{ flex:1, paddingHorizontal:10 }}>
-                        <Button 
-                            title="Cancel" 
-                            buttonStyle={ [parameters.appButtonXL, { backgroundColor: appColors.AppLightGray }] }
-                            titleStyle={ [parameters.appButtonXLTitle, { color: appColors.AppBlue }] }
-                            onPress={() => setIsLogoutModalVisible(false)}
+
+                <View style={styles.bottomSpacing} />
+            </ScrollView>
+
+            {/** Logout BottomSheet Modal */}
+            <BottomSheet
+                containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
+                modalProps={{ presentationStyle: "overFullScreen", visible: isLogoutModalVisible, }}
+                onBackdropPress={() => { setIsLogoutModalVisible(false); }}
+            >
+                <View style={parameters.doffeeModalContainer}>
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 20, }}>
+                        <Icon
+                            type="material"
+                            name="logout"
+                            color={appColors.AppBlue}
+                            size={50}
                         />
-                    </View>
-                    <View style={{ flex:1, paddingHorizontal:10 }}>
-                        <Button 
-                            title="Log Out" 
-                            buttonStyle={ [parameters.appButtonXL, { backgroundColor: '#F44336' }] }
-                            titleStyle={ parameters.appButtonXLTitle }
-                            onPress={() => {
-                                signOutHandler();
-                                setIsLogoutModalVisible(false);
+                        <Text
+                            style={{
+                                fontSize: 18,
+                                paddingVertical: 15,
+                                color: appColors.AppBlue,
+                                textAlign: "center",
+                                fontFamily: appFonts.appTextBold,
                             }}
-                        />
+                        >
+                            Are you sure you want to log out?
+                        </Text>
+                        <Text
+                            style={{
+                                fontSize: 14,
+                                color: appColors.AppGray,
+                                textAlign: "center",
+                                fontFamily: appFonts.appTextRegular,
+                                paddingHorizontal: 20,
+                            }}
+                        >
+                            You'll need to sign in again to access your account.
+                        </Text>
                     </View>
+                    <View style={{ paddingVertical: 5 }}></View>
+                    <View style={{ flexDirection: 'row' }}>
+                        <View style={{ flex: 1, paddingHorizontal: 10 }}>
+                            <Button
+                                title="Cancel"
+                                buttonStyle={[parameters.appButtonXL, { backgroundColor: appColors.AppLightGray }]}
+                                titleStyle={[parameters.appButtonXLTitle, { color: appColors.AppBlue }]}
+                                onPress={() => setIsLogoutModalVisible(false)}
+                            />
+                        </View>
+                        <View style={{ flex: 1, paddingHorizontal: 10 }}>
+                            <Button
+                                title="Log Out"
+                                buttonStyle={[parameters.appButtonXL, { backgroundColor: '#F44336' }]}
+                                titleStyle={parameters.appButtonXLTitle}
+                                onPress={() => {
+                                    signOutHandler();
+                                    setIsLogoutModalVisible(false);
+                                }}
+                            />
+                        </View>
+                    </View>
+                    <View style={{ paddingVertical: 25 }}></View>
                 </View>
-                <View style={{ paddingVertical:25 }}></View>
-            </View>
-        </BottomSheet>
-        {/* -- Logout BottomSheet Modal ends */}
+            </BottomSheet>
+            {/* -- Logout BottomSheet Modal ends */}
 
-    </SafeAreaView>
+            <ISAlert ref={alert.ref} />
+        </SafeAreaView>
     )
 }
 
 // local stylesheet
 const styles = StyleSheet.create({
-    container : {
+    container: {
         flex: 1,
         backgroundColor: appColors.AppLightGray,
     },
@@ -517,16 +524,16 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     listRow: {
-        flexDirection:'row',
-        alignItems:'center',
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 16,
         borderBottomWidth: 0.5,
         borderBottomColor: appColors.grey6,
     },
     listRowLast: {
-        flexDirection:'row',
-        alignItems:'center',
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 16,
         justifyContent: 'space-between',

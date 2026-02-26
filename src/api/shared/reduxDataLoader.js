@@ -16,21 +16,21 @@ import { getEmergencyContacts, getCrisisLines, getSafetyPlan } from '../client/e
 import { getProfile as getClientProfile } from '../client/profile';
 import { getPlans, getCurrentSubscription, getBillingHistory } from '../client/subscriptions';
 import { getPrivacySettings, getNotificationSettings, getAppearanceSettings } from '../client/settings';
-import { 
-  setEmergencyContacts, 
-  setCrisisLines, 
-  setSafetyPlan 
+import {
+  setEmergencyContacts,
+  setCrisisLines,
+  setSafetyPlan
 } from '../../features/emergency/emergencySlice';
-import { 
-  setAvailablePlans, 
-  setCurrentSubscription, 
-  setBillingHistory 
+import {
+  setAvailablePlans,
+  setCurrentSubscription,
+  setBillingHistory
 } from '../../features/subscription/subscriptionSlice';
 import { setUserProfile } from '../../features/user/userDataSlice';
-import { 
-  setPrivacySettings, 
-  setNotificationSettings, 
-  setAppearanceSettings 
+import {
+  setPrivacySettings,
+  setNotificationSettings,
+  setAppearanceSettings
 } from '../../features/settings/userSettingsSlice';
 
 /**
@@ -43,11 +43,11 @@ import {
  */
 export const loadCriticalDataToRedux = async (userId, dispatch) => {
   console.log('🔄 Starting background Redux data load for user:', userId);
-  
+
   // Clear all emergency data first to prevent stale data
   dispatch(setEmergencyContacts([]));
   dispatch(setCrisisLines([]));
-  
+
   const results = {
     success: [],
     failed: [],
@@ -167,7 +167,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
   try {
     const contactsResponse = await getEmergencyContacts(userId);
     const contactsData = contactsResponse.data?.contacts || contactsResponse.contacts || [];
-    
+
     if (contactsData.length > 0) {
       const mappedContacts = contactsData.map((contact) => ({
         id: contact.id || contact.contact_id,
@@ -197,7 +197,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
   try {
     const crisisLinesResponse = await getCrisisLines(userId);
     const crisisLinesData = crisisLinesResponse.data?.hotlines || crisisLinesResponse.hotlines || [];
-    
+
     if (crisisLinesData.length > 0) {
       const mappedCrisisLines = crisisLinesData.map((line) => ({
         id: line.id,
@@ -226,7 +226,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
   try {
     const safetyPlanResponse = await getSafetyPlan(userId);
     const planData = safetyPlanResponse.data?.safetyPlan || safetyPlanResponse.safetyPlan || safetyPlanResponse.data || {};
-    
+
     const mappedPlan = {
       warningSignsPersonal: planData.warning_signs_personal || planData.warningSignsPersonal || [],
       warningSignsCrisis: planData.warning_signs_crisis || planData.warningSignsCrisis || [],
@@ -238,7 +238,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
       emergencyContacts: planData.emergency_contacts || planData.emergencyContacts || [],
       lastUpdated: planData.last_updated || planData.lastUpdated || null,
     };
-    
+
     dispatch(setSafetyPlan(mappedPlan));
     results.success.push('safety_plan');
     console.log('✅ Safety plan loaded to Redux');
@@ -252,7 +252,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
   try {
     const plansResponse = await getPlans(userId);
     const plansData = plansResponse.plans || [];
-    
+
     if (plansData.length > 0) {
       const mappedPlans = plansData.map((plan) => ({
         id: plan.id || plan.plan_id,
@@ -285,7 +285,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
   // Current Subscription
   try {
     const subscriptionResponse = await getCurrentSubscription(userId);
-    
+
     if (subscriptionResponse.subscription) {
       const sub = subscriptionResponse.subscription;
       const mappedSubscription = {
@@ -322,7 +322,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
   try {
     const billingResponse = await getBillingHistory(userId, 1, 20);
     const billingsData = billingResponse.data?.billings || [];
-    
+
     if (billingsData.length > 0) {
       const mappedInvoices = billingsData.map((billing) => ({
         id: billing.id || billing.billing_id,
@@ -353,7 +353,7 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
   console.log('📊 Redux data load complete:');
   console.log(`   ✅ Success: ${results.success.length}/${results.total}`);
   console.log(`   ❌ Failed: ${results.failed.length}/${results.total}`);
-  
+
   if (results.failed.length > 0) {
     console.log('   Failed items:', results.failed.join(', '));
   }
@@ -370,12 +370,12 @@ export const loadCriticalDataToRedux = async (userId, dispatch) => {
  */
 export const loadEmergencyDataToRedux = async (userId, dispatch) => {
   console.log('🔄 Loading emergency data to Redux...');
-  
+
   try {
     // Emergency Contacts
     const contactsResponse = await getEmergencyContacts(userId);
     const contactsData = contactsResponse.data?.contacts || contactsResponse.contacts || [];
-    
+
     if (contactsData.length > 0) {
       const mappedContacts = contactsData.map((contact) => ({
         id: contact.id || contact.contact_id,
@@ -393,7 +393,7 @@ export const loadEmergencyDataToRedux = async (userId, dispatch) => {
     // Crisis Lines
     const crisisLinesResponse = await getCrisisLines(userId);
     const crisisLinesData = crisisLinesResponse.data?.hotlines || crisisLinesResponse.hotlines || [];
-    
+
     if (crisisLinesData.length > 0) {
       const mappedCrisisLines = crisisLinesData.map((line) => ({
         id: line.id,
@@ -424,12 +424,12 @@ export const loadEmergencyDataToRedux = async (userId, dispatch) => {
  */
 export const loadSubscriptionDataToRedux = async (userId, dispatch) => {
   console.log('🔄 Loading subscription data to Redux...');
-  
+
   try {
     // Available Plans
     const plansResponse = await getPlans(userId);
     const plansData = plansResponse.plans || [];
-    
+
     if (plansData.length > 0) {
       const mappedPlans = plansData.map((plan) => ({
         id: plan.id || plan.plan_id,
@@ -452,7 +452,7 @@ export const loadSubscriptionDataToRedux = async (userId, dispatch) => {
 
     // Current Subscription
     const subscriptionResponse = await getCurrentSubscription(userId);
-    
+
     if (subscriptionResponse.subscription) {
       const sub = subscriptionResponse.subscription;
       const mappedSubscription = {
@@ -480,4 +480,154 @@ export const loadSubscriptionDataToRedux = async (userId, dispatch) => {
   } catch (error) {
     console.error('❌ Failed to load subscription data:', error);
   }
+};
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// THERAPIST-SPECIFIC DATA LOADER
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Therapist API imports
+import { getDashboardStats, getTherapistProfile } from '../therapist/dashboard';
+import { getAvailability } from '../therapist/calendar';
+import { getEvents } from '../therapist/events';
+import { getAnalyticsOverview, getRevenueAnalytics } from '../therapist/analytics';
+
+// Therapist Redux slice imports
+import {
+  updateDashboardStats,
+  updateAvailability,
+  updateTherapistProfile,
+  updateUpcomingEventsCount,
+} from '../../features/therapist/dashboardSlice';
+import { updateRevenueAnalytics } from '../../features/therapist/analyticsSlice';
+
+/**
+ * Load critical therapist-specific data into Redux stores at app startup.
+ *
+ * This runs in the background (non-blocking) and populates therapist dashboard,
+ * analytics, availability, and profile slices so they are ready before the
+ * therapist even navigates to those screens.
+ *
+ * Note: This is separate from loadCriticalDataToRedux (client-only) to ensure
+ * the two roles don't interfere — therapist APIs should not fire for clients
+ * and vice versa.
+ *
+ * @param {string} therapistId - The authenticated therapist's userId
+ * @param {Function} dispatch - Redux dispatch function
+ * @returns {Promise<Object>} Status object with success/failure counts
+ */
+export const loadCriticalTherapistDataToRedux = async (therapistId, dispatch) => {
+  console.log('🔄 Starting background Redux data load for therapist:', therapistId);
+
+  const results = {
+    success: [],
+    failed: [],
+    total: 0,
+  };
+
+  // ── 1. Dashboard Stats ─────────────────────────────────────────────────────
+  // Primary data for the therapist dashboard cards (appointments, requests, etc.)
+  try {
+    const response = await getDashboardStats(therapistId);
+    if (response?.data) {
+      // Normalize the backend response to the flat shape the dashboard expects
+      const normalizedStats = {
+        todayAppointments: response.data?.todayAppointments ?? response.data?.appointments?.today ?? 0,
+        pendingRequests: response.data?.pendingRequests ?? response.data?.requests?.pending ?? 0,
+        activeGroups: response.data?.activeGroups ?? response.data?.groups?.active ?? 0,
+        unreadMessages: response.data?.unreadMessages ?? response.data?.messages?.unread ?? 0,
+        totalClients: response.data?.totalClients ?? response.data?.clients?.total ?? 0,
+      };
+      dispatch(updateDashboardStats(normalizedStats));
+      results.success.push('dashboard-stats');
+      console.log('✅ Therapist dashboard stats loaded to Redux');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load therapist dashboard stats:', error?.message);
+    results.failed.push('dashboard-stats');
+  }
+  results.total++;
+
+  // ── 2. Therapist Profile ───────────────────────────────────────────────────
+  // Professional profile data used across the Account screen and dashboard header
+  try {
+    const response = await getTherapistProfile(therapistId);
+    if (response?.success && response?.data) {
+      dispatch(updateTherapistProfile(response.data));
+      results.success.push('therapist-profile');
+      console.log('✅ Therapist profile loaded to Redux');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load therapist profile:', error?.message);
+    results.failed.push('therapist-profile');
+  }
+  results.total++;
+
+  // ── 3. Availability Schedule ───────────────────────────────────────────────
+  // Pre-loads availability so the scheduling screens don't need to wait
+  try {
+    const response = await getAvailability(therapistId);
+    if (response?.success && response?.data) {
+      dispatch(updateAvailability(response.data));
+      results.success.push('availability');
+      console.log('✅ Therapist availability loaded to Redux');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load therapist availability:', error?.message);
+    results.failed.push('availability');
+  }
+  results.total++;
+
+  // ── 4. Analytics & Revenue ─────────────────────────────────────────────────
+  // Populates the analytics/revenue slice used by the Pricing and Analytics screens
+  try {
+    const [overviewRes, revenueRes] = await Promise.all([
+      getAnalyticsOverview(therapistId, 'month'),
+      getRevenueAnalytics(therapistId, 'month'),
+    ]);
+
+    const mergedSummary = {};
+    if (overviewRes?.success) {
+      mergedSummary.sessionCount = overviewRes.data?.sessions?.total || 0;
+    }
+    if (revenueRes?.success) {
+      mergedSummary.total = revenueRes.data?.totalRevenue || 0;
+      mergedSummary.currency = revenueRes.data?.currency || 'UGX';
+      mergedSummary.pendingPayout = revenueRes.data?.pendingPayments || 0;
+    }
+    dispatch(updateRevenueAnalytics(mergedSummary));
+    results.success.push('analytics-revenue');
+    console.log('✅ Therapist analytics & revenue loaded to Redux');
+  } catch (error) {
+    console.error('❌ Failed to load therapist analytics/revenue:', error?.message);
+    results.failed.push('analytics-revenue');
+  }
+  results.total++;
+
+  // ── 5. Upcoming Events Count ───────────────────────────────────────────────
+  // Quick count used by the dashboard Events card badge
+  try {
+    const response = await getEvents(therapistId, { status: 'upcoming', limit: 1 });
+    if (response?.success) {
+      dispatch(updateUpcomingEventsCount(response.data?.stats?.upcomingEvents || 0));
+      results.success.push('upcoming-events-count');
+      console.log('✅ Therapist upcoming events count loaded to Redux');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load therapist upcoming events count:', error?.message);
+    results.failed.push('upcoming-events-count');
+  }
+  results.total++;
+
+  // ── Summary ────────────────────────────────────────────────────────────────
+  console.log('📊 Therapist Redux data load complete:');
+  console.log(`   ✅ Success: ${results.success.length}/${results.total}`);
+  console.log(`   ❌ Failed: ${results.failed.length}/${results.total}`);
+
+  if (results.failed.length > 0) {
+    console.log('   Failed items:', results.failed.join(', '));
+  }
+
+  return results;
 };

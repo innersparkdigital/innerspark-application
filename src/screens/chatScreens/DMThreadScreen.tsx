@@ -9,7 +9,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -20,6 +19,7 @@ import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadMessages, sendChatMessage, markConversationRead } from '../../utils/chatManager';
 import { selectMessages, selectChatLoading, selectChatSending } from '../../features/chat/chatSlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface Message {
   id: string;
@@ -40,12 +40,13 @@ interface DMThreadScreenProps {
 
 const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const dispatch = useDispatch();
   const flatListRef = useRef<FlatList>(null);
   const { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail } = route.params;
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const chatId = `${userId}_${partnerId}`;
-  
+
   const messages = useSelector(selectMessages);
   const isLoading = useSelector(selectChatLoading);
   const isSending = useSelector(selectChatSending);
@@ -95,32 +96,28 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => {
-            setMessages(prev => prev.filter(msg => msg.id !== messageId));
-            toast.show({
-              description: 'Message deleted',
-              duration: 2000,
-            });
-          }
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Message',
+      message: 'Are you sure you want to delete this message?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        toast.show({
+          description: 'Message deleted',
+          duration: 2000,
+        });
+      },
+    });
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
@@ -135,8 +132,8 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
     } else if (date.toDateString() === yesterday.toDateString()) {
       return 'Yesterday';
     } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
       });
@@ -145,10 +142,10 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
 
   const shouldShowDateSeparator = (currentMessage: Message, previousMessage?: Message) => {
     if (!previousMessage) return true;
-    
+
     const currentDate = new Date(currentMessage.createdAt).toDateString();
     const previousDate = new Date(previousMessage.createdAt).toDateString();
-    
+
     return currentDate !== previousDate;
   };
 
@@ -165,7 +162,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
             </Text>
           </View>
         )}
-        
+
         <View style={[
           styles.messageContainer,
           item.isOwn ? styles.ownMessageContainer : styles.partnerMessageContainer
@@ -178,7 +175,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
               containerStyle={styles.messageAvatar}
             />
           )}
-          
+
           <TouchableOpacity
             style={[
               styles.messageBubble,
@@ -192,7 +189,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
             ]}>
               {item.content}
             </Text>
-            
+
             <View style={styles.messageFooter}>
               <Text style={[
                 styles.messageTime,
@@ -200,7 +197,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
               ]}>
                 {formatTime(item.createdAt)}
               </Text>
-              
+
               {item.isOwn && (
                 <View style={styles.messageStatus}>
                   {!item.isSent ? (
@@ -223,13 +220,13 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerInfo}>
           {partnerAvatar && (
             <Avatar
@@ -247,10 +244,10 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => navigation.navigate('TherapistProfileViewScreen', { 
-            therapist: { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail } 
+          onPress={() => navigation.navigate('TherapistProfileViewScreen', {
+            therapist: { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail }
           })}
         >
           <Icon name="info" type="material" color={appColors.CardBackground} size={24} />
@@ -258,7 +255,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
       </View>
 
       {/* Messages */}
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -285,7 +282,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
               multiline
               maxLength={1000}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.sendButton,
                 messageText.trim() ? styles.sendButtonActive : styles.sendButtonInactive
@@ -293,16 +290,17 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
               onPress={handleSendMessage}
               disabled={!messageText.trim() || isSending}
             >
-              <Icon 
-                name="send" 
-                type="material" 
-                color={messageText.trim() ? appColors.CardBackground : appColors.grey3} 
-                size={20} 
+              <Icon
+                name="send"
+                type="material"
+                color={messageText.trim() ? appColors.CardBackground : appColors.grey3}
+                size={20}
               />
             </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { getGroupById, getGroupMembers } from '../../../api/therapist';
 import { ActivityIndicator } from 'react-native';
 import { useSelector } from 'react-redux';
@@ -18,6 +19,7 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const [members, setMembers] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const alert = useISAlert();
 
   React.useEffect(() => {
     loadGroupDetails();
@@ -74,20 +76,17 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   };
 
   const handleStartSession = () => {
-    Alert.alert(
-      'Start Group Session',
-      'Ready to start the session with all group members?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Start',
-          onPress: () => {
-            // Navigate to session or open meeting
-            Alert.alert('Success', 'Session started! Meeting link sent to all members.');
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Start Group Session',
+      message: 'Ready to start the session with all group members?',
+      confirmText: 'Start',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        // Navigate to session or open meeting
+        alert.show({ type: 'success', title: 'Session Started', message: 'Session started! Meeting link sent to all members.' });
+      },
+    });
   };
 
   const handleEditGroup = () => {
@@ -281,6 +280,7 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
 
         <View style={{ height: 100 }} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

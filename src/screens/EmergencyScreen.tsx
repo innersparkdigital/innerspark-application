@@ -11,7 +11,6 @@ import {
   Dimensions,
   Pressable,
   TouchableOpacity,
-  Alert,
   Linking,
   Modal,
 } from 'react-native';
@@ -23,11 +22,13 @@ import { useSelector } from 'react-redux';
 import LHGenericHeader from '../components/LHGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
 import { appContents } from '../global/Data';
+import ISAlert, { useISAlert } from '../components/alerts/ISAlert';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const EmergencyScreen = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const crisisLines = useSelector((state: any) => state.emergency.crisisLines || []);
 
   // Quick Actions Data - Dynamic data from API and app config
@@ -84,7 +85,7 @@ const EmergencyScreen = ({ navigation }) => {
       subtitle: quickActionsData[0]?.subtitle || 'Crisis Lifeline',
       icon: quickActionsData[0]?.icon || 'phone',
       color: quickActionsData[0]?.color || '#E91E63',
-      action: () => quickActionsData[0]?.type === 'call' 
+      action: () => quickActionsData[0]?.type === 'call'
         ? handleCall({ number: quickActionsData[0].contact, name: quickActionsData[0].name })
         : null,
     },
@@ -106,14 +107,14 @@ const EmergencyScreen = ({ navigation }) => {
       color: quickActionsData[2]?.color || '#2196F3',
       action: () => quickActionsData[2]?.type === 'call'
         ? handleCall({ number: quickActionsData[2].contact, name: quickActionsData[2].name })
-        : Alert.alert(
-            'Crisis Counselor',
-            'Connect with a trained crisis counselor for immediate support.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Call Now', onPress: () => handleCall({ number: quickActionsData[2]?.contact, name: 'Crisis Counselor' }) },
-            ]
-          ),
+        : alert.show({
+          type: 'confirm',
+          title: 'Crisis Counselor',
+          message: 'Connect with a trained crisis counselor for immediate support.',
+          confirmText: 'Call Now',
+          cancelText: 'Cancel',
+          onConfirm: () => handleCall({ number: quickActionsData[2]?.contact, name: 'Crisis Counselor' }),
+        }),
     },
     {
       id: 4,
@@ -131,20 +132,17 @@ const EmergencyScreen = ({ navigation }) => {
   const handleCall = (contact) => {
     const phoneNumber = contact.phone || contact.number;
     const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
-    
-    Alert.alert(
-      'Call ' + contact.name,
-      'Are you sure you want to call ' + phoneNumber + '?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Call',
-          onPress: () => {
-            Linking.openURL(`tel:${cleanNumber}`);
-          },
-        },
-      ]
-    );
+
+    alert.show({
+      type: 'confirm',
+      title: 'Call ' + contact.name,
+      message: 'Are you sure you want to call ' + phoneNumber + '?',
+      confirmText: 'Call',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        Linking.openURL(`tel:${cleanNumber}`);
+      },
+    });
   };
 
 
@@ -152,11 +150,11 @@ const EmergencyScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* <StatusBar backgroundColor="#E91E63" barStyle="light-content" /> */}
       <ISStatusBar backgroundColor='#E91E63' />
-      
+
       {/* Emergency Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -173,7 +171,7 @@ const EmergencyScreen = ({ navigation }) => {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        
+
         {/* Crisis Alert Banner */}
         <View style={styles.crisisAlert}>
           <Icon name="warning" type="material" color="#F44336" size={24} />
@@ -209,7 +207,7 @@ const EmergencyScreen = ({ navigation }) => {
             <Icon name="favorite" type="material" color="#E91E63" size={32} />
             <Text style={styles.encouragementTitle}>You Matter</Text>
             <Text style={styles.encouragementText}>
-              Your life has value and meaning. Crisis situations are temporary, but recovery and hope are possible. 
+              Your life has value and meaning. Crisis situations are temporary, but recovery and hope are possible.
               You deserve support and care.
             </Text>
           </View>
@@ -217,6 +215,7 @@ const EmergencyScreen = ({ navigation }) => {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

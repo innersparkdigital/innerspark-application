@@ -5,12 +5,11 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
-  View, 
-  Text, 
-  StyleSheet, 
+  View,
+  Text,
+  StyleSheet,
   TouchableOpacity,
   TextInput,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -24,6 +23,7 @@ import ISStatusBar from '../../components/ISStatusBar';
 import { getFullname } from '../../global/LHShortcuts';
 import { getProfile as getClientProfile, updateProfile as updateClientProfile } from '../../api/client/profile';
 import { setUserProfile } from '../../features/user/userDataSlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -54,70 +54,71 @@ interface EditModalProps {
 }
 
 // Edit Modal Component
-const EditModal = ({ 
-  isVisible, 
-  field, 
-  value, 
-  onClose, 
-  onSave, 
-  requiresVerification = false 
-}: EditModalProps) => {
+const EditModal = ({
+  isVisible,
+  field,
+  value,
+  onClose,
+  onSave,
+  requiresVerification = false,
+  alertRef,
+}: EditModalProps & { alertRef?: any }) => {
   const [editValue, setEditValue] = useState(value);
   const [isLoading, setIsLoading] = useState(false);
 
   const getFieldConfig = (fieldName: string) => {
     switch (fieldName) {
       case 'firstName':
-        return { 
-          title: 'Edit First Name', 
+        return {
+          title: 'Edit First Name',
           placeholder: 'Enter your first name',
           keyboardType: 'default' as const,
           maxLength: 50,
           multiline: false
         };
       case 'lastName':
-        return { 
-          title: 'Edit Last Name', 
+        return {
+          title: 'Edit Last Name',
           placeholder: 'Enter your last name',
           keyboardType: 'default' as const,
           maxLength: 50,
           multiline: false
         };
       case 'email':
-        return { 
-          title: 'Edit Email Address', 
+        return {
+          title: 'Edit Email Address',
           placeholder: 'Enter your email address',
           keyboardType: 'email-address' as const,
           maxLength: 100,
           multiline: false
         };
       case 'phone':
-        return { 
-          title: 'Edit Phone Number', 
+        return {
+          title: 'Edit Phone Number',
           placeholder: 'Enter your phone number',
           keyboardType: 'phone-pad' as const,
           maxLength: 20,
           multiline: false
         };
       case 'bio':
-        return { 
-          title: 'Edit Bio', 
+        return {
+          title: 'Edit Bio',
           placeholder: 'Tell us about yourself...',
           keyboardType: 'default' as const,
           maxLength: 500,
           multiline: true
         };
       case 'gender':
-        return { 
-          title: 'Select Gender', 
+        return {
+          title: 'Select Gender',
           placeholder: 'Select your gender',
           keyboardType: 'default' as const,
           maxLength: 20,
           multiline: false
         };
       default:
-        return { 
-          title: 'Edit Field', 
+        return {
+          title: 'Edit Field',
           placeholder: 'Enter value',
           keyboardType: 'default' as const,
           maxLength: 100,
@@ -153,15 +154,20 @@ const EditModal = ({
   const handleSave = async () => {
     const error = validateInput(editValue);
     if (error) {
-      Alert.alert('Validation Error', error);
+      alertRef?.current?.show({
+        type: 'warning',
+        title: 'Validation Error',
+        message: error,
+        confirmText: 'OK',
+      });
       return;
     }
 
     setIsLoading(true);
-    
+
     // Simulate API call
     await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
-    
+
     setIsLoading(false);
     onSave(editValue);
   };
@@ -268,9 +274,10 @@ const EditModal = ({
 export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdateScreenProps) {
   const toast = useToast();
   const dispatch = useDispatch();
+  const alert = useISAlert();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const userProfile = useSelector((state: any) => state.userData.userProfile);
-  
+
   const [profileData, setProfileData] = useState<UserProfile>({});
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [currentEditField, setCurrentEditField] = useState('');
@@ -304,19 +311,19 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   // Handle save field
   const handleSaveField = async (value: string) => {
     const requiresVerification = currentEditField === 'email' || currentEditField === 'phone';
-    
+
     if (requiresVerification) {
       // Close modal first
       setIsEditModalVisible(false);
-      
+
       // Navigate to appropriate verification screen
       if (currentEditField === 'email') {
-        navigation.navigate('VerifyEmailScreen', { 
+        navigation.navigate('VerifyEmailScreen', {
           verificationEmail: value,
           returnScreen: 'ProfileUpdateScreen'
         });
       } else if (currentEditField === 'phone') {
-        navigation.navigate('VerifyPhoneScreen', { 
+        navigation.navigate('VerifyPhoneScreen', {
           verificationPhone: value,
           returnScreen: 'ProfileUpdateScreen'
         });
@@ -327,7 +334,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
         ...prev,
         [currentEditField]: value
       }));
-      
+
       setIsEditModalVisible(false);
       notifyWithToast(`${currentEditField} updated successfully`);
     }
@@ -381,14 +388,14 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   };
 
   // Profile field component for update screen
-  const UpdateProfileField = ({ 
-    label, 
-    value, 
-    icon, 
-    iconType = "material", 
-    onEdit, 
+  const UpdateProfileField = ({
+    label,
+    value,
+    icon,
+    iconType = "material",
+    onEdit,
     requiresVerification = false,
-    isLast = false 
+    isLast = false
   }: {
     label: string;
     value: string;
@@ -402,11 +409,11 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
       <View style={[styles.profileField, isLast && styles.profileFieldLast]}>
         <View style={styles.fieldHeader}>
           <View style={styles.fieldLabelContainer}>
-            <Icon 
-              type={iconType} 
-              name={icon} 
-              color={appColors.AppBlue} 
-              size={20} 
+            <Icon
+              type={iconType}
+              name={icon}
+              color={appColors.AppBlue}
+              size={20}
             />
             <Text style={styles.fieldLabel}>{label}</Text>
             {requiresVerification && (
@@ -415,11 +422,11 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
               </View>
             )}
           </View>
-          <Icon 
-            type="material" 
-            name="edit" 
-            color={appColors.AppBlue} 
-            size={18} 
+          <Icon
+            type="material"
+            name="edit"
+            color={appColors.AppBlue}
+            size={18}
           />
         </View>
         <Text style={styles.fieldValue}>{value || 'Not provided'}</Text>
@@ -434,25 +441,25 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       <ISGenericHeader
         title="Edit Profile"
         navigation={navigation}
       />
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
         >
           {/* Profile Header */}
           <View style={styles.profileHeader}>
-            <Avatar 
-              rounded 
-              size={100} 
+            <Avatar
+              rounded
+              size={100}
               source={userDetails?.image || appImages.avatarDefault}
               containerStyle={styles.avatarStyle}
             />
@@ -465,21 +472,21 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
           {/* Editable Fields */}
           <View style={styles.profileSection}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
-            
+
             <UpdateProfileField
               label="First Name"
               value={profileData.firstName || ''}
               icon="person"
               onEdit={() => handleEditField('firstName')}
             />
-            
+
             <UpdateProfileField
               label="Last Name"
               value={profileData.lastName || ''}
               icon="person-outline"
               onEdit={() => handleEditField('lastName')}
             />
-            
+
             <UpdateProfileField
               label="Email Address"
               value={profileData.email || ''}
@@ -487,7 +494,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
               onEdit={() => handleEditField('email')}
               requiresVerification={true}
             />
-            
+
             <UpdateProfileField
               label="Phone Number"
               value={profileData.phone || ''}
@@ -495,14 +502,14 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
               onEdit={() => handleEditField('phone')}
               requiresVerification={true}
             />
-            
+
             <UpdateProfileField
               label="Gender"
               value={profileData.gender || ''}
               icon="person-outline"
               onEdit={() => handleEditField('gender')}
             />
-            
+
             <UpdateProfileField
               label="Bio"
               value={profileData.bio || ''}
@@ -545,7 +552,9 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
         onClose={() => setIsEditModalVisible(false)}
         onSave={handleSaveField}
         requiresVerification={currentEditField === 'email' || currentEditField === 'phone'}
+        alertRef={alert.ref}
       />
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 }

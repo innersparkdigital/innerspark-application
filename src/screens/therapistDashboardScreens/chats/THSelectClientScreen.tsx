@@ -9,7 +9,6 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Alert,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +18,7 @@ import { appColors, appFonts } from '../../../global/Styles';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { getClients } from '../../../api/therapist';
 
 interface Client {
@@ -32,6 +32,7 @@ interface Client {
 
 const THSelectClientScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const alert = useISAlert();
   const [searchQuery, setSearchQuery] = useState('');
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,10 +87,11 @@ const THSelectClientScreen = ({ navigation }: any) => {
       });
     } else {
       // Start new conversation
-      Alert.alert(
-        'Start Conversation',
-        `Start a new conversation with ${client.name}?`,
-        [
+      alert.show({
+        type: 'info',
+        title: 'Start Conversation',
+        message: `Start a new conversation with ${client.name}?`,
+        actions: [
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Start',
@@ -105,7 +107,7 @@ const THSelectClientScreen = ({ navigation }: any) => {
             },
           },
         ]
-      );
+      });
     }
   };
 
@@ -191,6 +193,7 @@ const THSelectClientScreen = ({ navigation }: any) => {
           }
         />
       </View>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

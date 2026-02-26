@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../global/Styles';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 import { useSelector } from 'react-redux';
 import { getRequests, acceptRequest, declineRequest } from '../../api/therapist';
@@ -32,6 +32,7 @@ const THRequestsScreen = ({ navigation }: any) => {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const alert = useISAlert();
 
   React.useEffect(() => {
     loadRequests();
@@ -91,64 +92,51 @@ const THRequestsScreen = ({ navigation }: any) => {
   };
 
   const handleAcceptRequest = (requestId: number) => {
-    Alert.alert(
-      'Accept Request',
-      'Are you sure you want to accept this client request?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Accept',
-          onPress: async () => {
-            try {
-              const therapistId = userDetails?.userId;
-              // Optimistic update
-              setRequests(requests.filter((r) => r.id !== requestId));
-              await acceptRequest(requestId.toString(), therapistId);
-              Alert.alert('Success', 'Request accepted! You can now chat with the client.');
-            } catch (error: any) {
-              console.error(error);
-              const errorMessage = error.backendMessage || 'Failed to accept request';
-              Alert.alert('Error', errorMessage);
-              // Could revert state here if needed
-              loadRequests();
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Accept Request',
+      message: 'Are you sure you want to accept this client request?',
+      confirmText: 'Accept',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          const therapistId = userDetails?.userId;
+          // Optimistic update
+          setRequests(requests.filter((r) => r.id !== requestId));
+          await acceptRequest(requestId.toString(), therapistId);
+          alert.show({ type: 'success', title: 'Success', message: 'Request accepted! You can now chat with the client.' });
+        } catch (error: any) {
+          console.error(error);
+          const errorMessage = error.backendMessage || 'Failed to accept request';
+          alert.show({ type: 'error', title: 'Error', message: errorMessage });
+          // Revert state if needed
+          loadRequests();
+        }
+      },
+    });
   };
 
   const handleDeclineRequest = (requestId: number) => {
-    Alert.alert(
-      'Decline Request',
-      'Are you sure you want to decline this request?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Decline',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const therapistId = userDetails?.userId;
-              // Optimistic update
-              setRequests(requests.filter((r) => r.id !== requestId));
-              await declineRequest(requestId.toString(), therapistId);
-            } catch (error: any) {
-              console.error(error);
-              const errorMessage = error.backendMessage || 'Failed to decline request';
-              Alert.alert('Error', errorMessage);
-              loadRequests();
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Decline Request',
+      message: 'Are you sure you want to decline this request?',
+      confirmText: 'Decline',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          const therapistId = userDetails?.userId;
+          // Optimistic update
+          setRequests(requests.filter((r) => r.id !== requestId));
+          await declineRequest(requestId.toString(), therapistId);
+        } catch (error: any) {
+          console.error(error);
+          const errorMessage = error.backendMessage || 'Failed to decline request';
+          alert.show({ type: 'error', title: 'Error', message: errorMessage });
+          loadRequests();
+        }
+      },
+    });
   };
 
   const RequestCard = ({ request }: any) => (
@@ -285,6 +273,7 @@ const THRequestsScreen = ({ navigation }: any) => {
           </View>
         )}
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

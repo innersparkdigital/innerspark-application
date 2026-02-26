@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -22,6 +21,7 @@ import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { deactivateAccount } from '../../api/client/account';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DeactivateAccountScreenProps {
   navigation: NavigationProp<any>;
@@ -35,6 +35,7 @@ interface DeactivationReason {
 
 const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
@@ -92,48 +93,44 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
   };
 
   const handleDeactivateAccount = async () => {
-    Alert.alert(
-      'Confirm Deactivation',
-      'Your account will be temporarily disabled. You can reactivate it anytime by logging back in.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Deactivate',
-          style: 'destructive',
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              const response = await deactivateAccount(userId);
-              
-              if (response.success) {
-                toast.show({
-                  description: response.message || 'Account deactivated successfully. You can reactivate anytime.',
-                  duration: 5000,
-                });
-                
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'SigninScreen' }],
-                });
-              } else {
-                toast.show({
-                  description: response.message || 'Failed to deactivate account',
-                  duration: 3000,
-                });
-              }
-            } catch (error: any) {
-              console.error('Error deactivating account:', error);
-              toast.show({
-                description: error.response?.data?.message || 'Failed to deactivate account. Please try again.',
-                duration: 3000,
-              });
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'warning',
+      title: 'Confirm Deactivation',
+      message: 'Your account will be temporarily disabled. You can reactivate it anytime by logging back in.',
+      confirmText: 'Deactivate',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          const response = await deactivateAccount(userId);
+
+          if (response.success) {
+            toast.show({
+              description: response.message || 'Account deactivated successfully. You can reactivate anytime.',
+              duration: 5000,
+            });
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'SigninScreen' }],
+            });
+          } else {
+            toast.show({
+              description: response.message || 'Failed to deactivate account',
+              duration: 3000,
+            });
+          }
+        } catch (error: any) {
+          console.error('Error deactivating account:', error);
+          toast.show({
+            description: error.response?.data?.message || 'Failed to deactivate account. Please try again.',
+            duration: 3000,
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   return (
@@ -183,7 +180,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
               </Text>
             </View>
           </View>
-          
+
 
           {/* Reason Selection */}
           <View style={styles.section}>
@@ -270,6 +267,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
           </Text>
         </View>
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

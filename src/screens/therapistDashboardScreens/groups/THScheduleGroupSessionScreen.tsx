@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,10 +17,12 @@ import DatePicker from 'react-native-date-picker';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { scheduleGroupSession } from '../../../api/therapist';
 
 const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
   const { group } = route.params;
+  const alert = useISAlert();
 
   const [isLoading, setIsLoading] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('');
@@ -61,12 +62,12 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
 
   const handleSchedule = async () => {
     if (!sessionTitle.trim()) {
-      Alert.alert('Missing Information', 'Please enter a session title');
+      alert.show({ type: 'warning', title: 'Missing Info', message: 'Please enter a session title' });
       return;
     }
 
     if (sessionType === 'virtual' && !meetingLink.trim()) {
-      Alert.alert('Missing Information', 'Please enter a meeting link for virtual sessions');
+      alert.show({ type: 'warning', title: 'Link Required', message: 'Please enter a meeting link for virtual sessions' });
       return;
     }
 
@@ -85,20 +86,16 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
 
       await scheduleGroupSession(group.id, sessionData);
 
-      Alert.alert(
-        'Session Scheduled',
-        `${sessionTitle} has been scheduled for ${formatDate(selectedDate)} at ${formatTime(selectedDate)}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      alert.show({
+        type: 'success',
+        title: 'Session Scheduled',
+        message: `${sessionTitle} has been scheduled for ${formatDate(selectedDate)} at ${formatTime(selectedDate)}`,
+        onConfirm: () => navigation.goBack()
+      });
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to schedule session';
       console.error('Schedule Session Error:', errorMessage);
-      Alert.alert('Error', errorMessage);
+      alert.show({ type: 'error', title: 'Error', message: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -264,6 +261,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
           disabled={isLoading}
         />
       </View>
+      <ISAlert ref={alert.ref} />
 
       {/* Date Picker Modal */}
       <Modal

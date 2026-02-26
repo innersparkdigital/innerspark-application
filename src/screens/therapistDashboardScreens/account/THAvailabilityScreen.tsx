@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert,
   Modal,
   TextInput,
   RefreshControl,
@@ -20,6 +19,7 @@ import DatePicker from 'react-native-date-picker';
 import { appColors, appFonts } from '../../../global/Styles';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import ISConfirmationModal from '../../../components/ISConfirmationModal';
 import {
   getAvailability,
@@ -50,6 +50,7 @@ const THAvailabilityScreen = ({ navigation }: any) => {
   const therapistId = userDetails?.userId;
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const alert = useISAlert();
 
   // Initialize with default schedule
   const [schedule, setSchedule] = useState<DaySchedule[]>([
@@ -315,7 +316,7 @@ const THAvailabilityScreen = ({ navigation }: any) => {
 
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to save changes';
-      Alert.alert('Error', errorMessage);
+      alert.show({ type: 'error', title: 'Error', message: errorMessage });
       console.error('Save Availability Error:', errorMessage);
     } finally {
       setLoading(false);
@@ -792,7 +793,7 @@ const THAvailabilityScreen = ({ navigation }: any) => {
                     if (error.response?.status === 404) {
                       errorMessage = 'Something went wrong!';
                     }
-                    Alert.alert('Error', errorMessage);
+                    alert.show({ type: 'error', title: 'Error', message: errorMessage });
                     console.error('Block Time Error:', errorMessage);
                   });
 
@@ -830,7 +831,7 @@ const THAvailabilityScreen = ({ navigation }: any) => {
                 if (error.response?.status === 404) {
                   errorMessage = 'Something went wrong!';
                 }
-                Alert.alert('Error', errorMessage);
+                alert.show({ type: 'error', title: 'Error', message: errorMessage });
                 console.error('Unblock Time Error:', errorMessage);
               });
           }
@@ -901,7 +902,8 @@ const THAvailabilityScreen = ({ navigation }: any) => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView >
+      <ISAlert ref={alert.ref} />
+    </SafeAreaView>
   );
 };
 

@@ -9,7 +9,6 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Alert,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,9 +17,11 @@ import { appColors, appFonts } from '../../../global/Styles';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 
 const THAddClientNoteScreen = ({ navigation, route }: any) => {
   const { client } = route.params;
+  const alert = useISAlert();
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [noteType, setNoteType] = useState<'progress' | 'session' | 'observation' | 'treatment'>('session');
@@ -34,21 +35,17 @@ const THAddClientNoteScreen = ({ navigation, route }: any) => {
 
   const handleSave = () => {
     if (!noteTitle.trim() || !noteContent.trim()) {
-      Alert.alert('Missing Information', 'Please enter both title and content for the note.');
+      alert.show({ type: 'warning', title: 'Missing Info', message: 'Please enter both title and content for the note.' });
       return;
     }
 
     // TODO: Save note to backend
-    Alert.alert(
-      'Note Saved',
-      'Your note has been saved successfully.',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]
-    );
+    alert.show({
+      type: 'success',
+      title: 'Note Saved',
+      message: 'Your note has been saved successfully.',
+      onConfirm: () => navigation.goBack()
+    });
   };
 
   return (
@@ -167,6 +164,7 @@ const THAddClientNoteScreen = ({ navigation, route }: any) => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

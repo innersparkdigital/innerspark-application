@@ -8,7 +8,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
@@ -17,6 +16,7 @@ import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import { markGoalComplete, updateExistingGoal, deleteExistingGoal } from '../../utils/goalsManager';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface Goal {
   id: number;
@@ -38,6 +38,7 @@ interface GoalDetailScreenProps {
 const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }) => {
   const { goal } = route.params;
   const toast = useToast();
+  const alert = useISAlert();
   const [currentGoal, setCurrentGoal] = useState(goal);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -74,7 +75,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
     const today = new Date();
     const diffTime = due.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Due today';
     if (diffDays === 1) return '1 day remaining';
     if (diffDays > 1) return `${diffDays} days remaining`;
@@ -94,14 +95,14 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
     setIsLoading(true);
     try {
       const result = await markGoalComplete(currentGoal.id);
-      
+
       if (result.success) {
-        setCurrentGoal(prev => ({ 
-          ...prev, 
-          status: 'completed', 
-          progress: 100 
+        setCurrentGoal(prev => ({
+          ...prev,
+          status: 'completed',
+          progress: 100
         }));
-        
+
         toast.show({
           description: 'Congratulations! Goal marked as completed! 🎉',
           duration: 3000,
@@ -128,57 +129,53 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Goal',
-      'Are you sure you want to delete this goal? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive', 
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              const result = await deleteExistingGoal(currentGoal.id);
-              
-              if (result.success) {
-                toast.show({
-                  description: 'Goal deleted successfully',
-                  duration: 2000,
-                });
-                
-                navigation.goBack();
-              } else {
-                toast.show({
-                  description: result.error || 'Failed to delete goal',
-                  duration: 3000,
-                });
-              }
-            } catch (error) {
-              console.error('Error deleting goal:', error);
-              toast.show({
-                description: 'Failed to delete goal',
-                duration: 3000,
-              });
-            } finally {
-              setIsLoading(false);
-            }
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Goal',
+      message: 'Are you sure you want to delete this goal? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          const result = await deleteExistingGoal(currentGoal.id);
+
+          if (result.success) {
+            toast.show({
+              description: 'Goal deleted successfully',
+              duration: 2000,
+            });
+
+            navigation.goBack();
+          } else {
+            toast.show({
+              description: result.error || 'Failed to delete goal',
+              duration: 3000,
+            });
           }
-        },
-      ]
-    );
+        } catch (error) {
+          console.error('Error deleting goal:', error);
+          toast.show({
+            description: 'Failed to delete goal',
+            duration: 3000,
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   const handlePauseResume = async () => {
     const newStatus = currentGoal.status === 'paused' ? 'active' : 'paused';
-    
+
     setIsLoading(true);
     try {
       const result = await updateExistingGoal(currentGoal.id, { status: newStatus });
-      
+
       if (result.success) {
         setCurrentGoal(prev => ({ ...prev, status: newStatus }));
-        
+
         toast.show({
           description: `Goal ${newStatus === 'paused' ? 'paused' : 'resumed'}`,
           duration: 2000,
@@ -207,7 +204,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -238,7 +235,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
             </View>
 
             <Text style={styles.goalTitle}>{currentGoal.title}</Text>
-            
+
             <View style={styles.categoryContainer}>
               <Icon name="label" type="material" color={appColors.grey2} size={16} />
               <Text style={styles.categoryText}>{currentGoal.category}</Text>
@@ -250,16 +247,16 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
             <Text style={styles.sectionTitle}>Progress</Text>
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View 
+                <View
                   style={[
-                    styles.progressFill, 
+                    styles.progressFill,
                     { width: `${currentGoal.progress}%`, backgroundColor: statusColor }
-                  ]} 
+                  ]}
                 />
               </View>
               <Text style={styles.progressText}>{currentGoal.progress}%</Text>
             </View>
-            
+
             <View style={styles.progressStats}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{currentGoal.progress}%</Text>
@@ -283,7 +280,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
           {/* Timeline Section */}
           <View style={styles.timelineSection}>
             <Text style={styles.sectionTitle}>Timeline</Text>
-            
+
             <View style={styles.timelineItem}>
               <Icon name="flag" type="material" color={appColors.AppBlue} size={20} />
               <View style={styles.timelineContent}>
@@ -293,11 +290,11 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
             </View>
 
             <View style={styles.timelineItem}>
-              <Icon 
-                name={isOverdue ? "warning" : "event"} 
-                type="material" 
-                color={isOverdue ? "#F44336" : appColors.AppBlue} 
-                size={20} 
+              <Icon
+                name={isOverdue ? "warning" : "event"}
+                type="material"
+                color={isOverdue ? "#F44336" : appColors.AppBlue}
+                size={20}
               />
               <View style={styles.timelineContent}>
                 <Text style={styles.timelineTitle}>Due Date</Text>
@@ -329,7 +326,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
                   buttonStyle={[styles.actionButton, styles.completeButton]}
                   titleStyle={styles.actionButtonText}
                 />
-                
+
                 <Button
                   title={currentGoal.status === 'paused' ? 'Resume Goal' : 'Pause Goal'}
                   onPress={handlePauseResume}
@@ -339,7 +336,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
                 />
               </>
             )}
-            
+
             <Button
               title="Delete Goal"
               onPress={handleDelete}
@@ -350,6 +347,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
           </View>
         </View>
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

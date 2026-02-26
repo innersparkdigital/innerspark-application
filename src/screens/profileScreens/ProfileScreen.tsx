@@ -4,15 +4,14 @@
 import React, { useState, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
+import {
   StatusBar,
   ScrollView,
-  View, 
-  Text, 
-  StyleSheet, 
+  View,
+  Text,
+  StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
@@ -24,6 +23,7 @@ import ISStatusBar from '../../components/ISStatusBar';
 import { getFullname } from '../../global/LHShortcuts';
 import { getProfile as getClientProfile } from '../../api/client/profile';
 import { setUserProfile } from '../../features/user/userDataSlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -64,12 +64,12 @@ const ProfileSkeleton = () => (
 );
 
 // Profile field component
-const ProfileField = ({ 
-  label, 
-  value, 
-  icon, 
-  iconType = "material", 
-  isLast = false 
+const ProfileField = ({
+  label,
+  value,
+  icon,
+  iconType = "material",
+  isLast = false
 }: {
   label: string;
   value: string;
@@ -80,11 +80,11 @@ const ProfileField = ({
   <View style={[styles.profileField, isLast && styles.profileFieldLast]}>
     <View style={styles.fieldHeader}>
       <View style={styles.fieldLabelContainer}>
-        <Icon 
-          type={iconType} 
-          name={icon} 
-          color={appColors.AppBlue} 
-          size={20} 
+        <Icon
+          type={iconType}
+          name={icon}
+          color={appColors.AppBlue}
+          size={20}
         />
         <Text style={styles.fieldLabel}>{label}</Text>
       </View>
@@ -96,9 +96,10 @@ const ProfileField = ({
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const toast = useToast();
   const dispatch = useDispatch();
+  const alert = useISAlert();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const userProfile = useSelector((state: any) => state.userData.userProfile);
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile>({});
@@ -169,19 +170,20 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
   // Handle field edit
   const handleEditField = (field: string) => {
-    navigation.navigate('ProfileUpdateScreen', { 
+    navigation.navigate('ProfileUpdateScreen', {
       editField: field,
-      currentData: profileData 
+      currentData: profileData
     });
   };
 
   // Handle avatar update
   const handleAvatarUpdate = () => {
-    Alert.alert(
-      'Update Profile Photo',
-      'Avatar upload feature coming soon!',
-      [{ text: 'OK' }]
-    );
+    alert.show({
+      type: 'info',
+      title: 'Update Profile Photo',
+      message: 'Avatar upload feature coming soon!',
+      confirmText: 'OK',
+    });
   };
 
   // Sync local state from Redux userProfile whenever screen gains focus
@@ -221,13 +223,13 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} />
-      
+
       <ISGenericHeader
         title="Profile"
         navigation={navigation}
       />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -242,26 +244,26 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <TouchableOpacity onPress={handleAvatarUpdate} style={styles.avatarContainer}>
-            <Avatar 
-              rounded 
-              size={120} 
+            <Avatar
+              rounded
+              size={120}
               source={userDetails?.image || appImages.avatarDefault}
               containerStyle={styles.avatarStyle}
             />
             <View style={styles.avatarEditOverlay}>
-              <Icon 
-                type="material" 
-                name="camera-alt" 
-                color={appColors.CardBackground} 
-                size={20} 
+              <Icon
+                type="material"
+                name="camera-alt"
+                color={appColors.CardBackground}
+                size={20}
               />
             </View>
           </TouchableOpacity>
-          
+
           <Text style={styles.userName}>
             {getFullname(profileData.firstName || '', profileData.lastName || '')}
           </Text>
-          
+
           {/* header meta data */}
           {/* Header meta data is hidden for now */}
           {/* <View style={styles.metaDataContainer}>
@@ -278,7 +280,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         <View style={styles.profileSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.editProfileButton}
               onPress={() => navigation.navigate('ProfileUpdateScreen')}
             >
@@ -286,37 +288,37 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
               <Text style={styles.editProfileText}>Edit</Text>
             </TouchableOpacity>
           </View>
-          
+
           <ProfileField
             label="First Name"
             value={profileData.firstName || ''}
             icon="person"
           />
-          
+
           <ProfileField
             label="Last Name"
             value={profileData.lastName || ''}
             icon="person-outline"
           />
-          
+
           <ProfileField
             label="Email Address"
             value={profileData.email || ''}
             icon="email"
           />
-          
+
           <ProfileField
             label="Phone Number"
             value={profileData.phone || ''}
             icon="phone"
           />
-          
+
           <ProfileField
             label="Gender"
             value={profileData.gender || ''}
             icon="person-outline"
           />
-          
+
           <ProfileField
             label="Bio"
             value={profileData.bio || ''}
@@ -328,15 +330,15 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         {/* Account Information */}
         <View style={styles.profileSection}>
           <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Account Information</Text>
+            <Text style={styles.sectionTitle}>Account Information</Text>
           </View>
-          
+
           <ProfileField
             label="Member Since"
             value={profileData.dateJoined || ''}
             icon="calendar-today"
           />
-          
+
           {/* Last active field is hidden for now */}
           {/* 
           <ProfileField
@@ -373,6 +375,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 }

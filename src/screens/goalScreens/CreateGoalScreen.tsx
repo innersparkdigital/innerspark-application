@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
@@ -18,6 +17,7 @@ import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import { createNewGoal } from '../../utils/goalsManager';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface CreateGoalScreenProps {
   navigation: NavigationProp<any>;
@@ -25,16 +25,17 @@ interface CreateGoalScreenProps {
 
 const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [category, setCategory] = useState('');
   const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const categories = [
-    'Mindfulness', 'Physical Health', 'Professional Help', 
+    'Mindfulness', 'Physical Health', 'Professional Help',
     'Self-Awareness', 'Relationships', 'Lifestyle', 'Learning'
   ];
 
@@ -45,7 +46,7 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
   ];
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     if (!title.trim()) {
       newErrors.title = 'Title is required';
@@ -70,7 +71,7 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
         const selectedDate = new Date(dueDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         if (selectedDate < today) {
           newErrors.dueDate = 'Due date cannot be in the past';
         }
@@ -107,13 +108,13 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
 
       // Create goal via API
       const result = await createNewGoal(goalData);
-      
+
       if (result.success) {
         toast.show({
           description: 'Goal created successfully! 🎯',
           duration: 3000,
         });
-        
+
         navigation.goBack();
       } else {
         toast.show({
@@ -134,14 +135,14 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
 
   const handleCancel = () => {
     if (title || description || dueDate || category !== '') {
-      Alert.alert(
-        'Discard Changes',
-        'Are you sure you want to discard your changes?',
-        [
-          { text: 'Keep Editing', style: 'cancel' },
-          { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() },
-        ]
-      );
+      alert.show({
+        type: 'destructive',
+        title: 'Discard Changes',
+        message: 'Are you sure you want to discard your changes?',
+        confirmText: 'Discard',
+        cancelText: 'Keep Editing',
+        onConfirm: () => navigation.goBack(),
+      });
     } else {
       navigation.goBack();
     }
@@ -150,7 +151,7 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
@@ -280,6 +281,7 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
           titleStyle={styles.saveButtonText}
         />
       </View>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

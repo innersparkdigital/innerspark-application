@@ -16,7 +16,6 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  Alert,
   Modal,
   ScrollView,
   RefreshControl,
@@ -25,6 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface HistoryMessage {
   id: string;
@@ -52,6 +52,7 @@ interface GroupMessagesHistoryScreenProps {
 
 const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const { groupId, groupName, userRole, privacyMode = true } = route.params;
 
   const [messages, setMessages] = useState<HistoryMessage[]>([]);
@@ -258,7 +259,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = messages.filter(message => 
+      filtered = messages.filter(message =>
         message.content.toLowerCase().includes(query) ||
         message.senderName.toLowerCase().includes(query)
       );
@@ -277,11 +278,11 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
 
       setTimeout(() => {
         setShowExportModal(false);
-        Alert.alert(
-          'Export Complete',
-          `Messages have been exported as ${exportOptions.format.toUpperCase()} file. Check your downloads folder.`,
-          [{ text: 'OK' }]
-        );
+        alert.show({
+          type: 'success',
+          title: 'Export Complete',
+          message: `Messages have been exported as ${exportOptions.format.toUpperCase()} file. Check your downloads folder.`,
+        });
       }, 2000);
     } catch (error) {
       toast.show({
@@ -295,51 +296,47 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
     if (!selectedMessage) return;
 
     const actionText = action === 'delete' ? 'delete' : action === 'report' ? 'report' : 'warn user about';
-    
-    Alert.alert(
-      'Moderate Message',
-      `Are you sure you want to ${actionText} this message?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Confirm', 
-          style: action === 'delete' ? 'destructive' : 'default',
-          onPress: () => {
-            if (action === 'delete') {
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === selectedMessage.id 
-                    ? { ...msg, isDeleted: true, content: '[Message deleted by moderator]' }
-                    : msg
-                )
-              );
-            } else if (action === 'report') {
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === selectedMessage.id 
-                    ? { ...msg, isReported: true }
-                    : msg
-                )
-              );
-            }
-            
-            setShowModerationModal(false);
-            setSelectedMessage(null);
-            toast.show({
-              description: `Message ${action}ed successfully`,
-              duration: 2000,
-            });
-          }
-        },
-      ]
-    );
+
+    alert.show({
+      type: action === 'delete' ? 'destructive' : 'warning',
+      title: 'Moderate Message',
+      message: `Are you sure you want to ${actionText} this message?`,
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        if (action === 'delete') {
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === selectedMessage.id
+                ? { ...msg, isDeleted: true, content: '[Message deleted by moderator]' }
+                : msg
+            )
+          );
+        } else if (action === 'report') {
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === selectedMessage.id
+                ? { ...msg, isReported: true }
+                : msg
+            )
+          );
+        }
+
+        setShowModerationModal(false);
+        setSelectedMessage(null);
+        toast.show({
+          description: `Message ${action}ed successfully`,
+          duration: 2000,
+        });
+      },
+    });
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'short', 
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -365,18 +362,18 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
     if (message.senderRole === 'therapist') {
       return message.senderName;
     }
-    
+
     // Privacy mode: show anonymous names for members
     if (privacyMode && message.senderRole === 'member') {
       // Use index + 1 as anonymous ID (simple approach)
       return `Member ${(index % 20) + 1}`;
     }
-    
+
     // Moderators: show name with badge
     if (message.senderRole === 'moderator') {
       return privacyMode ? `Member ${(index % 20) + 1}` : message.senderName;
     }
-    
+
     // Default: show real name
     return message.senderName;
   };
@@ -393,7 +390,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
     }
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
           styles.messageItem,
           item.isReported && styles.reportedMessage,
@@ -436,14 +433,14 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
             <Icon name="flag" type="material" color="#F44336" size={16} />
           )}
         </View>
-        
+
         <Text style={[
           styles.messageContent,
           item.isDeleted && styles.deletedMessageContent
         ]}>
           {item.content}
         </Text>
-        
+
         {item.type === 'announcement' && (
           <View style={styles.announcementBadge}>
             <Icon name="campaign" type="material" color={appColors.AppBlue} size={14} />
@@ -476,19 +473,19 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerText}>
           <Text style={styles.headerTitle}>Message History</Text>
           <Text style={styles.headerSubtitle}>{groupName}</Text>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.headerButton}
           onPress={() => setShowExportModal(true)}
         >
@@ -530,6 +527,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
         }
         ListEmptyComponent={!isLoading ? renderEmptyState : null}
       />
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

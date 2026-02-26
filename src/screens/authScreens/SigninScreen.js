@@ -40,7 +40,6 @@ export default function SigninScreen({ navigation }) {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [username, setUsername] = useState(""); // represents email or phone number
-    const [isFeatureModalVisible, setIsFeatureModalVisible] = useState(false);
     // const [userToken, setUserToken] = useState(null); // do we need this ?
     const [isLoadingAppData, setIsLoadingAppData] = useState(false); // Toggles App Home Data Loading states
     const [loginPayload, setLoginPayload] = useState(null); // user login payload data
@@ -60,17 +59,19 @@ export default function SigninScreen({ navigation }) {
         })
     }
 
+
     // Therapist Test Data 
+    // grab from env variables
     const therapistTestData = {
-        userId: '79784672620',
-        firstName: 'Isabella',
-        lastName: 'Nakato',
-        email: "isabella.nak@juakaly.com",
-        phone: '+256702211671',
-        role: 'therapist',
-        email_verified: 1,
-        phone_verified: 1,
-        profileImage: null,
+        userId: process.env.THERAPIST_USER_ID,
+        firstName: process.env.THERAPIST_FIRST_NAME,
+        lastName: process.env.THERAPIST_LAST_NAME,
+        email: process.env.THERAPIST_EMAIL,
+        phone: process.env.THERAPIST_PHONE,
+        role: process.env.THERAPIST_ROLE,
+        email_verified: process.env.THERAPIST_EMAIL_VERIFIED,
+        phone_verified: process.env.THERAPIST_PHONE_VERIFIED,
+        profileImage: process.env.THERAPIST_PROFILE_IMAGE,
     };
 
     // Toggle Password Handler
@@ -561,7 +562,6 @@ export default function SigninScreen({ navigation }) {
                                     onPress={
                                         () => {
                                             // testing the feature modal
-                                            // setIsFeatureModalVisible(true);
                                             // setIsLoggedInModalVisible(true);
 
                                             // Select Login Method (Email or Phone)
@@ -651,7 +651,11 @@ export default function SigninScreen({ navigation }) {
 
                         {/* Test Therapist Login Link */}
                         {/* Temporary debug link - will be removed in production */}
-                        {/* This is a temporary link for testing therapist dashboard access and will be removed before production release */}
+                        {/** 
+                         * This is a temporary link for testing therapist dashboard access 
+                         * and will be removed before production release 
+                         */}
+                        {/*  
                         <View style={{ justifyContent: 'center', paddingVertical: 10, paddingTop: 20 }}>
                             <Pressable
                                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
@@ -680,7 +684,7 @@ export default function SigninScreen({ navigation }) {
                                 </Text>
                             </Pressable>
                         </View>
-
+                        */}
 
                         {/* Terms of Service - with separate links */}
                         {/* <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: 15 }}>
@@ -700,15 +704,6 @@ export default function SigninScreen({ navigation }) {
 
                     </View>
                 </ScrollView>
-
-                {/* Generic Feature Modal */}
-                <LHGenericFeatureModal
-                    isModVisible={isFeatureModalVisible}
-                    visibilitySetter={setIsFeatureModalVisible}
-                    isDismissable={true}
-                    title="Stay Tuned"
-                    description="This feature is in progress. Check back soon."
-                />
 
                 {/* Login Success Modal */}
                 <LHLoginSuccessModal

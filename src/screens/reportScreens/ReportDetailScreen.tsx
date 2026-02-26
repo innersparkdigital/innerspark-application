@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Share,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +16,7 @@ import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface ReportDetailScreenProps {
   navigation: NavigationProp<any>;
@@ -28,6 +28,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, route }) => {
   const { reportId, section } = route.params;
   const toast = useToast();
+  const alert = useISAlert();
   const [selectedTab, setSelectedTab] = useState(section || 'mood');
 
   const tabs = [
@@ -52,35 +53,32 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
   };
 
   const handleEmail = () => {
-    Alert.alert(
-      'Email Report Section',
-      `Send the ${selectedTab} section to your email?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Send', 
-          onPress: () => {
-            toast.show({
-              description: 'Report section sent to your email!',
-              duration: 3000,
-            });
-          }
-        }
-      ]
-    );
+    alert.show({
+      type: 'confirm',
+      title: 'Email Report Section',
+      message: `Send the ${selectedTab} section to your email?`,
+      confirmText: 'Send',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        toast.show({
+          description: 'Report section sent to your email!',
+          duration: 3000,
+        });
+      },
+    });
   };
 
   const MoodTrendsDetail: React.FC = () => (
     <View style={styles.detailSection}>
       <Text style={styles.sectionTitle}>Mood Trends Analysis</Text>
-      
+
       <View style={styles.trendCard}>
         <Text style={styles.cardTitle}>Weekly Overview</Text>
         <Text style={styles.cardDescription}>
           Your mood showed an improving trend this week with an average rating of 3.8/5.
           You completed 6 out of 7 daily check-ins, maintaining a strong consistency.
         </Text>
-        
+
         <View style={styles.detailMetrics}>
           <View style={styles.detailMetric}>
             <Text style={styles.metricValue}>3.8/5</Text>
@@ -111,7 +109,7 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
   const JournalingDetail: React.FC = () => (
     <View style={styles.detailSection}>
       <Text style={styles.sectionTitle}>Journaling Analysis</Text>
-      
+
       <View style={styles.trendCard}>
         <Text style={styles.cardTitle}>Writing Patterns</Text>
         <View style={styles.detailMetrics}>
@@ -153,7 +151,7 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
   const ActivitiesDetail: React.FC = () => (
     <View style={styles.detailSection}>
       <Text style={styles.sectionTitle}>Activities & Goals</Text>
-      
+
       <View style={styles.achievementsCard}>
         <Text style={styles.cardTitle}>This Week's Achievements</Text>
         <View style={styles.achievementsList}>
@@ -182,7 +180,7 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
   const RecommendationsDetail: React.FC = () => (
     <View style={styles.detailSection}>
       <Text style={styles.sectionTitle}>Personalized Recommendations</Text>
-      
+
       <View style={styles.recommendationsCard}>
         <Text style={styles.cardTitle}>Based on Your Progress</Text>
         <View style={styles.recommendationsList}>
@@ -228,7 +226,7 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -254,11 +252,11 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
               style={[styles.tab, selectedTab === tab.key && styles.activeTab]}
               onPress={() => setSelectedTab(tab.key)}
             >
-              <Icon 
-                name={tab.icon} 
-                type="material" 
-                color={selectedTab === tab.key ? appColors.AppBlue : appColors.grey3} 
-                size={18} 
+              <Icon
+                name={tab.icon}
+                type="material"
+                color={selectedTab === tab.key ? appColors.AppBlue : appColors.grey3}
+                size={18}
               />
               <Text style={[
                 styles.tabText,
@@ -276,6 +274,7 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
         {renderContent()}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

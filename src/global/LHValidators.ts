@@ -4,6 +4,7 @@
  */
 
 import { Platform } from 'react-native';
+import { z } from 'zod';
 
 // Regex patterns for validation
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
@@ -28,10 +29,10 @@ const cleanInput = (value: string): string => {
  */
 export const isValidEmailOrPhone = (value: string): boolean => {
   const cleanedValue = cleanInput(value);
-  
+
   // Try email validation first
   if (emailRegex.test(cleanedValue)) return true;
-  
+
   // Try phone validation
   return phoneRegex.test(cleanedValue);
 };
@@ -144,5 +145,181 @@ export const isValidRelationship = (value: string): boolean => {
   if (!value || value.length < 2 || value.length > 30) return false;
   if (value.startsWith(' ')) return false;
   return /^[a-zA-Z\s\-']+$/.test(value);
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Event Form Validation (Zod v3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EVENT_CATEGORIES = ['Workshop', 'Training', 'Seminar', 'Summit'] as const;
+
+/**
+ * Zod v3 schema for creating or editing a therapist event.
+ * Cross-field checks (end > start, date not past) are handled in validateEventForm().
+ */
+export const eventFormSchema = z.object({
+  title: z
+    .string({ required_error: 'Title is required' })
+    .min(5, 'Title must be at least 5 characters')
+    .max(100, 'Title must be 100 characters or fewer')
+    .refine((v) => v.trim().length > 0, 'Title cannot be blank'),
+
+  description: z
+    .string({ required_error: 'Description is required' })
+    .min(20, 'Description must be at least 20 characters')
+    .max(1000, 'Description must be 1 000 characters or fewer')
+    .refine((v) => v.trim().length > 0, 'Description cannot be blank'),
+
+  category: z.enum(EVENT_CATEGORIES, {
+    errorMap: () => ({ message: 'Please select a valid category' }),
+  }),
+
+  location: z
+    .string({ required_error: 'Location is required' })
+    .min(3, 'Location must be at least 3 characters')
+    .max(200, 'Location is too long'),
+
+  maxAttendees: z
+    .number({ invalid_type_error: 'Max attendees must be a number', required_error: 'Max attendees is required' })
+    .int('Max attendees must be a whole number')
+    .min(1, 'At least 1 attendee is required')
+    .max(10000, 'Max attendees cannot exceed 10 000'),
+
+  price: z
+    .number({ invalid_type_error: 'Price must be a number', required_error: 'Price is required' })
+    .min(0, 'Price cannot be negative')
+    .max(10_000_000, 'Price seems too high'),
+
+  date: z.date({ required_error: 'Event date is required' }),
+  startTime: z.date({ required_error: 'Start time is required' }),
+  endTime: z.date({ required_error: 'End time is required' }),
+});
+
+export type EventFormData = z.infer<typeof eventFormSchema>;
+export type EventFormErrors = Partial<Record<keyof EventFormData, string>>;
+
+/**
+ * Validates the event creation / edit form using the eventFormSchema.
+ * Returns a record of { fieldName: errorMessage }. An empty object means the form is valid.
+ * Cross-field rules (end time after start, date not in the past) are also applied here.
+ *
+ * @param data - The form data to validate, typed as EventFormData.
+ * @returns An EventFormErrors object mapping each invalid field to its error message.
+ *
+ * Example: validateEventForm({ title: 'Hi', ... }) // Returns: { title: 'Title must be at least 5 characters' }
+ * Example: validateEventForm({ ...validData }) // Returns: {} (empty = valid)
+ */
+export const validateEventForm = (data: EventFormData): EventFormErrors => {
+  const errors: EventFormErrors = {};
+
+  const result = eventFormSchema.safeParse(data);
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as keyof EventFormData;
+      if (field && !errors[field]) {
+        errors[field] = issue.message;
+      }
+    }
+  }
+
+  // Cross-field: end time must be strictly after start time
+  if (!errors.endTime && !errors.startTime && data.endTime <= data.startTime) {
+    errors.endTime = 'End time must be after start time';
+  }
+
+  // Cross-field: event date cannot be in the past
+  if (!errors.date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (data.date < today) {
+      errors.date = 'Event date cannot be in the past';
+    }
+  }
+
+  return errors;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feedback Form Validations (Zod v3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Zod v3 schema for Post-Session Feedback.
+ */
+export const postSessionFeedbackSchema = z.object({
+  overallRating: z.number().min(1, 'Overall rating is required').max(5),
+  therapistRating: z.number().min(1, 'Therapist rating is required').max(5),
+  sessionEffectiveness: z.number().min(1).max(5),
+  communicationRating: z.number().min(1).max(5),
+  environmentRating: z.number().min(1).max(5),
+  whatWentWell: z
+    .string({ required_error: 'This field is required' })
+    .min(10, 'Please provide more detail (minimum 10 characters)')
+    .max(500, 'Keep it under 500 characters'),
+  goalProgress: z
+    .string({ required_error: 'This field is required' })
+    .min(5, 'Please describe your progress toward goals')
+    .max(300, 'Keep it under 300 characters'),
+  recommendToOthers: z.boolean({
+    required_error: 'Please indicate if you would recommend this therapist',
+    invalid_type_error: 'Please indicate if you would recommend this therapist'
+  }),
+});
+
+export type PostSessionFeedbackData = z.infer<typeof postSessionFeedbackSchema>;
+export type PostSessionFeedbackErrors = Partial<Record<keyof PostSessionFeedbackData, string>>;
+
+export const validatePostSessionFeedback = (data: PostSessionFeedbackData): PostSessionFeedbackErrors => {
+  const errors: PostSessionFeedbackErrors = {};
+  const result = postSessionFeedbackSchema.safeParse(data);
+
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as keyof PostSessionFeedbackData;
+      if (field && !errors[field]) {
+        errors[field] = issue.message;
+      }
+    }
+  }
+  return errors;
+};
+
+/**
+ * Zod v3 schema for General Feedback (SendFeedbackScreen).
+ */
+export const sendFeedbackSchema = z.object({
+  type: z.enum(['bug', 'feature', 'improvement', 'compliment', 'other']),
+  subject: z
+    .string({ required_error: 'Subject is required' })
+    .min(3, 'Subject must be at least 3 characters')
+    .max(100, 'Subject is too long'),
+  message: z
+    .string({ required_error: 'Message is required' })
+    .min(10, 'Message must be at least 10 characters')
+    .max(1000, 'Message is too long'),
+  email: z
+    .string()
+    .email('Please enter a valid email address')
+    .optional()
+    .or(z.literal('')),
+});
+
+export type SendFeedbackData = z.infer<typeof sendFeedbackSchema>;
+export type SendFeedbackErrors = Partial<Record<keyof SendFeedbackData, string>>;
+
+export const validateSendFeedback = (data: SendFeedbackData): SendFeedbackErrors => {
+  const errors: SendFeedbackErrors = {};
+  const result = sendFeedbackSchema.safeParse(data);
+
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as keyof SendFeedbackData;
+      if (field && !errors[field]) {
+        errors[field] = issue.message;
+      }
+    }
+  }
+  return errors;
 };
 

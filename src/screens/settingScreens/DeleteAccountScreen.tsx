@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -22,6 +21,7 @@ import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { deleteAccount } from '../../api/client/account';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DeleteAccountScreenProps {
   navigation: NavigationProp<any>;
@@ -35,6 +35,7 @@ interface DeletionReason {
 
 const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
@@ -101,71 +102,64 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
   };
 
   const handleDeleteAccount = async () => {
-    Alert.alert(
-      'Final Confirmation',
-      'This action cannot be undone. Your account and all associated data will be permanently deleted within 30 days. Are you absolutely sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Forever',
-          style: 'destructive',
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              const reasonText = selectedReasons.map(id => {
-                const reason = deletionReasons.find(r => r.id === id);
-                return reason?.title || id;
-              }).join(', ');
-              
-              const finalReason = additionalFeedback ? `${reasonText}. ${additionalFeedback}` : reasonText;
-              
-              const response = await deleteAccount(userId, finalReason);
-              
-              if (response.success) {
-                toast.show({
-                  description: response.message || 'Account deletion initiated. You will receive a confirmation email.',
-                  duration: 5000,
-                });
-                
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'SigninScreen' }],
-                });
-              } else {
-                toast.show({
-                  description: response.message || 'Failed to delete account',
-                  duration: 3000,
-                });
-              }
-            } catch (error: any) {
-              console.error('Error deleting account:', error);
-              toast.show({
-                description: error.response?.data?.message || 'Failed to delete account. Please try again.',
-                duration: 3000,
-              });
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Final Confirmation',
+      message: 'This action cannot be undone. Your account and all associated data will be permanently deleted within 30 days. Are you absolutely sure?',
+      confirmText: 'Delete Forever',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          const reasonText = selectedReasons.map(id => {
+            const reason = deletionReasons.find(r => r.id === id);
+            return reason?.title || id;
+          }).join(', ');
+
+          const finalReason = additionalFeedback ? `${reasonText}. ${additionalFeedback}` : reasonText;
+
+          const response = await deleteAccount(userId, finalReason);
+
+          if (response.success) {
+            toast.show({
+              description: response.message || 'Account deletion initiated. You will receive a confirmation email.',
+              duration: 5000,
+            });
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'SigninScreen' }],
+            });
+          } else {
+            toast.show({
+              description: response.message || 'Failed to delete account',
+              duration: 3000,
+            });
+          }
+        } catch (error: any) {
+          console.error('Error deleting account:', error);
+          toast.show({
+            description: error.response?.data?.message || 'Failed to delete account. Please try again.',
+            duration: 3000,
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   const handleDownloadData = () => {
-    Alert.alert(
-      'Download Your Data',
-      'We recommend downloading your data before deletion. This includes your mood history, journal entries, and progress reports.',
-      [
-        { text: 'Later', style: 'cancel' },
-        {
-          text: 'Download Now',
-          onPress: () => {
-            navigation.navigate('DataExportScreen');
-          },
-        },
-      ]
-    );
+    alert.show({
+      type: 'info',
+      title: 'Download Your Data',
+      message: 'We recommend downloading your data before deletion. This includes your mood history, journal entries, and progress reports.',
+      confirmText: 'Download Now',
+      cancelText: 'Later',
+      onConfirm: () => {
+        navigation.navigate('DataExportScreen');
+      },
+    });
   };
 
   return (
@@ -281,9 +275,9 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
                 checkedColor={appColors.AppBlue}
                 uncheckedColor={appColors.grey4}
               />
-              
+
               <View style={styles.separator} />
-              
+
               <CheckBox
                 title="I have backed up any important data"
                 checked={hasBackedUpData}
@@ -341,6 +335,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
           </Text>
         </View>
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

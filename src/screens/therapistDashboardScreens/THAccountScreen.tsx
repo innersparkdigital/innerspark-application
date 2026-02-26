@@ -8,6 +8,7 @@ import { appColors, appFonts, parameters } from '../../global/Styles';
 import { removeItemLS, retrieveItemLS } from '../../global/StorageActions';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import TherapistProfilePreviewCard from '../../components/modals/TherapistProfilePreviewCard';
 
 const THAccountScreen = ({ navigation }: any) => {
   const dispatch = useDispatch();
@@ -15,6 +16,7 @@ const THAccountScreen = ({ navigation }: any) => {
   const analyticsOverview = useSelector((state: any) => state.therapistAnalytics.overview);
   const therapistProfile = useSelector((state: any) => state.therapistDashboard.profile);
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+  const [isProfilePreviewVisible, setIsProfilePreviewVisible] = useState(false);
 
   /** Signout current user */
   const signOutHandler = async () => {
@@ -78,7 +80,7 @@ const THAccountScreen = ({ navigation }: any) => {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>
-              Dr. {userDetails?.firstName} {userDetails?.lastName}
+              {userDetails?.firstName} {userDetails?.lastName}
             </Text>
             <Text style={styles.profileEmail}>{userDetails?.email}</Text>
             <View style={styles.badgeContainer}>
@@ -88,6 +90,14 @@ const THAccountScreen = ({ navigation }: any) => {
               </View>
             </View>
           </View>
+          {/* Preview Profile Eye Icon */}
+          <TouchableOpacity
+            style={styles.previewIconButton}
+            onPress={() => setIsProfilePreviewVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Icon type="material" name="visibility" size={20} color={appColors.AppBlue} />
+          </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
@@ -133,13 +143,13 @@ const THAccountScreen = ({ navigation }: any) => {
 
 
         {/* Test Button */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={{ ...parameters.appButtonXLBlue, marginVertical: 10, marginHorizontal: 20 }}
           onPress={() => navigation.navigate('DevTestScreen')}
           activeOpacity={0.8}
         >
           <Text style={parameters.appButtonXLTitleBlue}>Test</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Logout Button */}
         <TouchableOpacity
@@ -233,6 +243,14 @@ const THAccountScreen = ({ navigation }: any) => {
         </View>
       </BottomSheet>
       {/* -- Logout BottomSheet Modal ends */}
+
+      {/* Therapist Profile Preview Modal */}
+      <TherapistProfilePreviewCard
+        visible={isProfilePreviewVisible}
+        onDismiss={() => setIsProfilePreviewVisible(false)}
+        profile={therapistProfile}
+        userDetails={userDetails}
+      />
     </SafeAreaView>
   );
 };
@@ -257,6 +275,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  previewIconButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: appColors.AppBlue + '12',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatarContainer: {
     width: 70,

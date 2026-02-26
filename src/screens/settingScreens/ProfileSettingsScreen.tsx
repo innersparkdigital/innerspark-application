@@ -9,7 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +20,7 @@ import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import { updateProfile } from '../../api/client/profile';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface ProfileSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -42,6 +42,7 @@ interface ProfileData {
 
 const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -73,7 +74,7 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
         phoneNumber: profileData.phone,
         bio: profileData.bio,
       });
-      
+
       if (response.success) {
         setHasChanges(false);
         toast.show({
@@ -98,30 +99,27 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
   };
 
   const handleChangeAvatar = () => {
-    Alert.alert(
-      'Change Profile Picture',
-      'Choose an option',
-      [
+    alert.show({
+      type: 'info',
+      title: 'Change Profile Picture',
+      message: 'Choose an option',
+      actions: [
+        { text: 'Cancel', style: 'cancel' },
         { text: 'Camera', onPress: () => toast.show({ description: 'Opening camera...' }) },
         { text: 'Photo Library', onPress: () => toast.show({ description: 'Opening photo library...' }) },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+      ],
+    });
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. All your data will be permanently deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => navigation.navigate('DeleteAccountScreen'),
-        },
-      ]
-    );
+    alert.show({
+      type: 'destructive',
+      title: 'Delete Account',
+      message: 'This action cannot be undone. All your data will be permanently deleted.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => navigation.navigate('DeleteAccountScreen'),
+    });
   };
 
   const renderInputField = (
@@ -178,15 +176,16 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
           style={styles.backButton}
           onPress={() => {
             if (hasChanges) {
-              Alert.alert(
-                'Unsaved Changes',
-                'You have unsaved changes. Do you want to save before leaving?',
-                [
+              alert.show({
+                type: 'warning',
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes. Do you want to save before leaving?',
+                actions: [
+                  { text: 'Cancel', style: 'cancel' },
                   { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() },
                   { text: 'Save', onPress: handleSave },
-                  { text: 'Cancel', style: 'cancel' },
-                ]
-              );
+                ],
+              });
             } else {
               navigation.goBack();
             }
@@ -225,9 +224,9 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
                 </View>
                 <Icon name="chevron-right" type="material" color={appColors.grey4} size={20} />
               </TouchableOpacity>
-              
+
               <View style={styles.separator} />
-              
+
               <TouchableOpacity
                 style={styles.actionItem}
                 onPress={() => navigation.navigate('DeactivateAccountScreen')}
@@ -238,9 +237,9 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
                 </View>
                 <Icon name="chevron-right" type="material" color={appColors.grey4} size={20} />
               </TouchableOpacity>
-              
+
               <View style={styles.separator} />
-              
+
               <TouchableOpacity
                 style={[styles.actionItem, styles.destructiveAction]}
                 onPress={handleDeleteAccount}
@@ -271,6 +270,7 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
           </View>
         )}
       </KeyboardAvoidingView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };

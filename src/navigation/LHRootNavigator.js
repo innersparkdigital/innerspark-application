@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { restoreToken } from '../features/user/userSlice';
-import { updateUserDetails, updateYoAppBio,} from '../features/user/userDataSlice';
+import { updateUserDetails, updateYoAppBio, } from '../features/user/userDataSlice';
 import { updateAppNeedsUpdate } from '../features/appStart/appStartSlice';
 import { updateIntroSlider } from '../features/appStart/appStartSlice';
 import { NavigationContainer } from '@react-navigation/native';
@@ -10,12 +10,12 @@ import UpdateAppNavigator from './UpdateAppNavigator';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import AppIntroSliderScreen from '../screens/sliderScreens/AppIntroSliderScreen';
 import LHSplashScreen from '../components/LHSplashScreen';
-import {  retrieveItemLS, storeItemLS } from '../global/StorageActions';
+import { retrieveItemLS, storeItemLS } from '../global/StorageActions';
 import { checkVersion } from 'react-native-check-version';
 import LHAuthNavigator from './LHAuthNavigator';
 import LHStackNavigator from './LHStackNavigator';
 import LHTherapistNavigator from './LHTherapistNavigator';
-import { loadCriticalDataToRedux } from '../api/shared';
+import { loadCriticalDataToRedux, loadCriticalTherapistDataToRedux } from '../api/shared';
 
 
 export default function LHRootNavigator() {
@@ -27,77 +27,93 @@ export default function LHRootNavigator() {
     const dispatch = useDispatch();
 
     useEffect(
-        
+
         () => {
-        // Fetch the token from the storage then navigate to our appropriate place
-        const userStoredTokenAsync = async () => {
-            let userToken; // user token on local storage
-            let userDetailsLS; // User Local Details
-            let userAvatarLS; // User avatar on local storage
-            let yoAppBioLS; // User App Bio Data stored locally 
-            try {
-                 userToken = await EncryptedStorage.getItem("userToken");
-                 userDetailsLS = await EncryptedStorage.getItem("userDetailsLS");
-                 userAvatarLS = await EncryptedStorage.getItem("userAvatarLS");
-                 yoAppBioLS = await EncryptedStorage.getItem("yoAppBioLS");
-                 
-                 // Local storage user token
-                 if (userToken !== undefined ) {
-                    // Token is defined
-                    // console.log(userToken);
+            // Fetch the token from the storage then navigate to our appropriate place
+            const userStoredTokenAsync = async () => {
+                let userToken; // user token on local storage
+                let userDetailsLS; // User Local Details
+                let userAvatarLS; // User avatar on local storage
+                let yoAppBioLS; // User App Bio Data stored locally 
+                try {
+                    userToken = await EncryptedStorage.getItem("userToken");
+                    userDetailsLS = await EncryptedStorage.getItem("userDetailsLS");
+                    userAvatarLS = await EncryptedStorage.getItem("userAvatarLS");
+                    yoAppBioLS = await EncryptedStorage.getItem("yoAppBioLS");
+
+                    // Local storage user token
+                    if (userToken !== undefined) {
+                        // Token is defined
+                        // console.log(userToken);
+                    }
+
+                    // User details local store data
+                    if (userDetailsLS !== undefined) {
+                        // Token is defined
+                        console.log(userDetailsLS);
+                        console.log('------------');
+                        const parsedUserDetails = JSON.parse(userDetailsLS);
+                        console.log(parsedUserDetails);
+                        dispatch(updateUserDetails(parsedUserDetails));
+
+                        // ── Role-Aware Background Data Loading (non-blocking) ──
+                        // Load critical data into Redux based on the user's role.
+                        // This ensures client APIs don't fire for therapists and vice versa.
+                        if (userToken && parsedUserDetails?.userId) {
+                            const userRole = parsedUserDetails?.role;
+
+                            if (userRole === 'user') {
+                                // Client: load client-specific data (emergency, subscriptions, settings, profile)
+                                loadCriticalDataToRedux(parsedUserDetails.userId, dispatch)
+                                    .then((results) => {
+                                        console.log('✅ Background client data load on app startup:', results);
+                                    })
+                                    .catch((error) => {
+                                        console.error('❌ Background client data load failed on startup:', error);
+                                    });
+                            } else if (userRole === 'therapist') {
+                                // Therapist: load therapist-specific data (dashboard, analytics, availability, profile)
+                                loadCriticalTherapistDataToRedux(parsedUserDetails.userId, dispatch)
+                                    .then((results) => {
+                                        console.log('✅ Background therapist data load on app startup:', results);
+                                    })
+                                    .catch((error) => {
+                                        console.error('❌ Background therapist data load failed on startup:', error);
+                                    });
+                            }
+                            // Other roles: no background data loaded to avoid surprises
+                        }
+                    }
+
+
+                    // AppBio local storage
+                    if (yoAppBioLS !== undefined) {
+                        //console.log(yoAppBioLS);
+                        //console.log('----Yo App Bio Data ----');
+                        //console.log(JSON.parse(yoAppBioLS));
+                        dispatch(updateYoAppBio(JSON.parse(yoAppBioLS)));
+                    }
+
+
+                } catch (error) {
+                    // restoring token failed, what now?
+                    console.log(error.code);
                 }
 
-                // User details local store data
-                if (userDetailsLS !== undefined ) {
-                    // Token is defined
-                     console.log(userDetailsLS);
-                     console.log('------------');
-                     const parsedUserDetails = JSON.parse(userDetailsLS);
-                     console.log(parsedUserDetails);
-                     dispatch(updateUserDetails(parsedUserDetails));
+                // Let's just confirm the token is authentic anyway
+                // After restoring token, we may need to validate it in production apps
 
-                     // Load critical data into Redux in the background (non-blocking)
-                     // Only if user token exists (user is logged in)
-                     if (userToken && parsedUserDetails?.userId) {
-                         loadCriticalDataToRedux(parsedUserDetails.userId, dispatch)
-                             .then((results) => {
-                                 console.log('✅ Background data load on app startup:', results);
-                             })
-                             .catch((error) => {
-                                 console.error('❌ Background data load failed on startup:', error);
-                             });
-                     }
-                }
+                // This will switch to the App screen or Auth screen and this loading
+                // screen will be unmounted and thrown away.
+                dispatch(restoreToken(userToken));
+                // storeItemLS("userDetailsLS", )
+                //dispatch(updateUserAvatar(userAvatarLS));
 
-            
-                // AppBio local storage
-                if ( yoAppBioLS !== undefined ) {
-                     //console.log(yoAppBioLS);
-                     //console.log('----Yo App Bio Data ----');
-                     //console.log(JSON.parse(yoAppBioLS));
-                     dispatch(updateYoAppBio(JSON.parse(yoAppBioLS)));
-                }
+            };
 
+            userStoredTokenAsync(); // the cleanup function
 
-            } catch (error) {
-                // restoring token failed, what now?
-                console.log(error.code);
-            }
-
-            // Let's just confirm the token is authentic anyway
-            // After restoring token, we may need to validate it in production apps
-
-            // This will switch to the App screen or Auth screen and this loading
-            // screen will be unmounted and thrown away.
-            dispatch(restoreToken(userToken));
-            // storeItemLS("userDetailsLS", )
-            //dispatch(updateUserAvatar(userAvatarLS));
-
-        };
-
-        userStoredTokenAsync(); // the cleanup function
-
-    }, []);
+        }, []);
 
 
     /*
@@ -138,65 +154,65 @@ export default function LHRootNavigator() {
     */
 
 
-        /*
-        // checking if a new app version is available
-        useEffect( 
-            () => {
+    /*
+    // checking if a new app version is available
+    useEffect( 
+        () => {
 
-                let isUpdateAvailable = false; // default
+            let isUpdateAvailable = false; // default
 
-                const checkAppUpdateAvailable = async () => {
-                    const version = await checkVersion();
-                    // console.log("Got version info: ", version);
-                    // console.log(version);
+            const checkAppUpdateAvailable = async () => {
+                const version = await checkVersion();
+                // console.log("Got version info: ", version);
+                // console.log(version);
 
-                    if (version.needsUpdate) {
-                        // console.log(`App has a ${version.updateType} update pending.`);
-                        // dispatch(updateAppNeedsUpdate(version.needsUpdate));
-                        isUpdateAvailable = version.needsUpdate;
-                    }
+                if (version.needsUpdate) {
+                    // console.log(`App has a ${version.updateType} update pending.`);
+                    // dispatch(updateAppNeedsUpdate(version.needsUpdate));
+                    isUpdateAvailable = version.needsUpdate;
+                }
 
-                        dispatch(updateAppNeedsUpdate(isUpdateAvailable));
+                    dispatch(updateAppNeedsUpdate(isUpdateAvailable));
 
-                };
+            };
 
-                checkAppUpdateAvailable();
+            checkAppUpdateAvailable();
 
-            }, []
-        );
+        }, []
+    );
 
-        */
-       
-
-        // Load splashscreen while fetching the token from local storage
-        if (user.isLoading) {
-            // We haven't finished checking for the token yet
-            return <LHSplashScreen />;
-        }
-
-        // load the starter for the first time -- this is the welcome screen
-        // the welcome screen is the first screen that the user sees when the app is launched
-        // the welcome screen is the app intro slider screen
-        // we disable the slider for now
-        // we will use the slider to check if the user has completed the onboarding process
-        /* if (!introSliderStatus) {
-            // the app is running for the first time
-            return <AppIntroSliderScreen />;
-        } */
+    */
 
 
-    
+    // Load splashscreen while fetching the token from local storage
+    if (user.isLoading) {
+        // We haven't finished checking for the token yet
+        return <LHSplashScreen />;
+    }
+
+    // load the starter for the first time -- this is the welcome screen
+    // the welcome screen is the first screen that the user sees when the app is launched
+    // the welcome screen is the app intro slider screen
+    // we disable the slider for now
+    // we will use the slider to check if the user has completed the onboarding process
+    /* if (!introSliderStatus) {
+        // the app is running for the first time
+        return <AppIntroSliderScreen />;
+    } */
+
+
+
     // check user token
-    return(
+    return (
         <NavigationContainer>
-            { 
-                appNeedsUpdate && <UpdateAppNavigator /> 
-                    || 
-                user.userToken == null && <LHAuthNavigator /> 
-                    ||
-                user.userToken != null && userDetails?.role === 'therapist' && <LHTherapistNavigator /> 
-                    ||
-                <LHStackNavigator /> 
+            {
+                appNeedsUpdate && <UpdateAppNavigator />
+                ||
+                user.userToken == null && <LHAuthNavigator />
+                ||
+                user.userToken != null && userDetails?.role === 'therapist' && <LHTherapistNavigator />
+                ||
+                <LHStackNavigator />
             }
         </NavigationContainer>
     )

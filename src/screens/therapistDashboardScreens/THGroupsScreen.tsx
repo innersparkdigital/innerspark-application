@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
@@ -7,6 +7,7 @@ import { appColors, appFonts } from '../../global/Styles';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getGroups } from '../../api/therapist';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 
@@ -20,6 +21,14 @@ const THGroupsScreen = ({ navigation }: any) => {
   useEffect(() => {
     loadGroups();
   }, []);
+
+  // Reload groups whenever this tab comes into focus
+  // (e.g. after creating a group, managing members, or returning from chat)
+  useFocusEffect(
+    useCallback(() => {
+      loadGroups();
+    }, [])
+  );
 
   const loadGroups = async () => {
     try {
