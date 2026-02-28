@@ -9,6 +9,7 @@ import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getEvents } from '../../api/therapist';
@@ -561,7 +562,7 @@ const styles = StyleSheet.create({
         marginBottom: 1,
     },
     eventDay: {
-        fontSize: 22,
+        fontSize: moderateScale(22),
         fontWeight: '900',
         lineHeight: 26,
     },
@@ -635,7 +636,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 40,
+        paddingHorizontal: scale(40),
         gap: 10,
     },
     emptyIconWrap: {

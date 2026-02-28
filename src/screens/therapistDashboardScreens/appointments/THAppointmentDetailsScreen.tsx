@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   clientName: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,

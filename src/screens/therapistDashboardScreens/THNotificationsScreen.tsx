@@ -5,6 +5,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../api/therapist';
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: scale(40),
   },
   swipeableContainer: {
     marginBottom: 12,

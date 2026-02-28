@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import MoodCheckInCard from '../../components/MoodCheckInCard';
@@ -229,13 +230,13 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
   const StatsHeader: React.FC = () => (
     <View style={styles.statsHeader}>
       <View style={styles.statCard}>
-        <Icon name="local-fire-department" type="material" color="#FF5722" size={24} />
+        <Icon name="local-fire-department" type="material" color="#FF5722" size={scale(24)} />
         <Text style={styles.statValue}>{currentStreak}</Text>
         <Text style={styles.statLabel}>Day Streak</Text>
       </View>
 
       <View style={styles.statCard}>
-        <Icon name="emoji-events" type="material" color="#FFD700" size={24} />
+        <Icon name="emoji-events" type="material" color="#FFD700" size={scale(24)} />
         <Text style={styles.statValue}>{currentStreak >= 30 ? '3/3' : currentStreak >= 14 ? '2/3' : currentStreak >= 7 ? '1/3' : '0/3'}</Text>
         <Text style={styles.statLabel}>Milestones</Text>
       </View>
@@ -244,7 +245,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         style={styles.statCard}
         onPress={() => navigation.navigate('MoodHistoryScreen')}
       >
-        <Icon name="history" type="material" color={appColors.AppBlue} size={24} />
+        <Icon name="history" type="material" color={appColors.AppBlue} size={scale(24)} />
         <Text style={styles.statValue}>View</Text>
         <Text style={styles.statLabel}>History</Text>
       </TouchableOpacity>
@@ -259,14 +260,14 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={scale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daily Mood Check-in</Text>
         <TouchableOpacity
           style={styles.historyButton}
           onPress={() => navigation.navigate('MoodHistoryScreen')}
         >
-          <Icon name="history" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="history" type="material" color={appColors.CardBackground} size={scale(24)} />
         </TouchableOpacity>
       </View>
 
@@ -338,7 +339,7 @@ const TodayMoodScreen: React.FC<TodayMoodScreenProps> = ({ navigation, route }) 
         {/* Already Logged Message */}
         {todayEntry && (
           <View style={styles.completedSection}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={48} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={scale(48)} />
             <Text style={styles.completedTitle}>Today's Check-in Complete!</Text>
             <Text style={styles.completedMessage}>
               Come back tomorrow to continue your streak!
@@ -364,29 +365,29 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 4,
+    elevation: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 5,
+    padding: scale(5),
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   historyButton: {
-    padding: 5,
+    padding: scale(5),
   },
   scrollView: {
     flex: 1,
@@ -396,86 +397,86 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 30,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    elevation: 1,
+    marginHorizontal: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(30),
+    paddingVertical: scale(16),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(12),
+    elevation: scale(1),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   statCard: {
     alignItems: 'center',
     flex: 1,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 4,
+    marginTop: scale(4),
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
     textAlign: 'center',
   },
   todayCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    marginTop: 15,
-    padding: 20,
-    borderRadius: 16,
-    elevation: 2,
+    margin: scale(20),
+    marginTop: scale(15),
+    padding: scale(20),
+    borderRadius: scale(16),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   todayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   todayTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   todayTime: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   todayMoodDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   todayEmoji: {
-    fontSize: 48,
-    marginRight: 16,
+    fontSize: moderateScale(48),
+    marginRight: scale(16),
   },
   todayMoodInfo: {
     flex: 1,
   },
   todayMoodLabel: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   todayMoodNote: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
     fontStyle: 'italic',
@@ -484,149 +485,149 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: scale(8),
+    padding: scale(12),
   },
   pointsText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: '#E65100',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   moodSelectorContainer: {
-    margin: 20,
-    marginTop: 15,
+    margin: scale(20),
+    marginTop: scale(15),
   },
   reflectionSection: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    elevation: 2,
+    padding: scale(20),
+    borderRadius: scale(16),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   reflectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   reflectionPrompt: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 16,
+    marginBottom: scale(16),
     fontStyle: 'italic',
   },
   reflectionInput: {
     width: '100%',
-    borderWidth: 1,
+    borderWidth: scale(1),
     borderColor: appColors.grey5,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderRadius: scale(8),
+    padding: scale(12),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
     textAlignVertical: 'top',
-    minHeight: 100,
+    minHeight: scale(100),
   },
   inputFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: scale(8),
   },
   characterCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   streakProgressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: scale(8),
     flex: 1,
   },
   streakProgressTrack: {
     flex: 1,
-    height: 6,
-    borderRadius: 3,
+    height: scale(6),
+    borderRadius: scale(3),
     backgroundColor: appColors.AppLightGray,
     overflow: 'hidden',
   },
   streakProgressFill: {
     height: '100%',
     backgroundColor: appColors.AppBlue,
-    borderRadius: 3,
+    borderRadius: scale(3),
   },
   nextMilestoneText: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   submitSection: {
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
   },
   submitButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 16,
+    borderRadius: scale(25),
+    paddingVertical: scale(16),
   },
   submitButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   submitNote: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    marginTop: 12,
+    marginTop: scale(12),
   },
   completedSection: {
     alignItems: 'center',
-    padding: 40,
-    margin: 20,
+    padding: scale(40),
+    margin: scale(20),
     marginTop: 0,
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    elevation: 2,
+    borderRadius: scale(16),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   completedTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   completedMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   viewHistoryButton: {
     backgroundColor: appColors.AppBlue + '20',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(10),
   },
   viewHistoryText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,

@@ -16,6 +16,7 @@ import { appColors, parameters, appFonts } from '../global/Styles';
 import { useToast } from 'native-base';
 import { appContents, appLinks, faqData } from '../global/Data';
 import { openThisURL } from '../global/LHShortcuts';
+import { scale, moderateScale } from '../global/Scaling';
 
 interface HelpItem {
   id: string;
@@ -78,13 +79,13 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
       onPress={item.action}
     >
       <View style={styles.helpItemIcon}>
-        <Icon name={item.icon} type="material" color={appColors.AppBlue} size={24} />
+        <Icon name={item.icon} type="material" color={appColors.AppBlue} size={moderateScale(24)} />
       </View>
       <View style={styles.helpItemContent}>
         <Text style={styles.helpItemTitle}>{item.title}</Text>
         <Text style={styles.helpItemDescription}>{item.description}</Text>
       </View>
-      <Icon name="chevron-right" type="material" color={appColors.grey3} size={20} />
+      <Icon name="chevron-right" type="material" color={appColors.grey3} size={moderateScale(20)} />
     </TouchableOpacity>
   );
 
@@ -95,11 +96,11 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
         onPress={() => toggleFAQ(item.id)}
       >
         <Text style={styles.faqQuestionText}>{item.question}</Text>
-        <Icon 
-          name={expandedFAQ === item.id ? "expand-less" : "expand-more"} 
-          type="material" 
-          color={appColors.grey3} 
-          size={24} 
+        <Icon
+          name={expandedFAQ === item.id ? "expand-less" : "expand-more"}
+          type="material"
+          color={appColors.grey3}
+          size={moderateScale(24)}
         />
       </TouchableOpacity>
       {expandedFAQ === item.id && (
@@ -114,11 +115,11 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help Center</Text>
         <View style={styles.headerSpacer} />
@@ -150,15 +151,15 @@ const HelpCenterScreen: React.FC<HelpCenterScreenProps> = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Still Need Help?</Text>
           <View style={styles.contactInfo}>
             <View style={styles.contactItem}>
-              <Icon name="email" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="email" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.contactText}>{appContents.supportEmail}</Text>
             </View>
             <View style={styles.contactItem}>
-              <Icon name="phone" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="phone" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.contactText}>{appContents.supportPhone}</Text>
             </View>
             <View style={styles.contactItem}>
-              <Icon name="schedule" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="schedule" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.contactText}>{appContents.supportHours}</Text>
             </View>
           </View>
@@ -178,165 +179,165 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },
   headerSpacer: {
-    width: 40,
+    width: scale(40),
   },
   content: {
     flex: 1,
   },
   welcomeSection: {
     backgroundColor: appColors.CardBackground,
-    padding: 24,
-    margin: 16,
-    marginBottom: 24,
-    borderRadius: 12,
+    padding: scale(24),
+    margin: scale(16),
+    marginBottom: scale(24),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   welcomeTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   welcomeText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.regularText,
-    lineHeight: 22,
+    lineHeight: moderateScale(22),
   },
   section: {
-    marginHorizontal: 16,
-    marginBottom: 24,
+    marginHorizontal: scale(16),
+    marginBottom: scale(24),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   helpItem: {
     backgroundColor: appColors.CardBackground,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
+    padding: scale(16),
+    borderRadius: scale(12),
+    marginBottom: scale(8),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   helpItemIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     backgroundColor: appColors.AppBlue + '20',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: scale(16),
   },
   helpItemContent: {
     flex: 1,
   },
   helpItemTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   helpItemDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.regularText,
   },
   faqItem: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    marginBottom: 8,
+    borderRadius: scale(12),
+    marginBottom: scale(8),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   faqQuestion: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: scale(16),
   },
   faqQuestionText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   faqAnswer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: scale(16),
+    paddingBottom: scale(16),
     borderTopWidth: 1,
     borderTopColor: appColors.grey6,
   },
   faqAnswerText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.regularText,
-    lineHeight: 20,
-    paddingTop: 12,
+    lineHeight: moderateScale(20),
+    paddingTop: scale(12),
   },
   contactInfo: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    borderRadius: 12,
+    padding: scale(16),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   contactText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.regularText,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   bottomSpacer: {
-    height: 32,
+    height: scale(32),
   },
 });
 

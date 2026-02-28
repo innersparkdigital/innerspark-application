@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import {
@@ -47,12 +48,12 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
   const toast = useToast();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedPeriod, setSelectedPeriod] = useState<'7' | '30' | '90'>('7');
-  
+
   // Get data from Redux
   const moodHistoryData = useSelector(selectMoodHistory);
   const reduxStats = useSelector(selectMoodStats);
   const isLoading = useSelector(selectHistoryLoading);
-  
+
   // Use Redux data directly
   const moodHistory = moodHistoryData || [];
   const [localStats, setLocalStats] = useState({
@@ -70,27 +71,27 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
   ];
 
   const moodColors = {
-    1: '#F44336', // Terrible
-    2: '#FF9800', // Bad
+    1: '#4CAF50', // Great
+    2: '#8BC34A', // Good
     3: '#FFC107', // Okay
-    4: '#8BC34A', // Good
-    5: '#4CAF50', // Great
+    4: '#FF9800', // Bad
+    5: '#F44336', // Terrible
   };
 
   const moodLabels = {
-    1: 'Terrible',
-    2: 'Bad',
+    1: 'Great',
+    2: 'Good',
     3: 'Okay',
-    4: 'Good',
-    5: 'Great',
+    4: 'Bad',
+    5: 'Terrible',
   };
 
   const moodEmojis = {
-    1: '😢',
-    2: '😔',
+    1: '😊',
+    2: '🙂',
     3: '😐',
-    4: '🙂',
-    5: '😊',
+    4: '😔',
+    5: '😢',
   };
 
   useEffect(() => {
@@ -99,7 +100,7 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
       loadMoodHistory(userDetails.userId, periodMap[selectedPeriod] || 'week');
     }
   }, [selectedPeriod, userDetails?.userId]);
-  
+
   // Recalculate local stats when mood history changes
   useEffect(() => {
     calculateStats(moodHistory);
@@ -118,20 +119,20 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
     }
 
     const averageMood = data.reduce((sum, entry) => sum + entry.moodValue, 0) / data.length;
-    const bestDay = data.reduce((best, entry) => 
-      entry.moodValue > (best?.moodValue || 0) ? entry : best
+    const bestDay = data.reduce((best, entry) =>
+      entry.moodValue < (best?.moodValue || Infinity) ? entry : best
     );
 
     // Calculate current streak
     let streak = 0;
     const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const today = new Date().toDateString();
-    
+
     for (let i = 0; i < sortedData.length; i++) {
       const entryDate = new Date(sortedData[i].date);
       const expectedDate = new Date();
       expectedDate.setDate(expectedDate.getDate() - i);
-      
+
       if (entryDate.toDateString() === expectedDate.toDateString()) {
         streak++;
       } else {
@@ -144,8 +145,8 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
       counts[entry.mood] = (counts[entry.mood] || 0) + 1;
       return counts;
     }, {} as Record<string, number>);
-    
-    const mostCommonMood = Object.entries(moodCounts).reduce((a, b) => 
+
+    const mostCommonMood = Object.entries(moodCounts).reduce((a, b) =>
       moodCounts[a[0]] > moodCounts[b[0]] ? a : b
     )[0];
 
@@ -182,7 +183,7 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
         <View style={styles.chartContainer}>
           <Text style={styles.chartTitle}>Mood Trend</Text>
           <View style={styles.emptyChart}>
-            <Icon name="show-chart" type="material" color={appColors.grey3} size={48} />
+            <Icon name="show-chart" type="material" color={appColors.grey3} size={moderateScale(48)} />
             <Text style={styles.emptyChartText}>No mood data yet</Text>
             <Text style={styles.emptyChartSubtext}>Start tracking your mood to see trends</Text>
           </View>
@@ -190,20 +191,20 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
       );
     }
 
-    const chartHeight = 160;
-    const chartPadding = 20;
-    const pointSize = 12;
-    const minWidth = CHART_WIDTH - 60;
-    const chartWidth = Math.max(minWidth, moodHistory.length * 60);
+    const chartHeight = scale(160);
+    const chartPadding = scale(20);
+    const pointSize = scale(12);
+    const minWidth = CHART_WIDTH - scale(60);
+    const chartWidth = Math.max(minWidth, moodHistory.length * scale(60));
 
     return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Mood Trend - Last {selectedPeriod} Days</Text>
-        
+
         <View style={styles.chartWrapper}>
           {/* Y-axis emojis */}
           <View style={styles.yAxis}>
-            {[5, 4, 3, 2, 1].map(value => (
+            {[1, 2, 3, 4, 5].map(value => (
               <Text key={value} style={styles.yAxisEmoji}>
                 {moodEmojis[value as keyof typeof moodEmojis]}
               </Text>
@@ -211,15 +212,15 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
           </View>
 
           {/* Scrollable chart */}
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.chartScrollView}
           >
             <View style={[styles.chartCanvas, { width: chartWidth, height: chartHeight }]}>
               {/* Grid lines */}
               {[1, 2, 3, 4, 5].map(value => {
-                const y = chartHeight - ((value - 1) / 4) * (chartHeight - chartPadding * 2) - chartPadding;
+                const y = ((value - 1) / 4) * (chartHeight - chartPadding * 2) + chartPadding;
                 return (
                   <View
                     key={`grid-${value}`}
@@ -229,11 +230,11 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
               })}
 
               {/* Data points and lines */}
-              {moodHistory.map((entry, index) => {
+              {moodHistory.map((entry: any, index: number) => {
                 const x = moodHistory.length > 1
                   ? (index / (moodHistory.length - 1)) * (chartWidth - 40) + 20
                   : chartWidth / 2;
-                const y = chartHeight - ((entry.moodValue - 1) / 4) * (chartHeight - chartPadding * 2) - chartPadding;
+                const y = ((entry.moodValue - 1) / 4) * (chartHeight - chartPadding * 2) + chartPadding;
 
                 const nextEntry = moodHistory[index + 1];
                 let lineWidth = 0;
@@ -241,7 +242,7 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
 
                 if (nextEntry) {
                   const nextX = (index + 1) / (moodHistory.length - 1) * (chartWidth - 40) + 20;
-                  const nextY = chartHeight - ((nextEntry.moodValue - 1) / 4) * (chartHeight - chartPadding * 2) - chartPadding;
+                  const nextY = ((nextEntry.moodValue - 1) / 4) * (chartHeight - chartPadding * 2) + chartPadding;
                   lineWidth = Math.sqrt(Math.pow(nextX - x, 2) + Math.pow(nextY - y, 2));
                   lineAngle = Math.atan2(nextY - y, nextX - x) * (180 / Math.PI);
                 }
@@ -350,7 +351,7 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
 
   const EmptyState: React.FC = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="mood" type="material" color={appColors.grey3} size={80} />
+      <Icon name="mood" type="material" color={appColors.grey3} size={moderateScale(80)} />
       <Text style={styles.emptyTitle}>No Mood Entries Yet</Text>
       <Text style={styles.emptySubtitle}>
         Start tracking your daily mood to see insights and trends over time.
@@ -385,18 +386,18 @@ const MoodHistoryScreen: React.FC<MoodHistoryScreenProps> = ({ navigation }) => 
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mood History</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.todayButton}
           onPress={() => navigation.navigate('TodayMoodScreen')}
         >
-          <Icon name="today" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="today" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
@@ -474,59 +475,59 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 4,
+    elevation: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   todayButton: {
-    padding: 8,
+    padding: scale(8),
   },
   scrollView: {
     flex: 1,
   },
   loadingContainer: {
-    padding: 20,
+    padding: scale(20),
   },
   periodFilter: {
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(20),
   },
   periodButton: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginHorizontal: 8,
-    elevation: 1,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(10),
+    marginHorizontal: scale(8),
+    elevation: scale(1),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   selectedPeriodButton: {
     backgroundColor: appColors.AppBlue,
   },
   periodButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
   },
@@ -537,40 +538,40 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    elevation: 2,
+    padding: scale(20),
+    borderRadius: scale(16),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   emptyChart: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: scale(40),
   },
   emptyChartText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextSemiBold,
-    marginTop: 12,
+    marginTop: scale(12),
   },
   emptyChartSubtext: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 4,
+    marginTop: scale(4),
     textAlign: 'center',
   },
   chartWrapper: {
@@ -578,13 +579,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   yAxis: {
-    width: 40,
-    height: 160,
+    width: scale(40),
+    height: scale(160),
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: scale(10),
   },
   yAxisEmoji: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     textAlign: 'center',
   },
   chartScrollView: {
@@ -593,178 +594,177 @@ const styles = StyleSheet.create({
   chartCanvas: {
     position: 'relative',
     backgroundColor: '#FAFAFA',
-    borderRadius: 8,
-    marginLeft: 10,
+    borderRadius: scale(8),
+    marginLeft: scale(10),
   },
   gridLine: {
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 1,
+    height: scale(1),
     backgroundColor: '#E0E0E0',
   },
   dataPoint: {
     position: 'absolute',
     borderWidth: 3,
     borderColor: appColors.CardBackground,
-    elevation: 3,
+    elevation: scale(3),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.25,
-    shadowRadius: 3,
+    shadowRadius: scale(3),
   },
   connectingLine: {
     position: 'absolute',
-    height: 3,
+    height: scale(3),
     opacity: 0.7,
-    transformOrigin: 'left center',
   },
   statsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: scale(20),
+    marginBottom: scale(20),
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   statCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: scale(12),
+    padding: scale(16),
     alignItems: 'center',
     width: '48%',
-    elevation: 2,
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   statValue: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 4,
+    marginTop: scale(4),
     textAlign: 'center',
   },
   historySection: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    borderRadius: 16,
-    elevation: 2,
+    borderRadius: scale(16),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   historySectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    padding: 20,
+    padding: scale(20),
     paddingBottom: 0,
   },
   historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
+    padding: scale(20),
+    borderBottomWidth: scale(1),
     borderBottomColor: appColors.grey6,
   },
   historyDate: {
-    width: 80,
+    width: scale(80),
     alignItems: 'center',
   },
   historyDateText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   historyTimeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   historyMood: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 16,
+    marginLeft: scale(16),
   },
   historyEmoji: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: moderateScale(24),
+    marginRight: scale(12),
   },
   historyMoodInfo: {
     flex: 1,
   },
   historyMoodLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   historyNote: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   historyPoints: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF3E0',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
   },
   historyPointsText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontWeight: 'bold',
     color: '#E65100',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 64,
+    paddingHorizontal: scale(32),
+    paddingVertical: scale(64),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: moderateScale(20),
+    marginBottom: scale(24),
   },
   startTrackingButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    borderRadius: scale(25),
+    paddingHorizontal: scale(24),
+    paddingVertical: scale(12),
   },
   startTrackingText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,

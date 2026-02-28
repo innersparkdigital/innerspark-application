@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
-import { appColors, appFonts } from '../../global/Styles';
+import { appColors, parameters, appFonts } from '../../global/Styles';
+import { moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 
 const TransactionDetailScreen = ({ navigation, route }) => {
@@ -63,11 +64,11 @@ const TransactionDetailScreen = ({ navigation, route }) => {
 
     return (
       <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
-        <Icon 
-          name={status?.toLowerCase() === 'completed' ? 'check-circle' : 'schedule'} 
-          type="material" 
-          color={getStatusColor()} 
-          size={16} 
+        <Icon
+          name={status?.toLowerCase() === 'completed' ? 'check-circle' : 'schedule'}
+          type="material"
+          color={getStatusColor()}
+          size={16}
         />
         <Text style={[styles.statusText, { color: getStatusColor() }]}>
           {status}
@@ -80,7 +81,7 @@ const TransactionDetailScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -139,17 +140,17 @@ const TransactionDetailScreen = ({ navigation, route }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Payment Breakdown</Text>
             <View style={styles.card}>
-              <DetailRow 
-                label="Subtotal" 
-                value={`UGX ${transactionDetail.breakdown.subtotal.toLocaleString()}`} 
+              <DetailRow
+                label="Subtotal"
+                value={`UGX ${transactionDetail.breakdown.subtotal.toLocaleString()}`}
               />
-              <DetailRow 
-                label="Service Fee" 
-                value={`UGX ${transactionDetail.breakdown.serviceFee.toLocaleString()}`} 
+              <DetailRow
+                label="Service Fee"
+                value={`UGX ${transactionDetail.breakdown.serviceFee.toLocaleString()}`}
               />
               <View style={styles.divider} />
-              <DetailRow 
-                label="Total" 
+              <DetailRow
+                label="Total"
                 value={`UGX ${transactionDetail.breakdown.total.toLocaleString()}`}
                 valueColor={transactionDetail.type === 'credit' ? '#4CAF50' : '#F44336'}
               />
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,

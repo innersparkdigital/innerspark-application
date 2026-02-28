@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { scale, moderateScale } from '../../../global/Scaling';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { getAnalyticsOverview, getSessionAnalytics, getRevenueAnalytics } from '../../../api/therapist';
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   metricValue: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 140,
+    height: scale(140),
     paddingBottom: 8,
   },
   chartBar: {

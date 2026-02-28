@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import ISStatusBar from '../../components/ISStatusBar';
 
@@ -26,7 +27,7 @@ interface AppointmentDetailsScreenProps {
 const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  
+
   // Get appointment data from route params
   const appointment = route?.params?.appointment || {
     id: '1',
@@ -50,7 +51,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
   const formatDate = (dateString: string) => {
     const [day, month, year] = dateString.split('/');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('en-US', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -138,14 +139,14 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Appointment Details</Text>
         <View style={styles.headerSpacer} />
@@ -158,11 +159,11 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
             styles.statusBadge,
             { backgroundColor: getStatusColor(appointment.status) + '20' }
           ]}>
-            <Icon 
+            <Icon
               name={appointment.status === 'upcoming' ? 'event' : appointment.status === 'completed' ? 'check-circle' : 'cancel'}
-              type="material" 
-              color={getStatusColor(appointment.status)} 
-              size={16} 
+              type="material"
+              color={getStatusColor(appointment.status)}
+              size={moderateScale(16)}
             />
             <Text style={[
               styles.statusText,
@@ -179,7 +180,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
           <View style={styles.therapistInfo}>
             <Avatar
               source={appointment.image}
-              size={70}
+              size={scale(70)}
               rounded
               containerStyle={styles.therapistAvatar}
             />
@@ -193,13 +194,13 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
               )}
             </View>
           </View>
-          
+
           {appointment.status === 'completed' && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.feedbackButton}
               onPress={() => navigation.navigate('PostSessionFeedbackScreen', { appointment })}
             >
-              <Icon name="rate-review" type="material" color="#FF9800" size={18} />
+              <Icon name="rate-review" type="material" color="#FF9800" size={moderateScale(18)} />
               <Text style={styles.feedbackButtonText}>Give Feedback</Text>
             </TouchableOpacity>
           )}
@@ -208,9 +209,9 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
         {/* Appointment Details Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Appointment Information</Text>
-          
+
           <View style={styles.detailRow}>
-            <Icon name="event" type="material" color={appColors.grey2} size={20} />
+            <Icon name="event" type="material" color={appColors.grey2} size={moderateScale(20)} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Date</Text>
               <Text style={styles.detailValue}>{formatDate(appointment.date)}</Text>
@@ -218,7 +219,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
           </View>
 
           <View style={styles.detailRow}>
-            <Icon name="schedule" type="material" color={appColors.grey2} size={20} />
+            <Icon name="schedule" type="material" color={appColors.grey2} size={moderateScale(20)} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Time</Text>
               <Text style={styles.detailValue}>{appointment.time} ({appointment.timezone})</Text>
@@ -226,7 +227,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
           </View>
 
           <View style={styles.detailRow}>
-            <Icon name="timer" type="material" color={appColors.grey2} size={20} />
+            <Icon name="timer" type="material" color={appColors.grey2} size={moderateScale(20)} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Duration</Text>
               <Text style={styles.detailValue}>{appointment.duration}</Text>
@@ -234,7 +235,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
           </View>
 
           <View style={styles.detailRow}>
-            <Icon name="psychology" type="material" color={appColors.grey2} size={20} />
+            <Icon name="psychology" type="material" color={appColors.grey2} size={moderateScale(20)} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Session Type</Text>
               <Text style={styles.detailValue}>{appointment.sessionType}</Text>
@@ -243,7 +244,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
 
           {appointment.location && (
             <View style={styles.detailRow}>
-              <Icon name="location-on" type="material" color={appColors.grey2} size={20} />
+              <Icon name="location-on" type="material" color={appColors.grey2} size={moderateScale(20)} />
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Location</Text>
                 <Text style={styles.detailValue}>{appointment.location}</Text>
@@ -255,7 +256,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
         {/* Payment Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Payment</Text>
-          
+
           <View style={styles.paymentRow}>
             <Text style={styles.amountLabel}>Amount</Text>
             <Text style={styles.amountValue}>{appointment.amount}</Text>
@@ -283,7 +284,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
               titleStyle={styles.payNowButtonText}
               onPress={handlePayNow}
               icon={
-                <Icon name="payment" type="material" color={appColors.CardBackground} size={18} style={{ marginRight: 8 }} />
+                <Icon name="payment" type="material" color={appColors.CardBackground} size={moderateScale(18)} style={{ marginRight: scale(8) }} />
               }
             />
           )}
@@ -294,7 +295,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Cancellation Policy</Text>
             <View style={styles.policyContainer}>
-              <Icon name="info" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="info" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.policyText}>{appointment.cancellationPolicy}</Text>
             </View>
           </View>
@@ -313,16 +314,16 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
               titleStyle={styles.joinButtonText}
               onPress={handleJoinMeeting}
               icon={
-                <Icon name="videocam" type="material" color={appColors.CardBackground} size={20} style={{ marginRight: 8 }} />
+                <Icon name="videocam" type="material" color={appColors.CardBackground} size={moderateScale(20)} style={{ marginRight: scale(8) }} />
               }
             />
           )}
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.cancelButton}
             onPress={handleRequestCancellation}
           >
-            <Icon name="event-busy" type="material" color="#F44336" size={18} />
+            <Icon name="event-busy" type="material" color="#F44336" size={moderateScale(18)} />
             <Text style={styles.cancelButtonText}>Request Cancellation</Text>
           </TouchableOpacity>
         </View>
@@ -337,7 +338,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Icon name="event-busy" type="material" color="#F44336" size={48} />
+            <Icon name="event-busy" type="material" color="#F44336" size={moderateScale(48)} />
             <Text style={styles.modalTitle}>Request Cancellation</Text>
             <Text style={styles.modalMessage}>
               Send a cancellation request for your appointment with {appointment.therapistName}?
@@ -345,16 +346,16 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
             <Text style={styles.modalSubMessage}>
               Your therapist will review and respond to your request. You'll be notified of their decision.
             </Text>
-            
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCancelButton}
                 onPress={() => setShowCancelModal(false)}
               >
                 <Text style={styles.modalCancelText}>Keep Appointment</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.modalConfirmButton}
                 onPress={confirmCancellation}
               >
@@ -376,52 +377,52 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
-    marginRight: 15,
+    padding: scale(8),
+    borderRadius: scale(20),
+    marginRight: scale(15),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSpacer: {
-    width: 40,
+    width: scale(40),
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: scale(20),
   },
   statusSection: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    borderRadius: scale(20),
+    gap: scale(6),
   },
   statusText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   card: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -429,45 +430,45 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextBold,
   },
   therapistInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   therapistAvatar: {
-    marginRight: 15,
+    marginRight: scale(15),
   },
   therapistDetails: {
     flex: 1,
   },
   therapistName: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 5,
+    marginBottom: scale(5),
     fontFamily: appFonts.headerTextBold,
   },
   therapistType: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextRegular,
   },
   specialtyBadge: {
     alignSelf: 'flex-start',
     backgroundColor: appColors.AppBlue + '15',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: scale(10),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
   },
   specialtyText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -477,12 +478,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: appColors.AppBlue + '10',
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 8,
+    paddingVertical: scale(12),
+    borderRadius: scale(10),
+    gap: scale(8),
   },
   contactButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
@@ -492,12 +493,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FF980010',
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 8,
+    paddingVertical: scale(12),
+    borderRadius: scale(10),
+    gap: scale(8),
   },
   feedbackButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: '#FF9800',
     fontFamily: appFonts.headerTextBold,
@@ -505,20 +506,20 @@ const styles = StyleSheet.create({
   detailRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   detailContent: {
     flex: 1,
-    marginLeft: 15,
+    marginLeft: scale(15),
   },
   detailLabel: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey3,
-    marginBottom: 4,
+    marginBottom: scale(4),
     fontFamily: appFonts.headerTextRegular,
   },
   detailValue: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontWeight: '500',
     fontFamily: appFonts.headerTextMedium,
@@ -527,42 +528,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   amountLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   amountValue: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   paymentLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   paymentStatusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(12),
   },
   paymentStatusText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   payNowButton: {
     backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginTop: 10,
+    borderRadius: scale(10),
+    paddingVertical: scale(12),
+    marginTop: scale(10),
   },
   payNowButtonText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
@@ -571,20 +572,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: appColors.AppBlue + '08',
-    padding: 12,
-    borderRadius: 10,
-    gap: 10,
+    padding: scale(12),
+    borderRadius: scale(10),
+    gap: scale(10),
   },
   policyText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey1,
-    lineHeight: 20,
+    lineHeight: scale(20),
     fontFamily: appFonts.headerTextRegular,
   },
   footer: {
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -593,12 +594,12 @@ const styles = StyleSheet.create({
   },
   joinButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 12,
-    paddingVertical: 15,
-    marginBottom: 12,
+    borderRadius: scale(12),
+    paddingVertical: scale(15),
+    marginBottom: scale(12),
   },
   joinButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
@@ -608,18 +609,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F4433610',
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 8,
+    paddingVertical: scale(12),
+    borderRadius: scale(10),
+    gap: scale(8),
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: '#F44336',
     fontFamily: appFonts.headerTextBold,
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   // Modal styles
   modalOverlay: {
@@ -630,69 +631,69 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    borderRadius: 15,
-    padding: 25,
+    margin: scale(20),
+    borderRadius: scale(15),
+    padding: scale(25),
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    maxWidth: 400,
+    maxWidth: scale(400),
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: scale(15),
+    marginBottom: scale(10),
     fontFamily: appFonts.headerTextBold,
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextRegular,
   },
   modalSubMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: scale(25),
     fontFamily: appFonts.headerTextRegular,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    gap: 10,
+    gap: scale(10),
   },
   modalCancelButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
+    borderRadius: scale(10),
     backgroundColor: appColors.grey6,
     alignItems: 'center',
   },
   modalCancelText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
   },
   modalConfirmButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
+    borderRadius: scale(10),
     backgroundColor: '#F44336',
     alignItems: 'center',
   },
   modalConfirmText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,

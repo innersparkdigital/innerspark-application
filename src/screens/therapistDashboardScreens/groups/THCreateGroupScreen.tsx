@@ -13,11 +13,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/themed';
 import { appColors, appFonts, parameters } from '../../../global/Styles';
+import { scale, moderateScale } from '../../../global/Scaling';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { useSelector } from 'react-redux';
 import { createGroup, updateGroup } from '../../../api/therapist';
+import { validateGroupForm } from '../../../global/LHValidators';
 
 const THCreateGroupScreen = ({ navigation, route }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -31,54 +33,66 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
   const [maxMembers, setMaxMembers] = useState(group?.maxMembers?.toString() || '20');
   const [isPrivate, setIsPrivate] = useState(group?.isPrivate || false);
   const [requireApproval, setRequireApproval] = useState(group?.requireApproval || true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const icons = ['🧘', '🌱', '🧠', '🕉️', '💪', '🌟', '🤝', '💙', '🌈', '☮️', '🦋', '🌺'];
 
   const handleSave = async () => {
-    if (!groupName.trim()) {
-      alert.show({ type: 'warning', title: 'Missing Name', message: 'Please enter a group name' });
-      return;
-    }
+    const groupData = {
+      name: groupName.trim(),
+      description: description.trim(),
+      icon: selectedIcon,
+      maxMembers: parseInt(maxMembers) || 0,
+      privacy: isPrivate ? 'private' as const : 'public' as const,
+      requireApproval: requireApproval,
+    };
 
-    if (!description.trim()) {
-      alert.show({ type: 'warning', title: 'Missing Description', message: 'Please enter a description' });
+    const errors = validateGroupForm(groupData);
+
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0] as string;
+      alert.show({ type: 'warning', title: 'Validation Error', message: firstError });
       return;
     }
 
     try {
+      setIsLoading(true);
       const therapistId = userDetails?.userId;
-      const groupData = {
+      const submissionData = {
+        ...groupData,
         therapist_id: therapistId,
-        name: groupName.trim(),
-        description: description.trim(),
-        icon: selectedIcon,
-        maxMembers: parseInt(maxMembers) || 20,
-        privacy: isPrivate ? 'private' as const : 'public' as const,
-        requireApproval: requireApproval,
         guidelines: ["Respect confidentiality", "Be supportive", "Attend regularly"] // Default guidelines
       };
 
+      console.log('--- GROUP SUBMISSION PAYLOAD ---');
+      console.log(JSON.stringify(submissionData, null, 2));
+      console.log('-------------------------------');
+
       if (isEditing && group?.id) {
-        await updateGroup(group.id, groupData);
+        await updateGroup(group.id, submissionData);
         alert.show({
           type: 'success',
           title: 'Updated',
           message: 'Group updated successfully!',
-          onConfirm: () => navigation.goBack()
+          onConfirm: () => navigation.goBack(),
+          onCancel: () => navigation.goBack()
         });
       } else {
-        await createGroup(groupData);
+        await createGroup(submissionData);
         alert.show({
           type: 'success',
           title: 'Created',
           message: 'Group created successfully!',
-          onConfirm: () => navigation.goBack()
+          onConfirm: () => navigation.goBack(),
+          onCancel: () => navigation.goBack()
         });
       }
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to save group. Please try again.';
       console.error('Create Group Error:', errorMessage);
       alert.show({ type: 'error', title: 'Error', message: errorMessage });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -148,7 +162,7 @@ const THCreateGroupScreen = ({ navigation, route }: any) => {
             placeholder="20"
             placeholderTextColor={appColors.grey3}
             value={maxMembers}
-            onChangeText={setMaxMembers}
+            onChangeText={(text) => setMaxMembers(text.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
             maxLength={3}
           />
@@ -313,7 +327,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue + '20',
   },
   iconText: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
   },
   input: {
     backgroundColor: appColors.AppLightGray,
@@ -325,7 +339,7 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextRegular,
   },
   textArea: {
-    height: 100,
+    height: scale(100),
     textAlignVertical: 'top',
   },
   charCount: {

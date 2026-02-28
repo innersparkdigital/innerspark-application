@@ -1,7 +1,7 @@
 /**
  * App HomeScreen - Mental Health Wellness Dashboard
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -13,10 +13,13 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  Linking,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/base';
 import { appColors as staticAppColors, parameters, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import { useThemedColors } from '../hooks/useThemedColors';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
@@ -24,7 +27,7 @@ import ISStatusBar from '../components/ISStatusBar';
 import PanicButtonComponent from '../components/PanicButtonComponent';
 import MoodCheckInCard, { MoodOption } from '../components/MoodCheckInCard';
 import TodayMoodSummaryCard from '../components/TodayMoodSummaryCard';
-import { appImages, moodOptions } from '../global/Data';
+import { appImages, moodOptions, appPromotionalLinks } from '../global/Data';
 import { getFirstName, getGreeting, getLastName, getFullname } from '../global/LHShortcuts';
 import { loadAllMoodData, formatRelativeTime } from '../utils/moodCheckInManager';
 import { selectHasCheckedInToday, selectTodayMoodData } from '../features/mood/moodSlice';
@@ -39,15 +42,17 @@ import {
   selectDashboardLoading,
 } from '../features/dashboard/dashboardSlice';
 import { loadDashboardData, refreshDashboardData } from '../utils/dashboardManager';
+import { useDashboardSync } from '../hooks/useDashboardSync';
+import { useNotificationsSync } from '../hooks/useNotificationsSync';
 import EmptySessionsCard from '../components/EmptySessionsCard';
 import SessionCard from '../components/SessionCard';
 import TimelineEvent from '../components/TimelineEvent';
 import WellnessTipCard from '../components/WellnessTipCard';
 
 // test notification trigger
-import { 
-  triggerTestNotifications, 
-  initializeNotificationChannels, 
+import {
+  triggerTestNotifications,
+  initializeNotificationChannels,
   requestNotificationPermissions,
   setupNotificationEventListeners
 } from '../api/LHNotifications';
@@ -55,14 +60,18 @@ import {
 // get the screen Width
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen: React.FC<any> = ({ navigation }) => {
   const dispatch = useDispatch();
   const toast = useToast();
   const appColors = useThemedColors(); // ✅ Themed colors
 
-  const userDetails = useSelector(state => state.userData.userDetails);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [selectedMood, setSelectedMood] = useState(null);
-  
+
+  // Initialize Smart Background Sync
+  useDashboardSync(userDetails?.userId, 60000);
+  useNotificationsSync(userDetails?.userId, 60000);
+
   // Get mood check-in status from Redux
   const hasCheckedInToday = useSelector(selectHasCheckedInToday);
   const todayMoodData = useSelector(selectTodayMoodData);
@@ -74,7 +83,7 @@ const HomeScreen = ({ navigation }) => {
   const moodStreak = useSelector(selectMoodStreak);
   const quickStats = useSelector(selectQuickStats);
   const isDashboardLoading = useSelector(selectDashboardLoading);
-  
+
   // Get unread notification count from Redux
   const unreadNotifications = useSelector(selectUnreadCount);
   // Commented out for future use
@@ -86,6 +95,32 @@ const HomeScreen = ({ navigation }) => {
 
   // State for refreshing
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // State for Collapsible Mood Section
+  const [isMoodSectionVisible, setIsMoodSectionVisible] = useState(true);
+  const breathingAnim = useRef(new Animated.Value(1)).current;
+
+  // Breathing animation for the header emoji icon
+  useEffect(() => {
+    if (hasCheckedInToday) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(breathingAnim, {
+            toValue: 1.15,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(breathingAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      breathingAnim.setValue(1);
+    }
+  }, [hasCheckedInToday, breathingAnim]);
 
   const wellnessPrompts = [
     "Take 5 deep breaths and notice how you feel right now",
@@ -104,7 +139,7 @@ const HomeScreen = ({ navigation }) => {
 
   // State for rotating content
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
-  const [currentPromptIndex, setCurrentPromptIndex] = useState(() => 
+  const [currentPromptIndex, setCurrentPromptIndex] = useState(() =>
     Math.floor(Math.random() * wellnessPrompts.length)
   );
   const [completedTips, setCompletedTips] = useState(new Set());
@@ -112,7 +147,7 @@ const HomeScreen = ({ navigation }) => {
   // Helper: Get session urgency level
   const getSessionUrgency = (session: any) => {
     if (!session || !session.date || !session.time) return 'upcoming';
-    
+
     // For demo, check if it's "Today"
     if (session.date === 'Today') {
       // Parse time and check if within 30 minutes
@@ -124,7 +159,7 @@ const HomeScreen = ({ navigation }) => {
 
   // Helper: Get session status color
   const getSessionStatusColor = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'confirmed': return '#4CAF50';
       case 'pending': return '#FF9800';
       case 'cancelled': return '#F44336';
@@ -149,7 +184,7 @@ const HomeScreen = ({ navigation }) => {
   // Rotate through events and prompts every 4 minutes
   useEffect(() => {
     if (todayEvents.length === 0) return;
-    
+
     const rotationInterval = setInterval(() => {
       setCurrentEventIndex(prevIndex => (prevIndex + 1) % todayEvents.length);
       setCurrentPromptIndex(prevIndex => (prevIndex + 1) % wellnessPrompts.length);
@@ -188,8 +223,9 @@ const HomeScreen = ({ navigation }) => {
   const quickActions = [
     { id: 1, title: 'Groups', icon: 'people', color: '#2196F3', screen: 'GroupsScreen' },
     { id: 2, title: 'Events', icon: 'event', color: '#FF9800', screen: 'EventsScreen' },
-    { id: 3, title: 'Services', icon: 'shopping-cart', color: '#00BCD4', screen: 'ServicesScreen' },
-    { id: 4, title: 'Meditation', icon: 'self-improvement', color: '#673AB7', screen: 'MeditationScreen' },
+    { id: 3, title: 'Meditation', icon: 'self-improvement', color: '#673AB7', screen: 'MeditationScreen' },
+    { id: 4, title: 'Mind Check', icon: 'psychology', color: '#4CAF50', url: appPromotionalLinks.appPromotionalLink1 },
+    // { id: 5, title: 'Services', icon: 'shopping-cart', color: '#00BCD4', screen: 'ServicesScreen' },
   ];
 
   // Initialize notification system on component mount
@@ -197,36 +233,36 @@ const HomeScreen = ({ navigation }) => {
     const initializeNotifications = async () => {
       try {
         console.log('🔔 Initializing notification system...');
-        
+
         // Request notification permissions first
         const permissionGranted = await requestNotificationPermissions();
         if (!permissionGranted) {
           console.log('❌ Notification permissions denied');
           return;
         }
-        
+
         // Initialize notification channels
         await initializeNotificationChannels();
-        
+
         // Setup notification event listeners (THIS WAS MISSING!)
         const unsubscribe = setupNotificationEventListeners();
-        
+
         console.log('✅ Notification system initialized successfully');
-        
+
         // Return cleanup function
         return () => {
           if (unsubscribe) {
             unsubscribe();
           }
         };
-        
+
       } catch (error) {
         console.error('❌ Failed to initialize notification system:', error);
       }
     };
 
     initializeNotifications();
-    
+
     // Load all data if user is logged in
     if (userDetails?.userId) {
       loadAllMoodData(userDetails.userId);
@@ -238,7 +274,7 @@ const HomeScreen = ({ navigation }) => {
   // Handle pull-to-refresh
   const handleRefresh = async () => {
     if (!userDetails?.userId) return;
-    
+
     setIsRefreshing(true);
     try {
       await Promise.all([
@@ -260,14 +296,31 @@ const HomeScreen = ({ navigation }) => {
   };
 
   // Handle quick action button presses
-  const handleQuickAction = (action: any) => {
+  const handleQuickAction = async (action: any) => {
+    // 1. Check for external URL first
+    if (action.url) {
+      try {
+        const supported = await Linking.canOpenURL(action.url);
+        if (supported) {
+          await Linking.openURL(action.url);
+        } else {
+          notifyWithToast(`Cannot open URL: ${action.title}`);
+        }
+      } catch (error) {
+        console.error('Error opening URL:', error);
+        notifyWithToast('Failed to open link.');
+      }
+      return;
+    }
+
+    // 2. Handle internal screens
     const bottomTabScreens = ['TherapistsScreen', 'MoodScreen', 'EmergencyScreen']; // Tabs screens available
     const stackScreens = ['AppointmentsScreen', 'GoalsScreen', 'EventsScreen', 'GroupsScreen', 'ServicesScreen', 'MeditationScreen']; // Available screens that can be navigated to directly
-    
-    if (bottomTabScreens.includes(action.screen)) {
+
+    if (action.screen && bottomTabScreens.includes(action.screen)) {
       // Navigate to the bottom tab screen
       navigation.navigate('LHBottomTabs', { screen: action.screen });
-    } else if (stackScreens.includes(action.screen)) {
+    } else if (action.screen && stackScreens.includes(action.screen)) {
       // Navigate to stack screen directly
       navigation.navigate(action.screen);
     } else {
@@ -288,20 +341,20 @@ const HomeScreen = ({ navigation }) => {
 
 
   // Render a quick action card
-  const QuickActionCard = ({ action }: { action: any }) => (
+  const QuickActionCard = ({ action, isFullWidth }: { action: any, isFullWidth?: boolean }) => (
     <TouchableOpacity
-      style={styles.actionCard}
+      style={[styles.actionCard, isFullWidth && styles.fullWidthCard]}
       onPress={() => handleQuickAction(action)}
     >
-      <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
+      <View style={[styles.actionIcon, isFullWidth && styles.fullWidthActionIcon, { backgroundColor: action.color + '20' }]}>
         <Icon
           name={action.icon}
           type="material"
           color={action.color}
-          size={24}
+          size={moderateScale(24)}
         />
       </View>
-      <Text style={styles.actionTitle}>{action.title}</Text>
+      <Text style={[styles.actionTitle, isFullWidth && styles.fullWidthActionTitle]}>{action.title}</Text>
     </TouchableOpacity>
   );
 
@@ -319,10 +372,10 @@ const HomeScreen = ({ navigation }) => {
   // Test Notification Button
   const TestNotificationButton = () => (
     <TouchableOpacity
-      style={{ backgroundColor: staticAppColors.AppBlue, padding: 10, borderRadius: 5 }}
+      style={{ backgroundColor: staticAppColors.AppBlue, padding: scale(10), borderRadius: moderateScale(5) }}
       onPress={handleTestNotification}
     >
-      <Text style={{ color: staticAppColors.CardBackground, fontSize: 16 }}>Test Notification</Text>
+      <Text style={{ color: staticAppColors.CardBackground, fontSize: moderateScale(16) }}>Test Notification</Text>
     </TouchableOpacity>
   );
 
@@ -331,43 +384,59 @@ const HomeScreen = ({ navigation }) => {
     // THEMED: Background adapts to light (#F6F6F6) / dark (#121212)
     <SafeAreaView style={[styles.container, { backgroundColor: appColors.background }]}>
       <ISStatusBar />
-      
+
       {/* Always-visible Panic Button */}
-      <PanicButtonComponent 
-        position="bottom-right" 
-        size="medium" 
-        quickAction="screen" 
+      <PanicButtonComponent
+        position="bottom-right"
+        size="medium"
+        quickAction="screen"
       />
-      
+
       {/* Header Section */}
       {/* THEMED: Header stays blue in both themes for brand consistency */}
       <View style={styles.header}>
         {/* Top row with icons */}
         <View style={styles.headerTopRow}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => navigation.navigate('ChatScreen')}
-          >
-            <Icon name="chat" type="material" color={appColors.CardBackground} size={24} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => navigation.navigate('NotificationScreen')}
-          >
-            <View style={styles.notificationIconContainer}>
-              <Icon name="notifications" type="material" color={appColors.CardBackground} size={24} />
-              {unreadNotifications > 0 && (
-                <Badge
-                  value={unreadNotifications > 99 ? '99+' : unreadNotifications}
-                  status="error"
-                  containerStyle={styles.badgeContainer}
-                  textStyle={styles.badgeText}
-                />
-              )}
-            </View>
-          </TouchableOpacity>
+          {/* Brand Logo on the left */}
+          <Image source={appImages.logoRecWhite} style={styles.headerLogo} resizeMode="contain" />
+
+          {/* Action Icons on the right */}
+          <View style={styles.headerRightIcons}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('ChatScreen')}
+            >
+              <Icon name="chat" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
+            </TouchableOpacity>
+            {hasCheckedInToday && todayMoodData?.emoji && (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setIsMoodSectionVisible(!isMoodSectionVisible)}
+              >
+                <Animated.View style={{ transform: [{ scale: breathingAnim }] }}>
+                  <Text style={{ fontSize: moderateScale(22) }}>{todayMoodData.emoji}</Text>
+                </Animated.View>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('NotificationScreen')}
+            >
+              <View style={styles.notificationIconContainer}>
+                <Icon name="notifications" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
+                {unreadNotifications > 0 && (
+                  <Badge
+                    value={unreadNotifications > 99 ? '99+' : unreadNotifications}
+                    status="error"
+                    containerStyle={styles.badgeContainer}
+                    textStyle={styles.badgeText}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-        
+
         {/* Header Greeting Section */}
         <View style={styles.headerBottomRow}>
           <Text style={styles.greeting}>
@@ -386,7 +455,7 @@ const HomeScreen = ({ navigation }) => {
             onMoodSelect={handleMoodSelect}
             showNavigationHint={true}
           />
-        ) : todayMoodData ? (
+        ) : (todayMoodData && isMoodSectionVisible) ? (
           <TodayMoodSummaryCard
             mood={todayMoodData.mood}
             emoji={todayMoodData.emoji}
@@ -398,13 +467,15 @@ const HomeScreen = ({ navigation }) => {
             showPoints={false}
             showDetailsButton={false}
             compact={true}
+            showToggleIcon={true}
+            onToggleVisibility={() => setIsMoodSectionVisible(false)}
           />
         ) : null}
       </View>
 
       {/* THEMED: ScrollView background adapts to light (#F6F6F6) / dark (#121212) */}
-      <ScrollView 
-        style={[styles.scrollView, { backgroundColor: appColors.background }]} 
+      <ScrollView
+        style={[styles.scrollView, { backgroundColor: appColors.background }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -421,9 +492,17 @@ const HomeScreen = ({ navigation }) => {
           {/* THEMED: Section header text adapts - light (#5170FF) / dark (#6B8AFF) */}
           <Text style={[styles.sectionHeader, { color: appColors.AppBlue }]}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            {quickActions.map((action) => (
-              <QuickActionCard key={action.id} action={action} />
-            ))}
+            {quickActions.map((action, index) => {
+              // Check if array has odd length and this is the last item
+              const isLastOddItem = quickActions.length % 2 !== 0 && index === quickActions.length - 1;
+              return (
+                <QuickActionCard
+                  key={action.id}
+                  action={action}
+                  isFullWidth={isLastOddItem}
+                />
+              );
+            })}
           </View>
         </View>
 
@@ -466,7 +545,7 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionHeader}>Upcoming Sessions</Text>
               {upcomingSessions.length > 1 && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => navigation.navigate('AppointmentsScreen')}
                   style={styles.viewAllButton}
                 >
@@ -474,9 +553,9 @@ const HomeScreen = ({ navigation }) => {
                 </TouchableOpacity>
               )}
             </View>
-            
+
             {upcomingSessions.length === 1 ? (
-              <SessionCard 
+              <SessionCard
                 session={{
                   ...upcomingSessions[0],
                   status: 'confirmed',
@@ -485,13 +564,13 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => navigation.navigate('AppointmentsScreen')}
               />
             ) : (
-              <ScrollView 
-                horizontal 
+              <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.sessionsScroll}
               >
                 {upcomingSessions.map((session: any) => (
-                  <SessionCard 
+                  <SessionCard
                     key={session.id}
                     session={{
                       ...session,
@@ -512,7 +591,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.section}>
             {/* THEMED: Section header text adapts - light (#5170FF) / dark (#6B8AFF) */}
             <Text style={[styles.sectionHeader, { color: appColors.AppBlue }]}>Today's Schedule</Text>
-            
+
             <View style={styles.timelineContainer}>
               {todayEvents.map((event: any, index: number) => (
                 <TimelineEvent
@@ -574,7 +653,7 @@ const HomeScreen = ({ navigation }) => {
         </View>
         */}
 
-        
+
 
         {/* Test Notification Button */}
         {/* <TestNotificationButton /> */}
@@ -594,73 +673,82 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: staticAppColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 60,
-    paddingHorizontal: 20,
+    paddingBottom: scale(60),
+    paddingHorizontal: scale(20),
   },
   headerTopRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: scale(15),
+  },
+  headerLogo: {
+    width: scale(135),
+    height: scale(32),
+    // Removed tintColor so the original blue dot in the logo is visible
+  },
+  headerRightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerBottomRow: {
     alignItems: 'flex-start',
   },
   greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: moderateScale(22),
+    fontWeight: '800',
     color: staticAppColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 5,
+    marginBottom: scale(6),
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: staticAppColors.CardBackground,
     fontFamily: appFonts.bodyTextRegular,
     opacity: 0.9,
   },
   iconButton: {
-    marginLeft: 15,
-    padding: 8,
+    marginLeft: scale(8), // Reduced from 15 to pull icons much closer
+    padding: scale(4), // Reduced from 8 to tighten tap targets visually
   },
   notificationIconContainer: {
     position: 'relative',
   },
   badgeContainer: {
     position: 'absolute',
-    top: -8,
-    right: -8,
+    top: scale(-8),
+    right: scale(-8),
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontWeight: 'bold',
   },
   moodSection: {
-    paddingHorizontal: 20,
-    marginTop: -40,
+    paddingHorizontal: scale(20),
+    marginTop: scale(-40),
     zIndex: 1,
   },
   scrollView: {
     flex: 1,
     backgroundColor: staticAppColors.AppLightGray,
-    paddingTop: 10,
+    paddingTop: scale(10),
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: scale(20),
+    marginBottom: scale(20),
   },
   sectionHeader: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: staticAppColors.AppBlue,
-    marginBottom: 15,
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextBold,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: staticAppColors.AppBlue,
-    marginBottom: 20,
+    marginBottom: scale(20),
     fontFamily: appFonts.headerTextBold,
   },
   actionsGrid: {
@@ -672,37 +760,53 @@ const styles = StyleSheet.create({
     width: '48%',
     alignItems: 'center',
     backgroundColor: staticAppColors.CardBackground,
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 20,
-    marginBottom: 15,
+    borderRadius: scale(15),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(20),
+    marginBottom: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
+  fullWidthCard: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingVertical: scale(16),
+  },
   actionIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
+  },
+  fullWidthActionIcon: {
+    marginBottom: 0,
+    marginRight: scale(16),
   },
   actionTitle: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: staticAppColors.AppBlue,
     fontWeight: '600',
     textAlign: 'center',
-    fontFamily: appFonts.appTextMedium,
-    lineHeight: 16,
-    marginTop: 5,
+    fontFamily: appFonts.bodyTextMedium,
+    lineHeight: moderateScale(16),
+    marginTop: scale(5),
+  },
+  fullWidthActionTitle: {
+    marginTop: 0,
+    textAlign: 'left',
+    fontSize: moderateScale(16),
   },
   sessionsCard: {
     backgroundColor: '#E8D5B7',
-    borderRadius: 15,
-    padding: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -716,111 +820,111 @@ const styles = StyleSheet.create({
   },
   sessionsContent: {
     flex: 1,
-    paddingRight: 20,
+    paddingRight: scale(20),
   },
   sessionsTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: staticAppColors.AppBlue,
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   sessionsSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: staticAppColors.AppBlue,
-    marginBottom: 15,
-    lineHeight: 20,
+    marginBottom: scale(15),
+    lineHeight: moderateScale(20),
     fontFamily: appFonts.bodyTextRegular,
   },
   bookButton: {
     backgroundColor: staticAppColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    borderRadius: scale(25),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
     alignSelf: 'flex-start',
   },
   bookButtonText: {
     color: staticAppColors.CardBackground,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.buttonTextMedium,
   },
   sessionsIllustration: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
+
   // New Session Card Styles
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   viewAllButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: scale(4),
+    paddingHorizontal: scale(8),
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: staticAppColors.AppBlue,
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
   },
   sessionCard: {
     backgroundColor: staticAppColors.CardBackground,
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: scale(12),
+    padding: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    borderLeftWidth: 4,
+    borderLeftWidth: scale(4),
     borderLeftColor: '#4CAF50',
   },
-  sessionHeader: {
+  sessionHeaderStyle: { // Renamed from sessionHeader to avoid conflict or just usage check
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   therapistAvatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
+    width: scale(45),
+    height: scale(45),
+    borderRadius: scale(22.5),
     backgroundColor: staticAppColors.AppBlue,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   avatarText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: staticAppColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   avatarImage: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
+    width: scale(45),
+    height: scale(45),
+    borderRadius: scale(22.5),
   },
   sessionInfo: {
     flex: 1,
   },
   therapistName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: staticAppColors.AppBlue,
-    marginBottom: 2,
+    marginBottom: scale(2),
     fontFamily: appFonts.headerTextMedium,
   },
   sessionSpecialty: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: staticAppColors.AppGray,
     fontFamily: appFonts.bodyTextRegular,
   },
   sessionType: {
-    padding: 5,
+    padding: scale(5),
   },
   sessionDetails: {
     flexDirection: 'row',
@@ -833,32 +937,32 @@ const styles = StyleSheet.create({
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   sessionDateTime: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: staticAppColors.AppBlue,
     fontWeight: '500',
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.bodyTextMedium,
   },
   sessionDuration: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: staticAppColors.AppGray,
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.bodyTextRegular,
   },
   sessionActions: {
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
   joinButton: {
     backgroundColor: staticAppColors.AppBlue,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    borderRadius: scale(20),
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(16),
   },
   joinButtonText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     fontWeight: '600',
     color: staticAppColors.CardBackground,
     fontFamily: appFonts.bodyTextMedium,
@@ -866,8 +970,8 @@ const styles = StyleSheet.create({
   // Events and Prompts Styles - Compact Design
   eventsContainer: {
     backgroundColor: staticAppColors.CardBackground,
-    borderRadius: 12,
-    padding: 8,
+    borderRadius: scale(12),
+    padding: scale(8),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -877,12 +981,12 @@ const styles = StyleSheet.create({
   eventItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    marginBottom: 6,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(10),
+    marginBottom: scale(6),
     backgroundColor: staticAppColors.CardBackground,
-    borderRadius: 10,
-    borderLeftWidth: 3,
+    borderRadius: scale(10),
+    borderLeftWidth: scale(3),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -890,75 +994,75 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
   },
   eventIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: scale(32),
+    height: scale(32),
+    borderRadius: scale(16),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: scale(10),
   },
   eventContent: {
     flex: 1,
   },
   eventTitle: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: '600',
     color: staticAppColors.AppBlue,
-    marginBottom: 1,
+    marginBottom: scale(1),
     fontFamily: appFonts.headerTextMedium,
   },
   eventTime: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: staticAppColors.AppGray,
     fontFamily: appFonts.bodyTextRegular,
   },
   eventAction: {
-    padding: 3,
+    padding: scale(3),
   },
   promptItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(10),
     backgroundColor: '#FFF8E1',
-    borderRadius: 10,
-    borderLeftWidth: 3,
-    marginTop: 3,
+    borderRadius: scale(10),
+    borderLeftWidth: scale(3),
+    marginTop: scale(3),
   },
   promptIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: scale(32),
+    height: scale(32),
+    borderRadius: scale(16),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
-    marginTop: 1,
+    marginRight: scale(10),
+    marginTop: scale(1),
   },
   promptContent: {
     flex: 1,
   },
   promptLabel: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     fontWeight: '600',
     color: '#F57C00',
-    marginBottom: 3,
+    marginBottom: scale(3),
     fontFamily: appFonts.bodyTextMedium,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   promptTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '500',
     color: staticAppColors.AppBlue,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
     fontFamily: appFonts.bodyTextRegular,
   },
-  
+
   // Commented out - Original Activities Styles (kept for future use)
   activitiesContainer: {
     backgroundColor: staticAppColors.CardBackground,
-    borderRadius: 15,
-    padding: 15,
+    borderRadius: scale(15),
+    padding: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -968,7 +1072,7 @@ const styles = StyleSheet.create({
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: scale(10),
     borderBottomWidth: 1,
     borderBottomColor: staticAppColors.AppLightGray,
   },
@@ -976,48 +1080,48 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   activityIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: staticAppColors.AppLightBlue,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: staticAppColors.AppBlueFade,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   activityContent: {
     flex: 1,
   },
   activityTitle: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: '600',
     color: staticAppColors.AppBlue,
-    marginBottom: 2,
+    marginBottom: scale(2),
     fontFamily: appFonts.bodyTextMedium,
   },
   activityTime: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: staticAppColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
   },
 
   emergencyText: {
     color: staticAppColors.CardBackground,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginLeft: scale(10),
     fontFamily: appFonts.headerTextBold,
   },
   bottomSpacing: {
-    height: 30,
+    height: scale(30),
   },
   // New Component Styles
   sessionsScroll: {
-    paddingRight: 20,
+    paddingRight: scale(20),
   },
   emptyEventsCard: {
     backgroundColor: staticAppColors.CardBackground,
-    borderRadius: 12,
-    padding: 32,
+    borderRadius: scale(12),
+    padding: scale(32),
     alignItems: 'center',
     elevation: 1,
     shadowColor: '#000',
@@ -1026,14 +1130,14 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   emptyEventsText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: staticAppColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 12,
+    marginTop: scale(12),
     textAlign: 'center',
   },
   timelineContainer: {
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
 });
 

@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Icon } from '@rneui/base';
-import { appColors, parameters } from '../../global/Styles';
+import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { appImages } from '../../global/Data';
 import { checkVersion } from 'react-native-check-version';
@@ -82,39 +83,30 @@ export default function VerifyAppVersionScreen({ navigation }) {
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle='light-content' backgroundColor={appColors.AppBlue} />
             <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, }}>
-                <View style={{ flex: 3, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 15 }}>
-                    <Icon type="material-icons" name="update" color={appColors.AppBlue} size={90} />
-                    <Text style={{ fontSize: 22, paddingVertical: 10, color: appColors.AppBlue, fontWeight: 'bold', textAlign: 'center' }}>
+                <View style={{ flex: 3, alignItems: 'center', justifyContent: 'center', paddingHorizontal: scale(15) }}>
+                    <Icon type="material-icons" name="update" color={appColors.AppBlue} size={moderateScale(90)} />
+                    <Text style={{ fontSize: moderateScale(22), paddingVertical: scale(10), color: appColors.AppBlue, fontWeight: 'bold', textAlign: 'center', fontFamily: appFonts.headerTextBold }}>
                         Innerspark has a new update!
                     </Text>
-                    <View style={{ padding: 8 }}>
-                        <Text style={{ color: appColors.black, fontSize: 15, textAlign: 'center' }}>
+                    <View style={{ padding: scale(8) }}>
+                        <Text style={{ color: appColors.black, fontSize: moderateScale(15), textAlign: 'center', fontFamily: appFonts.bodyTextRegular }}>
                             Update the app to unlock new features.
                         </Text>
                     </View>
                 </View>
 
-                <View style={{ flex: 1, paddingVertical: 20, paddingHorizontal: 25 }}>
-                    {/* <Button 
-                        title="Update"
-                        buttonStyle={ parameters.doffeeButtonXL }
-                        titleStyle={ parameters.doffeeButtonXLTitle }   
-                        onPress={ () => { 
-                            checkAppUpdate();
-                         } }
-                    />  
-                    <Text></Text> */}
+                <View style={{ flex: 1, paddingVertical: scale(20), paddingHorizontal: scale(25) }}>
+                    {/* ... (buttons remain same, OpenURLButton title is fixed) */}
                     <OpenURLButton title="Update" url={updateURL} alertRef={alert.ref} />
                     <Pressable
-                        style={{ marginVertical: 10, paddingVertical: 5, alignItems: 'center' }}
+                        style={{ marginVertical: scale(10), paddingVertical: scale(5), alignItems: 'center' }}
                         onPress={
                             () => {
                                 dispatch(updateAppNeedsUpdate(false));
-                                // console.log('Not now');
                             }
                         }
                     >
-                        <Text style={{ color: appColors.grey2, fontSize: 15, fontWeight: 'bold' }}>Not Now</Text>
+                        <Text style={{ color: appColors.grey2, fontSize: moderateScale(15), fontWeight: 'bold', fontFamily: appFonts.bodyTextMedium }}>Not Now</Text>
                     </Pressable>
 
                 </View>

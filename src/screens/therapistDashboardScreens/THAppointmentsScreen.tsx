@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
+import { moderateScale } from '../../global/Scaling';
 import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   statNumber: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,

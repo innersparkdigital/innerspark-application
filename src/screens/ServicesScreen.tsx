@@ -16,6 +16,7 @@ import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import SubscriptionPlansScreen from './servicesScreens/ServicesCatalogScreen';
 import MySubscriptionScreen from './servicesScreens/PlansSubscriptionsScreen';
+import { scale, moderateScale } from '../global/Scaling';
 
 interface ServicesScreenProps {
   navigation: any;
@@ -51,35 +52,35 @@ const ServicesScreen: React.FC<ServicesScreenProps> = ({ navigation, route }) =>
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Services</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.navigate('BillingHistoryScreen')}
         >
-          <Icon name="receipt" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="receipt" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'plans' && styles.activeTab]}
           onPress={() => setActiveTab('plans')}
         >
-          <Icon 
-            name="card-membership" 
-            type="material" 
-            color={activeTab === 'plans' ? appColors.AppBlue : appColors.grey3} 
-            size={20} 
+          <Icon
+            name="card-membership"
+            type="material"
+            color={activeTab === 'plans' ? appColors.AppBlue : appColors.grey3}
+            size={moderateScale(20)}
           />
           <Text style={[
             styles.tabText,
@@ -89,15 +90,15 @@ const ServicesScreen: React.FC<ServicesScreenProps> = ({ navigation, route }) =>
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'subscription' && styles.activeTab]}
           onPress={() => setActiveTab('subscription')}
         >
-          <Icon 
-            name="account-circle" 
-            type="material" 
-            color={activeTab === 'subscription' ? appColors.AppBlue : appColors.grey3} 
-            size={20} 
+          <Icon
+            name="account-circle"
+            type="material"
+            color={activeTab === 'subscription' ? appColors.AppBlue : appColors.grey3}
+            size={moderateScale(20)}
           />
           <Text style={[
             styles.tabText,
@@ -124,61 +125,61 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(10),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 25,
-    marginHorizontal: 4,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(16),
+    borderRadius: scale(25),
+    marginHorizontal: scale(4),
   },
   activeTab: {
     backgroundColor: appColors.AppBlue + '15',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextRegular,
   },
   activeTabText: {

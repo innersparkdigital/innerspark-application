@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getMyGroups, leaveGroup } from '../../api/client/groups';
@@ -324,15 +325,15 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
       <View style={styles.therapistSection}>
         <Avatar
           source={item.therapistAvatar}
-          size={24}
+          size={scale(32)}
           rounded
           containerStyle={styles.therapistAvatar}
         />
-        <Text style={styles.therapistName}>{item.therapistName}</Text>
-        <View style={styles.memberInfo}>
-          <Icon name="group" type="material" color={appColors.grey3} size={14} />
-          <Text style={styles.memberCount}>{item.memberCount}</Text>
+        <View style={styles.therapistInfo}>
+          <Text style={styles.therapistName}>{item.therapistName}</Text>
         </View>
+        <Icon name="group" type="material" color={appColors.grey3} size={14} />
+        <Text style={styles.memberCount}>{item.memberCount}</Text>
       </View>
 
       <View style={styles.groupFooter}>
@@ -373,17 +374,17 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Icon name="group-off" type="material" color={appColors.grey3} size={80} />
+      <Icon name="groups" type="material" color={appColors.grey4} size={scale(80)} />
       <Text style={styles.emptyTitle}>No groups joined yet</Text>
       <Text style={styles.emptySubtitle}>
-        Join support groups to connect with others and get the help you need
+        Join support groups to connect with others and get guidance from our therapists.
       </Text>
-      <Button
-        title="Browse Groups"
-        buttonStyle={styles.browseButton}
-        titleStyle={styles.browseButtonText}
-        onPress={() => navigation.navigate('GroupsScreen')}
-      />
+      <TouchableOpacity
+        style={styles.browseButton}
+        onPress={() => navigation.navigate('GroupsListScreen')}
+      >
+        <Text style={styles.browseButtonText}>Browse Groups</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -473,40 +474,75 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
+  statsHeader: {
+    backgroundColor: appColors.CardBackground,
+    padding: scale(20),
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: scale(12),
+    elevation: scale(2),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: scale(1) },
+    shadowOpacity: 0.1,
+    shadowRadius: scale(2),
+  },
   statItem: {
     flex: 1,
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginTop: 4,
+    fontFamily: appFonts.bodyTextRegular,
+    marginTop: scale(4),
   },
   statDivider: {
     width: 1,
     backgroundColor: appColors.grey6,
-    marginHorizontal: 16,
+    marginHorizontal: scale(10),
+    height: scale(30),
   },
   listContainer: {
     paddingHorizontal: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: scale(16),
+    marginBottom: scale(12),
+  },
+  sectionTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  groupCount: {
+    fontSize: moderateScale(14),
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+  },
+  listContent: {
+    paddingHorizontal: scale(16),
+    paddingBottom: scale(20),
+  },
   groupCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 3,
+    borderRadius: scale(16),
+    padding: scale(16),
+    marginBottom: scale(12),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(2),
     position: 'relative',
   },
   inactiveGroupCard: {
@@ -515,15 +551,16 @@ const styles = StyleSheet.create({
   groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   groupIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
+    backgroundColor: appColors.grey6,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
     position: 'relative',
   },
   moderatorBadge: {
@@ -546,20 +583,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   groupName: {
-    fontSize: 16,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     flex: 1,
+    marginBottom: scale(4),
   },
   unreadBadge: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    borderRadius: scale(10),
+    minWidth: scale(20),
+    height: scale(20),
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: scale(8),
+    paddingHorizontal: scale(6),
   },
   unreadCount: {
     color: appColors.CardBackground,
@@ -567,47 +606,67 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
+  unreadText: {
+    fontSize: moderateScale(10),
+    color: appColors.CardBackground,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
   lastActivity: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
+  },
+  lastMessage: {
+    fontSize: moderateScale(14),
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+    lineHeight: scale(20),
   },
   moreButton: {
     padding: 4,
   },
   groupDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
-    lineHeight: 20,
-    marginBottom: 12,
+    fontFamily: appFonts.bodyTextRegular,
+    lineHeight: scale(20),
+    marginBottom: scale(12),
   },
   therapistSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingTop: 8,
+    marginBottom: scale(12),
+    paddingTop: scale(12),
     borderTopWidth: 1,
     borderTopColor: appColors.grey6,
   },
   therapistAvatar: {
-    marginRight: 8,
+    marginRight: scale(8),
+  },
+  therapistInfo: {
+    flex: 1,
   },
   therapistName: {
-    fontSize: 12,
+    fontSize: moderateScale(14),
+    fontWeight: 'bold',
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
-    flex: 1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  therapistEmail: {
+    fontSize: moderateScale(12),
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
   },
   memberInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   memberCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginLeft: 4,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(4),
   },
   groupFooter: {
     flexDirection: 'row',
@@ -620,9 +679,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nextMeeting: {
-    fontSize: 12,
-    color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
+    fontSize: moderateScale(12),
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
     marginLeft: 4,
   },
   actionButtons: {
@@ -631,30 +690,30 @@ const styles = StyleSheet.create({
   detailsButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(15),
     backgroundColor: appColors.AppBlue + '20',
-    marginRight: 8,
+    marginRight: scale(8),
   },
   detailsButtonText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
-    marginLeft: 4,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(4),
   },
   chatButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(15),
   },
   chatButtonText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
-    marginLeft: 4,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(4),
   },
   inactiveOverlay: {
     position: 'absolute',
@@ -669,7 +728,7 @@ const styles = StyleSheet.create({
   },
   inactiveText: {
     color: appColors.CardBackground,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -680,31 +739,31 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: scale(40),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: scale(20),
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     textAlign: 'center',
-    marginBottom: 30,
-    fontFamily: appFonts.regularText,
+    marginBottom: scale(30),
+    fontFamily: appFonts.bodyTextRegular,
   },
   browseButton: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
+    paddingHorizontal: scale(30),
+    paddingVertical: scale(12),
+    borderRadius: scale(25),
   },
   browseButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -720,20 +779,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   skeletonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: scale(44),
+    height: scale(44),
+    borderRadius: scale(22),
     backgroundColor: appColors.grey6,
-    marginRight: 12,
+    marginRight: scale(12),
   },
   skeletonInfo: {
     flex: 1,
   },
   skeletonLine: {
-    height: 16,
+    height: scale(16),
     backgroundColor: appColors.grey6,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
   },
   skeletonLineShort: {
     width: '60%',

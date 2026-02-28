@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { performLogout } from '../utils/authManager';
 import { appColors, parameters, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import { useToast } from 'native-base';
 import {
     StatusBar,
@@ -87,14 +88,14 @@ export default function AccountScreen({ navigation }) {
         <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
             <View style={isLast ? styles.listRowLast : styles.listRow}>
                 <View style={[styles.iconCircle, { backgroundColor: iconColor + '15' }]}>
-                    <Icon type={iconType} name={icon} color={iconColor} size={22} />
+                    <Icon type={iconType} name={icon} color={iconColor} size={moderateScale(22)} />
                 </View>
                 <View style={styles.itemTextContainer}>
                     <Text style={styles.menuText}>{title}</Text>
                     {subtitle && <Text style={styles.menuSubtext}>{subtitle}</Text>}
                 </View>
                 {showChevron && (
-                    <Icon type="material" name="chevron-right" color={appColors.grey4} size={22} />
+                    <Icon type="material" name="chevron-right" color={appColors.grey4} size={moderateScale(22)} />
                 )}
             </View>
         </TouchableOpacity>
@@ -110,7 +111,7 @@ export default function AccountScreen({ navigation }) {
                     <View style={styles.avatarContainer}>
                         <Avatar
                             rounded
-                            size={90}
+                            size={moderateScale(90)}
                             source={userProfile?.profileImage || userDetails?.image || appImages.avatarDefault}
                             containerStyle={styles.avatarStyle}
                             avatarStyle={styles.avatarImageStyle}
@@ -126,7 +127,7 @@ export default function AccountScreen({ navigation }) {
                         {userProfile?.email || userDetails?.email || 'user@example.com'}
                     </Text>
                     <View style={styles.memberBadge}>
-                        <Icon name="verified" type="material" color="#4CAF50" size={14} />
+                        <Icon name="verified" type="material" color="#4CAF50" size={moderateScale(14)} />
                         <Text style={styles.memberText}>Verified Member</Text>
                     </View>
                 </View>
@@ -144,7 +145,7 @@ export default function AccountScreen({ navigation }) {
                             activeOpacity={0.8}
                         >
                             <View style={[styles.shortcutIconContainer, { backgroundColor: '#FFC107' + '15' }]}>
-                                <Icon name="flag" type="material" color="#FFC107" size={24} />
+                                <Icon name="flag" type="material" color="#FFC107" size={moderateScale(24)} />
                             </View>
                             <Text style={styles.shortcutText}>Goals</Text>
                         </TouchableOpacity>
@@ -155,7 +156,7 @@ export default function AccountScreen({ navigation }) {
                             activeOpacity={0.8}
                         >
                             <View style={[styles.shortcutIconContainer, { backgroundColor: '#2196F3' + '15' }]}>
-                                <Icon name="event" type="material" color="#2196F3" size={24} />
+                                <Icon name="event" type="material" color="#2196F3" size={moderateScale(24)} />
                             </View>
                             <Text style={styles.shortcutText}>Appointments</Text>
                         </TouchableOpacity>
@@ -166,7 +167,7 @@ export default function AccountScreen({ navigation }) {
                             activeOpacity={0.8}
                         >
                             <View style={[styles.shortcutIconContainer, { backgroundColor: '#E91E63' + '15' }]}>
-                                <Icon name="celebration" type="material" color="#E91E63" size={24} />
+                                <Icon name="celebration" type="material" color="#E91E63" size={moderateScale(24)} />
                             </View>
                             <Text style={styles.shortcutText}>Events</Text>
                         </TouchableOpacity>
@@ -274,7 +275,7 @@ export default function AccountScreen({ navigation }) {
                         activeOpacity={0.8}
                     >
                         <View style={styles.logoutIconContainer}>
-                            <Icon name="logout" type="material" color="#F44336" size={22} />
+                            <Icon name="logout" type="material" color="#F44336" size={moderateScale(22)} />
                         </View>
                         <Text style={styles.logoutText}>Log Out</Text>
                     </TouchableOpacity>
@@ -295,26 +296,26 @@ export default function AccountScreen({ navigation }) {
                             type="material"
                             name="logout"
                             color={appColors.AppBlue}
-                            size={50}
+                            size={moderateScale(50)}
                         />
                         <Text
                             style={{
-                                fontSize: 18,
-                                paddingVertical: 15,
+                                fontSize: moderateScale(18),
+                                paddingVertical: scale(15),
                                 color: appColors.AppBlue,
                                 textAlign: "center",
-                                fontFamily: appFonts.appTextBold,
+                                fontFamily: appFonts.headerTextBold,
                             }}
                         >
                             Are you sure you want to log out?
                         </Text>
                         <Text
                             style={{
-                                fontSize: 14,
+                                fontSize: moderateScale(14),
                                 color: appColors.AppGray,
                                 textAlign: "center",
-                                fontFamily: appFonts.appTextRegular,
-                                paddingHorizontal: 20,
+                                fontFamily: appFonts.headerTextRegular,
+                                paddingHorizontal: scale(20),
                             }}
                         >
                             You'll need to sign in again to access your account.
@@ -360,30 +361,30 @@ const styles = StyleSheet.create({
     },
     curvedHeader: {
         backgroundColor: appColors.AppBlue,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        paddingBottom: 30,
-        paddingTop: 20,
+        borderBottomLeftRadius: scale(30),
+        borderBottomRightRadius: scale(30),
+        paddingBottom: scale(30),
+        paddingTop: scale(20),
     },
     profileSection: {
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: scale(20),
     },
     avatarContainer: {
-        marginBottom: 15,
+        marginBottom: scale(15),
         alignItems: 'center',
         backgroundColor: appColors.AppBlue,
     },
     avatarStyle: {
-        borderWidth: 2,
+        borderWidth: scale(2),
         borderColor: appColors.CardBackground,
         justifyContent: 'center',
         alignItems: 'center',
     },
     avatarImageStyle: {
-        width: 86,
-        height: 86,
-        borderRadius: 45,
+        width: scale(86),
+        height: scale(86),
+        borderRadius: scale(45),
         resizeMode: 'cover',
     },
     editAvatarButton: {
@@ -391,12 +392,12 @@ const styles = StyleSheet.create({
         bottom: 0,
         right: 0,
         backgroundColor: appColors.AppBlue,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: scale(32),
+        height: scale(32),
+        borderRadius: scale(16),
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 3,
+        borderWidth: scale(3),
         borderColor: appColors.CardBackground,
         elevation: 3,
         shadowColor: '#000',
@@ -405,50 +406,50 @@ const styles = StyleSheet.create({
         shadowRadius: 3,
     },
     userName: {
-        fontSize: 24,
+        fontSize: moderateScale(24),
         fontWeight: 'bold',
         color: appColors.CardBackground,
-        marginBottom: 4,
+        marginBottom: scale(4),
         fontFamily: appFonts.headerTextBold,
     },
     userEmail: {
-        fontSize: 15,
+        fontSize: moderateScale(15),
         color: appColors.CardBackground,
         opacity: 0.9,
         fontFamily: appFonts.headerTextRegular,
-        marginBottom: 8,
+        marginBottom: scale(8),
     },
     memberBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
-        marginTop: 4,
+        paddingHorizontal: scale(12),
+        paddingVertical: scale(6),
+        borderRadius: scale(20),
+        marginTop: scale(4),
     },
     memberText: {
-        fontSize: 13,
+        fontSize: moderateScale(13),
         color: appColors.CardBackground,
         fontFamily: appFonts.headerTextMedium,
-        marginLeft: 4,
+        marginLeft: scale(4),
         fontWeight: '600',
     },
     scrollView: {
         flex: 1,
         backgroundColor: appColors.AppLightGray,
-        paddingTop: 20,
+        paddingTop: scale(20),
     },
     shortcutsSection: {
-        paddingHorizontal: 20,
-        marginBottom: 20,
+        paddingHorizontal: scale(20),
+        marginBottom: scale(20),
     },
     shortcutsTitle: {
-        fontSize: 16,
+        fontSize: moderateScale(16),
         fontWeight: 'bold',
         color: appColors.grey2,
         fontFamily: appFonts.headerTextBold,
-        marginBottom: 12,
+        marginBottom: scale(12),
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
@@ -460,123 +461,123 @@ const styles = StyleSheet.create({
     shortcutCard: {
         flex: 1,
         backgroundColor: appColors.CardBackground,
-        borderRadius: 12,
-        paddingVertical: 12,
-        paddingHorizontal: 6,
+        borderRadius: scale(12),
+        paddingVertical: scale(12),
+        paddingHorizontal: scale(6),
         alignItems: 'center',
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
-        marginHorizontal: 4,
-        minHeight: 80,
+        marginHorizontal: scale(4),
+        minHeight: scale(80),
         justifyContent: 'center',
     },
     shortcutIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: scale(40),
+        height: scale(40),
+        borderRadius: scale(20),
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 6,
+        marginBottom: scale(6),
     },
     shortcutText: {
-        fontSize: 11,
+        fontSize: moderateScale(11),
         color: appColors.grey1,
         fontWeight: '600',
         textAlign: 'center',
         fontFamily: appFonts.headerTextMedium,
-        lineHeight: 14,
+        lineHeight: moderateScale(14),
     },
     menuSection: {
         backgroundColor: appColors.CardBackground,
-        marginHorizontal: 20,
-        borderRadius: 20,
-        paddingVertical: 5,
+        marginHorizontal: scale(20),
+        borderRadius: scale(20),
+        paddingVertical: scale(5),
         elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
         shadowRadius: 3,
-        marginBottom: 20,
+        marginBottom: scale(20),
     },
 
     accountImageContainer: {
-        paddingVertical: 30,
-        paddingHorizontal: 20,
+        paddingVertical: scale(30),
+        paddingHorizontal: scale(20),
         alignItems: 'center',
         backgroundColor: appColors.CardBackground,
-        borderBottomWidth: 1,
+        borderBottomWidth: scale(1),
         borderBottomColor: appColors.AppLightGray,
     },
 
 
     menuSectionTitle: {
-        fontSize: 14,
+        fontSize: moderateScale(14),
         fontWeight: 'bold',
         color: appColors.grey3,
         fontFamily: appFonts.headerTextBold,
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 8,
+        paddingHorizontal: scale(20),
+        paddingTop: scale(16),
+        paddingBottom: scale(8),
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
     listRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 0.5,
+        paddingHorizontal: scale(20),
+        paddingVertical: scale(16),
+        borderBottomWidth: scale(0.5),
         borderBottomColor: appColors.grey6,
     },
     listRowLast: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingHorizontal: scale(20),
+        paddingVertical: scale(16),
         justifyContent: 'space-between',
-        borderBottomLeftRadius: 15,
-        borderBottomRightRadius: 15,
+        borderBottomLeftRadius: scale(15),
+        borderBottomRightRadius: scale(15),
     },
     iconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: scale(40),
+        height: scale(40),
+        borderRadius: scale(20),
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: scale(12),
     },
     listRowItem: {
-        padding: 5,
+        padding: scale(5),
     },
     itemTextContainer: {
         flex: 1,
-        paddingVertical: 2,
+        paddingVertical: scale(2),
     },
     menuText: {
-        fontSize: 16,
+        fontSize: moderateScale(16),
         color: appColors.grey1,
         fontWeight: '600',
         fontFamily: appFonts.headerTextBold,
-        marginBottom: 2,
+        marginBottom: scale(2),
     },
     menuSubtext: {
-        fontSize: 13,
+        fontSize: moderateScale(13),
         color: appColors.grey3,
         fontFamily: appFonts.headerTextRegular,
-        lineHeight: 18,
+        lineHeight: moderateScale(18),
     },
     logoutSection: {
-        marginHorizontal: 20,
-        marginTop: 20,
+        marginHorizontal: scale(20),
+        marginTop: scale(20),
     },
     logoutButton: {
         backgroundColor: appColors.CardBackground,
-        borderRadius: 16,
-        paddingVertical: 18,
-        paddingHorizontal: 20,
+        borderRadius: scale(16),
+        paddingVertical: scale(18),
+        paddingHorizontal: scale(20),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -585,26 +586,26 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        borderWidth: 1,
+        borderWidth: scale(1),
         borderColor: '#FFEBEE',
     },
     logoutIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: scale(40),
+        height: scale(40),
+        borderRadius: scale(20),
         backgroundColor: '#FFEBEE',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: scale(12),
     },
     logoutText: {
-        fontSize: 16,
+        fontSize: moderateScale(16),
         color: '#F44336',
         fontWeight: '600',
         fontFamily: appFonts.headerTextBold,
     },
 
     bottomSpacing: {
-        height: 40,
+        height: scale(40),
     },
 });

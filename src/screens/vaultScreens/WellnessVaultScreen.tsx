@@ -11,10 +11,13 @@ import {
   View,
   Dimensions,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { appImages } from '../../global/Data';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 import {
@@ -32,7 +35,8 @@ const WellnessVaultScreen = ({ navigation }) => {
   const toast = useToast();
   const userDetails = useSelector(state => state.userData.userDetails);
   const [showTopupModal, setShowTopupModal] = useState(false);
-  
+  const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+
   // Get wallet data from Redux
   const balance = useSelector(selectBalance);
   const currency = useSelector(selectCurrency);
@@ -98,8 +102,9 @@ const WellnessVaultScreen = ({ navigation }) => {
 
   const handleTopUp = () => {
     // Show coming soon modal instead of navigating
-    setShowTopupModal(true);
-    // navigation.navigate('MoMoTopupScreen');
+    // setShowTopupModal(true);
+    // proceed to MoMoTopupScreen for now
+    navigation.navigate('MoMoTopupScreen'); // 
   };
 
   const handleViewAll = () => {
@@ -160,32 +165,75 @@ const WellnessVaultScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Wellness Vault</Text>
           <Text style={styles.headerSubtitle}>Your wellness funding hub</Text>
         </View>
-      </View>
+      </View> */}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Balance Card */}
+        {/* Branded Balance Card */}
         <View style={styles.balanceSection}>
-          <View style={styles.balanceCard}>
-            <Text style={styles.balanceLabel}>Balance</Text>
-            <View style={styles.balanceRow}>
-              <Text style={styles.balanceAmount}>
-                {vaultData.currency} {formatCurrency(vaultData.balance, vaultData.currency)}
-              </Text>
-              <TouchableOpacity 
-                style={styles.plusButton}
-                onPress={handleTopUp}
+          <View style={styles.brandedCard}>
+            {/* Top Row: Label and Logo */}
+            <View style={styles.cardTopRow}>
+              <Text style={styles.cardVaultTitle}>Wellness Vault</Text>
+              <Image source={appImages.appIconWhite} style={styles.cardLogo} resizeMode="contain" />
+            </View>
+
+            {/* Middle Row: Balance */}
+            <View style={styles.cardMiddleRow}>
+              <View style={styles.balanceInfoBox}>
+                <Text style={styles.cardLabel}>Available Balance</Text>
+                <View style={styles.balanceDisplayRow}>
+                  <Text style={styles.cardCurrency}>{vaultData.currency}</Text>
+                  <Text style={styles.cardAmount}>
+                    {isBalanceHidden ? '••••' : formatCurrency(vaultData.balance, vaultData.currency)}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.hideBalanceButton}
+                onPress={() => setIsBalanceHidden(!isBalanceHidden)}
                 activeOpacity={0.7}
               >
-                <Icon name="add" type="material" color={appColors.CardBackground} size={28} />
+                <Icon
+                  name={isBalanceHidden ? "visibility-off" : "visibility"}
+                  type="material"
+                  color={appColors.CardBackground}
+                  size={scale(18)}
+                />
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+
+        {/* Quick Actions Grid */}
+        <View style={styles.quickActionsSection}>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity style={styles.quickActionItem} onPress={handleTopUp} activeOpacity={0.7}>
+              <View style={[styles.quickActionIconC, { backgroundColor: '#E3F2FD' }]}>
+                <Icon name="add" type="material" color={appColors.AppBlue} size={scale(24)} />
+              </View>
+              <Text style={styles.quickActionText}>Top Up</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.quickActionItem} onPress={() => navigation.navigate('TherapistsScreen')} activeOpacity={0.7}>
+              <View style={[styles.quickActionIconC, { backgroundColor: '#E8F5E9' }]}>
+                <Icon name="event-available" type="material" color="#4CAF50" size={scale(24)} />
+              </View>
+              <Text style={styles.quickActionText}>Book Session</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.quickActionItem} onPress={handleViewAll} activeOpacity={0.7}>
+              <View style={[styles.quickActionIconC, { backgroundColor: '#FFF3E0' }]}>
+                <Icon name="history" type="material" color="#FF9800" size={scale(24)} />
+              </View>
+              <Text style={styles.quickActionText}>History</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -219,7 +267,7 @@ const WellnessVaultScreen = ({ navigation }) => {
               </TouchableOpacity>
             )}
           </View>
-          
+
           {recentActivities.length > 0 ? (
             <View style={styles.activitiesContainer}>
               {recentActivities.map((activity) => (
@@ -233,7 +281,7 @@ const WellnessVaultScreen = ({ navigation }) => {
               <Text style={styles.emptyActivitiesText}>
                 Your recent wallet activities will appear here once you make transactions.
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.emptyActivitiesButton}
                 onPress={handleTopUp}
               >
@@ -268,111 +316,175 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
+    paddingBottom: scale(25),
+    paddingHorizontal: scale(15),
   },
   headerContent: {
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: scale(8),
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
     opacity: 0.9,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
   },
   scrollView: {
     flex: 1,
   },
   balanceSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    marginBottom: 20,
+    paddingHorizontal: scale(15),
+    marginTop: scale(25), // Normal margin, not overlapping the header
+    marginBottom: scale(25),
   },
-  balanceCard: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-  },
-  balanceLabel: {
-    fontSize: 14,
-    color: appColors.grey2,
-    marginBottom: 8,
-    fontFamily: appFonts.appTextRegular,
-  },
-  balanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  balanceAmount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
-  },
-  plusButton: {
+  brandedCard: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+    borderRadius: scale(20), // More rounded corners like a real card
+    padding: scale(24), // More inner padding
+    elevation: 8,
+    shadowColor: appColors.AppBlue,
+    shadowOffset: { width: 0, height: scale(4) },
+    shadowOpacity: 0.3,
+    shadowRadius: scale(8),
+    minHeight: scale(180), // Increased minimum height significantly
+    justifyContent: 'space-between', // Spread content to fill the new height
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: scale(15),
+  },
+  cardVaultTitle: {
+    fontSize: moderateScale(20),
+    color: 'rgba(255, 255, 255, 1)', // Fully opaque, prominent white
+    fontFamily: appFonts.headerTextBold, // Explicitly strong font weight
+    fontWeight: '900', // Heaviest weight possible
+    letterSpacing: 0.5,
+  },
+  cardLabel: {
+    fontSize: moderateScale(13),
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: scale(4),
+  },
+  cardLogo: {
+    width: scale(36), // A slightly squarer proportion fitting an app icon, not a long wordmark
+    height: scale(36),
+    tintColor: appColors.CardBackground,
+  },
+  cardMiddleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: 'auto', // Pushes this block to the bottom of the card
+  },
+  balanceInfoBox: {
+    flex: 1,
+  },
+  balanceDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  cardCurrency: {
+    fontSize: moderateScale(16),
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+    marginRight: scale(6),
+  },
+  cardAmount: {
+    fontSize: moderateScale(42), // Massive bold text for the main balance
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+    letterSpacing: 1,
+    lineHeight: moderateScale(48), // Keeps the towering text from clipping
+  },
+  hideBalanceButton: {
+    padding: scale(6),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: scale(24),
+    marginBottom: scale(4), // Aligns it nicely with the massive text baseline
+  },
+  quickActionsSection: {
+    paddingHorizontal: scale(15),
+    marginBottom: scale(25),
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: scale(15),
+    backgroundColor: appColors.CardBackground,
+    borderRadius: scale(16),
+    padding: scale(15),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: scale(1) },
+    shadowOpacity: 0.1,
+    shadowRadius: scale(2),
+  },
+  quickActionItem: {
+    alignItems: 'center',
+    width: '30%',
+  },
+  quickActionIconC: {
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    marginBottom: scale(8),
+  },
+  quickActionText: {
+    fontSize: moderateScale(12),
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextMedium,
+    textAlign: 'center',
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 25,
+    paddingHorizontal: scale(15),
+    marginBottom: scale(25),
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: '#333',
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   topUpButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#333',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(15),
   },
   topUpText: {
     color: appColors.CardBackground,
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: '600',
-    marginRight: 4,
-    fontFamily: appFonts.appTextMedium,
+    marginRight: scale(4),
+    fontFamily: appFonts.bodyTextMedium,
   },
   viewAllText: {
     color: appColors.AppBlue,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   fundingGrid: {
     flexDirection: 'row',
@@ -381,90 +493,90 @@ const styles = StyleSheet.create({
   fundingCard: {
     width: '32%',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    paddingVertical: 15,
-    paddingHorizontal: 8,
+    borderRadius: scale(12),
+    paddingVertical: scale(15),
+    paddingHorizontal: scale(8),
     alignItems: 'center',
     elevation: 2,
     shadowColor: appColors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   fundingIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   fundingName: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey1,
     fontWeight: '600',
     textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 4,
-    fontFamily: appFonts.appTextMedium,
+    marginTop: scale(8),
+    marginBottom: scale(4),
+    fontFamily: appFonts.bodyTextMedium,
   },
   fundingAmount: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     textAlign: 'center',
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   fundingCurrency: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.grey2,
     textAlign: 'center',
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   fundingEquivalent: {
-    fontSize: 9,
+    fontSize: moderateScale(9),
     color: appColors.grey3,
     textAlign: 'center',
-    fontFamily: appFonts.appTextRegular,
-    marginTop: 2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginTop: scale(2),
     fontStyle: 'italic',
   },
   activitiesContainer: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: scale(10),
+    padding: scale(15),
     elevation: 2,
     shadowColor: appColors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: scale(12),
     borderBottomWidth: 0.5,
     borderBottomColor: appColors.grey6,
   },
   activityContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   activityDescription: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey1,
-    fontFamily: appFonts.appTextMedium,
-    marginBottom: 2,
+    fontFamily: appFonts.bodyTextMedium,
+    marginBottom: scale(2),
   },
   activityTime: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     color: appColors.grey3,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   activityAmount: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     fontWeight: '600',
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   creditAmount: {
     color: '#4CAF50',
@@ -475,33 +587,33 @@ const styles = StyleSheet.create({
   emptyActivities: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 40,
+    paddingVertical: scale(20),
+    paddingHorizontal: scale(15),
   },
   emptyActivitiesTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontFamily: appFonts.headerTextBold,
     color: appColors.grey1,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: scale(12),
+    marginBottom: scale(8),
     textAlign: 'center',
   },
   emptyActivitiesText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: appFonts.headerTextRegular,
     color: appColors.grey3,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: scale(20),
+    marginBottom: scale(16),
   },
   emptyActivitiesButton: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: scale(32),
+    paddingVertical: scale(12),
+    borderRadius: scale(8),
   },
   emptyActivitiesButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontFamily: appFonts.headerTextSemiBold,
     color: appColors.CardBackground,
   },

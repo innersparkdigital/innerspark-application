@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
@@ -208,11 +209,11 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Goal Details</Text>
         <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-          <Icon name="edit" type="material" color={appColors.CardBackground} size={22} />
+          <Icon name="edit" type="material" color={appColors.CardBackground} size={moderateScale(22)} />
         </TouchableOpacity>
       </View>
 
@@ -237,7 +238,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
             <Text style={styles.goalTitle}>{currentGoal.title}</Text>
 
             <View style={styles.categoryContainer}>
-              <Icon name="label" type="material" color={appColors.grey2} size={16} />
+              <Icon name="label" type="material" color={appColors.grey2} size={moderateScale(16)} />
               <Text style={styles.categoryText}>{currentGoal.category}</Text>
             </View>
           </View>
@@ -282,7 +283,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
             <Text style={styles.sectionTitle}>Timeline</Text>
 
             <View style={styles.timelineItem}>
-              <Icon name="flag" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="flag" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <View style={styles.timelineContent}>
                 <Text style={styles.timelineTitle}>Goal Created</Text>
                 <Text style={styles.timelineDate}>{formatDate(currentGoal.createdAt)}</Text>
@@ -294,7 +295,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
                 name={isOverdue ? "warning" : "event"}
                 type="material"
                 color={isOverdue ? "#F44336" : appColors.AppBlue}
-                size={20}
+                size={moderateScale(20)}
               />
               <View style={styles.timelineContent}>
                 <Text style={styles.timelineTitle}>Due Date</Text>
@@ -306,7 +307,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
 
             {currentGoal.status === 'completed' && (
               <View style={styles.timelineItem}>
-                <Icon name="check-circle" type="material" color="#4CAF50" size={20} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(20)} />
                 <View style={styles.timelineContent}>
                   <Text style={styles.timelineTitle}>Completed</Text>
                   <Text style={styles.timelineDate}>Today</Text>
@@ -359,51 +360,51 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   editButton: {
-    padding: 8,
+    padding: scale(8),
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 20,
+    padding: scale(20),
   },
   goalHeader: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(20),
+    padding: scale(20),
+    marginBottom: scale(20),
   },
   statusRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   statusChip: {
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
   },
   statusText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -412,21 +413,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
+    marginRight: scale(6),
   },
   priorityText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   goalTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 12,
+    marginBottom: scale(12),
     fontFamily: appFonts.headerTextBold,
   },
   categoryContainer: {
@@ -434,42 +435,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextRegular,
   },
   progressSection: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(20),
+    padding: scale(20),
+    marginBottom: scale(20),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 16,
+    marginBottom: scale(16),
     fontFamily: appFonts.headerTextBold,
   },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   progressBar: {
     flex: 1,
-    height: 12,
+    height: scale(12),
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 6,
-    marginRight: 12,
+    borderRadius: scale(6),
+    marginRight: scale(12),
   },
   progressFill: {
     height: '100%',
-    borderRadius: 6,
+    borderRadius: scale(6),
   },
   progressText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -482,15 +483,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
-    marginTop: 4,
+    marginTop: scale(4),
     fontFamily: appFonts.headerTextRegular,
   },
   overdueText: {
@@ -498,65 +499,65 @@ const styles = StyleSheet.create({
   },
   descriptionSection: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(20),
+    padding: scale(20),
+    marginBottom: scale(20),
   },
   description: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    lineHeight: 24,
+    lineHeight: moderateScale(24),
     fontFamily: appFonts.headerTextRegular,
   },
   timelineSection: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(20),
+    padding: scale(20),
+    marginBottom: scale(20),
   },
   timelineItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   timelineContent: {
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   timelineTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   timelineDate: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginTop: 2,
+    marginTop: scale(2),
     fontFamily: appFonts.headerTextRegular,
   },
   actionSection: {
-    gap: 12,
+    gap: scale(12),
   },
   actionButton: {
-    borderRadius: 25,
-    paddingVertical: 15,
+    borderRadius: scale(25),
+    paddingVertical: scale(15),
   },
   completeButton: {
     backgroundColor: '#4CAF50',
   },
   pauseButton: {
     backgroundColor: appColors.CardBackground,
-    borderWidth: 2,
+    borderWidth: scale(2),
     borderColor: appColors.AppBlue,
   },
   deleteButton: {
     backgroundColor: appColors.CardBackground,
-    borderWidth: 2,
+    borderWidth: scale(2),
     borderColor: '#F44336',
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },

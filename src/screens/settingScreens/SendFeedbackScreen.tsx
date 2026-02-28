@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -134,9 +135,8 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
         >
-          {/* Header Message */}
           <View style={styles.headerCard}>
-            <Icon name="feedback" type="material" color={appColors.AppBlue} size={48} />
+            <Icon name="feedback" type="material" color={appColors.AppBlue} size={moderateScale(48)} />
             <Text style={styles.headerTitle}>We Value Your Feedback</Text>
             <Text style={styles.headerSubtitle}>
               Help us improve Innerspark by sharing your thoughts, suggestions, or reporting issues.
@@ -162,7 +162,7 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
                     name={type.icon}
                     type="material"
                     color={selectedType === type.id ? type.color : appColors.grey4}
-                    size={24}
+                    size={moderateScale(24)}
                   />
                   <Text style={[
                     styles.typeLabel,
@@ -212,11 +212,10 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
             {errors.message && <Text style={styles.fieldErrorText}>{errors.message}</Text>}
           </View>
 
-          {/* Optional Email */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>EMAIL (OPTIONAL)</Text>
             <View style={[styles.inputContainer, errors.email ? styles.inputError : {}]}>
-              <Icon name="email" type="material" color={appColors.grey4} size={20} style={styles.inputIcon} />
+              <Icon name="email" type="material" color={appColors.grey4} size={moderateScale(20)} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, styles.emailInput]}
                 placeholder="your.email@example.com"
@@ -233,10 +232,9 @@ const SendFeedbackScreen: React.FC<SendFeedbackScreenProps> = ({ navigation }) =
             </Text>
           </View>
 
-          {/* Quick Tips */}
           <View style={styles.tipsCard}>
             <View style={styles.tipsHeader}>
-              <Icon name="tips-and-updates" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="tips-and-updates" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.tipsTitle}>Tips for Great Feedback</Text>
             </View>
             <View style={styles.tipItem}>
@@ -285,54 +283,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   headerCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: scale(16),
+    padding: scale(24),
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: scale(20),
+    marginBottom: scale(20),
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
     textAlign: 'center',
   },
   headerSubtitle: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: scale(22),
   },
   section: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   typeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: scale(12),
   },
   typeButton: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
+    borderRadius: scale(12),
     borderWidth: 2,
-    padding: 12,
+    padding: scale(12),
     alignItems: 'center',
     minWidth: '30%',
     flex: 1,
@@ -341,98 +339,98 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue + '10',
   },
   typeLabel: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextMedium,
-    marginTop: 6,
+    marginTop: scale(6),
     textAlign: 'center',
   },
   inputContainer: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: scale(12),
+    padding: scale(16),
     position: 'relative',
   },
   input: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
     padding: 0,
   },
   messageInput: {
-    minHeight: 150,
-    paddingBottom: 24,
+    minHeight: scale(150),
+    paddingBottom: scale(24),
   },
   emailInput: {
-    paddingLeft: 32,
+    paddingLeft: scale(32),
   },
   inputIcon: {
     position: 'absolute',
-    left: 16,
-    top: 18,
+    left: scale(16),
+    top: scale(18),
   },
   charCount: {
     position: 'absolute',
-    right: 16,
-    bottom: 12,
-    fontSize: 12,
+    right: scale(16),
+    bottom: scale(12),
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
   },
   helperText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 8,
-    marginLeft: 4,
+    marginTop: scale(8),
+    marginLeft: scale(4),
   },
   tipsCard: {
     backgroundColor: appColors.AppBlue + '10',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: scale(12),
+    padding: scale(16),
+    marginBottom: scale(24),
   },
   tipsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   tipsTitle: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   tipItem: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: scale(6),
   },
   bullet: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    marginRight: 8,
+    marginRight: scale(8),
     fontWeight: 'bold',
   },
   tipText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   submitContainer: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   fieldErrorText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#F44336',
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 6,
-    marginLeft: 4,
+    marginTop: scale(6),
+    marginLeft: scale(4),
   },
   inputError: {
     borderColor: '#F44336',

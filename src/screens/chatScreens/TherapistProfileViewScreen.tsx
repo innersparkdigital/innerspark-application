@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 
@@ -45,7 +46,7 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
   const renderInfoCard = (icon: string, title: string, content: string, iconType: string = 'material') => (
     <View style={styles.infoCard}>
       <View style={styles.infoIconContainer}>
-        <Icon name={icon} type={iconType} size={20} color={appColors.AppBlue} />
+        <Icon name={icon} type={iconType} size={moderateScale(20)} color={appColors.AppBlue} />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoTitle}>{title}</Text>
@@ -70,13 +71,13 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
             {therapistProfile.avatar ? (
               <Avatar
                 source={therapistProfile.avatar}
-                size={100}
+                size={scale(100)}
                 rounded
               />
             ) : (
               <Avatar
-                title={therapistProfile.name.split(' ').map(n => n[0]).join('')}
-                size={100}
+                title={therapistProfile.name.split(' ').map((n: string) => n[0]).join('')}
+                size={scale(100)}
                 rounded
                 containerStyle={{ backgroundColor: appColors.AppBlue }}
                 titleStyle={styles.avatarText}
@@ -87,9 +88,9 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
 
           <Text style={styles.therapistName}>{therapistProfile.name}</Text>
           <Text style={styles.credentials}>{therapistProfile.credentials}</Text>
-          
+
           <View style={styles.specialtyBadge}>
-            <Icon name="psychology" type="material" size={16} color={appColors.AppBlue} />
+            <Icon name="psychology" type="material" size={moderateScale(16)} color={appColors.AppBlue} />
             <Text style={styles.specialtyText}>{therapistProfile.specialty}</Text>
           </View>
 
@@ -140,7 +141,7 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
           <View style={styles.sessionTypesContainer}>
             {therapistProfile.sessionTypes.map((type, index) => (
               <View key={index} style={styles.sessionTypeBadge}>
-                <Icon name="check-circle" type="material" size={16} color={appColors.AppGreen} />
+                <Icon name="check-circle" type="material" size={moderateScale(16)} color={appColors.AppGreen} />
                 <Text style={styles.sessionTypeText}>{type}</Text>
               </View>
             ))}
@@ -151,11 +152,11 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contact</Text>
           <View style={styles.contactCard}>
-            <Icon name="email" type="material" size={20} color={appColors.grey3} />
+            <Icon name="email" type="material" size={moderateScale(20)} color={appColors.grey3} />
             <Text style={styles.contactText}>{therapistProfile.email}</Text>
           </View>
           <View style={styles.contactNote}>
-            <Icon name="info" type="material" size={16} color={appColors.grey3} />
+            <Icon name="info" type="material" size={moderateScale(16)} color={appColors.grey3} />
             <Text style={styles.contactNoteText}>
               For session-related questions, please use the chat or schedule an appointment
             </Text>
@@ -168,7 +169,7 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
             style={styles.primaryButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="chat" type="material" size={20} color={appColors.CardBackground} />
+            <Icon name="chat" type="material" size={moderateScale(20)} color={appColors.CardBackground} />
             <Text style={styles.primaryButtonText}>Back to Chat</Text>
           </TouchableOpacity>
         </View>
@@ -189,132 +190,132 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     backgroundColor: appColors.CardBackground,
-    paddingVertical: 30,
-    paddingHorizontal: 20,
+    paddingVertical: scale(30),
+    paddingHorizontal: scale(20),
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   onlineIndicator: {
     position: 'absolute',
-    bottom: 5,
-    right: 5,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    bottom: scale(5),
+    right: scale(5),
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(10),
     backgroundColor: appColors.AppGreen,
-    borderWidth: 3,
+    borderWidth: scale(3),
     borderColor: appColors.CardBackground,
   },
   avatarText: {
-    fontSize: 36,
+    fontSize: moderateScale(36),
     fontWeight: 'bold',
     color: appColors.CardBackground,
   },
   therapistName: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   credentials: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   specialtyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppBlue + '15',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 8,
-    gap: 6,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    borderRadius: scale(20),
+    marginBottom: scale(8),
+    gap: scale(6),
   },
   specialtyText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   experienceBadge: {
     backgroundColor: appColors.grey6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(12),
   },
   experienceText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
   },
   section: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 16,
+    padding: scale(16),
+    marginBottom: scale(16),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   bioText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 22,
+    lineHeight: scale(22),
   },
   infoCard: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    marginHorizontal: 16,
+    padding: scale(16),
+    marginBottom: scale(12),
+    borderRadius: scale(12),
+    marginHorizontal: scale(16),
   },
   infoIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     backgroundColor: appColors.AppBlue + '15',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   infoContent: {
     flex: 1,
   },
   infoTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   infoText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   sessionTypesContainer: {
-    gap: 10,
+    gap: scale(10),
   },
   sessionTypeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: scale(8),
   },
   sessionTypeText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
   },
@@ -322,46 +323,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppLightGray,
-    padding: 12,
-    borderRadius: 8,
-    gap: 10,
-    marginBottom: 12,
+    padding: scale(12),
+    borderRadius: scale(8),
+    gap: scale(10),
+    marginBottom: scale(12),
   },
   contactText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
   },
   contactNote: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
+    gap: scale(8),
     backgroundColor: appColors.AppBlue + '10',
-    padding: 12,
-    borderRadius: 8,
+    padding: scale(12),
+    borderRadius: scale(8),
   },
   contactNoteText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 18,
+    lineHeight: scale(18),
   },
   actionsContainer: {
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: scale(16),
+    gap: scale(12),
   },
   primaryButton: {
     flexDirection: 'row',
     backgroundColor: appColors.AppBlue,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: scale(14),
+    borderRadius: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: scale(8),
   },
   primaryButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
@@ -369,22 +370,22 @@ const styles = StyleSheet.create({
   secondaryButton: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: scale(14),
+    borderRadius: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    borderWidth: 2,
+    gap: scale(8),
+    borderWidth: scale(2),
     borderColor: appColors.AppBlue,
   },
   secondaryButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   bottomPadding: {
-    height: 30,
+    height: scale(30),
   },
 });
 

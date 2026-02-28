@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Slider } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import { submitReview } from '../../utils/appointmentsManager';
@@ -230,7 +231,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           trackStyle={styles.sliderTrack}
           minimumTrackTintColor={appColors.AppBlue}
           maximumTrackTintColor={appColors.grey5}
-          thumbTouchSize={{ width: 44, height: 44 }}
+          thumbTouchSize={{ width: scale(44), height: scale(44) }}
           style={{ width: '100%' }}
         />
         <View style={styles.ratingLabels}>
@@ -260,7 +261,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
             name="thumb-up"
             type="material"
             color={feedback.recommendToOthers === true ? appColors.CardBackground : appColors.AppBlue}
-            size={20}
+            size={moderateScale(20)}
           />
           <Text style={[
             styles.recommendButtonText,
@@ -281,7 +282,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
             name="thumb-down"
             type="material"
             color={feedback.recommendToOthers === false ? appColors.CardBackground : appColors.grey3}
-            size={20}
+            size={moderateScale(20)}
           />
           <Text style={[
             styles.recommendButtonText,
@@ -307,7 +308,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Session Feedback</Text>
           <TouchableOpacity
@@ -322,7 +323,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
           {/* Session Summary */}
           <View style={styles.sessionSummary}>
             <View style={styles.sessionHeader}>
-              <Icon name="psychology" type="material" color={appColors.AppBlue} size={24} />
+              <Icon name="psychology" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
               <Text style={styles.sessionTitle}>Session with {sessionDetails.therapistName}</Text>
             </View>
             <Text style={styles.sessionDate}>
@@ -489,7 +490,7 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
                 feedback.followUpNeeded && styles.checkedCheckbox
               ]}>
                 {feedback.followUpNeeded && (
-                  <Icon name="check" type="material" color={appColors.CardBackground} size={16} />
+                  <Icon name="check" type="material" color={appColors.CardBackground} size={moderateScale(16)} />
                 )}
               </View>
               <Text style={styles.followUpText}>
@@ -529,8 +530,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -541,20 +542,20 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   skipButton: {
-    padding: 8,
+    padding: scale(8),
   },
   skipButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextMedium,
   },
@@ -563,9 +564,9 @@ const styles = StyleSheet.create({
   },
   sessionSummary: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    padding: 20,
-    borderRadius: 12,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -575,24 +576,24 @@ const styles = StyleSheet.create({
   sessionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   sessionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   sessionDate: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   sessionDuration: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -600,22 +601,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEBEE',
     borderLeftWidth: 4,
     borderLeftColor: '#F44336',
-    margin: 20,
-    padding: 16,
-    borderRadius: 8,
+    margin: scale(20),
+    padding: scale(16),
+    borderRadius: scale(8),
   },
   errorText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#C62828',
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   ratingsSection: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
+    padding: scale(20),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -623,59 +624,59 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   ratingContainer: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   ratingTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   sliderContainer: {
-    paddingHorizontal: 8,
+    paddingHorizontal: scale(8),
     width: '100%',
   },
   sliderThumb: {
     backgroundColor: appColors.AppBlue,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: scale(24),
+    height: scale(24),
+    borderRadius: scale(12),
   },
   sliderTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: scale(6),
+    borderRadius: scale(3),
   },
   ratingLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: scale(8),
   },
   ratingLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   ratingValue: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   textFeedbackSection: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
+    padding: scale(20),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -683,40 +684,40 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   textInput: {
     borderWidth: 1,
     borderColor: appColors.grey5,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderRadius: scale(8),
+    padding: scale(12),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
     textAlignVertical: 'top',
-    minHeight: 100,
+    minHeight: scale(100),
     backgroundColor: appColors.CardBackground,
   },
   characterCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'right',
-    marginTop: 4,
+    marginTop: scale(4),
   },
   recommendationContainer: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
+    padding: scale(20),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -732,32 +733,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    borderRadius: 8,
+    padding: scale(16),
+    borderRadius: scale(8),
     borderWidth: 2,
     borderColor: appColors.grey5,
-    marginHorizontal: 4,
+    marginHorizontal: scale(4),
   },
   selectedRecommendButton: {
     backgroundColor: appColors.AppBlue,
     borderColor: appColors.AppBlue,
   },
   recommendButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   selectedRecommendButtonText: {
     color: appColors.CardBackground,
   },
   followUpSection: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 12,
+    padding: scale(20),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -769,54 +770,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(4),
     borderWidth: 2,
     borderColor: appColors.grey4,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   checkedCheckbox: {
     backgroundColor: appColors.AppBlue,
     borderColor: appColors.AppBlue,
   },
   followUpText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
     flex: 1,
   },
   submitSection: {
-    padding: 20,
+    padding: scale(20),
     backgroundColor: appColors.CardBackground,
   },
   submitButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 12,
-    height: 56,
+    borderRadius: scale(12),
+    height: scale(56),
   },
   submitButtonText: {
-    fontSize: 18,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   privacyNote: {
-    fontSize: 12,
-    color: appColors.grey3,
+    fontSize: moderateScale(12),
+    color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    marginTop: 12,
+    marginTop: scale(12),
   },
   fieldErrorText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#C62828',
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 4,
+    marginTop: scale(4),
   },
   fieldErrorTextInner: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#C62828',
     fontFamily: appFonts.headerTextRegular,
     flex: 1,
@@ -825,7 +826,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: scale(4),
   },
   inputError: {
     borderColor: '#F44336',

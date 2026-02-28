@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -183,10 +184,10 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
       </View>
       <View style={styles.headerActions}>
         <TouchableOpacity style={styles.actionButton} onPress={handleShareReport}>
-          <Icon name="share" type="material" color={appColors.AppBlue} size={20} />
+          <Icon name="share" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={handleEmailReport}>
-          <Icon name="email" type="material" color={appColors.AppBlue} size={20} />
+          <Icon name="email" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
         </TouchableOpacity>
       </View>
     </View>
@@ -217,7 +218,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
             <Text style={styles.metricLabel}>Average Mood</Text>
           </View>
           <View style={styles.moodMetric}>
-            <Icon name={trendIcon.name} type="material" color={trendIcon.color} size={32} />
+            <Icon name={trendIcon.name} type="material" color={trendIcon.color} size={moderateScale(32)} />
             <Text style={[styles.metricLabel, { color: trendIcon.color }]}>
               {moodSummary.moodTrend}
             </Text>
@@ -302,7 +303,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
           <Text style={styles.sectionSubtitle}>Key Insights</Text>
           {journalingSummary.keyInsights.map((insight, index) => (
             <View key={index} style={styles.insightItem}>
-              <Icon name="lightbulb" type="material" color="#FFD700" size={16} />
+              <Icon name="lightbulb" type="material" color="#FFD700" size={moderateScale(16)} />
               <Text style={styles.insightText}>{insight}</Text>
             </View>
           ))}
@@ -338,7 +339,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
           <Text style={styles.sectionSubtitle}>Achieved Milestones</Text>
           {activitiesSummary.achievedMilestones.map((milestone, index) => (
             <View key={index} style={styles.milestoneItem}>
-              <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
+              <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(16)} />
               <Text style={styles.milestoneText}>{milestone}</Text>
             </View>
           ))}
@@ -369,7 +370,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
           <Text style={styles.sectionSubtitle}>Based on Your Mood Trends</Text>
           {recommendations.moodBased.slice(0, 2).map((rec, index) => (
             <View key={index} style={styles.recommendationItem}>
-              <Icon name="psychology" type="material" color={appColors.AppBlue} size={16} />
+              <Icon name="psychology" type="material" color={appColors.AppBlue} size={moderateScale(16)} />
               <Text style={styles.recommendationText}>{rec}</Text>
             </View>
           ))}
@@ -379,7 +380,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
           <Text style={styles.sectionSubtitle}>Suggested Activities</Text>
           {recommendations.activityBased.slice(0, 2).map((rec, index) => (
             <View key={index} style={styles.recommendationItem}>
-              <Icon name="local-activity" type="material" color="#FF9800" size={16} />
+              <Icon name="local-activity" type="material" color="#FF9800" size={moderateScale(16)} />
               <Text style={styles.recommendationText}>{rec}</Text>
             </View>
           ))}
@@ -391,7 +392,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
   const PointsEarnedCard: React.FC = () => (
     <View style={styles.pointsCard}>
       <View style={styles.pointsContent}>
-        <Icon name="stars" type="material" color="#FFD700" size={32} />
+        <Icon name="stars" type="material" color="#FFD700" size={moderateScale(32)} />
         <View style={styles.pointsInfo}>
           <Text style={styles.pointsValue}>UGX {weeklyReport?.pointsEarned.toLocaleString()}</Text>
           <Text style={styles.pointsLabel}>Loyalty Points Earned This Week</Text>
@@ -441,14 +442,14 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Weekly Report</Text>
           <TouchableOpacity
             style={styles.refreshButton}
             onPress={handleRefresh}
           >
-            <Icon name="refresh" type="material" color={appColors.CardBackground} size={24} />
+            <Icon name="refresh" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
           </TouchableOpacity>
         </View>
 
@@ -463,7 +464,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
             />
           }
         >
-          <Icon name="assessment" type="material" color={appColors.grey3} size={80} />
+          <Icon name="assessment" type="material" color={appColors.grey3} size={moderateScale(80)} />
           <Text style={styles.emptyTitle}>No Report Available</Text>
           <Text style={styles.emptySubtitle}>
             Your weekly wellness report will be generated automatically based on your mood tracking, journaling, and activities.
@@ -490,14 +491,14 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Weekly Report</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
         >
-          <Icon name="refresh" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="refresh" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
@@ -522,7 +523,7 @@ const WeeklyReportScreen: React.FC<WeeklyReportScreenProps> = ({ navigation }) =
 
         {/* Next Report Info */}
         <View style={styles.nextReportCard}>
-          <Icon name="schedule" type="material" color={appColors.grey3} size={20} />
+          <Icon name="schedule" type="material" color={appColors.grey3} size={moderateScale(20)} />
           <Text style={styles.nextReportText}>
             Next report will be generated on {new Date(weeklyReport?.nextReportDate || '').toLocaleDateString()}
           </Text>
@@ -543,71 +544,71 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: '#FFFFFF',
     fontFamily: appFonts.headerTextBold,
   },
   refreshButton: {
-    padding: 8,
+    padding: scale(8),
   },
   placeholder: {
-    width: 40,
+    width: scale(40),
   },
   scrollView: {
     flex: 1,
   },
   loadingContainer: {
-    padding: 20,
+    padding: scale(20),
   },
   reportHeader: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   headerContent: {
     flex: 1,
   },
   reportTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   reportDate: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   generatedDate: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -615,108 +616,108 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   actionButton: {
-    padding: 12,
-    marginLeft: 8,
+    padding: scale(12),
+    marginLeft: scale(8),
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
+    borderRadius: scale(20),
   },
   summaryCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   viewDetailsText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
   },
   moodOverview: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   moodMetric: {
     alignItems: 'center',
   },
   metricValue: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 4,
+    marginTop: scale(4),
     textAlign: 'center',
   },
   moodDistribution: {
-    marginTop: 16,
+    marginTop: scale(16),
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   moodDistributionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   moodEmoji: {
-    fontSize: 16,
-    width: 24,
+    fontSize: moderateScale(16),
+    width: scale(24),
   },
   moodName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
-    width: 60,
-    marginLeft: 8,
+    width: scale(60),
+    marginLeft: scale(8),
   },
   progressBarContainer: {
     flex: 1,
-    height: 8,
+    height: scale(8),
     backgroundColor: appColors.grey6,
-    borderRadius: 4,
-    marginHorizontal: 12,
+    borderRadius: scale(4),
+    marginHorizontal: scale(12),
   },
   progressBar: {
     height: '100%',
     backgroundColor: appColors.AppBlue,
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
   moodPercentage: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    width: 30,
+    width: scale(30),
     textAlign: 'right',
   },
   journalingMetrics: {
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   metricRow: {
     flexDirection: 'row',
@@ -726,7 +727,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   themesSection: {
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   themesContainer: {
     flexDirection: 'row',
@@ -734,82 +735,82 @@ const styles = StyleSheet.create({
   },
   themeTag: {
     backgroundColor: appColors.AppBlue + '15',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
+    borderRadius: scale(16),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    marginRight: scale(8),
+    marginBottom: scale(8),
   },
   themeText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
   },
   insightsSection: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   insightItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   insightText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
+    marginLeft: scale(8),
     flex: 1,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   activitiesMetric: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   milestonesSection: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   milestoneItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   milestoneText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
+    marginLeft: scale(8),
     flex: 1,
   },
   recommendationsSection: {
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   recommendationItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   recommendationText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
+    marginLeft: scale(8),
     flex: 1,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   pointsCard: {
     backgroundColor: '#FFF3E0',
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
+    padding: scale(20),
+    borderRadius: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   pointsContent: {
     flexDirection: 'row',
@@ -817,87 +818,87 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pointsInfo: {
-    marginLeft: 16,
+    marginLeft: scale(16),
   },
   pointsValue: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: '#E65100',
     fontFamily: appFonts.headerTextBold,
   },
   pointsLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#BF360C',
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   redeemButton: {
     backgroundColor: '#FF9800',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
   },
   redeemButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   nextReportCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 16,
-    borderRadius: 12,
+    padding: scale(16),
+    borderRadius: scale(12),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.05,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   nextReportText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
+    paddingHorizontal: scale(40),
+    paddingVertical: scale(60),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontFamily: appFonts.headerTextBold,
     color: appColors.grey1,
-    marginTop: 20,
+    marginTop: scale(20),
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: appFonts.headerTextRegular,
     color: appColors.grey3,
-    marginTop: 12,
+    marginTop: scale(12),
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   emptyButton: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 24,
+    paddingHorizontal: scale(32),
+    paddingVertical: scale(12),
+    borderRadius: scale(8),
+    marginTop: scale(24),
   },
   emptyButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontFamily: appFonts.headerTextSemiBold,
     color: appColors.CardBackground,
   },

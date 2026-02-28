@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -178,7 +179,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
           {/* Warning Section */}
           <View style={styles.warningCard}>
             <View style={styles.warningHeader}>
-              <Icon name="warning" type="material" color="#F44336" size={28} />
+              <Icon name="warning" type="material" color="#F44336" size={scale(28)} />
               <Text style={styles.warningTitle}>Permanent Account Deletion</Text>
             </View>
             <Text style={styles.warningDescription}>
@@ -203,7 +204,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
             <View style={styles.sectionContent}>
               <TouchableOpacity style={styles.backupItem} onPress={handleDownloadData}>
                 <View style={styles.backupLeft}>
-                  <Icon name="download" type="material" color={appColors.AppBlue} size={24} />
+                  <Icon name="download" type="material" color={appColors.AppBlue} size={scale(24)} />
                   <View style={styles.backupContent}>
                     <Text style={styles.backupTitle}>Download Your Data</Text>
                     <Text style={styles.backupSubtitle}>Get a copy of your information</Text>
@@ -307,7 +308,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
               />
               {isConfirmationValid && (
                 <View style={styles.validationMessage}>
-                  <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
+                  <Icon name="check-circle" type="material" color="#4CAF50" size={scale(16)} />
                   <Text style={styles.validationText}>Confirmation text matches</Text>
                 </View>
               )}
@@ -381,9 +382,9 @@ const styles = StyleSheet.create({
   },
   warningCard: {
     backgroundColor: '#FFEBEE',
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
     borderWidth: 2,
     borderColor: '#FFCDD2',
   },
@@ -393,14 +394,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   warningTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: '#D32F2F',
     fontFamily: appFonts.headerTextBold,
     marginLeft: 12,
   },
   warningDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#D32F2F',
     fontFamily: appFonts.headerTextRegular,
     marginBottom: 12,
@@ -410,14 +411,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   warningItem: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#D32F2F',
     fontFamily: appFonts.headerTextRegular,
     marginBottom: 4,
     lineHeight: 18,
   },
   warningFooter: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#D32F2F',
     fontFamily: appFonts.headerTextBold,
     fontWeight: 'bold',
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
@@ -436,7 +437,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionDescription: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
     marginHorizontal: 20,
@@ -445,8 +446,8 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -468,14 +469,14 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   backupTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     marginBottom: 2,
   },
   backupSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   checkboxText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -495,14 +496,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reasonTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     marginBottom: 2,
   },
   reasonDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -510,13 +511,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: appColors.grey5,
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    padding: scale(12),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
-    height: 100,
+    height: scale(100),
     textAlignVertical: 'top',
-    margin: 16,
+    margin: scale(16),
   },
   confirmationCheckbox: {
     backgroundColor: 'transparent',
@@ -525,7 +526,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   confirmationText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     marginLeft: 8,
@@ -533,12 +534,12 @@ const styles = StyleSheet.create({
   confirmationInput: {
     borderWidth: 2,
     borderColor: '#F44336',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderRadius: scale(8),
+    padding: scale(12),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    margin: 16,
+    margin: scale(16),
     textAlign: 'center',
     fontWeight: 'bold',
   },
@@ -554,7 +555,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   validationText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#4CAF50',
     fontFamily: appFonts.headerTextMedium,
     marginLeft: 4,
@@ -564,7 +565,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.grey6,
   },
   deleteButtonContainer: {
-    padding: 20,
+    padding: scale(20),
     backgroundColor: appColors.CardBackground,
     elevation: 4,
     shadowColor: '#000',
@@ -574,20 +575,20 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: '#F44336',
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginBottom: 8,
+    borderRadius: scale(12),
+    paddingVertical: scale(16),
+    marginBottom: scale(8),
   },
   disabledDeleteButton: {
     backgroundColor: appColors.grey4,
   },
   deleteButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   deleteButtonSubtext: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',

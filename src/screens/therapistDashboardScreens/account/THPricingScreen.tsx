@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { moderateScale } from '../../../global/Scaling';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { getPricingRates } from '../../../api/therapist/earnings';
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   summaryAmount: {
-    fontSize: 32,
+    fontSize: moderateScale(32),
     fontWeight: 'bold',
     color: '#FFFFFF',
     fontFamily: appFonts.headerTextBold,
@@ -624,7 +625,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,

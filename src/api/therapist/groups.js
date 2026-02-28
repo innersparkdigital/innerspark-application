@@ -92,6 +92,7 @@ export const createGroup = async (groupData) => {
  * @returns {Promise<{success: boolean, message: string, data: Object}>} Updated group
  */
 export const updateGroup = async (groupId, updateData) => {
+    // Backend expects therapist_id in the body for updates
     const response = await APIInstance.put(`/th/groups/${groupId}`, updateData);
     return response.data;
 };
@@ -103,6 +104,7 @@ export const updateGroup = async (groupId, updateData) => {
  * @returns {Promise<{success: boolean, message: string}>} Archive confirmation
  */
 export const archiveGroup = async (groupId, therapistId) => {
+    // Postman shows DELETE /th/groups/:id?therapist_id=...
     const response = await APIInstance.delete(`/th/groups/${groupId}`, {
         params: { therapist_id: therapistId }
     });
@@ -230,43 +232,61 @@ export const getGroupMemberDetails = async (groupId, memberId, therapistId) => {
 
 /**
  * Update member role (make/remove moderator)
- * @param {string} groupId 
- * @param {string} memberId 
- * @param {string} role 'member' | 'moderator'
+ * @param {string} groupId - Group ID
+ * @param {string} memberId - Member ID
+ * @param {string} therapistId - Therapist ID (Moderator)
+ * @param {'member'|'moderator'} role - New role
+ * @returns {Promise<{success: boolean, message: string}>}
  */
-export const updateGroupMemberRole = async (groupId, memberId, role) => {
-    const response = await APIInstance.put(`/th/groups/${groupId}/members/${memberId}/role`, { role });
+export const updateGroupMemberRole = async (groupId, memberId, therapistId, role) => {
+    const response = await APIInstance.put(`/th/groups/${groupId}/members/${memberId}/role`, {
+        therapist_id: therapistId,
+        role
+    });
     return response.data;
 };
 
 /**
  * Mute a member temporarily
- * @param {string} groupId 
- * @param {string} memberId 
- * @param {number} duration in seconds
+ * @param {string} groupId - Group ID
+ * @param {string} memberId - Member ID
+ * @param {string} therapistId - Therapist ID
+ * @param {number} [duration] - Optional duration in seconds
+ * @returns {Promise<{success: boolean, message: string}>}
  */
-export const muteGroupMember = async (groupId, memberId, duration) => {
-    const response = await APIInstance.post(`/th/groups/${groupId}/members/${memberId}/mute`, { duration });
+export const muteGroupMember = async (groupId, memberId, therapistId, duration) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/members/${memberId}/mute`, {
+        therapist_id: therapistId,
+        duration
+    });
     return response.data;
 };
 
 /**
  * Unmute a member
- * @param {string} groupId 
- * @param {string} memberId 
+ * @param {string} groupId - Group ID
+ * @param {string} memberId - Member ID
+ * @param {string} therapistId - Therapist ID
+ * @returns {Promise<{success: boolean, message: string}>}
  */
-export const unmuteGroupMember = async (groupId, memberId) => {
-    const response = await APIInstance.post(`/th/groups/${groupId}/members/${memberId}/unmute`);
+export const unmuteGroupMember = async (groupId, memberId, therapistId) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/members/${memberId}/unmute`, {
+        therapist_id: therapistId
+    });
     return response.data;
 };
 
 /**
  * Remove a member from the group
- * @param {string} groupId 
- * @param {string} memberId 
+ * @param {string} groupId - Group ID
+ * @param {string} memberId - Member ID
+ * @param {string} therapistId - Therapist ID
+ * @returns {Promise<{success: boolean, message: string}>}
  */
-export const removeGroupMember = async (groupId, memberId) => {
-    const response = await APIInstance.delete(`/th/groups/${groupId}/members/${memberId}`);
+export const removeGroupMember = async (groupId, memberId, therapistId) => {
+    const response = await APIInstance.delete(`/th/groups/${groupId}/members/${memberId}`, {
+        params: { therapist_id: therapistId }
+    });
     return response.data;
 };
 
@@ -276,41 +296,59 @@ export const removeGroupMember = async (groupId, memberId) => {
 
 /**
  * Schedule a new group session
- * @param {string} groupId 
- * @param {Object} sessionData {date, time, topic, duration, meetingLink}
+ * @param {string} groupId - Group ID
+ * @param {string} therapistId - Therapist ID
+ * @param {Object} sessionData - {date, time, topic, duration, meetingLink}
+ * @returns {Promise<{success: boolean, message: string, data: Object}>}
  */
-export const scheduleGroupSession = async (groupId, sessionData) => {
-    const response = await APIInstance.post(`/th/groups/${groupId}/sessions`, sessionData);
+export const scheduleGroupSession = async (groupId, therapistId, sessionData) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/sessions`, {
+        therapist_id: therapistId,
+        ...sessionData
+    });
     return response.data;
 };
 
 /**
  * Start a group session
- * @param {string} groupId 
- * @param {string} sessionId 
+ * @param {string} groupId - Group ID
+ * @param {string} sessionId - Session ID
+ * @param {string} therapistId - Therapist ID
+ * @returns {Promise<{success: boolean, data: Object}>}
  */
-export const startGroupSession = async (groupId, sessionId) => {
-    const response = await APIInstance.post(`/th/groups/${groupId}/sessions/${sessionId}/start`);
+export const startGroupSession = async (groupId, sessionId, therapistId) => {
+    const response = await APIInstance.post(`/th/groups/${groupId}/sessions/${sessionId}/start`, {
+        therapist_id: therapistId
+    });
     return response.data;
 };
 
 /**
  * Update session details
- * @param {string} groupId 
- * @param {string} sessionId 
- * @param {Object} sessionData {date, time, topic}
+ * @param {string} groupId - Group ID
+ * @param {string} sessionId - Session ID
+ * @param {string} therapistId - Therapist ID
+ * @param {Object} sessionData - {date, time, topic}
+ * @returns {Promise<{success: boolean, message: string}>}
  */
-export const updateGroupSession = async (groupId, sessionId, sessionData) => {
-    const response = await APIInstance.put(`/th/groups/${groupId}/sessions/${sessionId}`, sessionData);
+export const updateGroupSession = async (groupId, sessionId, therapistId, sessionData) => {
+    const response = await APIInstance.put(`/th/groups/${groupId}/sessions/${sessionId}`, {
+        therapist_id: therapistId,
+        ...sessionData
+    });
     return response.data;
 };
 
 /**
  * Cancel a session
- * @param {string} groupId 
- * @param {string} sessionId 
+ * @param {string} groupId - Group ID
+ * @param {string} sessionId - Session ID
+ * @param {string} therapistId - Therapist ID
+ * @returns {Promise<{success: boolean, message: string}>}
  */
-export const cancelGroupSession = async (groupId, sessionId) => {
-    const response = await APIInstance.delete(`/th/groups/${groupId}/sessions/${sessionId}`);
+export const cancelGroupSession = async (groupId, sessionId, therapistId) => {
+    const response = await APIInstance.delete(`/th/groups/${groupId}/sessions/${sessionId}`, {
+        params: { therapist_id: therapistId }
+    });
     return response.data;
 };

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -37,24 +38,24 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
   const toast = useToast();
   const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  
+
   // Get settings from Redux
   const appearanceSettings = useSelector(selectAppearanceSettings);
-  
+
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Local state synced with Redux
   const [selectedTheme, setSelectedThemeLocal] = useState<'light' | 'dark' | 'auto'>(appearanceSettings.theme);
   const [useSystemThemeLocal, setUseSystemThemeLocal] = useState(appearanceSettings.useSystemTheme);
   const [highContrastLocal, setHighContrastLocal] = useState(appearanceSettings.highContrast);
   const [reducedMotionLocal, setReducedMotionLocal] = useState(appearanceSettings.reducedMotion);
   const [largeTextLocal, setLargeTextLocal] = useState(appearanceSettings.largeText);
-  
+
   // Load appearance settings from API on mount
   useEffect(() => {
     loadAppearanceSettings();
   }, []);
-  
+
   // Sync local state with Redux when settings change
   useEffect(() => {
     setSelectedThemeLocal(appearanceSettings.theme);
@@ -107,7 +108,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
       console.error('Failed to update appearance setting:', error);
     }
   };
-  
+
   // Listen to system theme changes when auto mode is enabled
   useEffect(() => {
     if (useSystemThemeLocal) {
@@ -144,7 +145,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
       });
     }
   };
-  
+
   const handleHighContrastToggle = (value: boolean) => {
     setHighContrastLocal(value);
     dispatch(setHighContrast(value));
@@ -154,7 +155,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
       duration: 2000,
     });
   };
-  
+
   const handleReducedMotionToggle = (value: boolean) => {
     setReducedMotionLocal(value);
     dispatch(setReducedMotion(value));
@@ -164,7 +165,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
       duration: 2000,
     });
   };
-  
+
   const handleLargeTextToggle = (value: boolean) => {
     setLargeTextLocal(value);
     dispatch(setLargeText(value));
@@ -175,17 +176,17 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
     });
   };
 
-  const ThemeOption = ({ 
-    theme, 
-    title, 
-    description, 
-    icon, 
-    iconColor 
-  }: { 
-    theme: 'light' | 'dark' | 'auto'; 
-    title: string; 
-    description: string; 
-    icon: string; 
+  const ThemeOption = ({
+    theme,
+    title,
+    description,
+    icon,
+    iconColor
+  }: {
+    theme: 'light' | 'dark' | 'auto';
+    title: string;
+    description: string;
+    icon: string;
     iconColor: string;
   }) => (
     <TouchableOpacity
@@ -226,7 +227,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
         navigation={navigation}
       />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -245,7 +246,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
         {/* Theme Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>THEME</Text>
-          
+
           <View style={styles.themesContainer}>
             <ThemeOption
               theme="light"
@@ -254,7 +255,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
               icon="light-mode"
               iconColor="#FFC107"
             />
-            
+
             <ThemeOption
               theme="dark"
               title="Dark Mode"
@@ -262,7 +263,7 @@ const AppearanceSettingsScreen: React.FC<AppearanceSettingsScreenProps> = ({ nav
               icon="dark-mode"
               iconColor="#424242"
             />
-            
+
             <ThemeOption
               theme="auto"
               title="Auto"
@@ -459,22 +460,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   infoCard: {
     flexDirection: 'row',
     backgroundColor: '#E91E63' + '10',
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 20,
-    marginBottom: 20,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(20),
   },
   infoContent: {
     flex: 1,
     marginLeft: 16,
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -490,7 +491,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
@@ -514,7 +515,7 @@ const styles = StyleSheet.create({
   themeCard: {
     backgroundColor: appColors.CardBackground,
     borderRadius: 12,
-    padding: 20,
+    padding: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
@@ -530,9 +531,9 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue + '05',
   },
   themeIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -541,7 +542,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   themeTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -564,9 +565,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(8),
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -575,7 +576,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
@@ -603,7 +604,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   displayText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
     marginLeft: 12,
@@ -628,12 +629,12 @@ const styles = StyleSheet.create({
   },
   previewCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(12),
+    padding: scale(20),
+    marginBottom: scale(20),
   },
   previewTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -650,7 +651,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   previewHeaderText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -670,7 +671,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   previewButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: '#FFF',
     fontFamily: appFonts.headerTextBold,

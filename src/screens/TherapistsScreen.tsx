@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import { useToast } from 'native-base';
 import { appImages } from '../global/Data';
 import LHGenericHeader from '../components/LHGenericHeader';
@@ -34,20 +35,41 @@ import {
 } from '../features/therapists/therapistsSlice';
 import { loadTherapists, refreshTherapists } from '../utils/therapistsManager';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+import { NavigationProp, RouteProp } from '@react-navigation/native';
 
-const TherapistsScreen = ({ navigation, route }) => {
+interface Therapist {
+  id: number;
+  name: string;
+  specialty: string;
+  rating: number;
+  location: string;
+  image: any;
+  reviews: number;
+  experience: string;
+  price: string;
+  priceUnit: string;
+  available: boolean;
+  bio: string;
+  nextAvailable: string;
+}
+
+interface TherapistsScreenProps {
+  navigation: NavigationProp<any>;
+  route: RouteProp<any, any>;
+}
+
+const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const toast = useToast();
-  
+
   // Check if we came from outside bottom tabs (need back button)
   const showBackButton = route?.params?.showBackButton || false;
-  
+
   // Get therapists from Redux
   const therapists = useSelector(selectTherapists);
   const isLoading = useSelector(selectTherapistsLoading);
   const isRefreshing = useSelector(selectTherapistsRefreshing);
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -293,22 +315,22 @@ const TherapistsScreen = ({ navigation, route }) => {
 
   const specialties = ['All Specialities', 'Therapist', 'Specialist', 'Counselor'];
 
-  const filteredTherapists = therapists.filter(therapist => {
+  const filteredTherapists = (therapists as Therapist[] || []).filter((therapist: Therapist) => {
     const matchesSearch = therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         therapist.specialty.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = selectedSpecialty === 'All Specialities' || 
-                            therapist.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase());
+      therapist.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecialty = selectedSpecialty === 'All Specialities' ||
+      therapist.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase());
     return matchesSearch && matchesSpecialty;
   });
 
-  const notifyWithToast = (description) => {
+  const notifyWithToast = (description: string) => {
     toast.show({
       description: description,
       duration: 2000,
     });
   };
 
-  const handleBookSession = (therapist) => {
+  const handleBookSession = (therapist: Therapist) => {
     if (therapist.available) {
       navigation.navigate('TherapistDetailScreen', { therapist });
     } else {
@@ -317,7 +339,7 @@ const TherapistsScreen = ({ navigation, route }) => {
   };
 
   // Profile view
-  const handleViewProfile = (therapist) => {
+  const handleViewProfile = (therapist: Therapist) => {
     navigation.navigate('TherapistDetailScreen', { therapist });
   };
 
@@ -332,7 +354,7 @@ const TherapistsScreen = ({ navigation, route }) => {
   };
 
   // Recent search press
-  const handleRecentSearchPress = (searchTerm) => {
+  const handleRecentSearchPress = (searchTerm: string) => {
     setSearchQuery(searchTerm);
     setIsSearchFocused(false);
   };
@@ -365,21 +387,21 @@ const TherapistsScreen = ({ navigation, route }) => {
   };
 
   // Render stars
-  const renderStars = (rating) => {
+  const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Icon
         key={index}
         name="star"
         type="material"
         color={index < rating ? "#FFD700" : "#E0E0E0"}
-        size={14}
+        size={moderateScale(14)}
       />
     ));
   };
 
   // Compact therapist card
-  const CompactTherapistCard = ({ therapist }) => (
-    <TouchableOpacity 
+  const CompactTherapistCard: React.FC<{ therapist: Therapist }> = ({ therapist }) => (
+    <TouchableOpacity
       style={styles.therapistCard}
       onPress={() => handleViewProfile(therapist)}
       activeOpacity={0.7}
@@ -387,16 +409,16 @@ const TherapistsScreen = ({ navigation, route }) => {
       <View style={styles.cardContent}>
         <Avatar
           source={therapist.image}
-          size={60}
+          size={scale(60)}
           rounded
           containerStyle={styles.avatar}
         />
-        
+
         <View style={styles.therapistInfo}>
           <Text style={styles.therapistName}>{therapist.name}</Text>
           <Text style={styles.therapistSpecialty}>{therapist.specialty}</Text>
           <Text style={styles.therapistLocation}>{therapist.location}</Text>
-          
+
           <View style={styles.ratingContainer}>
             <View style={styles.starsContainer}>
               {renderStars(therapist.rating)}
@@ -413,8 +435,8 @@ const TherapistsScreen = ({ navigation, route }) => {
   );
 
   // Detailed therapist card
-  const DetailedTherapistCard = ({ therapist }) => (
-    <TouchableOpacity 
+  const DetailedTherapistCard: React.FC<{ therapist: Therapist }> = ({ therapist }) => (
+    <TouchableOpacity
       style={styles.detailedTherapistCard}
       onPress={() => handleViewProfile(therapist)}
       activeOpacity={0.7}
@@ -422,7 +444,7 @@ const TherapistsScreen = ({ navigation, route }) => {
       <View style={styles.therapistHeader}>
         <Avatar
           source={therapist.image}
-          size={70}
+          size={scale(70)}
           rounded
           containerStyle={styles.avatar}
         />
@@ -430,7 +452,7 @@ const TherapistsScreen = ({ navigation, route }) => {
           <Text style={styles.therapistName}>{therapist.name}</Text>
           <Text style={styles.therapistSpecialty}>{therapist.specialty}</Text>
           <View style={styles.ratingContainer}>
-            <Icon name="star" type="material" color="#FFD700" size={16} />
+            <Icon name="star" type="material" color="#FFD700" size={moderateScale(16)} />
             <Text style={styles.rating}>{therapist.rating}</Text>
             <Text style={styles.reviewCount}>({therapist.reviews} reviews)</Text>
           </View>
@@ -452,15 +474,15 @@ const TherapistsScreen = ({ navigation, route }) => {
           </View>
         </View>
       </View>
-      
+
       <Text style={styles.therapistBio} numberOfLines={2}>{therapist.bio}</Text>
-      
+
       <View style={styles.therapistFooter}>
         <View style={styles.nextAvailableContainer}>
-          <Icon name="schedule" type="material" color={appColors.AppBlue} size={16} />
+          <Icon name="schedule" type="material" color={appColors.AppBlue} size={moderateScale(16)} />
           <Text style={styles.nextAvailableText}>Next: {therapist.nextAvailable}</Text>
         </View>
-        
+
         <TouchableOpacity
           style={[
             styles.bookButton,
@@ -483,9 +505,9 @@ const TherapistsScreen = ({ navigation, route }) => {
     </TouchableOpacity>
   );
 
-  const TherapistCard = ({ therapist }) => {
-    return viewType === 'compact' ? 
-      <CompactTherapistCard therapist={therapist} /> : 
+  const TherapistCard: React.FC<{ therapist: Therapist }> = ({ therapist }) => {
+    return viewType === 'compact' ?
+      <CompactTherapistCard therapist={therapist} /> :
       <DetailedTherapistCard therapist={therapist} />;
   };
 
@@ -500,31 +522,33 @@ const TherapistsScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} />
-      
+
       {showBackButton ? (
         <LHGenericHeader
           title="Find Therapists"
           subtitle="Connect with mental health professionals"
           showLeftIcon={true}
           leftIconPressed={() => navigation.goBack()}
+          leftIconName="arrow-back"
+          leftIconType="material"
+          rightIcon={null}
+          rightIconPressed={() => { }}
         />
       ) : (
         // Custom Header like MoodScreen
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <View>
+            <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>Find Therapists</Text>
               <Text style={styles.headerSubtitle}>Connect with mental health professionals</Text>
             </View>
-            
-            {/* Donate Button */}
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.donateButton}
-              // onPress={() => navigation.navigate('DonationFundScreen')}
               onPress={() => setShowDonateModal(true)}
               activeOpacity={0.7}
             >
-              <Icon name="favorite" type="material" color={appColors.CardBackground} size={20} />
+              <Icon name="favorite" type="material" color={appColors.CardBackground} size={moderateScale(20)} />
               <Text style={styles.donateText}>Donate</Text>
             </TouchableOpacity>
           </View>
@@ -538,7 +562,7 @@ const TherapistsScreen = ({ navigation, route }) => {
             name="search"
             type="material"
             color={isSearchFocused ? appColors.AppBlue : appColors.AppGray}
-            size={20}
+            size={moderateScale(20)}
             style={styles.searchIcon}
           />
           <TextInput
@@ -556,7 +580,7 @@ const TherapistsScreen = ({ navigation, route }) => {
                 name="close"
                 type="material"
                 color={appColors.AppGray}
-                size={20}
+                size={moderateScale(20)}
               />
             </TouchableOpacity>
           )}
@@ -576,12 +600,12 @@ const TherapistsScreen = ({ navigation, route }) => {
                   name="history"
                   type="material"
                   color={appColors.AppGray}
-                  size={18}
+                  size={moderateScale(18)}
                 />
                 <Text style={styles.recentSearchText}>{search}</Text>
               </TouchableOpacity>
             ))}
-            
+
             <Text style={styles.searchSectionTitle}>Popular Specialties</Text>
             {['Anxiety & Depression', 'Relationship Counseling', 'Trauma Therapy'].map((specialty, index) => (
               <TouchableOpacity
@@ -593,7 +617,7 @@ const TherapistsScreen = ({ navigation, route }) => {
                   name="trending-up"
                   type="material"
                   color={appColors.AppBlue}
-                  size={18}
+                  size={moderateScale(18)}
                 />
                 <Text style={styles.recentSearchText}>{specialty}</Text>
               </TouchableOpacity>
@@ -617,15 +641,15 @@ const TherapistsScreen = ({ navigation, route }) => {
                   <Text style={styles.filterText}>All Specialities</Text>
                   <View style={styles.filterActions}>
                     <TouchableOpacity style={styles.viewToggleButton} onPress={toggleViewType}>
-                      <Icon 
-                        name={viewType === 'compact' ? 'view-list' : 'view-module'} 
-                        type="material" 
-                        color={appColors.grey2} 
-                        size={24} 
+                      <Icon
+                        name={viewType === 'compact' ? 'view-list' : 'view-module'}
+                        type="material"
+                        color={appColors.grey2}
+                        size={moderateScale(24)}
                       />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.filterButton} onPress={toggleFilters}>
-                      <Icon name="tune" type="material" color={appColors.grey2} size={24} />
+                      <Icon name="tune" type="material" color={appColors.grey2} size={moderateScale(24)} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -659,7 +683,7 @@ const TherapistsScreen = ({ navigation, route }) => {
             }
             refreshControl={
               <RefreshControl
-                refreshing={isRefreshing}
+                refreshing={isRefreshing as boolean}
                 onRefresh={onRefresh}
                 colors={[appColors.AppBlue]}
                 tintColor={appColors.AppBlue}
@@ -671,7 +695,7 @@ const TherapistsScreen = ({ navigation, route }) => {
                   name="person-search"
                   type="material"
                   color={appColors.AppGray}
-                  size={60}
+                  size={moderateScale(60)}
                 />
                 <Text style={styles.emptyText}>No therapists found</Text>
                 <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
@@ -682,30 +706,30 @@ const TherapistsScreen = ({ navigation, route }) => {
       </View>
       {/* Floating Matching Quiz Button */}
       <TouchableOpacity style={styles.fab} onPress={handleStartMatchingQuiz} activeOpacity={0.85}>
-        <Icon name="psychology" type="material" color={appColors.CardBackground} size={26} />
+        <Icon name="psychology" type="material" color={appColors.CardBackground} size={moderateScale(26)} />
         <Text style={styles.fabText}>Match</Text>
       </TouchableOpacity>
 
       {/* Panic Button */}
-      <PanicButtonComponent 
-        position="bottom-left" 
-        size="medium" 
-        quickAction="modal" 
+      <PanicButtonComponent
+        position="bottom-left"
+        size="medium"
+        quickAction="modal"
       />
 
-      {/* Donate Coming Soon Modal */}
+      {/* @ts-ignore */}
       <LHGenericFeatureModal
         title="Donate Feature"
         description="The donation feature is coming soon! You'll be able to support mental health initiatives and help others access therapy services."
         buttonTitle="GOT IT"
         isModVisible={showDonateModal}
-        visibilitySetter={setShowDonateModal}
+        visibilitySetter={(val: boolean) => setShowDonateModal(val)}
         isDismissable={true}
         hasIcon={true}
         iconType="material"
         iconName="favorite"
       />
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
@@ -716,45 +740,45 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: scale(20),
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    marginBottom: 20,
+    borderRadius: scale(25),
+    paddingHorizontal: scale(15),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    borderWidth: 1,
+    borderWidth: scale(1),
     borderColor: appColors.AppLightGray,
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: scale(10),
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 15,
-    fontSize: 16,
+    paddingVertical: scale(15),
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   searchContainerFocused: {
     borderColor: appColors.AppBlue,
-    borderWidth: 2,
+    borderWidth: scale(2),
   },
   clearButton: {
-    padding: 5,
+    padding: scale(5),
   },
   searchExpandedContainer: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -762,83 +786,37 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   searchSectionTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
-    marginTop: 10,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(15),
+    marginTop: scale(10),
+    fontFamily: appFonts.bodyTextBold,
   },
   recentSearchItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 5,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(5),
     borderBottomWidth: 0.5,
     borderBottomColor: appColors.grey4,
   },
   recentSearchText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
-    marginLeft: 12,
-    fontFamily: appFonts.appTextRegular,
+    marginLeft: scale(12),
+    fontFamily: appFonts.bodyTextRegular,
   },
   specialtyContainer: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   specialtyChip: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginRight: 10,
-  },
-  selectedSpecialtyChip: {
-    backgroundColor: appColors.AppBlue,
-  },
-  specialtyText: {
-    fontSize: 14,
-    color: appColors.AppGray,
-    fontFamily: appFonts.appTextMedium,
-  },
-  selectedSpecialtyText: {
-    color: appColors.CardBackground,
-  },
-  listContainer: {
-    paddingBottom: 20,
-  },
-  filterSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  filterText: {
-    fontSize: 16,
-    color: appColors.grey1,
-    fontFamily: appFonts.appTextMedium,
-  },
-  filterActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  viewToggleButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  filterButton: {
-    padding: 8,
-  },
-  specialtyContainer: {
-    marginBottom: 20,
-  },
-  specialtyChip: {
-    backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginRight: 10,
-    height: 36,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(15),
+    paddingVertical: scale(8),
+    marginRight: scale(10),
+    height: scale(36),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -846,20 +824,45 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue,
   },
   specialtyText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppGray,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
     textAlign: 'center',
   },
   selectedSpecialtyText: {
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
+  },
+  listContainer: {
+    paddingBottom: scale(20),
+  },
+  filterSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: scale(20),
+  },
+  filterText: {
+    fontSize: moderateScale(16),
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextMedium,
+  },
+  filterActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewToggleButton: {
+    padding: scale(8),
+    marginRight: scale(8),
+  },
+  filterButton: {
+    padding: scale(8),
   },
   therapistCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: scale(15),
+    padding: scale(15),
+    marginBottom: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -871,29 +874,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    marginRight: 15,
+    marginRight: scale(15),
   },
   therapistInfo: {
     flex: 1,
   },
   therapistName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 3,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(3),
+    fontFamily: appFonts.bodyTextBold,
   },
   therapistSpecialty: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 3,
-    fontFamily: appFonts.appTextRegular,
+    marginBottom: scale(3),
+    fontFamily: appFonts.bodyTextRegular,
   },
   therapistLocation: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
-    marginBottom: 8,
-    fontFamily: appFonts.appTextRegular,
+    marginBottom: scale(8),
+    fontFamily: appFonts.bodyTextRegular,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -901,21 +904,21 @@ const styles = StyleSheet.create({
   },
   starsContainer: {
     flexDirection: 'row',
-    marginRight: 8,
+    marginRight: scale(8),
   },
   reviewCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   menuButton: {
-    padding: 8,
+    padding: scale(8),
   },
   detailedTherapistCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 15,
+    borderRadius: scale(20),
+    padding: scale(20),
+    marginBottom: scale(15),
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -924,38 +927,38 @@ const styles = StyleSheet.create({
   },
   therapistHeader: {
     flexDirection: 'row',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   priceContainer: {
     alignItems: 'flex-end',
   },
   price: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.bodyTextBold,
   },
   priceUnit: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
-    marginBottom: 8,
-    fontFamily: appFonts.appTextRegular,
+    marginBottom: scale(8),
+    fontFamily: appFonts.bodyTextRegular,
   },
   rating: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
-    marginLeft: 4,
-    fontFamily: appFonts.appTextMedium,
+    marginLeft: scale(4),
+    fontFamily: appFonts.bodyTextMedium,
   },
   experience: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   availabilityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    borderRadius: scale(10),
   },
   available: {
     backgroundColor: '#E8F5E8',
@@ -964,8 +967,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE8E8',
   },
   availabilityText: {
-    fontSize: 12,
-    fontFamily: appFonts.appTextMedium,
+    fontSize: moderateScale(12),
+    fontFamily: appFonts.bodyTextMedium,
   },
   availableText: {
     color: '#4CAF50',
@@ -974,11 +977,11 @@ const styles = StyleSheet.create({
     color: '#F44336',
   },
   therapistBio: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 15,
-    lineHeight: 20,
-    fontFamily: appFonts.appTextRegular,
+    marginBottom: scale(15),
+    lineHeight: moderateScale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   therapistFooter: {
     flexDirection: 'row',
@@ -991,23 +994,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nextAvailableText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.AppBlue,
-    marginLeft: 6,
-    fontFamily: appFonts.appTextMedium,
+    marginLeft: scale(6),
+    fontFamily: appFonts.bodyTextMedium,
   },
   bookButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderRadius: scale(20),
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(20),
     alignItems: 'center',
   },
   bookButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     fontWeight: '600',
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   disabledButton: {
     backgroundColor: appColors.AppLightGray,
@@ -1018,68 +1021,72 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: scale(60),
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.AppGray,
-    marginTop: 20,
-    fontFamily: appFonts.appTextBold,
+    marginTop: scale(20),
+    fontFamily: appFonts.bodyTextBold,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppGray,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: scale(8),
   },
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 25,
-    paddingHorizontal: 20,
+    paddingBottom: scale(25),
+    paddingHorizontal: scale(20),
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: scale(15),
+  },
   donateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    gap: scale(6),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
+    borderRadius: scale(20),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   donateText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextMedium,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     opacity: 0.9,
-    marginTop: 4,
+    marginTop: scale(4),
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 24,
+    right: scale(20),
+    bottom: scale(24),
     backgroundColor: appColors.AppBlue,
-    borderRadius: 28,
-    paddingHorizontal: 18,
-    height: 56,
+    borderRadius: scale(28),
+    paddingHorizontal: scale(18),
+    height: scale(56),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1091,9 +1098,9 @@ const styles = StyleSheet.create({
   },
   fabText: {
     color: appColors.CardBackground,
-    fontSize: 14,
-    fontFamily: appFonts.appTextMedium,
-    marginLeft: 8,
+    fontSize: moderateScale(14),
+    fontFamily: appFonts.bodyTextMedium,
+    marginLeft: scale(8),
     fontWeight: '700',
   },
 });

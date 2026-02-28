@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -73,7 +74,7 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
         lastName: profileData.lastName,
         phoneNumber: profileData.phone,
         bio: profileData.bio,
-      });
+      }, undefined, undefined, undefined);
 
       if (response.success) {
         setHasChanges(false);
@@ -163,7 +164,7 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
         <Text style={[styles.selectText, !value && styles.placeholderText]}>
           {value || placeholder}
         </Text>
-        <Icon name="chevron-right" type="material" color={appColors.grey4} size={20} />
+        <Icon name="chevron-right" type="material" color={appColors.grey4} size={moderateScale(20)} />
       </TouchableOpacity>
     </View>
   );
@@ -191,7 +192,7 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
             }
           }}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.grey1} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile Settings</Text>
         <TouchableOpacity
@@ -245,10 +246,10 @@ const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({ navigatio
                 onPress={handleDeleteAccount}
               >
                 <View style={styles.actionLeft}>
-                  <Icon name="delete-forever" type="material" color="#F44336" size={20} />
+                  <Icon name="delete-forever" type="material" color="#F44336" size={moderateScale(20)} />
                   <Text style={[styles.actionText, styles.destructiveText]}>Delete Account</Text>
                 </View>
-                <Icon name="chevron-right" type="material" color="#F44336" size={20} />
+                <Icon name="chevron-right" type="material" color="#F44336" size={moderateScale(20)} />
               </TouchableOpacity>
             </View>
           </View>
@@ -283,8 +284,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.CardBackground,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -295,10 +296,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -306,10 +307,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   saveButton: {
-    padding: 8,
+    padding: scale(8),
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -325,29 +326,29 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: 'center',
-    paddingVertical: 30,
+    paddingVertical: scale(30),
     backgroundColor: appColors.CardBackground,
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: scale(100),
+    height: scale(100),
+    borderRadius: scale(50),
   },
   avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: scale(100),
+    height: scale(100),
+    borderRadius: scale(50),
     backgroundColor: appColors.AppBlue,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    fontSize: 36,
+    fontSize: moderateScale(36),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -357,37 +358,37 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     backgroundColor: appColors.AppBlue,
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+    borderRadius: scale(16),
+    width: scale(32),
+    height: scale(32),
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
+    borderWidth: scale(3),
     borderColor: appColors.CardBackground,
   },
   changePhotoText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 20,
-    marginBottom: 8,
+    marginHorizontal: scale(20),
+    marginBottom: scale(8),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
-    padding: 16,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
+    padding: scale(16),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -395,28 +396,28 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '500',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 6,
+    marginBottom: scale(6),
   },
   textInput: {
     borderWidth: 1,
     borderColor: appColors.grey5,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(10),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
     backgroundColor: appColors.CardBackground,
   },
   multilineInput: {
-    height: 80,
+    height: scale(80),
     textAlignVertical: 'top',
   },
   disabledInput: {
@@ -426,16 +427,16 @@ const styles = StyleSheet.create({
   selectInput: {
     borderWidth: 1,
     borderColor: appColors.grey5,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: appColors.CardBackground,
   },
   selectText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -446,23 +447,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: scale(12),
   },
   destructiveAction: {
     backgroundColor: '#FFEBEE',
-    marginHorizontal: -16,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    marginHorizontal: scale(-16),
+    paddingHorizontal: scale(16),
+    borderRadius: scale(8),
   },
   actionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   actionText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   destructiveText: {
     color: '#D32F2F',
@@ -470,24 +471,24 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: appColors.grey6,
-    marginVertical: 8,
+    marginVertical: scale(8),
   },
   saveButtonContainer: {
-    padding: 20,
+    padding: scale(20),
     backgroundColor: appColors.CardBackground,
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   saveButtonFull: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: scale(12),
+    paddingVertical: scale(16),
   },
   saveButtonFullText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -495,7 +496,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.grey4,
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
 });
 

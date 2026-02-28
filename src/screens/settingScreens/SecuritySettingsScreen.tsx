@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -293,8 +294,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.CardBackground,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -305,22 +306,22 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   placeholder: {
-    width: 40,
+    width: scale(40),
   },
   statusCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -330,21 +331,21 @@ const styles = StyleSheet.create({
   statusHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   statusTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   statusDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 16,
-    lineHeight: 20,
+    marginBottom: scale(16),
+    lineHeight: scale(20),
   },
   statusIndicators: {
     flexDirection: 'column',
@@ -352,34 +353,34 @@ const styles = StyleSheet.create({
   statusIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   statusIndicatorText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   scrollView: {
     flex: 1,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 20,
-    marginBottom: 8,
+    marginHorizontal: scale(20),
+    marginBottom: scale(8),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -390,8 +391,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
   },
   securityItemLeft: {
     flexDirection: 'row',
@@ -399,25 +400,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(8),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   securityItemContent: {
     flex: 1,
   },
   securityTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   securitySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -427,13 +428,13 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginRight: 8,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    marginRight: scale(8),
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -441,10 +442,10 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: appColors.grey6,
-    marginLeft: 64,
+    marginLeft: scale(64),
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
 });
 

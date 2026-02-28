@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -279,15 +280,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   infoCard: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
     borderRadius: 16,
-    padding: 20,
-    marginTop: 20,
-    marginBottom: 20,
+    padding: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(20),
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   infoName: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
@@ -357,9 +358,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(8),
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,

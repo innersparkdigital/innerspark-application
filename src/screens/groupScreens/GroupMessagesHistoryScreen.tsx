@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
@@ -406,9 +407,9 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
         <View style={styles.messageHeader}>
           <Avatar
             title={displayName.charAt(0)}
-            size={32}
+            size={scale(32)}
             rounded
-            backgroundColor={getRoleColor(item.senderRole)}
+            containerStyle={{ backgroundColor: getRoleColor(item.senderRole) }}
             titleStyle={styles.avatarText}
           />
           <View style={styles.messageInfo}>
@@ -430,7 +431,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
             <Text style={styles.messageTime}>{formatDate(item.createdAt)}</Text>
           </View>
           {item.isReported && (
-            <Icon name="flag" type="material" color="#F44336" size={16} />
+            <Icon name="flag" type="material" color="#F44336" size={scale(16)} />
           )}
         </View>
 
@@ -443,7 +444,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
 
         {item.type === 'announcement' && (
           <View style={styles.announcementBadge}>
-            <Icon name="campaign" type="material" color={appColors.AppBlue} size={14} />
+            <Icon name="campaign" type="material" color={appColors.AppBlue} size={scale(14)} />
             <Text style={styles.announcementText}>Announcement</Text>
           </View>
         )}
@@ -453,7 +454,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Icon name="history" type="material" color={appColors.grey3} size={64} />
+      <Icon name="history" type="material" color={appColors.grey3} size={scale(64)} />
       <Text style={styles.emptyStateTitle}>No Messages Found</Text>
       <Text style={styles.emptyStateText}>
         {searchQuery ? 'No messages match your search criteria.' : 'This group doesn\'t have any message history yet.'}
@@ -477,7 +478,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={scale(24)} />
         </TouchableOpacity>
 
         <View style={styles.headerText}>
@@ -489,13 +490,13 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
           style={styles.headerButton}
           onPress={() => setShowExportModal(true)}
         >
-          <Icon name="file-download" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="file-download" type="material" color={appColors.CardBackground} size={scale(24)} />
         </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <Icon name="search" type="material" color={appColors.grey3} size={20} />
+        <Icon name="search" type="material" color={appColors.grey3} size={scale(20)} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search messages..."
@@ -505,7 +506,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Icon name="clear" type="material" color={appColors.grey3} size={20} />
+            <Icon name="clear" type="material" color={appColors.grey3} size={scale(20)} />
           </TouchableOpacity>
         )}
       </View>
@@ -539,75 +540,75 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 4,
+    elevation: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerText: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: 'rgba(255, 255, 255, 0.8)',
     fontFamily: appFonts.bodyTextRegular,
   },
   headerButton: {
-    padding: 8,
+    padding: scale(8),
   },
   searchContainer: {
     backgroundColor: appColors.CardBackground,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
     borderBottomWidth: 1,
     borderBottomColor: appColors.grey6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    marginLeft: 12,
-    marginRight: 8,
+    marginLeft: scale(12),
+    marginRight: scale(8),
   },
   messagesList: {
     flex: 1,
   },
   messagesContent: {
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   messageItem: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
+    marginHorizontal: scale(16),
+    marginVertical: scale(4),
+    padding: scale(16),
+    borderRadius: scale(12),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   reportedMessage: {
-    borderLeftWidth: 4,
+    borderLeftWidth: scale(4),
     borderLeftColor: '#F44336',
   },
   deletedMessage: {
@@ -617,45 +618,45 @@ const styles = StyleSheet.create({
   messageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   messageInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   senderInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   senderName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   roleBadge: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: 8,
+    paddingHorizontal: scale(6),
+    paddingVertical: scale(2),
+    borderRadius: scale(8),
+    marginLeft: scale(8),
   },
   roleBadgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
     fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
   messageTime: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   messageContent: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   deletedMessageContent: {
     fontStyle: 'italic',
@@ -664,41 +665,41 @@ const styles = StyleSheet.create({
   announcementBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: scale(8),
+    paddingTop: scale(8),
     borderTopWidth: 1,
     borderTopColor: appColors.grey6,
   },
   announcementText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontFamily: appFonts.bodyTextRegular,
-    marginLeft: 4,
+    marginLeft: scale(4),
     fontWeight: 'bold',
   },
   systemMessage: {
     alignItems: 'center',
-    marginVertical: 8,
-    paddingHorizontal: 16,
+    marginVertical: scale(8),
+    paddingHorizontal: scale(16),
   },
   systemMessageText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     backgroundColor: appColors.grey6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(12),
     textAlign: 'center',
     fontFamily: appFonts.bodyTextRegular,
   },
   systemMessageTime: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.grey4,
     fontFamily: appFonts.bodyTextRegular,
-    marginTop: 4,
+    marginTop: scale(4),
   },
   avatarText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     color: appColors.CardBackground,
   },
@@ -706,33 +707,33 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 64,
+    paddingHorizontal: scale(32),
+    paddingVertical: scale(64),
   },
   emptyStateTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   emptyStateText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   clearSearchButton: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 16,
+    paddingHorizontal: scale(24),
+    paddingVertical: scale(12),
+    borderRadius: scale(8),
+    marginTop: scale(16),
   },
   clearSearchButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',

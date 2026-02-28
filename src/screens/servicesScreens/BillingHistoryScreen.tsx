@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { NavigationProp } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -285,7 +286,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
             name={getStatusIcon(invoice.status)}
             type="material"
             color={appColors.CardBackground}
-            size={14}
+            size={moderateScale(14)}
           />
           <Text style={styles.statusText}>{invoice.status?.toUpperCase() || 'UNKNOWN'}</Text>
         </View>
@@ -313,7 +314,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
             style={styles.downloadButton}
             onPress={() => handleDownloadInvoice(invoice)}
           >
-            <Icon name="download" type="material" color={appColors.AppBlue} size={16} />
+            <Icon name="download" type="material" color={appColors.AppBlue} size={moderateScale(16)} />
             <Text style={styles.downloadButtonText}>Download</Text>
           </TouchableOpacity>
         )}
@@ -323,7 +324,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
             style={styles.retryButton}
             onPress={() => handleRetryPayment(invoice)}
           >
-            <Icon name="refresh" type="material" color={appColors.CardBackground} size={16} />
+            <Icon name="refresh" type="material" color={appColors.CardBackground} size={moderateScale(16)} />
             <Text style={styles.retryButtonText}>Retry Payment</Text>
           </TouchableOpacity>
         )}
@@ -348,7 +349,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
 
   const EmptyState: React.FC = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="receipt-long" type="material" color={appColors.grey3} size={80} />
+      <Icon name="receipt-long" type="material" color={appColors.grey3} size={moderateScale(80)} />
       <Text style={styles.emptyTitle}>No Invoices Found</Text>
       <Text style={styles.emptySubtitle}>
         {selectedFilter === 'all'
@@ -391,7 +392,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
               name={method.type === 'wellnessvault' ? 'account-balance-wallet' : 'phone-android'}
               type="material"
               color={appColors.AppBlue}
-              size={24}
+              size={moderateScale(24)}
             />
             <View style={styles.paymentMethodDetails}>
               <Text style={styles.paymentMethodName}>{method.name}</Text>
@@ -414,7 +415,7 @@ const BillingHistoryScreen: React.FC<BillingHistoryScreenProps> = ({ navigation 
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Billing History</Text>
@@ -462,8 +463,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
   },
   headerRow: {
     flexDirection: 'row',
@@ -471,8 +472,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   headerCenter: {
@@ -480,30 +481,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerRightPlaceholder: {
-    width: 40,
+    width: scale(40),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     opacity: 0.9,
-    marginTop: 4,
+    marginTop: scale(4),
     fontFamily: appFonts.headerTextRegular,
   },
   listContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: scale(20),
+    paddingBottom: scale(40),
   },
   paymentMethodsCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -511,18 +512,18 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   paymentMethodItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: scale(12),
+    borderBottomWidth: scale(1),
     borderBottomColor: appColors.grey6,
   },
   paymentMethodInfo: {
@@ -531,45 +532,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   paymentMethodDetails: {
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   paymentMethodName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   paymentMethodDetailsText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   defaultBadge: {
     backgroundColor: appColors.AppBlue + '20',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
   },
   defaultText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   filterContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   filterChip: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 10,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    marginRight: scale(10),
     elevation: 1,
-    height: 36,
+    height: scale(36),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -577,7 +578,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue,
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     textAlign: 'center',
@@ -588,9 +589,9 @@ const styles = StyleSheet.create({
   },
   invoiceCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: scale(12),
+    padding: scale(16),
+    marginBottom: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -601,72 +602,72 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   invoiceInfo: {
     flex: 1,
   },
   invoiceNumber: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   invoiceDate: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
   },
   statusText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   invoiceDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   billingPeriod: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   invoiceDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   amountContainer: {
     flex: 1,
   },
   amount: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   paymentMethod: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   dueDate: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#FF9800',
     fontFamily: appFonts.headerTextBold,
   },
@@ -678,55 +679,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppBlue + '20',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 8,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
+    marginLeft: scale(8),
   },
   downloadButtonText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontWeight: '600',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F44336',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 8,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
+    marginLeft: scale(8),
   },
   retryButtonText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.CardBackground,
     fontWeight: '600',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 64,
+    paddingHorizontal: scale(32),
+    paddingVertical: scale(64),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
 });
 

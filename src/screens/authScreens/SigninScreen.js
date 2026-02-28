@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { appColors, parameters } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { Button, Icon } from '@rneui/base';
 import { useToast } from 'native-base';
 import { storeItemLS } from '../../global/StorageActions';
@@ -490,30 +491,30 @@ export default function SigninScreen({ navigation }) {
                 </View>
 
                 <ScrollView contentContainerStyle={{ flex: 1, justifyContent: 'center' }}>
-                    <View style={{ paddingHorizontal: 20, paddingVertical: 10, paddingBottom: 20 }}>
+                    <View style={{ paddingHorizontal: scale(20), paddingVertical: scale(10), paddingBottom: scale(20) }}>
 
                         {/* Logo and Welcome Text */}
-                        <View style={{ paddingVertical: 2 }}>
+                        <View style={{ paddingVertical: scale(2) }}>
                             <View style={{ justifyContent: "center", alignItems: "center" }}>
-                                <Image source={appImages.logoDefault} style={{ width: 280, height: 140, resizeMode: 'contain' }} />
+                                <Image source={appImages.logoDefault} style={{ width: scale(280), height: scale(140), resizeMode: 'contain' }} />
                             </View>
-                            <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: 10, paddingBottom: 15 }}>
-                                <Text style={{ fontSize: 16, color: appColors.grey2, fontWeight: '500', paddingVertical: 5 }}>
+                            <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: scale(10), paddingBottom: scale(15) }}>
+                                <Text style={{ fontSize: moderateScale(16), color: appColors.grey2, fontWeight: '500', paddingVertical: scale(5) }}>
                                     Your Journey to mental wellness
                                 </Text>
                             </View>
                         </View>
 
-                        <View style={{ paddingHorizontal: 10 }}>
+                        <View style={{ paddingHorizontal: scale(10) }}>
                             {/* Email, Phone Input Block */}
                             <View style={styles.inputBlockRow}>
-                                <View style={{ justifyContent: "center", alignItems: "center", paddingRight: 10 }}>
-                                    <Icon type="material-icons" name="alternate-email" color={appColors.grey4} size={25} />
+                                <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                    <Icon type="material-icons" name="alternate-email" color={appColors.grey4} size={moderateScale(25)} />
                                 </View>
 
                                 <TextInput
                                     placeholderTextColor={appColors.grey3}
-                                    style={{ flex: 3, fontSize: 15, color: appColors.black, paddingVertical: 0 }}
+                                    style={{ flex: 3, fontSize: moderateScale(15), color: appColors.black, paddingVertical: 0 }}
                                     editable={!isLoading}
                                     placeholder='Email or Phone'
                                     value={username}
@@ -524,24 +525,24 @@ export default function SigninScreen({ navigation }) {
 
                             {/* Password Input Block */}
                             <View style={styles.inputBlockRow}>
-                                <View style={{ justifyContent: "center", alignItems: "center", paddingRight: 10 }}>
-                                    <Icon type="material-community" name="lock" color={appColors.grey4} size={25} />
+                                <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                    <Icon type="material-community" name="lock" color={appColors.grey4} size={moderateScale(25)} />
                                 </View>
                                 <TextInput
                                     placeholderTextColor={appColors.grey3}
-                                    style={{ flex: 3, fontSize: 15, color: appColors.black, paddingVertical: 0 }}
+                                    style={{ flex: 3, fontSize: moderateScale(15), color: appColors.black, paddingVertical: 0 }}
                                     secureTextEntry={!showPassword}
                                     editable={!isLoading}
                                     placeholder='Password'
                                     value={password}
                                     onChangeText={onChangePasswordHandler}
                                 />
-                                <View style={{ justifyContent: "center", alignItems: "center", paddingLeft: 10, }}>
+                                <View style={{ justifyContent: "center", alignItems: "center", paddingLeft: scale(10), }}>
                                     <Icon
                                         type="material-community"
                                         name={showPassword ? "eye-off-outline" : "eye-outline"}
                                         color={appColors.grey4}
-                                        size={25}
+                                        size={moderateScale(25)}
                                         onPress={() => togglePassword()}
                                     />
                                 </View>
@@ -554,7 +555,7 @@ export default function SigninScreen({ navigation }) {
                                 </View>
                             } */}
 
-                            <View style={{ paddingVertical: 15 }}>
+                            <View style={{ paddingVertical: scale(15) }}>
                                 <Button
                                     title="Sign In"
                                     buttonStyle={parameters.appButtonXLBlue}
@@ -618,7 +619,7 @@ export default function SigninScreen({ navigation }) {
                         </View>
 
                         {/* Forgot Password Section */}
-                        <View style={{ paddingVertical: 5 }}>
+                        <View style={{ paddingVertical: scale(5) }}>
                             <Pressable
                                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', }}
                                 onPress={
@@ -628,19 +629,19 @@ export default function SigninScreen({ navigation }) {
                                 }
                             >
                                 <Text
-                                    style={{ fontSize: 14, textAlign: 'center', color: appColors.AppBlue, marginRight: 5 }}
+                                    style={{ fontSize: moderateScale(14), textAlign: 'center', color: appColors.AppBlue, marginRight: scale(5) }}
                                 >
                                     Forgot password?
                                 </Text>
-                                <Text style={{ fontSize: 14, color: appColors.AppBlue, fontWeight: 'bold' }}>Reset Password</Text>
+                                <Text style={{ fontSize: moderateScale(14), color: appColors.AppBlue, fontWeight: 'bold' }}>Reset Password</Text>
                             </Pressable>
                         </View>
 
                         {/* Don't have an account? */}
-                        <View style={{ justifyContent: 'center', paddingVertical: 5, flexDirection: 'row' }}>
-                            <Text style={{ color: appColors.AppBlue }}>Don't have an account?</Text>
+                        <View style={{ justifyContent: 'center', paddingVertical: scale(5), flexDirection: 'row' }}>
+                            <Text style={{ color: appColors.AppBlue, fontSize: moderateScale(14) }}>Don't have an account?</Text>
                             <Text
-                                style={{ color: appColors.AppBlue, fontWeight: 'bold' }}
+                                style={{ color: appColors.AppBlue, fontWeight: 'bold', fontSize: moderateScale(14) }}
                                 onPress={
                                     () => {
                                         navigation.navigate('SignupScreen');
@@ -741,12 +742,12 @@ const styles = StyleSheet.create({
     inputBlockRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderWidth: 1,
+        paddingHorizontal: scale(12),
+        paddingVertical: scale(8),
+        borderWidth: scale(1),
         borderColor: appColors.grey4,
-        borderRadius: 25,
-        marginVertical: 8
+        borderRadius: scale(25),
+        marginVertical: scale(8)
     },
 
 })

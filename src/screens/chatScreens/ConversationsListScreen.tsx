@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadConversations, refreshConversations } from '../../utils/chatManager';
@@ -50,7 +51,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   }, []);
 
   const loadConversationsData = async () => {
-    const result = await dispatch(loadConversations(userId));
+    const result = await (dispatch as any)(loadConversations(userId));
     if (!result.success) {
       toast.show({
         description: 'Failed to load conversations',
@@ -60,7 +61,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   };
 
   const handleRefresh = async () => {
-    await dispatch(refreshConversations(userId));
+    await (dispatch as any)(refreshConversations(userId));
   };
 
   const handleOpenConversation = (conversation: Conversation) => {
@@ -91,7 +92,8 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   };
 
   const getAvatarInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    if (!name) return '??';
+    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
   };
 
   const renderConversationItem = ({ item }: { item: Conversation }) => (
@@ -104,15 +106,15 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
         {item.partnerAvatar ? (
           <Avatar
             source={item.partnerAvatar}
-            size={60}
+            size={scale(60)}
             rounded
           />
         ) : (
           <Avatar
             title={getAvatarInitials(item.partnerName)}
-            size={60}
+            size={scale(60)}
             rounded
-            backgroundColor={appColors.AppBlue}
+            containerStyle={{ backgroundColor: appColors.AppBlue }}
             titleStyle={styles.avatarText}
           />
         )}
@@ -157,7 +159,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Icon name="chat-bubble-outline" type="material" color={appColors.grey3} size={80} />
+      <Icon name="chat-bubble-outline" type="material" color={appColors.grey3} size={moderateScale(80)} />
       <Text style={styles.emptyTitle}>No conversations yet</Text>
       <Text style={styles.emptySubtitle}>
         Start a conversation with your therapist
@@ -221,34 +223,34 @@ const styles = StyleSheet.create({
   conversationItem: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    marginHorizontal: scale(16),
+    marginVertical: scale(4),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   avatarContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   onlineIndicator: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    bottom: scale(2),
+    right: scale(2),
+    width: scale(16),
+    height: scale(16),
+    borderRadius: scale(8),
     backgroundColor: '#4CAF50',
-    borderWidth: 2,
+    borderWidth: scale(2),
     borderColor: appColors.CardBackground,
   },
   avatarText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
   },
@@ -259,30 +261,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   partnerName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     flex: 1,
   },
   lastMessageTime: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   conversationBody: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   lastMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     flex: 1,
   },
   unreadMessage: {
@@ -291,23 +293,23 @@ const styles = StyleSheet.create({
   },
   unreadBadge: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
+    borderRadius: scale(12),
+    minWidth: scale(24),
+    height: scale(24),
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   unreadCount: {
     color: appColors.CardBackground,
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   lastSeen: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   emptyContainer: {
     flex: 1,
@@ -316,32 +318,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: scale(40),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: scale(20),
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     textAlign: 'center',
-    marginBottom: 30,
-    fontFamily: appFonts.regularText,
+    marginBottom: scale(30),
+    fontFamily: appFonts.bodyTextRegular,
   },
   startChatButton: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 25,
+    paddingHorizontal: scale(30),
+    paddingVertical: scale(12),
+    borderRadius: scale(25),
   },
   startChatButtonText: {
     color: appColors.CardBackground,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -349,28 +351,28 @@ const styles = StyleSheet.create({
   skeletonItem: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    marginHorizontal: scale(16),
+    marginVertical: scale(4),
+    borderRadius: scale(12),
   },
   skeletonAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
     backgroundColor: appColors.grey6,
-    marginRight: 12,
+    marginRight: scale(12),
   },
   skeletonContent: {
     flex: 1,
     justifyContent: 'center',
   },
   skeletonLine: {
-    height: 16,
+    height: scale(16),
     backgroundColor: appColors.grey6,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
   },
   skeletonLineShort: {
     width: '60%',

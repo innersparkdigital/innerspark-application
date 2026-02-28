@@ -6,6 +6,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, StatusBar, ScrollView,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import { useToast } from 'native-base';
 import { getEventById, getMyEvents } from '../../api/client/events';
@@ -48,12 +49,12 @@ interface MyEventDetailScreenProps {
 const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
-  
+
   const passedEvent: any = (route.params as any)?.event;
   const eventId: number = passedEvent?.id || (route.params as any)?.eventId;
-  
+
   const [event, setEvent] = useState<Event | null>(passedEvent || null);
-  
+
   // Initialize registration from passed event data (instant!)
   const [registration, setRegistration] = useState<Registration | null>(
     passedEvent?.registrationId ? {
@@ -65,14 +66,14 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
       paidAmount: passedEvent.paidAmount,
     } : null
   );
-  
+
   const [isLoading, setIsLoading] = useState(!passedEvent);
   const [refreshing, setRefreshing] = useState(false);
 
   // Compute join window and countdown
   const { joinable, countdownText } = useMemo(() => {
     if (!event) return { joinable: false, countdownText: '' };
-    
+
     try {
       const start = new Date(`${event.date} ${event.time}`);
       const now = new Date();
@@ -111,7 +112,7 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
       // Load event details
       const eventResponse = await getEventById(eventId.toString());
       const eventData = eventResponse.data;
-      
+
       const mappedEvent: Event = {
         id: eventData.id,
         title: eventData.title,
@@ -130,14 +131,14 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
         organizerImage: getImageSource(eventData.organizerImage, FALLBACK_IMAGES.avatar),
         isRegistered: eventData.isRegistered || false,
       };
-      
+
       setEvent(mappedEvent);
-      
+
       // Load registration details from myEvents
       const myEventsResponse = await getMyEvents(userId);
       const myEvents = myEventsResponse.data?.events || [];
       const myRegistration = myEvents.find((e: any) => e.id === eventId);
-      
+
       if (myRegistration) {
         setRegistration({
           registrationId: myRegistration.registrationId,
@@ -162,8 +163,8 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
   const handleJoin = async () => {
     const link = registration?.meetingLink || event?.isOnline ? 'https://meet.innerspark.com' : '';
     if (link) {
-      try { 
-        await Linking.openURL(link); 
+      try {
+        await Linking.openURL(link);
       } catch (error) {
         toast.show({ description: 'Unable to open meeting link', duration: 2000 });
       }
@@ -214,7 +215,7 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
         <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
         <View style={styles.header}>
           <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Event</Text>
           <View style={styles.headerButton} />
@@ -234,7 +235,7 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
       {/* Header (Blue) */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Event</Text>
         <View style={styles.headerButton} />
@@ -254,7 +255,7 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
           <Text style={styles.meta}>{event.date} at {event.time}</Text>
           <Text style={styles.meta}>{event.isOnline ? 'Online Event' : event.location}</Text>
 
-        {/* Registration Info */}
+          {/* Registration Info */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Registration</Text>
             <View style={styles.rowBetween}>
@@ -293,7 +294,7 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
             )}
           </View>
 
-        {/* Join / Access Info */}
+          {/* Join / Access Info */}
           {registration?.status !== 'cancelled' && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Access</Text>
@@ -302,15 +303,15 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
                   <Text style={styles.help}>
                     {joinable ? 'Click join to enter the event.' : (countdownText || 'The Join link will be available near start time.')}
                   </Text>
-                  <TouchableOpacity 
-                    style={[styles.primaryBtn, !joinable && { opacity: 0.5 }]} 
-                    onPress={handleJoin} 
+                  <TouchableOpacity
+                    style={[styles.primaryBtn, !joinable && { opacity: 0.5 }]}
+                    onPress={handleJoin}
                     disabled={!joinable}
                   >
                     <Text style={styles.primaryBtnText}>{joinable ? 'Join Now' : 'Join (disabled)'}</Text>
                   </TouchableOpacity>
                   {registration?.meetingLink && (
-                    <Text style={[styles.help, { marginTop: 8, fontSize: 11 }]}>
+                    <Text style={[styles.help, { marginTop: scale(8), fontSize: moderateScale(11) }]}>
                       Meeting Link: {registration.meetingLink}
                     </Text>
                   )}
@@ -322,7 +323,7 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
               )}
             </View>
           )}
-          
+
           {/* Cancelled Notice */}
           {registration?.status === 'cancelled' && (
             <View style={[styles.card, { backgroundColor: '#FFEBEE' }]}>
@@ -331,12 +332,12 @@ const MyEventDetailScreen: React.FC<MyEventDetailScreenProps> = ({ navigation, r
             </View>
           )}
 
-        {/* Ticket / QR */}
-        {/* Ticket/QR removed until feature is available */}
+          {/* Ticket / QR */}
+          {/* Ticket/QR removed until feature is available */}
 
-        {/* Actions - hidden for now */}
-        {/* Share removed until feature is available */}
-        {/*  
+          {/* Actions - hidden for now */}
+          {/* Share removed until feature is available */}
+          {/*  
           <View style={[styles.rowBetween, { marginTop: 10 }] }>
             <TouchableOpacity style={styles.secondaryBtn} onPress={handleAddToCalendar}>
               <Icon name="event" type="material" color={appColors.AppBlue} size={18} />
@@ -355,34 +356,34 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: appColors.AppLightGray },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
+    paddingTop: scale(16),
+    paddingBottom: scale(16),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerButton: { padding: 8, width: 40, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: appColors.CardBackground, fontFamily: appFonts.headerTextBold },
+  headerButton: { padding: scale(8), width: scale(40), alignItems: 'center' },
+  headerTitle: { fontSize: moderateScale(18), fontWeight: 'bold', color: appColors.CardBackground, fontFamily: appFonts.headerTextBold },
   scroll: { flex: 1 },
-  cover: { width: '100%', height: 220, backgroundColor: appColors.AppLightGray },
-  content: { padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold },
-  meta: { marginTop: 4, fontSize: 14, color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
-  card: { backgroundColor: appColors.CardBackground, borderRadius: 12, padding: 14, marginTop: 14 },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', color: appColors.grey1, marginBottom: 8, fontFamily: appFonts.headerTextBold },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
-  label: { fontSize: 14, color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
-  value: { fontSize: 14, color: appColors.grey1, fontFamily: appFonts.headerTextMedium },
-  help: { fontSize: 12, color: appColors.grey3, marginBottom: 10, fontFamily: appFonts.headerTextRegular },
-  primaryBtn: { backgroundColor: appColors.AppBlue, borderRadius: 24, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
-  primaryBtnText: { color: appColors.CardBackground, fontSize: 16, fontWeight: 'bold', fontFamily: appFonts.headerTextBold },
-  secondaryBtn: { backgroundColor: appColors.CardBackground, borderRadius: 24, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center' },
-  secondaryBtnText: { marginLeft: 6, color: appColors.AppBlue, fontSize: 14, fontFamily: appFonts.headerTextMedium },
-  qrBox: { marginTop: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: appColors.AppLightGray, borderRadius: 12, height: 140, backgroundColor: '#FAFAFA' },
-  qrText: { fontSize: 16, fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold },
+  cover: { width: '100%', height: scale(220), backgroundColor: appColors.AppLightGray },
+  content: { padding: scale(16) },
+  title: { fontSize: moderateScale(20), fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold },
+  meta: { marginTop: scale(4), fontSize: moderateScale(14), color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
+  card: { backgroundColor: appColors.CardBackground, borderRadius: scale(12), padding: scale(14), marginTop: scale(14) },
+  cardTitle: { fontSize: moderateScale(16), fontWeight: 'bold', color: appColors.grey1, marginBottom: scale(8), fontFamily: appFonts.headerTextBold },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: scale(6) },
+  label: { fontSize: moderateScale(14), color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
+  value: { fontSize: moderateScale(14), color: appColors.grey1, fontFamily: appFonts.headerTextMedium },
+  help: { fontSize: moderateScale(12), color: appColors.grey3, marginBottom: scale(10), fontFamily: appFonts.headerTextRegular },
+  primaryBtn: { backgroundColor: appColors.AppBlue, borderRadius: scale(24), paddingVertical: scale(12), alignItems: 'center', marginTop: scale(4) },
+  primaryBtnText: { color: appColors.CardBackground, fontSize: moderateScale(16), fontWeight: 'bold', fontFamily: appFonts.headerTextBold },
+  secondaryBtn: { backgroundColor: appColors.CardBackground, borderRadius: scale(24), paddingVertical: scale(10), paddingHorizontal: scale(14), flexDirection: 'row', alignItems: 'center' },
+  secondaryBtnText: { marginLeft: scale(6), color: appColors.AppBlue, fontSize: moderateScale(14), fontFamily: appFonts.headerTextMedium },
+  qrBox: { marginTop: scale(8), alignItems: 'center', justifyContent: 'center', borderWidth: scale(1), borderColor: appColors.AppLightGray, borderRadius: scale(12), height: scale(140), backgroundColor: '#FAFAFA' },
+  qrText: { fontSize: moderateScale(16), fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, fontSize: 14, color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
+  loadingText: { marginTop: scale(12), fontSize: moderateScale(14), color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
 });
 
 export default MyEventDetailScreen;

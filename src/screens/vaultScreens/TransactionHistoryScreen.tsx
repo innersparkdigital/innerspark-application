@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { moderateScale } from '../../global/Scaling';
 import { useSelector } from 'react-redux';
 import { RefreshControl, FlatList, ActivityIndicator } from 'react-native';
 import {
@@ -23,7 +24,7 @@ import { loadWalletTransactions, refreshWalletTransactions } from '../../utils/w
 
 const TransactionHistoryScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all'); // all, credit, debit
-  
+
   // Get transactions from Redux
   const allTransactions = useSelector(selectTransactions);
   const isLoading = useSelector(selectWalletLoading);
@@ -150,11 +151,11 @@ const TransactionHistoryScreen = ({ navigation }) => {
     const totalCredits = allTransactions
       .filter(txn => txn.type === 'credit')
       .reduce((sum, txn) => sum + (txn.amount || 0), 0);
-    
+
     const totalDebits = allTransactions
       .filter(txn => txn.type === 'debit')
       .reduce((sum, txn) => sum + Math.abs(txn.amount || 0), 0);
-    
+
     return { totalCredits, totalDebits };
   };
 
@@ -166,8 +167,8 @@ const TransactionHistoryScreen = ({ navigation }) => {
   });
 
   const TransactionItem = ({ transaction }) => (
-    <TouchableOpacity 
-      style={styles.transactionItem} 
+    <TouchableOpacity
+      style={styles.transactionItem}
       activeOpacity={0.7}
       onPress={() => navigation.navigate('TransactionDetailScreen', { transaction })}
     >
@@ -182,12 +183,12 @@ const TransactionHistoryScreen = ({ navigation }) => {
           size={24}
         />
       </View>
-      
+
       <View style={styles.transactionContent}>
         <Text style={styles.transactionDescription}>{transaction.description}</Text>
         <Text style={styles.transactionDate}>{transaction.date}</Text>
       </View>
-      
+
       <View style={styles.transactionRight}>
         <Text style={[
           styles.transactionAmount,
@@ -197,7 +198,7 @@ const TransactionHistoryScreen = ({ navigation }) => {
         </Text>
         <Text style={styles.transactionCategory}>{transaction.category}</Text>
       </View>
-      
+
       <Icon name="chevron-right" type="material" color={appColors.grey4} size={20} />
     </TouchableOpacity>
   );
@@ -217,7 +218,7 @@ const TransactionHistoryScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -254,8 +255,8 @@ const TransactionHistoryScreen = ({ navigation }) => {
       )}
 
       {/* Transactions List */}
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -271,7 +272,7 @@ const TransactionHistoryScreen = ({ navigation }) => {
               {filter === 'all' ? 'All Transactions' : filter === 'credit' ? 'Credits Only' : 'Debits Only'}
               <Text style={styles.countText}> ({filteredTransactions.length})</Text>
             </Text>
-            
+
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction) => (
                 <TransactionItem key={transaction.id} transaction={transaction} />
@@ -472,7 +473,7 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontFamily: appFonts.headerTextBold,
     color: appColors.grey1,
     marginTop: 20,

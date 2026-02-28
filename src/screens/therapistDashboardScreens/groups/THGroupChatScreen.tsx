@@ -12,10 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { moderateScale } from '../../../global/Scaling';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
@@ -24,8 +27,10 @@ import {
   getGroupMessages,
   sendGroupMessage,
   sendAnnouncement,
-  deleteGroupMessage
-} from '../../../api/therapist/groups';
+  deleteGroupMessage,
+  muteGroupMember
+} from '../../../api/therapist';
+import { messageSchema, announcementSchema } from '../../../global/LHValidators';
 
 interface GroupMessage {
   id: string;
@@ -43,7 +48,8 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<GroupMessage[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const alert = useISAlert();
 
   const [showModTools, setShowModTools] = useState(false);
@@ -68,7 +74,15 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
       const errorMessage = error.backendMessage || error.message || 'Failed to load messages';
       console.error('Group Messages Error:', errorMessage);
     }
-    finally { setLoading(false); }
+    finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadMessages();
   };
 
   useEffect(() => {
@@ -81,20 +95,25 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   }, [messages]);
 
   const handleSend = async () => {
-    if (message.trim() && group?.id) {
-      try {
-        const therapistId = userDetails?.userId;
-        const content = message.trim();
-        setMessage(''); // clear immediately for UX
+    if (!group?.id) return;
 
-        await sendGroupMessage(group.id, therapistId, content);
-        // Refresh messages (or ideally socket push)
-        loadMessages();
-      } catch (error: any) {
-        const errorMessage = error.backendMessage || error.message || 'Failed to send message';
-        console.error('Send Message Error:', errorMessage);
-        alert.show({ type: 'error', title: 'Error', message: errorMessage });
-      }
+    const result = messageSchema.safeParse(message);
+    if (!result.success) {
+      alert.show({ type: 'warning', title: 'Invalid Message', message: result.error.issues[0].message });
+      return;
+    }
+
+    try {
+      const therapistId = userDetails?.userId;
+      const content = message.trim();
+      setMessage(''); // clear immediately for UX
+
+      await sendGroupMessage(group.id, therapistId, content);
+      loadMessages();
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to send message';
+      console.error('Send Message Error:', errorMessage);
+      alert.show({ type: 'error', title: 'Error', message: errorMessage });
     }
   };
 
@@ -103,20 +122,26 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   };
 
   const sendAnnouncementAction = async () => {
-    if (announcementText.trim() && group?.id) {
-      try {
-        const therapistId = userDetails?.userId;
-        const content = announcementText.trim();
-        setAnnouncementText('');
-        setShowAnnouncementModal(false);
+    if (!group?.id) return;
 
-        await sendAnnouncement(group.id, therapistId, content);
-        loadMessages();
-      } catch (error: any) {
-        const errorMessage = error.backendMessage || error.message || 'Failed to send announcement';
-        console.error('Announcement Error:', errorMessage);
-        alert.show({ type: 'error', title: 'Error', message: errorMessage });
-      }
+    const result = announcementSchema.safeParse(announcementText);
+    if (!result.success) {
+      alert.show({ type: 'warning', title: 'Invalid Announcement', message: result.error.issues[0].message });
+      return;
+    }
+
+    try {
+      const therapistId = userDetails?.userId;
+      const content = announcementText.trim();
+      setAnnouncementText('');
+      setShowAnnouncementModal(false);
+
+      await sendAnnouncement(group.id, therapistId, content);
+      loadMessages();
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to send announcement';
+      console.error('Announcement Error:', errorMessage);
+      alert.show({ type: 'error', title: 'Error', message: errorMessage });
     }
   };
 
@@ -127,8 +152,15 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
       message: `Temporarily mute ${userName}? They won't be able to send messages for 5 minutes.`,
       confirmText: 'Mute',
       cancelText: 'Cancel',
-      onConfirm: () => {
-        alert.show({ type: 'success', title: 'User Muted', message: `${userName} has been muted for 5 minutes.` });
+      onConfirm: async () => {
+        try {
+          const therapistId = userDetails?.userId;
+          // Mute for 5 minutes (300 seconds)
+          await muteGroupMember(group.id, userId, therapistId, 300);
+          alert.show({ type: 'success', title: 'User Muted', message: `${userName} has been muted for 5 minutes.` });
+        } catch (error: any) {
+          alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to mute user' });
+        }
       },
     });
   };
@@ -165,6 +197,18 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
   const handleViewMuted = () => {
     navigation.navigate('THGroupMembersScreen', { group, filter: 'muted' });
   };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIconCircle}>
+        <Icon type="material" name="chat-bubble-outline" size={48} color={appColors.AppBlue} />
+      </View>
+      <Text style={styles.emptyTitle}>No messages yet</Text>
+      <Text style={styles.emptySubtitle}>
+        Start the conversation by sending a message or post an announcement to the group.
+      </Text>
+    </View>
+  );
 
   const renderMessage = ({ item }: { item: GroupMessage }) => {
     const isTherapist = item.senderRole === 'therapist';
@@ -283,9 +327,18 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesList}
+          contentContainerStyle={[styles.messagesList, messages.length === 0 && { flex: 1 }]}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={() => messages.length > 0 && flatListRef.current?.scrollToEnd({ animated: true })}
+          ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[appColors.AppBlue]}
+              tintColor={appColors.AppBlue}
+            />
+          }
         />
 
         {/* Input Area */}
@@ -583,7 +636,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -648,6 +701,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: appFonts.bodyTextMedium,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 60,
+  },
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: appColors.AppBlue + '10',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
 

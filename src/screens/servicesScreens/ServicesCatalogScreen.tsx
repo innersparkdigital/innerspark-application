@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { NavigationProp } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -93,11 +94,11 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
       }
     } catch (error: any) {
       console.error('❌ Error loading plans:', error);
-      
+
       // Fallback to mock data on error
       setPlans(mockSubscriptionPlans);
       dispatch(setAvailablePlans(mockSubscriptionPlans)); // ✅ Redux dispatch
-      
+
       toast.show({
         description: 'Using offline data. Some features may be limited.',
         duration: 3000,
@@ -116,7 +117,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
   const handleSelectPlan = (plan: SubscriptionPlan) => {
     // Show Coming Soon modal since subscription plans not fully implemented
     setShowComingSoonModal(true);
-    
+
     /* ORIGINAL CODE - Commented out until backend is ready
     if (plan.isCurrent) {
       toast.show({
@@ -176,7 +177,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
 
         {plan.isCurrent && (
           <View style={styles.currentBadge}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(16)} />
             <Text style={styles.currentText}>Current Plan</Text>
           </View>
         )}
@@ -198,13 +199,13 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
         {/* Premium Features Highlight */}
         <View style={styles.premiumFeaturesContainer}>
           <View style={styles.premiumFeature}>
-            <Icon name="groups" type="material" color={appColors.AppBlue} size={20} />
+            <Icon name="groups" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
             <Text style={styles.premiumFeatureText}>
               {plan.supportGroupsLimit === 'unlimited'
                 ? 'Unlimited Groups'
                 : plan.supportGroupsLimit === 0
-                ? 'No Group Access'
-                : `Up to ${plan.supportGroupsLimit} Groups`}
+                  ? 'No Group Access'
+                  : `Up to ${plan.supportGroupsLimit} Groups`}
             </Text>
           </View>
 
@@ -213,7 +214,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
               name={plan.directChatAccess ? 'chat' : 'chat-bubble-outline'}
               type="material"
               color={plan.directChatAccess ? appColors.AppBlue : appColors.grey4}
-              size={20}
+              size={moderateScale(20)}
             />
             <Text style={[
               styles.premiumFeatureText,
@@ -228,7 +229,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
         <View style={styles.featuresContainer}>
           {plan.features.map((feature, index) => (
             <View key={index} style={styles.featureItem}>
-              <Icon name="check" type="material" color="#4CAF50" size={16} />
+              <Icon name="check" type="material" color="#4CAF50" size={moderateScale(16)} />
               <Text style={styles.featureText}>{feature}</Text>
             </View>
           ))}
@@ -291,7 +292,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
 
   const InfoCard: React.FC = () => (
     <View style={styles.infoCard}>
-      <Icon name="info-outline" type="material" color={appColors.AppBlue} size={24} />
+      <Icon name="info-outline" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
       <View style={styles.infoCardContent}>
         <Text style={styles.infoCardTitle}>What's Included?</Text>
         <Text style={styles.infoCardText}>
@@ -306,7 +307,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
       <FlatList
         data={isLoading ? Array(4).fill({}) : plans}
         keyExtractor={(item, index) => isLoading ? index.toString() : item.id}
-        renderItem={({ item }) => 
+        renderItem={({ item }) =>
           isLoading ? <PlanSkeleton /> : <PlanCard plan={item} />
         }
         showsVerticalScrollIndicator={false}
@@ -324,7 +325,7 @@ const SubscriptionPlansScreen: React.FC<SubscriptionPlansScreenProps> = ({ navig
             <BillingCycleToggle />
           </View>
         }
-        ListFooterComponent={<View style={{ height: 20 }} />}
+        ListFooterComponent={<View style={{ height: scale(20) }} />}
       />
 
       <LHGenericFeatureModal
@@ -350,8 +351,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
   },
   headerRow: {
     flexDirection: 'row',
@@ -359,8 +360,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   headerCenter: {
@@ -368,49 +369,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerRightPlaceholder: {
-    width: 40,
+    width: scale(40),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     opacity: 0.9,
-    marginTop: 4,
+    marginTop: scale(4),
     fontFamily: appFonts.headerTextRegular,
   },
   listContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: scale(20),
+    paddingBottom: scale(40),
   },
   // Info Card
   infoCard: {
     backgroundColor: appColors.AppBlue + '15',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: scale(12),
+    padding: scale(16),
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   infoCardContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   infoCardTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   infoCardText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   boldText: {
     fontWeight: 'bold',
@@ -421,9 +422,9 @@ const styles = StyleSheet.create({
   billingToggleContainer: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 20,
+    borderRadius: scale(12),
+    padding: scale(4),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -435,14 +436,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: scale(12),
+    borderRadius: scale(8),
   },
   activeBillingToggle: {
     backgroundColor: appColors.AppBlue,
   },
   billingToggleText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
   },
@@ -453,13 +454,13 @@ const styles = StyleSheet.create({
   },
   saveBadge: {
     backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 6,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(6),
+    paddingVertical: scale(2),
+    marginLeft: scale(6),
   },
   saveBadgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -467,9 +468,9 @@ const styles = StyleSheet.create({
   // Plan Card
   planCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -486,11 +487,11 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -8,
-    right: 20,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    top: scale(-8),
+    right: scale(20),
+    borderRadius: scale(12),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(4),
     zIndex: 1,
   },
   popularBadge: {
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.grey4,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -510,59 +511,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: '#4CAF50' + '20',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginBottom: 12,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    marginBottom: scale(12),
   },
   currentText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#4CAF50',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   planName: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   planDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 16,
-    lineHeight: 20,
+    marginBottom: scale(16),
+    lineHeight: moderateScale(20),
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   price: {
-    fontSize: 32,
+    fontSize: moderateScale(32),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   billingCycleText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   savingsText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: '#4CAF50',
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   // Premium Features
   premiumFeaturesContainer: {
-    marginBottom: 16,
-    paddingVertical: 12,
+    marginBottom: scale(16),
+    paddingVertical: scale(12),
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: appColors.grey6,
@@ -570,13 +571,13 @@ const styles = StyleSheet.create({
   premiumFeature: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   premiumFeatureText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   disabledFeatureText: {
@@ -584,26 +585,26 @@ const styles = StyleSheet.create({
   },
   // Features List
   featuresContainer: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   featureText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
+    marginLeft: scale(8),
     flex: 1,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   // Select Button
   selectButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 10,
-    paddingVertical: 14,
+    borderRadius: scale(10),
+    paddingVertical: scale(14),
     alignItems: 'center',
   },
   currentPlanButton: {
@@ -613,7 +614,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.grey5,
   },
   selectButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -623,17 +624,17 @@ const styles = StyleSheet.create({
   },
   // Footer Links
   footerLinks: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: scale(20),
+    marginBottom: scale(20),
   },
   footerLink: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: scale(12),
+    padding: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -641,7 +642,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   footerLinkText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },

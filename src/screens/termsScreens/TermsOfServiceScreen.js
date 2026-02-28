@@ -3,29 +3,30 @@
  */
 import React, { useState } from 'react';
 import { useToast } from 'native-base';
-import { 
-  StatusBar,
-  SafeAreaView,
-  ScrollView,
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  Pressable,
-  ImageBackground,
-  ActivityIndicator,
-  Dimensions,
+import {
+    StatusBar,
+    ScrollView,
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    Pressable,
+    ImageBackground,
+    ActivityIndicator,
+    Dimensions,
 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar, BottomSheet } from '@rneui/base';
 import { appImages, appLinks } from '../../global/Data';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import WebView from 'react-native-webview';
 
 
-export default function TermsOfServiceScreen({ navigation }){
-    
+export default function TermsOfServiceScreen({ navigation }) {
+
     const toast = useToast();
 
     const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +39,7 @@ export default function TermsOfServiceScreen({ navigation }){
     // Add loading component
     const LoadingSpinner = () => (
         <View style={styles.loadingContainer}>
-            <ActivityIndicator size={80} color={appColors.AppBlue} />
+            <ActivityIndicator size={moderateScale(80)} color={appColors.AppBlue} />
             <Text style={styles.loadingText}>Loading Terms of Service...</Text>
         </View>
     );
@@ -46,8 +47,8 @@ export default function TermsOfServiceScreen({ navigation }){
     // Add error component
     const ErrorDisplay = () => (
         <View style={styles.errorContainer}>
-            <View style={{ paddingHorizontal: 10, paddingVertical: 20, alignItems: 'center' }}>
-                <Icon name="error-outline" type="material" size={60} color={appColors.AppBlue} />
+            <View style={{ paddingHorizontal: scale(10), paddingVertical: scale(20), alignItems: 'center' }}>
+                <Icon name="error-outline" type="material" size={moderateScale(60)} color={appColors.AppBlue} />
                 <Text style={styles.errorText}>
                     {errorMessage || "Unable to load Terms of Service. Please check your internet connection and try again."}
                 </Text>
@@ -64,84 +65,85 @@ export default function TermsOfServiceScreen({ navigation }){
         </View>
     );
 
-    return(
-      <SafeAreaView style={{ flex:1}}>
-        <View style={ styles.container }>
-            <ImageBackground source={appImages.laundryBg} style={{ flex: 1, }}>
-                <View style={{ paddingVertical:parameters.headerHeightTinier }}>
-                    <LHGenericHeader
-                        title='Terms of Service' 
-                        showLeftIcon={true}
-                        leftIconPressed={ () => { navigation.goBack(); } } 
-                    />
-                </View>
-              
-                <View style={styles.contentContainer}>
-                    {isLoading && <LoadingSpinner />}
-                    
-                    {hasError ? (
-                        <ErrorDisplay />
-                    ) : (
-                        <WebView 
-                            source={{ uri: appLinks.appTerms }} 
-                            style={{ flex: 1, opacity: isLoading ? 0 : 1 }}
-                            onLoadStart={() => setIsLoading(true)}
-                            onLoadEnd={() => setIsLoading(false)}
-                            onError={(syntheticEvent) => {
-                                const { nativeEvent } = syntheticEvent;
-                                setErrorMessage(nativeEvent.description);
-                                setHasError(true);
-                                setIsLoading(false);
-                            }}
-                            renderError={(errorDomain, errorCode, errorDesc) => {
-                                setErrorMessage(errorDesc);
-                                setHasError(true);
-                                setIsLoading(false);
-                                return <ErrorDisplay />;
-                            }}
-                            startInLoadingState={true}
-                            cacheEnabled={true}
-                            javaScriptEnabled={true}
-                            domStorageEnabled={true}
-                            androidLayerType="hardware"
-                            showsHorizontalScrollIndicator={false}
-                            showsVerticalScrollIndicator={false}
+    return (
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <ImageBackground source={appImages.laundryBg} style={{ flex: 1, }}>
+                    <View style={{ paddingVertical: parameters.headerHeightTinier }}>
+                        <LHGenericHeader
+                            title='Terms of Service'
+                            showLeftIcon={true}
+                            leftIconPressed={() => { navigation.goBack(); }}
                         />
-                    )}
-                </View>
-               
-            </ImageBackground>
-        </View>
-      </SafeAreaView>
+                    </View>
+
+                    <View style={styles.contentContainer}>
+                        {isLoading && <LoadingSpinner />}
+
+                        {hasError ? (
+                            <ErrorDisplay />
+                        ) : (
+                            <WebView
+                                source={{ uri: appLinks.appTerms }}
+                                style={{ flex: 1, opacity: isLoading ? 0 : 1 }}
+                                onLoadStart={() => setIsLoading(true)}
+                                onLoadEnd={() => setIsLoading(false)}
+                                onError={(syntheticEvent) => {
+                                    const { nativeEvent } = syntheticEvent;
+                                    setErrorMessage(nativeEvent.description);
+                                    setHasError(true);
+                                    setIsLoading(false);
+                                }}
+                                renderError={(errorDomain, errorCode, errorDesc) => {
+                                    setErrorMessage(errorDesc);
+                                    setHasError(true);
+                                    setIsLoading(false);
+                                    return <ErrorDisplay />;
+                                }}
+                                startInLoadingState={true}
+                                cacheEnabled={true}
+                                javaScriptEnabled={true}
+                                domStorageEnabled={true}
+                                androidLayerType="hardware"
+                                showsHorizontalScrollIndicator={false}
+                                showsVerticalScrollIndicator={false}
+                            />
+                        )}
+                    </View>
+
+                </ImageBackground>
+            </View>
+        </SafeAreaView>
     )
 }
 
 // local stylesheet
 const styles = StyleSheet.create({
-    container : {
+    container: {
         flex: 1,
         backgroundColor: appColors.grey7,
     },
 
     contentContainer: {
         flex: 1,
-        padding:5,
+        padding: scale(5),
         backgroundColor: appColors.CardBackground,
     },
 
     loadingContainer: {
         position: 'absolute',
-        top: 10,
+        top: scale(10),
         left: 0,
         right: 0,
     },
 
     loadingText: {
-        fontSize: 20,
+        fontSize: moderateScale(20),
         fontWeight: 'bold',
-        marginTop: 20,
+        marginTop: scale(20),
         textAlign: 'center',
         color: appColors.AppBlue,
+        fontFamily: appFonts.headerTextBold,
     },
 
     errorContainer: {
@@ -151,22 +153,24 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         justifyContent: 'center',
-        padding: 20,    
+        padding: scale(20),
     },
 
     errorCodeText: {
-        fontSize: 20,
+        fontSize: moderateScale(20),
         fontWeight: 'bold',
-        marginTop: 20,
+        marginTop: scale(20),
         textAlign: 'center',
         color: appColors.AppBlue,
+        fontFamily: appFonts.headerTextBold,
     },
 
     errorText: {
-        fontSize: 16,
+        fontSize: moderateScale(16),
         fontWeight: '600',
-        marginTop: 20,
+        marginTop: scale(20),
         textAlign: 'center',
         color: appColors.AppBlue,
+        fontFamily: appFonts.bodyTextMedium,
     },
 });

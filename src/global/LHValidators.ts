@@ -181,15 +181,30 @@ export const eventFormSchema = z.object({
     .max(200, 'Location is too long'),
 
   maxAttendees: z
-    .number({ invalid_type_error: 'Max attendees must be a number', required_error: 'Max attendees is required' })
-    .int('Max attendees must be a whole number')
-    .min(1, 'At least 1 attendee is required')
-    .max(10000, 'Max attendees cannot exceed 10 000'),
+    .preprocess((val) => {
+      if (typeof val === 'string' && /^\d+$/.test(val)) {
+        return parseInt(val, 10);
+      }
+      return val;
+    },
+      z.number({ invalid_type_error: 'Max attendees must be a numeric value' })
+        .int()
+        .min(1, 'At least 1 attendee is required')
+        .max(10000, 'Max attendees cannot exceed 10,000')
+    ),
 
   price: z
-    .number({ invalid_type_error: 'Price must be a number', required_error: 'Price is required' })
-    .min(0, 'Price cannot be negative')
-    .max(10_000_000, 'Price seems too high'),
+    .preprocess((val) => {
+      if (typeof val === 'string' && /^\d+$/.test(val)) {
+        return parseInt(val, 10);
+      }
+      if (val === '' || val === null || val === undefined) return 0;
+      return val;
+    },
+      z.number({ invalid_type_error: 'Price must be a numeric value' })
+        .min(0, 'Price cannot be negative')
+        .max(10000000, 'Price seems too high')
+    ),
 
   date: z.date({ required_error: 'Event date is required' }),
   startTime: z.date({ required_error: 'Start time is required' }),
@@ -323,3 +338,149 @@ export const validateSendFeedback = (data: SendFeedbackData): SendFeedbackErrors
   return errors;
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Group & Session Validation (Zod v3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Zod v3 schema for creating or editing a support group.
+ */
+export const groupFormSchema = z.object({
+  name: z
+    .string({ required_error: 'Group name is required' })
+    .min(3, 'Group name must be at least 3 characters')
+    .max(50, 'Group name must be 50 characters or fewer')
+    .refine((v) => v.trim().length > 0, 'Group name cannot be blank'),
+
+  description: z
+    .string({ required_error: 'Description is required' })
+    .min(10, 'Description must be at least 10 characters')
+    .max(200, 'Description must be 200 characters or fewer')
+    .refine((v) => v.trim().length > 0, 'Description cannot be blank'),
+
+  maxMembers: z
+    .preprocess((val) => {
+      if (typeof val === 'string' && /^\d+$/.test(val)) {
+        return parseInt(val, 10);
+      }
+      return val;
+    },
+      z.number({ invalid_type_error: 'Max members must be a numeric value' })
+        .int()
+        .min(2, 'A group must have at least 2 members')
+        .max(100, 'Max members cannot exceed 100')
+    ),
+
+  icon: z.string().optional().default('🧘'),
+  privacy: z.enum(['public', 'private']).default('private'),
+  requireApproval: z.boolean().default(true),
+});
+
+export type GroupFormData = z.infer<typeof groupFormSchema>;
+export type GroupFormErrors = Partial<Record<keyof GroupFormData, string>>;
+
+export const validateGroupForm = (data: any): GroupFormErrors => {
+  const errors: GroupFormErrors = {};
+  const result = groupFormSchema.safeParse(data);
+
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as keyof GroupFormData;
+      if (field && !errors[field]) {
+        errors[field] = issue.message;
+      }
+    }
+  }
+  return errors;
+};
+
+/**
+ * Zod v3 schema for scheduling a group session.
+ */
+export const groupSessionSchema = z.object({
+  topic: z
+    .string({ required_error: 'Title is required' })
+    .min(5, 'Title must be at least 5 characters')
+    .max(100, 'Title is too long')
+    .refine((v) => v.trim().length > 0, 'Title cannot be blank'),
+
+  description: z
+    .string()
+    .max(500, 'Description is too long')
+    .optional(),
+
+  duration: z
+    .preprocess((val) => {
+      if (typeof val === 'string' && /^\d+$/.test(val)) {
+        return parseInt(val, 10);
+      }
+      return val;
+    },
+      z.number({ invalid_type_error: 'Duration must be a numeric value (minutes)' })
+        .min(15, 'Minimum duration is 15 minutes')
+        .max(480, 'Maximum duration is 8 hours')
+    ),
+
+  type: z.enum(['virtual', 'in-person', 'hybrid']),
+
+  meetingLink: z
+    .string()
+    .url('Please enter a valid URL')
+    .optional()
+    .or(z.literal('')),
+
+  maxParticipants: z
+    .preprocess((val) => {
+      if (typeof val === 'string' && /^\d+$/.test(val)) {
+        return parseInt(val, 10);
+      }
+      return val;
+    },
+      z.number({ invalid_type_error: 'Max participants must be a numeric value' })
+        .min(1, 'At least 1 participant is required')
+    ),
+}).refine((data) => {
+  if (data.type === 'virtual' && !data.meetingLink) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Meeting link is required for virtual sessions',
+  path: ['meetingLink'],
+});
+
+export type GroupSessionData = z.infer<typeof groupSessionSchema>;
+export type GroupSessionErrors = Partial<Record<keyof GroupSessionData, string>>;
+
+export const validateGroupSession = (data: any): GroupSessionErrors => {
+  const errors: GroupSessionErrors = {};
+  const result = groupSessionSchema.safeParse(data);
+
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as keyof GroupSessionData;
+      if (field && !errors[field]) {
+        errors[field] = issue.message;
+      }
+    }
+  }
+  return errors;
+};
+
+/**
+ * Zod v3 schema for chat messages.
+ */
+export const messageSchema = z
+  .string({ required_error: 'Message is required' })
+  .min(1, 'Message cannot be empty')
+  .max(1000, 'Message is too long (max 1000 characters)')
+  .refine((v) => v.trim().length > 0, 'Message cannot be blank');
+
+/**
+ * Zod v3 schema for group announcements.
+ */
+export const announcementSchema = z
+  .string({ required_error: 'Announcement is required' })
+  .min(5, 'Announcement must be at least 5 characters')
+  .max(500, 'Announcement is too long (max 500 characters)')
+  .refine((v) => v.trim().length > 0, 'Announcement cannot be blank');

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
@@ -137,7 +138,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
       const payload: any = {};
       payload[key] = value;
 
-      await updatePrivacySettings(userId, payload);
+      await updatePrivacySettings(userId, payload, undefined, undefined, undefined);
       dispatch(updatePrivacySettingRedux({ key, value }));
     } catch (error) {
       console.error('Failed to update privacy setting:', error);
@@ -472,8 +473,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.CardBackground,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -484,22 +485,22 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   placeholder: {
-    width: 40,
+    width: scale(40),
   },
   statusCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -509,32 +510,32 @@ const styles = StyleSheet.create({
   statusHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   statusTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   statusDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 16,
-    lineHeight: 20,
+    marginBottom: scale(16),
+    lineHeight: scale(20),
   },
   privacyCheckButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: appColors.AppBlue + '10',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: scale(8),
+    padding: scale(12),
   },
   privacyCheckText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontWeight: '500',
     fontFamily: appFonts.headerTextMedium,
@@ -543,30 +544,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 20,
-    marginBottom: 4,
+    marginHorizontal: scale(20),
+    marginBottom: scale(4),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionDescription: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
-    marginHorizontal: 20,
-    marginBottom: 8,
-    lineHeight: 16,
+    marginHorizontal: scale(20),
+    marginBottom: scale(8),
+    lineHeight: scale(16),
   },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -577,8 +578,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
   },
   importantItem: {
     backgroundColor: '#FFF3E0',
@@ -589,25 +590,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(8),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   privacyItemContent: {
     flex: 1,
   },
   privacyTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   privacySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -616,15 +617,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   importantIcon: {
-    marginRight: 8,
+    marginRight: scale(8),
   },
   separator: {
     height: 1,
     backgroundColor: appColors.grey6,
-    marginLeft: 64,
+    marginLeft: scale(64),
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
 });
 

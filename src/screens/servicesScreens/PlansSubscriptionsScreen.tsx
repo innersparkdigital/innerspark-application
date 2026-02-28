@@ -16,13 +16,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
 import { getCurrentSubscription } from '../../api/client/subscriptions';
 import { mockCurrentPlan, mockCurrentSubscription } from '../../global/MockData';
-import { 
+import {
   setCurrentSubscription as setCurrentSubscriptionRedux,
   toggleAutoRenew as toggleAutoRenewRedux,
   cancelSubscription as cancelSubscriptionRedux
@@ -125,11 +126,11 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
       }
     } catch (error: any) {
       console.error('❌ Error loading subscription:', error);
-      
+
       // Fallback to mock data on error
       setCurrentPlan(mockCurrentPlan);
       setCurrentSubscription(mockCurrentSubscription);
-      
+
       toast.show({
         description: 'Using offline data. Some features may be limited.',
         duration: 3000,
@@ -158,7 +159,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
   const handleCancelSubscription = () => {
     // Show Coming Soon modal since subscription cancellation not fully implemented
     setShowComingSoonModal(true);
-    
+
     /* ORIGINAL CODE - Commented out until backend is ready
     setShowCancelModal(true);
     */
@@ -167,16 +168,16 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
   const confirmCancelSubscription = async () => {
     try {
       setShowCancelModal(false);
-      
+
       // ⚠️ MISSING ENDPOINT: cancelSubscription(userId, subscriptionId, reason)
       // Using local state update only
       console.log('⚠️ MISSING API: cancelSubscription - using mock behavior');
-      
+
       toast.show({
         description: 'Subscription cancelled successfully (offline mode)',
         duration: 3000,
       });
-      
+
       if (currentSubscription) {
         setCurrentSubscription({
           ...currentSubscription,
@@ -198,7 +199,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
 
     // Show Coming Soon modal since auto-renewal toggle not fully implemented
     setShowComingSoonModal(true);
-    
+
     /* ORIGINAL CODE - Commented out until backend is ready
     try {
       // ⚠️ MISSING ENDPOINT: toggleAutoRenew(userId, subscriptionId)
@@ -256,41 +257,41 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
           <Text style={styles.statusText}>FREE</Text>
         </View>
       </View>
-      
+
       <Text style={styles.subscriptionPlan}>Free Plan</Text>
       <Text style={styles.freePlanDescription}>
         You're currently on the free plan. Upgrade to unlock premium features like support groups and direct therapist chat.
       </Text>
-      
+
       <View style={styles.subscriptionDetails}>
         <View style={styles.detailRow}>
-          <Icon name="groups" type="material" color={appColors.grey4} size={20} />
-          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Support Groups:</Text>
+          <Icon name="groups" type="material" color={appColors.grey4} size={moderateScale(20)} />
+          <Text style={[styles.detailLabel, { marginLeft: scale(8), flex: 1 }]}>Support Groups:</Text>
           <Text style={[styles.detailValue, { color: appColors.grey4 }]}>Not Available</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
-          <Icon name="chat" type="material" color={appColors.grey4} size={20} />
-          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Direct Chat:</Text>
+          <Icon name="chat" type="material" color={appColors.grey4} size={moderateScale(20)} />
+          <Text style={[styles.detailLabel, { marginLeft: scale(8), flex: 1 }]}>Direct Chat:</Text>
           <Text style={[styles.detailValue, { color: appColors.grey4 }]}>Not Available</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
-          <Icon name="event" type="material" color={appColors.AppBlue} size={20} />
-          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Appointments:</Text>
+          <Icon name="event" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
+          <Text style={[styles.detailLabel, { marginLeft: scale(8), flex: 1 }]}>Appointments:</Text>
           <Text style={[styles.detailValue, { color: appColors.AppBlue }]}>Pay Per Use</Text>
         </View>
-        
+
         <View style={styles.detailRow}>
-          <Icon name="calendar-today" type="material" color={appColors.AppBlue} size={20} />
-          <Text style={[styles.detailLabel, { marginLeft: 8, flex: 1 }]}>Events:</Text>
+          <Icon name="calendar-today" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
+          <Text style={[styles.detailLabel, { marginLeft: scale(8), flex: 1 }]}>Events:</Text>
           <Text style={[styles.detailValue, { color: appColors.AppBlue }]}>Pay Per Use</Text>
         </View>
       </View>
 
       {/* Upgrade CTA */}
       <View style={styles.upgradeCtaContainer}>
-        <Icon name="star" type="material" color={appColors.AppBlue} size={24} />
+        <Icon name="star" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
         <View style={styles.upgradeCtaContent}>
           <Text style={styles.upgradeCtaTitle}>Unlock Premium Features</Text>
           <Text style={styles.upgradeCtaText}>Join support groups, chat with therapists, and more</Text>
@@ -302,7 +303,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
         onPress={handleUpgradePlan}
       >
         <Text style={styles.upgradePrimaryButtonText}>View Plans</Text>
-        <Icon name="arrow-forward" type="material" color={appColors.CardBackground} size={20} />
+        <Icon name="arrow-forward" type="material" color={appColors.CardBackground} size={moderateScale(20)} />
       </TouchableOpacity>
     </View>
   );
@@ -318,15 +319,15 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
             <Text style={styles.statusText}>{currentSubscription.status?.toUpperCase() || 'UNKNOWN'}</Text>
           </View>
         </View>
-        
+
         <Text style={styles.subscriptionPlan}>{currentSubscription.planName}</Text>
-        
+
         <View style={styles.subscriptionDetails}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Next Billing:</Text>
             <Text style={styles.detailValue}>{formatDate(currentSubscription.nextBillingDate)}</Text>
           </View>
-          
+
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Support Groups:</Text>
             <Text style={styles.detailValue}>
@@ -335,14 +336,14 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
               {currentSubscription.groupsLimit === 'unlimited' && ' (Unlimited)'}
             </Text>
           </View>
-          
+
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Direct Chat:</Text>
             <Text style={[styles.detailValue, { color: currentSubscription.directChatActive ? '#4CAF50' : appColors.grey4 }]}>
               {currentSubscription.directChatActive ? 'Active' : 'Not Available'}
             </Text>
           </View>
-          
+
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Auto-Renewal:</Text>
             <TouchableOpacity onPress={handleToggleAutoRenew}>
@@ -352,7 +353,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {/* Usage Progress Bar for Groups */}
         {currentSubscription.groupsLimit !== 'unlimited' && (
           <View style={styles.usageProgressContainer}>
@@ -371,16 +372,16 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
             style={styles.actionButton}
             onPress={() => navigation.navigate('GroupsScreen')}
           >
-            <Icon name="groups" type="material" color={appColors.AppBlue} size={20} />
+            <Icon name="groups" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
             <Text style={styles.actionButtonText}>Browse Groups</Text>
           </TouchableOpacity>
-          
+
           {currentSubscription.directChatActive && (
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => navigation.navigate('ChatScreen')}
             >
-              <Icon name="chat" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="chat" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.actionButtonText}>Message Therapist</Text>
             </TouchableOpacity>
           )}
@@ -393,7 +394,7 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
           >
             <Text style={styles.upgradeButtonText}>Change Plan</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={handleCancelSubscription}
@@ -442,16 +443,16 @@ const MySubscriptionScreen: React.FC<MySubscriptionScreenProps> = ({ navigation,
             <Text style={styles.modalMessage}>
               Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your current billing period.
             </Text>
-            
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCancelButton}
                 onPress={() => setShowCancelModal(false)}
               >
                 <Text style={styles.modalCancelText}>Keep Plan</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.modalConfirmButton}
                 onPress={confirmCancelSubscription}
               >
@@ -485,8 +486,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
   },
   headerRow: {
     flexDirection: 'row',
@@ -494,8 +495,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   headerCenter: {
@@ -503,55 +504,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerRightPlaceholder: {
-    width: 40,
+    width: scale(40),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     opacity: 0.9,
-    marginTop: 4,
+    marginTop: scale(4),
     fontFamily: appFonts.headerTextRegular,
   },
   scrollContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: scale(20),
+    paddingBottom: scale(40),
   },
   freePlanDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    lineHeight: 20,
-    marginTop: 8,
-    marginBottom: 16,
+    lineHeight: moderateScale(20),
+    marginTop: scale(8),
+    marginBottom: scale(16),
     fontFamily: appFonts.headerTextRegular,
   },
   upgradeCtaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#E3F2FD',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 16,
+    padding: scale(16),
+    borderRadius: scale(12),
+    marginTop: scale(16),
   },
   upgradeCtaContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   upgradeCtaTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   upgradeCtaText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
-    marginTop: 2,
+    marginTop: scale(2),
     fontFamily: appFonts.headerTextRegular,
   },
   upgradePrimaryButton: {
@@ -559,25 +560,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 16,
+    paddingVertical: scale(14),
+    borderRadius: scale(12),
+    marginTop: scale(16),
   },
   upgradePrimaryButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.CardBackground,
-    marginRight: 8,
+    marginRight: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   loadingContainer: {
-    padding: 20,
+    padding: scale(20),
   },
   subscriptionCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(24),
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -588,47 +589,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   subscriptionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   statusBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
   },
   statusText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   subscriptionPlan: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   subscriptionDetails: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
   },
@@ -638,23 +639,23 @@ const styles = StyleSheet.create({
   },
   // Usage Progress
   usageProgressContainer: {
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: scale(16),
+    marginBottom: scale(16),
   },
   progressBar: {
-    height: 8,
+    height: scale(8),
     backgroundColor: appColors.grey6,
-    borderRadius: 4,
+    borderRadius: scale(4),
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   progressFill: {
     height: '100%',
     backgroundColor: appColors.AppBlue,
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
   usageText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
@@ -662,9 +663,9 @@ const styles = StyleSheet.create({
   // Quick Actions
   quickActions: {
     flexDirection: 'row',
-    marginTop: 16,
-    marginBottom: 16,
-    gap: 12,
+    marginTop: scale(16),
+    marginBottom: scale(16),
+    gap: scale(12),
   },
   actionButton: {
     flex: 1,
@@ -672,28 +673,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: appColors.AppBlue + '15',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    borderRadius: scale(10),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(12),
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontWeight: '600',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   upgradeButton: {
     flex: 1,
     borderWidth: 1,
     borderColor: appColors.AppBlue,
-    borderRadius: 8,
-    paddingVertical: 12,
-    marginRight: 8,
+    borderRadius: scale(8),
+    paddingVertical: scale(12),
+    marginRight: scale(8),
     alignItems: 'center',
   },
   upgradeButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontWeight: '600',
     fontFamily: appFonts.headerTextBold,
@@ -701,22 +702,22 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     backgroundColor: '#F44336',
-    borderRadius: 8,
-    paddingVertical: 12,
-    marginLeft: 8,
+    borderRadius: scale(8),
+    paddingVertical: scale(12),
+    marginLeft: scale(8),
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     fontWeight: '600',
     fontFamily: appFonts.headerTextBold,
   },
   planCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -733,16 +734,16 @@ const styles = StyleSheet.create({
   },
   popularBadge: {
     position: 'absolute',
-    top: -8,
-    right: 20,
+    top: scale(-8),
+    right: scale(20),
     backgroundColor: '#FF9800',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(4),
     zIndex: 1,
   },
   popularText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -752,48 +753,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: '#4CAF50' + '20',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginBottom: 12,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    marginBottom: scale(12),
   },
   currentText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#4CAF50',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   planHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   planName: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     flex: 1,
   },
   supportBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(6),
+    paddingVertical: scale(2),
   },
   supportText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   planDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 16,
-    lineHeight: 20,
+    marginBottom: scale(16),
+    lineHeight: moderateScale(20),
   },
   priceContainer: {
     flexDirection: 'row',
@@ -801,7 +802,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   price: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
@@ -907,7 +908,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,

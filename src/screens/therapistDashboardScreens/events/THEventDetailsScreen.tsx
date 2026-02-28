@@ -9,6 +9,7 @@ import { Icon, Button } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { appColors, appFonts } from '../../../global/Styles';
+import { moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
@@ -699,7 +700,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     title: {
-        fontSize: 20,
+        fontSize: moderateScale(20),
         fontWeight: 'bold',
         color: appColors.grey1,
         fontFamily: appFonts.headerTextBold,

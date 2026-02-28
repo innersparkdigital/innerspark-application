@@ -10,12 +10,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { Slider } from '@rneui/themed';
+import Sound from 'react-native-sound';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
+import { getUploadUrl } from '../../utils/imageHelpers';
+import { parseIconProps } from '../../utils/iconHelper';
 
 const { width } = Dimensions.get('window');
+
+// Enable playback in silence mode
+Sound.setCategory('Playback');
 
 interface SoundPlayerScreenProps {
   navigation: NavigationProp<any>;
@@ -26,81 +33,167 @@ const SoundPlayerScreen: React.FC<SoundPlayerScreenProps> = ({ navigation, route
   const { sound } = route.params as any;
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(parseInt(sound.duration) * 60); // Convert to seconds
+  const [duration, setDuration] = useState(parseInt(sound.duration || '0') * 60); // Convert to seconds
   const [volume, setVolume] = useState(0.7);
   const [isLooping, setIsLooping] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
 
+  const soundObj = React.useRef<Sound | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+
   // Animation for the pulsing play button
-  const pulseAnim = useState(new Animated.Value(1))[0];
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
+  // Load sound natively
   useEffect(() => {
-    if (isPlaying) {
-      // Start pulsing animation
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
+    let isMounted = true;
 
-      // Simulate playback progress
-      const interval = setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev >= duration) {
-            if (isLooping) {
-              return 0;
-            } else {
-              setIsPlaying(false);
-              return duration;
-            }
-          }
-          return prev + 1;
+    const url = getUploadUrl(sound.audioUrl);
+    if (!url) {
+      if (isMounted) setIsLoading(false);
+      return;
+    }
+
+    const newSound = new Sound(url, Sound.MAIN_BUNDLE, (error) => {
+      if (error) {
+        console.log('Failed to load the sound', error);
+        if (isMounted) setIsLoading(false);
+        return;
+      }
+
+      if (isMounted) {
+        soundObj.current = newSound;
+        soundObj.current.setVolume(0.7);
+        // Sometimes duration comes back as -1 on external fast loads
+        const fetchedDuration = newSound.getDuration();
+        if (fetchedDuration > 0) {
+          setDuration(Math.floor(fetchedDuration));
+        }
+        setIsLoading(false);
+      } else {
+        newSound.release();
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (soundObj.current) {
+        soundObj.current.release();
+      }
+    };
+  }, [sound.audioUrl]);
+
+  // Sync Progress Status
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isPlaying && soundObj.current && !isScrubbing) {
+      interval = setInterval(() => {
+        soundObj.current?.getCurrentTime((seconds) => {
+          setCurrentTime(seconds);
         });
       }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isPlaying, isScrubbing]);
 
-      return () => clearInterval(interval);
+  useEffect(() => {
+    if (soundObj.current) {
+      soundObj.current.setNumberOfLoops(isLooping ? -1 : 0);
+    }
+  }, [isLooping]);
+
+  useEffect(() => {
+    if (soundObj.current) {
+      soundObj.current.setVolume(volume);
+    }
+  }, [volume]);
+
+  useEffect(() => {
+    if (soundObj.current) {
+      soundObj.current.setSpeed(playbackSpeed);
+    }
+  }, [playbackSpeed]);
+
+
+  useEffect(() => {
+    let loopAnim: Animated.CompositeAnimation | null = null;
+    if (isPlaying) {
+      loopAnim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.1, duration: 1000, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        ])
+      );
+      loopAnim.start();
     } else {
       pulseAnim.setValue(1);
     }
-  }, [isPlaying, duration, isLooping]);
+    return () => loopAnim?.stop();
+  }, [isPlaying, pulseAnim]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    // TODO: Implement actual audio playback
+    if (!soundObj.current || isLoading) return;
+
+    if (isPlaying) {
+      soundObj.current.pause();
+      setIsPlaying(false);
+    } else {
+      setIsPlaying(true);
+      soundObj.current.play((success) => {
+        if (success) {
+          // Playback finished cleanly
+          if (!isLooping) {
+            setIsPlaying(false);
+            setCurrentTime(0);
+          }
+        } else {
+          console.log('Playback failed due to audio decoding errors');
+          setIsPlaying(false);
+        }
+      });
+    }
   };
 
   const handleRewind = () => {
-    setCurrentTime(Math.max(0, currentTime - 15));
+    if (!soundObj.current) return;
+    const newTime = Math.max(0, currentTime - 15);
+    soundObj.current.setCurrentTime(newTime);
+    setCurrentTime(newTime);
   };
 
   const handleForward = () => {
-    setCurrentTime(Math.min(duration, currentTime + 15));
+    if (!soundObj.current) return;
+    const newTime = Math.min(duration, currentTime + 15);
+    soundObj.current.setCurrentTime(newTime);
+    setCurrentTime(newTime);
   };
 
   const handleSliderChange = (value: number) => {
+    setIsScrubbing(true);
     setCurrentTime(value);
+  };
+
+  const handleSliderComplete = (value: number) => {
+    if (soundObj.current) {
+      soundObj.current.setCurrentTime(value);
+    }
+    setIsScrubbing(false);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar backgroundColor={appColors.AppBlue} />
-      
+
       <ISGenericHeader
         title="Now Playing"
         navigation={navigation}
@@ -115,7 +208,7 @@ const SoundPlayerScreen: React.FC<SoundPlayerScreenProps> = ({ navigation, route
             { backgroundColor: sound.color + '20', transform: [{ scale: pulseAnim }] },
           ]}
         >
-          <Icon name={sound.icon} type="material" color={sound.color} size={80} />
+          <Icon {...parseIconProps(sound.icon)} color={sound.color || appColors.AppBlue} size={moderateScale(80)} />
         </Animated.View>
 
         {/* Sound Info */}
@@ -130,6 +223,7 @@ const SoundPlayerScreen: React.FC<SoundPlayerScreenProps> = ({ navigation, route
           <Slider
             value={currentTime}
             onValueChange={handleSliderChange}
+            onSlidingComplete={handleSliderComplete}
             maximumValue={duration}
             minimumValue={0}
             step={1}
@@ -154,28 +248,28 @@ const SoundPlayerScreen: React.FC<SoundPlayerScreenProps> = ({ navigation, route
               name="repeat"
               type="material"
               color={isLooping ? appColors.AppBlue : appColors.grey3}
-              size={28}
+              size={moderateScale(28)}
             />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.controlButton} onPress={handleRewind}>
-            <Icon name="replay-15" type="material" color={appColors.grey2} size={32} />
+            <Icon name="fast-rewind" type="material" color={appColors.grey2} size={moderateScale(32)} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.playButton, { backgroundColor: sound.color }]}
+            style={[styles.playButton, { backgroundColor: sound.color || appColors.AppBlue }]}
             onPress={handlePlayPause}
           >
             <Icon
               name={isPlaying ? 'pause' : 'play-arrow'}
               type="material"
               color="#FFFFFF"
-              size={48}
+              size={moderateScale(48)}
             />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.controlButton} onPress={handleForward}>
-            <Icon name="forward-15" type="material" color={appColors.grey2} size={32} />
+            <Icon name="fast-forward" type="material" color={appColors.grey2} size={moderateScale(32)} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -186,14 +280,14 @@ const SoundPlayerScreen: React.FC<SoundPlayerScreenProps> = ({ navigation, route
               name={isFavorite ? 'favorite' : 'favorite-border'}
               type="material"
               color={isFavorite ? '#E91E63' : appColors.grey3}
-              size={28}
+              size={moderateScale(28)}
             />
           </TouchableOpacity>
         </View>
 
         {/* Volume Control */}
         <View style={styles.volumeContainer}>
-          <Icon name="volume-down" type="material" color={appColors.grey3} size={24} />
+          <Icon name="volume-down" type="material" color={appColors.grey3} size={moderateScale(24)} />
           <Slider
             value={volume}
             onValueChange={setVolume}
@@ -206,7 +300,7 @@ const SoundPlayerScreen: React.FC<SoundPlayerScreenProps> = ({ navigation, route
             minimumTrackTintColor={appColors.AppBlue}
             maximumTrackTintColor={appColors.grey5}
           />
-          <Icon name="volume-up" type="material" color={appColors.grey3} size={24} />
+          <Icon name="volume-up" type="material" color={appColors.grey3} size={moderateScale(24)} />
         </View>
 
         {/* Playback Speed */}
@@ -238,7 +332,7 @@ const SoundPlayerScreen: React.FC<SoundPlayerScreenProps> = ({ navigation, route
         {/* Additional Info */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Icon name="info-outline" type="material" color={appColors.AppBlue} size={20} />
+            <Icon name="info-outline" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
             <Text style={styles.infoText}>
               This sound is designed to help you relax and focus. Use headphones for the best
               experience.
@@ -257,61 +351,61 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingHorizontal: scale(24),
+    paddingTop: scale(40),
   },
   soundIconContainer: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: scale(200),
+    height: scale(200),
+    borderRadius: scale(100),
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: 40,
+    marginBottom: scale(40),
   },
   infoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: scale(40),
   },
   soundTitle: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
     textAlign: 'center',
   },
   soundCategory: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   soundDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   progressContainer: {
-    marginBottom: 40,
+    marginBottom: scale(40),
   },
   sliderThumb: {
-    width: 16,
-    height: 16,
+    width: scale(16),
+    height: scale(16),
     backgroundColor: appColors.AppBlue,
   },
   sliderTrack: {
-    height: 4,
+    height: scale(4),
   },
   timeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: scale(8),
   },
   timeText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -319,79 +413,79 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
-    gap: 20,
+    marginBottom: scale(40),
+    gap: scale(20),
   },
   controlButton: {
-    padding: 8,
+    padding: scale(8),
   },
   playButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: scale(80),
+    height: scale(80),
+    borderRadius: scale(40),
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
+    elevation: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   volumeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
-    gap: 12,
+    marginBottom: scale(32),
+    gap: scale(12),
   },
   volumeSlider: {
     flex: 1,
   },
   volumeThumb: {
-    width: 12,
-    height: 12,
+    width: scale(12),
+    height: scale(12),
     backgroundColor: appColors.AppBlue,
   },
   volumeTrack: {
-    height: 3,
+    height: scale(3),
   },
   infoCard: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: scale(12),
+    padding: scale(16),
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: scale(12),
   },
   infoText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   speedContainer: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   speedLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 12,
+    marginBottom: scale(12),
     textAlign: 'center',
   },
   speedButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
+    gap: scale(8),
   },
   speedButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(16),
+    borderRadius: scale(20),
     backgroundColor: appColors.AppLightGray,
-    borderWidth: 1,
+    borderWidth: scale(1),
     borderColor: appColors.grey5,
   },
   speedButtonActive: {
@@ -399,7 +493,7 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   speedButtonText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
   },

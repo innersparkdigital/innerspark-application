@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Badge } from '@rneui/base';
 import { Swipeable } from 'react-native-gesture-handler';
 import { appColors, parameters, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../components/ISGenericHeader';
@@ -51,7 +52,7 @@ interface NotificationScreenProps {
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  
+
   // Get data from Redux
   const notifications = useSelector(selectNotifications);
   const unreadCount = useSelector(selectUnreadCount);
@@ -142,7 +143,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 48) return 'Yesterday';
@@ -153,7 +154,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   const NotificationCard: React.FC<{ notification: Notification }> = ({ notification }) => {
     const iconConfig = getNotificationIcon(notification.type);
-    
+
     const renderRightActions = () => (
       <View style={styles.rightActions}>
         {!notification.isRead && (
@@ -161,7 +162,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
             style={[styles.actionButton, styles.readAction]}
             onPress={() => handleMarkAsRead(notification.id)}
           >
-            <Icon name="done" type="material" color={appColors.CardBackground} size={20} />
+            <Icon name="done" type="material" color={appColors.CardBackground} size={moderateScale(20)} />
             <Text style={styles.actionText}>Read</Text>
           </TouchableOpacity>
         )}
@@ -169,7 +170,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           style={[styles.actionButton, styles.archiveAction]}
           onPress={() => handleArchiveNotification(notification.id)}
         >
-          <Icon name="archive" type="material" color={appColors.CardBackground} size={20} />
+          <Icon name="archive" type="material" color={appColors.CardBackground} size={moderateScale(20)} />
           <Text style={styles.actionText}>Archive</Text>
         </TouchableOpacity>
       </View>
@@ -181,12 +182,12 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           style={[styles.actionButton, styles.dismissAction]}
           onPress={() => handleDismissNotification(notification.id)}
         >
-          <Icon name="delete" type="material" color={appColors.CardBackground} size={20} />
+          <Icon name="delete" type="material" color={appColors.CardBackground} size={moderateScale(20)} />
           <Text style={styles.actionText}>Dismiss</Text>
         </TouchableOpacity>
       </View>
     );
-    
+
     return (
       <Swipeable
         renderRightActions={renderRightActions}
@@ -209,7 +210,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
                     name={iconConfig.name}
                     type="material"
                     color={iconConfig.color}
-                    size={20}
+                    size={moderateScale(20)}
                   />
                 </View>
               )}
@@ -225,7 +226,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
                   {formatTimestamp(notification.timestamp)}
                 </Text>
               </View>
-              
+
               <Text style={styles.message} numberOfLines={2}>
                 {notification.message}
               </Text>
@@ -238,7 +239,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="notifications-none" type="material" color={appColors.AppGray} size={80} />
+      <Icon name="notifications-none" type="material" color={appColors.AppGray} size={moderateScale(80)} />
       <Text style={styles.emptyTitle}>No Notifications</Text>
       <Text style={styles.emptySubtitle}>You're all caught up! Check back later for updates.</Text>
     </View>
@@ -281,15 +282,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   listContainer: {
-    paddingVertical: 10,
+    paddingVertical: scale(10),
   },
   notificationCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    marginBottom: 12,
+    borderRadius: scale(15),
+    marginBottom: scale(12),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -297,28 +298,28 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   unreadCard: {
-    borderLeftWidth: 4,
+    borderLeftWidth: scale(4),
     borderLeftColor: appColors.AppBlue,
   },
   cardContent: {
     flexDirection: 'row',
-    padding: 16,
+    padding: scale(16),
   },
   iconContainer: {
-    marginRight: 12,
+    marginRight: scale(12),
     position: 'relative',
   },
   iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     alignItems: 'center',
     justifyContent: 'center',
   },
   unreadBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: scale(-2),
+    right: scale(-2),
   },
   contentContainer: {
     flex: 1,
@@ -327,48 +328,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   title: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     flex: 1,
-    marginRight: 8,
+    marginRight: scale(8),
   },
   unreadTitle: {
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   timestamp: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   message: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
     fontFamily: appFonts.headerTextRegular,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: scale(80),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: 16,
+    marginTop: scale(16),
     fontFamily: appFonts.headerTextBold,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     textAlign: 'center',
-    marginTop: 8,
-    marginHorizontal: 40,
+    marginTop: scale(8),
+    marginHorizontal: scale(40),
     fontFamily: appFonts.headerTextRegular,
   },
   // Swipe Actions Styles
@@ -376,20 +377,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingLeft: 20,
+    paddingLeft: scale(20),
   },
   leftActions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingRight: 20,
+    paddingRight: scale(20),
   },
   actionButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 80,
+    width: scale(80),
     height: '100%',
-    paddingVertical: 16,
+    paddingVertical: scale(16),
   },
   readAction: {
     backgroundColor: '#4CAF50',
@@ -402,9 +403,9 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: appColors.CardBackground,
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
-    marginTop: 4,
+    marginTop: scale(4),
     fontFamily: appFonts.headerTextBold,
   },
 });

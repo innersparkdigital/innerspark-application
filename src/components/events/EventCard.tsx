@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Icon, Avatar } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 
 export type EventCardProps = {
   event: {
@@ -78,7 +79,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
         <Text style={styles.title} numberOfLines={2}>{event.title}</Text>
         {variant === 'my' && !!hint && (
           <View style={[styles.hintPill, { backgroundColor: hintColor + '20', borderColor: hintColor }]}>
-            <Icon name="schedule" type="material" color={hintColor} size={14} />
+            <Icon name="schedule" type="material" color={hintColor} size={scale(14)} />
             <Text style={[styles.hintText, { color: hintColor }]}>{hint}</Text>
           </View>
         )}
@@ -86,7 +87,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
 
         <View style={styles.footerRow}>
           <View style={styles.locationRow}>
-            <Icon name={event.isOnline ? 'videocam' : 'location-on'} type="material" color={appColors.grey2} size={16} />
+            <Icon name={event.isOnline ? 'videocam' : 'location-on'} type="material" color={appColors.grey2} size={scale(16)} />
             <Text style={styles.locationText} numberOfLines={1}>{event.isOnline ? 'Online Event' : event.location}</Text>
           </View>
           {variant === 'public' ? (
@@ -94,7 +95,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
           ) : (
             event.isRegistered ? (
               <View style={styles.registeredBadge}>
-                <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={scale(16)} />
                 <Text style={styles.registeredText}>Registered</Text>
               </View>
             ) : null
@@ -103,7 +104,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
 
         <View style={styles.metaRow}>
           <View style={styles.organizerRow}>
-            <Avatar source={event.organizerImage} size={24} rounded />
+            <Avatar source={event.organizerImage} size={scale(24)} rounded />
             <Text style={styles.organizerText}>{event.organizer}</Text>
           </View>
           <View>
@@ -118,7 +119,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
         {variant === 'my' && (
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.secondaryBtn} onPress={onViewTicket}>
-              <Icon name="confirmation-number" type="material" color={appColors.AppBlue} size={18} />
+              <Icon name="confirmation-number" type="material" color={appColors.AppBlue} size={scale(18)} />
               <Text style={styles.secondaryBtnText}>View Ticket</Text>
             </TouchableOpacity>
             {/* Add to Calendar hidden for now */}
@@ -134,47 +135,47 @@ const EventCard: React.FC<EventCardProps> = ({ event, variant = 'public', onPres
 };
 
 const styles = StyleSheet.create({
-  card: { 
-    backgroundColor: appColors.CardBackground, 
-    borderRadius: 15, 
-    marginBottom: 20, 
-    elevation: 3, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.1, shadowRadius: 4 
+  card: {
+    backgroundColor: appColors.CardBackground,
+    borderRadius: scale(15),
+    marginBottom: scale(20),
+    elevation: scale(3),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: scale(2) },
+    shadowOpacity: 0.1, shadowRadius: scale(4)
   },
-  image: { 
-    width: '100%', 
-    height: 180, 
-    borderTopLeftRadius: 15, 
-    borderTopRightRadius: 15, 
+  image: {
+    width: '100%',
+    height: scale(180),
+    borderTopLeftRadius: scale(15),
+    borderTopRightRadius: scale(15),
     // backgroundColor: appColors.AppLightGray, 
-    backgroundColor: appColors.AppBlueOpacity, 
+    backgroundColor: appColors.AppBlueOpacity,
   },
-  content: { padding: 16 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  date: { fontSize: 14, fontWeight: 'bold', color: appColors.AppBlue, fontFamily: appFonts.headerTextBold },
-  time: { fontSize: 12, color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
-  categoryBadge: { backgroundColor: appColors.AppLightGray, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
-  categoryText: { fontSize: 12, color: appColors.AppBlue, fontFamily: appFonts.headerTextMedium },
-  title: { fontSize: 18, fontWeight: 'bold', color: appColors.grey1, marginBottom: 8, fontFamily: appFonts.headerTextBold },
-  description: { fontSize: 14, color: appColors.grey2, lineHeight: 20, marginBottom: 12, fontFamily: appFonts.headerTextRegular },
-  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  content: { padding: scale(16) },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scale(12) },
+  date: { fontSize: moderateScale(14), fontWeight: 'bold', color: appColors.AppBlue, fontFamily: appFonts.headerTextBold },
+  time: { fontSize: moderateScale(12), color: appColors.grey2, fontFamily: appFonts.headerTextRegular },
+  categoryBadge: { backgroundColor: appColors.AppLightGray, borderRadius: scale(12), paddingHorizontal: scale(8), paddingVertical: scale(4) },
+  categoryText: { fontSize: moderateScale(12), color: appColors.AppBlue, fontFamily: appFonts.headerTextMedium },
+  title: { fontSize: moderateScale(18), fontWeight: 'bold', color: appColors.grey1, marginBottom: scale(8), fontFamily: appFonts.headerTextBold },
+  description: { fontSize: moderateScale(14), color: appColors.grey2, lineHeight: moderateScale(20), marginBottom: scale(12), fontFamily: appFonts.headerTextRegular },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scale(12) },
   locationRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  locationText: { fontSize: 13, color: appColors.grey2, marginLeft: 6, fontFamily: appFonts.headerTextRegular },
-  seatsText: { fontSize: 12, fontWeight: 'bold', fontFamily: appFonts.headerTextBold },
+  locationText: { fontSize: moderateScale(13), color: appColors.grey2, marginLeft: scale(6), fontFamily: appFonts.headerTextRegular },
+  seatsText: { fontSize: moderateScale(12), fontWeight: 'bold', fontFamily: appFonts.headerTextBold },
   registeredBadge: { flexDirection: 'row', alignItems: 'center' },
-  registeredText: { fontSize: 12, color: '#4CAF50', marginLeft: 6, fontFamily: appFonts.headerTextMedium },
+  registeredText: { fontSize: moderateScale(12), color: '#4CAF50', marginLeft: scale(6), fontFamily: appFonts.headerTextMedium },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   organizerRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  organizerText: { fontSize: 13, color: appColors.grey2, marginLeft: 8, fontFamily: appFonts.headerTextRegular },
-  free: { fontSize: 14, fontWeight: 'bold', color: '#4CAF50', fontFamily: appFonts.headerTextBold },
-  price: { fontSize: 14, fontWeight: 'bold', color: appColors.AppBlue, fontFamily: appFonts.headerTextBold },
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  secondaryBtn: { backgroundColor: appColors.CardBackground, borderRadius: 20, paddingVertical: 8, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', elevation: 1 },
-  secondaryBtnText: { marginLeft: 6, color: appColors.AppBlue, fontSize: 13, fontFamily: appFonts.headerTextMedium },
-  hintPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: 1, borderRadius: 14, paddingVertical: 2, paddingHorizontal: 8, marginBottom: 6, gap: 4 },
-  hintText: { fontSize: 12, fontFamily: appFonts.headerTextMedium },
+  organizerText: { fontSize: moderateScale(13), color: appColors.grey2, marginLeft: scale(8), fontFamily: appFonts.headerTextRegular },
+  free: { fontSize: moderateScale(14), fontWeight: 'bold', color: '#4CAF50', fontFamily: appFonts.headerTextBold },
+  price: { fontSize: moderateScale(14), fontWeight: 'bold', color: appColors.AppBlue, fontFamily: appFonts.headerTextBold },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: scale(12) },
+  secondaryBtn: { backgroundColor: appColors.CardBackground, borderRadius: scale(20), paddingVertical: scale(8), paddingHorizontal: scale(12), flexDirection: 'row', alignItems: 'center', elevation: scale(1) },
+  secondaryBtnText: { marginLeft: scale(6), color: appColors.AppBlue, fontSize: moderateScale(13), fontFamily: appFonts.headerTextMedium },
+  hintPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderWidth: scale(1), borderRadius: scale(14), paddingVertical: scale(2), paddingHorizontal: scale(8), marginBottom: scale(6), gap: scale(4) },
+  hintText: { fontSize: moderateScale(12), fontFamily: appFonts.headerTextMedium },
 });
 
 export default EventCard;

@@ -2,52 +2,53 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, StatusBar } from 'react-native';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts, parameters } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import { appImages } from '../global/Data';
 
 export default function LHGenericHeader({
     leftIconPressed,
     leftIconName,
     leftIconType,
-    hasCustomStatusBar=true,
-    title="Header Title",
+    hasCustomStatusBar = true,
+    title = "Header Title",
     subtitle,
     showLeftIcon = true,
     showTitle = true,
     rightIcon,
     rightIconPressed,
     rightIconType = "material",
-}){
+}) {
 
-    return(
+    return (
         <View style={styles.header}>
-            { hasCustomStatusBar && <StatusBar backgroundColor={appColors.AppBlue} barStyle='light-content' /> }
-          
-            {showLeftIcon && 
-            <View style={{...styles.headerIconsLR, marginLeft:10 }}>
-                <Icon 
-                    type={ leftIconType ? leftIconType : "material-community" }
-                    name={leftIconName ? leftIconName : "chevron-left-circle"}
-                    color={appColors.AppBlue}
-                    size={32}
-                    onPress={ leftIconPressed }
-               />
-            </View>
+            {hasCustomStatusBar && <StatusBar backgroundColor={appColors.AppBlue} barStyle='light-content' />}
+
+            {showLeftIcon &&
+                <View style={{ ...styles.headerIconsLR, marginLeft: 10 }}>
+                    <Icon
+                        type={leftIconType ? leftIconType : "material-community"}
+                        name={leftIconName ? leftIconName : "chevron-left-circle"}
+                        color={appColors.AppBlue}
+                        size={moderateScale(32)}
+                        onPress={leftIconPressed}
+                    />
+                </View>
             }
 
             {/* The Header Title and Subtitle */}
-            <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
-                { showTitle && <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerText}>{title}</Text> }
-                { subtitle && <Text numberOfLines={1} ellipsizeMode='tail' style={styles.subtitleText}>{subtitle}</Text> }
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                {showTitle && <Text numberOfLines={1} ellipsizeMode='tail' style={styles.headerText}>{title}</Text>}
+                {subtitle && <Text numberOfLines={1} ellipsizeMode='tail' style={styles.subtitleText}>{subtitle}</Text>}
             </View>
-            
+
             {/* The Right Icon or space to balance the header */}
-            <View style={{ marginRight:10, paddingHorizontal:8 }}>
+            <View style={{ marginRight: 10, paddingHorizontal: 8 }}>
                 {rightIcon && (
-                    <Icon 
+                    <Icon
                         type={rightIconType}
                         name={rightIcon}
                         color={appColors.AppBlue}
-                        size={28}
+                        size={moderateScale(28)}
                         onPress={rightIconPressed}
                     />
                 )}
@@ -58,38 +59,38 @@ export default function LHGenericHeader({
 
 const styles = StyleSheet.create({
     header: {
-        flexDirection:'row',
+        flexDirection: 'row',
         //backgroundColor:appColors.AppBlue,
-        height:parameters.headerHeightL,
+        height: scale(parameters.headerHeightL),
         // justifyContent:'space-between',
-        alignItems:'center',
+        alignItems: 'center',
     },
 
     headerLeftIcon: {
-        alignItems:"center",
-        justifyContent:"center", 
-        marginLeft:10
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: scale(10)
     },
 
     headerIconsLR: {
-        alignItems:"center", 
-        justifyContent:"center", 
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     headerText: {
         color: appColors.AppBlue,
-        fontSize: 20,
-        paddingHorizontal:5,
+        fontSize: moderateScale(20),
+        paddingHorizontal: scale(5),
         fontFamily: appFonts.headerTextBold,
-        textAlign:'center',
+        textAlign: 'center',
     },
 
     subtitleText: {
         color: appColors.AppGray,
-        fontSize: 14,
-        paddingHorizontal:5,
-        fontFamily: appFonts.regularText,
-        textAlign:'center',
-        marginTop: 2,
+        fontSize: moderateScale(14),
+        paddingHorizontal: scale(5),
+        fontFamily: appFonts.bodyTextRegular,
+        textAlign: 'center',
+        marginTop: scale(2),
     }
 })

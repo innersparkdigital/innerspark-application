@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
 import { createNewTicket } from '../../utils/supportTicketsManager';
@@ -103,7 +104,7 @@ const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, rou
       description: formData.description.trim(),
     };
 
-    const result = await dispatch(createNewTicket(userId, ticketData));
+    const result = await (dispatch as any)(createNewTicket(userId, ticketData));
 
     if (result.success) {
       toast.show({
@@ -134,7 +135,7 @@ const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, rou
 
   const updateFormData = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -203,23 +204,23 @@ const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, rou
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>Create Support Ticket</Text>
-        
+
         <View style={styles.headerSpacer} />
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -260,7 +261,7 @@ const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, rou
             <Text style={styles.label}>Description *</Text>
             <TextInput
               style={[
-                styles.textInput, 
+                styles.textInput,
                 styles.textAreaInput,
                 errors.description && styles.textInputError
               ]}
@@ -306,7 +307,7 @@ const CreateTicketScreen: React.FC<CreateTicketScreenProps> = ({ navigation, rou
             ]}
             titleStyle={styles.submitButtonText}
           />
-          
+
           <Text style={styles.submitNote}>
             You'll receive email notifications about updates to your ticket
           </Text>
@@ -323,9 +324,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.CardBackground,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
@@ -335,19 +336,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },
   headerSpacer: {
-    width: 40,
+    width: scale(40),
   },
   content: {
     flex: 1,
@@ -359,76 +360,76 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue + '20',
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    margin: 16,
-    borderRadius: 12,
+    padding: scale(16),
+    margin: scale(16),
+    borderRadius: scale(12),
   },
   helpText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
-    marginLeft: 12,
-    lineHeight: 20,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(12),
+    lineHeight: scale(20),
   },
   formGroup: {
-    marginHorizontal: 16,
-    marginBottom: 24,
+    marginHorizontal: scale(16),
+    marginBottom: scale(24),
   },
   label: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   textInput: {
     backgroundColor: appColors.CardBackground,
-    borderWidth: 1,
+    borderWidth: scale(1),
     borderColor: appColors.grey6,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   textInputError: {
     borderColor: '#F44336',
   },
   textAreaInput: {
-    minHeight: 120,
-    paddingTop: 12,
+    minHeight: scale(120),
+    paddingTop: scale(12),
   },
   inputFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: scale(4),
   },
   errorText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#F44336',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   characterCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 4,
+    marginTop: scale(4),
   },
   categoryChip: {
     backgroundColor: appColors.grey6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    borderRadius: scale(20),
+    marginRight: scale(8),
+    marginBottom: scale(8),
+    borderWidth: scale(1),
     borderColor: 'transparent',
   },
   categoryChipSelected: {
@@ -436,23 +437,23 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   categoryChipText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   categoryChipTextSelected: {
     color: appColors.AppBlue,
     fontWeight: '600',
   },
   priorityContainer: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   priorityOption: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
+    padding: scale(16),
+    borderRadius: scale(12),
+    marginBottom: scale(8),
+    borderWidth: scale(1),
     borderColor: appColors.grey6,
   },
   priorityOptionSelected: {
@@ -462,17 +463,17 @@ const styles = StyleSheet.create({
   priorityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   priorityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
+    width: scale(12),
+    height: scale(12),
+    borderRadius: scale(6),
+    marginRight: scale(12),
   },
   priorityText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -481,60 +482,60 @@ const styles = StyleSheet.create({
     color: appColors.AppBlue,
   },
   priorityDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginLeft: 24,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(24),
   },
   attachmentPlaceholder: {
     backgroundColor: appColors.grey6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    borderRadius: 12,
-    borderWidth: 2,
+    padding: scale(24),
+    borderRadius: scale(12),
+    borderWidth: scale(2),
     borderColor: appColors.grey5,
     borderStyle: 'dashed',
   },
   attachmentText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginLeft: 12,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(12),
   },
   bottomSpacer: {
-    height: 100,
+    height: scale(100),
   },
   submitContainer: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
+    padding: scale(16),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   submitButton: {
     backgroundColor: appColors.AppBlue,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: scale(16),
+    borderRadius: scale(12),
   },
   submitButtonDisabled: {
     backgroundColor: appColors.grey4,
   },
   submitButtonText: {
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   submitNote: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: scale(8),
   },
 });
 

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateGender } from '../../features/flow/signupFlowSlice';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    Dimensions, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    Dimensions,
     Image,
     ImageBackground,
     TextInput,
@@ -14,33 +14,34 @@ import {
     ActivityIndicator,
     Animated,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { appColors, parameters, appFonts } from '../../global/Styles';
-import { Button, Icon, BottomSheet} from '@rneui/base';
+import { scale, verticalScale, moderateScale } from '../../global/Scaling';
+import { Button, Icon, BottomSheet } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import { AuthInstance } from '../../api/LHAPI';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
-import { 
-    isValidPhoneNumber, 
-    isValidEmailAddress, 
-    isValidPassword, 
-    isValidName 
+import {
+    isValidPhoneNumber,
+    isValidEmailAddress,
+    isValidPassword,
+    isValidName
 } from '../../global/LHValidators';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 import { API_BASE_URL, API_VERSION, AUTH_TOKEN } from '../../config/env';
 
-export default function SignupScreen({navigation}){
-    
+export default function SignupScreen({ navigation }) {
+
     const dispatch = useDispatch(); // dispatch actions
     const toast = useToast();
-    
+
     // Redux selectors
     const storedGender = useSelector(state => state.signupFlow.gender); // gender default value
     const [isLoading, setIsLoading] = useState(false);
-    
+
     // Multi-step flow state
     const [currentStep, setCurrentStep] = useState(1);
     const slideAnim = useRef(new Animated.Value(0)).current;
@@ -58,14 +59,15 @@ export default function SignupScreen({navigation}){
     const [phone, setPhone] = useState(""); // phone number
     const [password, setPassword] = useState(""); // password
     const [verifyPassword, setVerifyPassword] = useState(""); // verify password
+    const [agreeToTerms, setAgreeToTerms] = useState(false); // Agree to terms checkbox
 
     // Phone related controls
     const [isCountrySupported, setIsCountrySupported] = useState(true);
     const [formattedPhone, setFormattedPhone] = useState(""); // Formatted phone
 
     // Toggle Password Handler
-    const togglePassword = () => { 
-        showPassword ? setShowPassword(false) : setShowPassword(true); 
+    const togglePassword = () => {
+        showPassword ? setShowPassword(false) : setShowPassword(true);
     }
 
     // Toggle Verify Password
@@ -74,32 +76,32 @@ export default function SignupScreen({navigation}){
     }
 
     // Gender handlers with Redux dispatch
-    const handleMaleSelection = () => { 
-        setGender("M"); 
-        dispatch(updateGender("M")); 
+    const handleMaleSelection = () => {
+        setGender("M");
+        dispatch(updateGender("M"));
         console.log("Gender: ", gender);
         // console.log("Gender Formatted: ", getGender(gender));
     }
-    const handleFemaleSelection = () => { 
-        setGender("F"); 
-        dispatch(updateGender("F")); 
+    const handleFemaleSelection = () => {
+        setGender("F");
+        dispatch(updateGender("F"));
         console.log("Gender: ", gender);
         // console.log("Gender Formatted: ", getGender(gender));
     }
 
     // Name Handler
-    const onChangeNameHandler = (name) => { setName(name); }   
+    const onChangeNameHandler = (name) => { setName(name); }
 
     // First Name Handler
-    const onChangeFirstNameHandler = (firstName) => { 
+    const onChangeFirstNameHandler = (firstName) => {
         setFirstName(firstName.trim()); // trim whitespace
-    }   
+    }
 
     // Last Name Handler
-    const onChangeLastNameHandler = (lastName) => { setLastName(lastName.trim()); }   
+    const onChangeLastNameHandler = (lastName) => { setLastName(lastName.trim()); }
 
     // Email Handler
-     const onChangeEmailHandler = (email) => { setEmail(email.trim()); }
+    const onChangeEmailHandler = (email) => { setEmail(email.trim()); }
 
     // Get Formatted Gender value
     const getGender = (gender) => { return (gender == 'M') ? 'Male' : 'Female'; }
@@ -108,7 +110,7 @@ export default function SignupScreen({navigation}){
     const onChangePhoneHandler = (phone) => { setPhone(phone); }
 
     // Password Handler
-    const onChangePasswordHandler = (password) => { setPassword(password.trim()); }            
+    const onChangePasswordHandler = (password) => { setPassword(password.trim()); }
 
     // Verify Password Handler
     const onChangeVerifyPasswordHandler = (password) => { setVerifyPassword(password.trim()); }
@@ -125,20 +127,26 @@ export default function SignupScreen({navigation}){
     // Step-specific validation
     const validateStep1 = () => {
         // Validate First Name
-        if ( !isValidName(firstName) ) {
+        if (!isValidName(firstName)) {
             notifyWithToast("Enter valid First Name.");
             return false;
         }
 
         // Validate Last Name
-        if ( !isValidName(lastName) ) {
+        if (!isValidName(lastName)) {
             notifyWithToast("Enter valid Last Name.");
             return false;
         }
 
         // Validate Gender
-        if ( !gender ) {
+        if (!gender) {
             notifyWithToast("Please select your gender.");
+            return false;
+        }
+
+        // Validate Agree to Terms
+        if (!agreeToTerms) {
+            notifyWithToast("You must agree to the Terms and Conditions to proceed.");
             return false;
         }
 
@@ -147,20 +155,26 @@ export default function SignupScreen({navigation}){
 
     const validateStep2 = () => {
         // Validate Email
-        if ( !isValidEmailAddress(email.trim()) ) {
+        if (!isValidEmailAddress(email.trim())) {
             notifyWithToast("Enter valid Email.");
             return false;
         }
 
         // check if country is supported
-        if ( !isCountrySupported ) {
+        if (!isCountrySupported) {
             notifyWithToast("Country not supported yet!");
             return false;
         }
 
         // Validate Phone
-        if ( !isValidPhoneNumber(formattedPhone) ) {
+        if (!isValidPhoneNumber(formattedPhone)) {
             notifyWithToast("Enter valid Phone Number.");
+            return false;
+        }
+
+        // Validate Agree to Terms
+        if (!agreeToTerms) {
+            notifyWithToast("You must agree to the Terms and Conditions to proceed.");
             return false;
         }
 
@@ -169,14 +183,20 @@ export default function SignupScreen({navigation}){
 
     const validateStep3 = () => {
         // Validate Password
-        if ( !isValidPassword(password) ) {
+        if (!isValidPassword(password)) {
             notifyWithToast("Password must be at least 8 characters");
             return false;
         }
 
         // Validate Password and Verify Password
-        if ( password != verifyPassword ) {
+        if (password != verifyPassword) {
             notifyWithToast("Passwords do not match!");
+            return false;
+        }
+
+        // Validate Agree to Terms
+        if (!agreeToTerms) {
+            notifyWithToast("You must agree to the Terms and Conditions to proceed.");
             return false;
         }
 
@@ -194,7 +214,7 @@ export default function SignupScreen({navigation}){
     // Step navigation with animation
     const goToNextStep = () => {
         let isValid = false;
-        
+
         if (currentStep === 1) {
             isValid = validateStep1();
         } else if (currentStep === 2) {
@@ -238,7 +258,7 @@ export default function SignupScreen({navigation}){
 
     // Get step title
     const getStepTitle = () => {
-        switch(currentStep) {
+        switch (currentStep) {
             case 1:
                 return "Personal Information";
             case 2:
@@ -256,9 +276,9 @@ export default function SignupScreen({navigation}){
      * This method creates a new Innerspark User
      */
     const UserSignupHandler = async (event) => {
-        
+
         // Validate Signup Inputs
-        if ( !validateSignupInputs() ) {
+        if (!validateSignupInputs()) {
             return;
         }
 
@@ -285,22 +305,22 @@ export default function SignupScreen({navigation}){
         try {
 
             const response = await AuthInstance.post('/auth/register', {
-                firstName : firstName.trim(), // first name
-                lastName : lastName.trim(), // last name
-                email : email.trim(), // email
-                phoneNumber : formattedPhone, // Formatted phone
-                gender : getGender(gender), // Gender Extraction
-                password : password.trim(), // password
+                firstName: firstName.trim(), // first name
+                lastName: lastName.trim(), // last name
+                email: email.trim(), // email
+                phoneNumber: formattedPhone, // Formatted phone
+                gender: getGender(gender), // Gender Extraction
+                password: password.trim(), // password
                 // role : "user", // We are creating a new user
-                
+
             });
-            
+
             // checking the status
             if (response.status === 200) {
 
                 // IF status is successful
                 // JSON.stringify(response.data)
-                if (response.data.status == "success"){
+                if (response.data.status == "success") {
 
                     console.log(response.data);
                     setIsLoading(false); // Set loading state
@@ -320,12 +340,12 @@ export default function SignupScreen({navigation}){
                     console.log(response.data);
                     setIsLoading(false); // Set loading state
                     notifyWithToast(response.data.message);  // Notify with Toasts
-                   
+
                     // clear sensitive inputs
                     setPassword(''); // Clear password
                     setVerifyPassword(''); // Clear verify password
                 }
-                
+
             } else {
 
                 // Can we find out what status code it is? 
@@ -335,7 +355,7 @@ export default function SignupScreen({navigation}){
 
         } catch (error) {
             console.error('Signup Error:', error.message);
-            
+
             if (error.response) {
                 // Show backend error message if available
                 const errorMessage = error.response.data?.message || "Whoops! Something went wrong.";
@@ -345,34 +365,34 @@ export default function SignupScreen({navigation}){
             } else {
                 notifyWithToast("Whoops! Something went wrong.");
             }
-            
+
             setIsLoading(false); // Set loading state
         }
 
-}
-    
+    }
 
-    return(
-       <SafeAreaView style={ styles.container }>
+
+    return (
+        <SafeAreaView style={styles.container}>
             <ImageBackground source={appImages.laundryBg} style={{ flex: 1, }}>
-                <View style={{ paddingVertical:parameters.headerHeightTinier }}>
+                <View style={{ paddingVertical: parameters.headerHeightTinier }}>
                     <LHGenericHeader
-                        title='Signup' 
+                        title='Signup'
                         showTitle={false}
                         showLeftIcon={true}
-                        leftIconPressed={ () => { navigation.goBack(); } } 
+                        leftIconPressed={() => { navigation.goBack(); }}
                     />
                 </View>
-               <ScrollView>
-                    <View style={{ flex:1, paddingHorizontal:25, paddingVertical:5 }}>
-                        <View style={{ justifyContent: "center", alignItems:"center" }}>
-                            <Image source={appImages.logoRecBlue} style={{ width:280, height:60, resizeMode:'contain' }} />
+                <ScrollView>
+                    <View style={{ flex: 1, paddingHorizontal: 25, paddingVertical: 5 }}>
+                        <View style={{ justifyContent: "center", alignItems: "center" }}>
+                            <Image source={appImages.logoRecBlue} style={{ width: scale(280), height: scale(60), resizeMode: 'contain' }} />
                         </View>
-                        <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:15 }}>
-                            <Text style={{ fontSize:18, color:appColors.AppBlue, fontWeight:'500', paddingVertical:5, textAlign:'center' }}>
+                        <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: scale(15) }}>
+                            <Text style={{ fontSize: moderateScale(18), color: appColors.AppBlue, fontWeight: '500', paddingVertical: scale(5), textAlign: 'center' }}>
                                 Start Your Wellness Journey Today!
                             </Text>
-                            <Text style={{ fontSize:15, color:appColors.grey2, fontWeight:'400', paddingVertical:5, textAlign:'center' }}>
+                            <Text style={{ fontSize: moderateScale(15), color: appColors.grey2, fontWeight: '400', paddingVertical: scale(5), textAlign: 'center' }}>
                                 Create an account to get started
                             </Text>
                         </View>
@@ -395,8 +415,8 @@ export default function SignupScreen({navigation}){
                         </View>
 
                         {/* Step Title */}
-                        <View style={{ paddingVertical:10 }}>
-                            <Text style={{ fontSize:16, color:appColors.AppBlue, fontWeight:'600', textAlign:'center' }}>
+                        <View style={{ paddingVertical: scale(10) }}>
+                            <Text style={{ fontSize: moderateScale(16), color: appColors.AppBlue, fontWeight: '600', textAlign: 'center' }}>
                                 {getStepTitle()}
                             </Text>
                         </View>
@@ -404,249 +424,259 @@ export default function SignupScreen({navigation}){
                         {/* Animated Step Container */}
                         <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
 
-                        {/* STEP 1: Personal Information */}
-                        {currentStep === 1 && (
-                            <View>
-                        {/* First Name Input block */}
-                        <View style={ styles.inputBlockRow }>
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                <Icon type="material-icons" name="person"  color={appColors.grey4} size={25} />
-                            </View>
-                            <TextInput 
-                                placeholderTextColor={ appColors.grey3 } 
-                                style={{ flex:3, fontSize:16, color:appColors.AppBlue, paddingVertical:0 }}
-                                editable={!isLoading}
-                                placeholder='First Name' 
-                                value={firstName}
-                                maxLength={30}
-                                onChangeText={ onChangeFirstNameHandler }
-                            />  
-                        </View>
-                            
-                        {/* Last Name Input block */}
-                        <View style={ styles.inputBlockRow }>
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                <Icon type="material-icons" name="person"  color={appColors.grey4} size={25} />
-                            </View>
-                            <TextInput 
-                                placeholderTextColor={ appColors.grey3 } 
-                                style={{ flex:3, fontSize:16, color:appColors.AppBlue, paddingVertical:0 }}
-                                editable={!isLoading}
-                                placeholder='Last Name' 
-                                value={lastName}
-                                maxLength={30}
-                                onChangeText={ onChangeLastNameHandler }
-                            />  
-                        </View>
-                            
-                        {/* Gender Input block */}
-                        <View style={{ flexDirection:'row', marginVertical:5, justifyContent:'space-between' }}>
-                            <View style={{ flex:1, paddingHorizontal:2, marginRight:5 }}>
-                                <Button 
-                                    title="Male"
-                                    buttonStyle={gender == "M" ? styles.genderButtonActive : styles.genderButtonInactive}
-                                    titleStyle={gender == "M" ? styles.genderButtonTitleActive : styles.genderButtonTitleInactive}
-                                    iconPosition='left'
-                                    iconContainerStyle={{ marginRight: 15 }}
-                                    icon={{ name: 'male', type: 'font-awesome', size: 18, color: appColors.grey4 }}
-                                    onPress={handleMaleSelection}
-                                />
-                            </View>
+                            {/* STEP 1: Personal Information */}
+                            {currentStep === 1 && (
+                                <View>
+                                    {/* First Name Input block */}
+                                    <View style={styles.inputBlockRow}>
+                                        <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                            <Icon type="material-icons" name="person" color={appColors.grey4} size={moderateScale(25)} />
+                                        </View>
+                                        <TextInput
+                                            placeholderTextColor={appColors.grey3}
+                                            style={{ flex: 3, fontSize: moderateScale(16), color: appColors.AppBlue, paddingVertical: 0 }}
+                                            editable={!isLoading}
+                                            placeholder='First Name'
+                                            value={firstName}
+                                            maxLength={30}
+                                            onChangeText={onChangeFirstNameHandler}
+                                        />
+                                    </View>
 
-                            <View style={{ flex:1, paddingHorizontal:2, marginLeft:5 }}>
-                                <Button 
-                                    title="Female"
-                                    buttonStyle={ gender == "F" ? styles.genderButtonActive : styles.genderButtonInactive }
-                                    titleStyle={gender == "F" ? styles.genderButtonTitleActive : styles.genderButtonTitleInactive}
-                                    iconPosition='left'
-                                    iconContainerStyle={{ marginRight: 15 }}
-                                    icon={{ name: 'female', type: 'font-awesome', size: 18, color: appColors.grey4 }}
-                                    onPress={handleFemaleSelection}
-                                />
-                            </View>
-                        </View>
+                                    {/* Last Name Input block */}
+                                    <View style={styles.inputBlockRow}>
+                                        <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                            <Icon type="material-icons" name="person" color={appColors.grey4} size={moderateScale(25)} />
+                                        </View>
+                                        <TextInput
+                                            placeholderTextColor={appColors.grey3}
+                                            style={{ flex: 3, fontSize: moderateScale(16), color: appColors.AppBlue, paddingVertical: 0 }}
+                                            editable={!isLoading}
+                                            placeholder='Last Name'
+                                            value={lastName}
+                                            maxLength={30}
+                                            onChangeText={onChangeLastNameHandler}
+                                        />
+                                    </View>
 
-                        {/* Step 1 Navigation */}
-                        <View style={{ paddingVertical:15 }}>
-                            <Button 
-                                title="Continue"
-                                buttonStyle={ parameters.appButtonXLBlue }
-                                titleStyle={ parameters.appButtonXLTitleBlue } 
-                                disabled={ isLoading }
-                                onPress={ goToNextStep }
-                            /> 
-                        </View>
-                            </View>
-                        )}
+                                    {/* Gender Input block */}
+                                    <View style={{ flexDirection: 'row', marginVertical: scale(5), justifyContent: 'space-between' }}>
+                                        <View style={{ flex: 1, paddingHorizontal: scale(2), marginRight: scale(5) }}>
+                                            <Button
+                                                title="Male"
+                                                buttonStyle={gender == "M" ? styles.genderButtonActive : styles.genderButtonInactive}
+                                                titleStyle={gender == "M" ? styles.genderButtonTitleActive : styles.genderButtonTitleInactive}
+                                                iconPosition='left'
+                                                iconContainerStyle={{ marginRight: scale(15) }}
+                                                icon={{ name: 'male', type: 'font-awesome', size: moderateScale(18), color: appColors.grey4 }}
+                                                onPress={handleMaleSelection}
+                                            />
+                                        </View>
+                                        <View style={{ flex: 1, paddingHorizontal: scale(2), marginLeft: scale(5) }}>
+                                            <Button
+                                                title="Female"
+                                                buttonStyle={gender == "F" ? styles.genderButtonActive : styles.genderButtonInactive}
+                                                titleStyle={gender == "F" ? styles.genderButtonTitleActive : styles.genderButtonTitleInactive}
+                                                iconPosition='left'
+                                                iconContainerStyle={{ marginRight: scale(15) }}
+                                                icon={{ name: 'female', type: 'font-awesome', size: moderateScale(18), color: appColors.grey4 }}
+                                                onPress={handleFemaleSelection}
+                                            />
+                                        </View>
+                                    </View>
 
-                       {/* STEP 2: Contact Details */}
-                       {currentStep === 2 && (
-                            <View>
-                       {/* Email Input Block */}
-                       <View style={ styles.inputBlockRow }>
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                <Icon type= "material-community" name= "email"  color= {appColors.grey4} size= {25} />
-                            </View>
-                            <TextInput 
-                                placeholderTextColor={ appColors.grey3 } 
-                                style={{ flex:3, fontSize:16, color:appColors.AppBlue, paddingVertical:0 }}
-                                placeholder='Your email address' 
-                                keyboardType='email-address'
-                                editable={!isLoading}
-                                value={email}
-                                maxLength={100}
-                                onChangeText={ onChangeEmailHandler }
-                            />   
-                        </View>
+                                    {/* Step 1 Navigation */}
+                                    <View style={{ paddingVertical: scale(15) }}>
+                                        <Button
+                                            title="Continue"
+                                            buttonStyle={parameters.appButtonXLBlue}
+                                            titleStyle={parameters.appButtonXLTitleBlue}
+                                            disabled={isLoading}
+                                            onPress={goToNextStep}
+                                        />
+                                    </View>
+                                </View>
+                            )}
 
-                        {/* Phone Input Block */}
-                        <LHPhoneInput
-                            placeholder="78xxxxxxx"
-                            inputValue={phone}
-                            inputValueSetter={setPhone}
-                            countrySupportSetter={setIsCountrySupported}
-                            formattedValueSetter={setFormattedPhone}
-                            isInputEditable={!isLoading}
+                            {/* STEP 2: Contact Details */}
+                            {currentStep === 2 && (
+                                <View>
+                                    {/* Email Input Block */}
+                                    <View style={styles.inputBlockRow}>
+                                        <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                            <Icon type="material-community" name="email" color={appColors.grey4} size={moderateScale(25)} />
+                                        </View>
+                                        <TextInput
+                                            placeholderTextColor={appColors.grey3}
+                                            style={{ flex: 3, fontSize: moderateScale(16), color: appColors.AppBlue, paddingVertical: 0 }}
+                                            placeholder='Your email address'
+                                            keyboardType='email-address'
+                                            editable={!isLoading}
+                                            value={email}
+                                            maxLength={100}
+                                            onChangeText={onChangeEmailHandler}
+                                        />
+                                    </View>
 
-                        />
+                                    {/* Phone Input Block */}
+                                    <LHPhoneInput
+                                        placeholder="78xxxxxxx"
+                                        inputValue={phone}
+                                        inputValueSetter={setPhone}
+                                        countrySupportSetter={setIsCountrySupported}
+                                        formattedValueSetter={setFormattedPhone}
+                                        isInputEditable={!isLoading}
 
-                        {/* Step 2 Navigation */}
-                        <View style={{ flexDirection:'row', paddingVertical:15, gap:10 }}>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Back"
-                                    buttonStyle={ parameters.appButtonXLOutline }
-                                    titleStyle={ parameters.appButtonXLOutlineTitle } 
-                                    disabled={ isLoading }
-                                    onPress={ goToPreviousStep }
-                                /> 
-                            </View>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Continue"
-                                    buttonStyle={ parameters.appButtonXLBlue }
-                                    titleStyle={ parameters.appButtonXLTitleBlue } 
-                                    disabled={ isLoading }
-                                    onPress={ goToNextStep }
-                                /> 
-                            </View>
-                        </View>
-                            </View>
-                        )}
+                                    />
 
-                        {/* STEP 3: Secure Your Account */}
-                        {currentStep === 3 && (
-                            <View>
-                        {/* Password Input Block */}
-                        <View style={ styles.inputBlockRow }>
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                <Icon type="material-community" name="lock"  color={appColors.grey4} size= {25} />
-                            </View>
+                                    {/* Step 2 Navigation */}
+                                    <View style={{ flexDirection: 'row', paddingVertical: scale(15), gap: scale(10) }}>
+                                        <View style={{ flex: 1 }}>
+                                            <Button
+                                                title="Back"
+                                                buttonStyle={parameters.appButtonXLOutline}
+                                                titleStyle={parameters.appButtonXLOutlineTitle}
+                                                disabled={isLoading}
+                                                onPress={goToPreviousStep}
+                                            />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Button
+                                                title="Continue"
+                                                buttonStyle={parameters.appButtonXLBlue}
+                                                titleStyle={parameters.appButtonXLTitleBlue}
+                                                disabled={isLoading}
+                                                onPress={goToNextStep}
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
 
-                            <TextInput 
-                                placeholderTextColor={ appColors.grey3 } 
-                                style={{ flex:3, fontSize:16, color:appColors.AppBlue, paddingVertical:0 }}
-                                secureTextEntry={!showPassword} 
-                                editable={!isLoading}
-                                placeholder='Password' 
-                                value={password}
-                                onChangeText={ onChangePasswordHandler }
-                            />  
+                            {/* STEP 3: Secure Your Account */}
+                            {currentStep === 3 && (
+                                <View>
+                                    {/* Password Input Block */}
+                                    <View style={styles.inputBlockRow}>
+                                        <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                            <Icon type="material-community" name="lock" color={appColors.grey4} size={moderateScale(25)} />
+                                        </View>
 
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingLeft:10, }}>
-                                <Icon 
-                                    type="material-community" 
-                                    name={ showPassword ? "eye-off-outline" : "eye-outline" }  
-                                    color={appColors.grey4} 
-                                    size={25} 
-                                    onPress={ () => togglePassword() }
-                                />
-                            </View> 
-                        </View>
+                                        <TextInput
+                                            placeholderTextColor={appColors.grey3}
+                                            style={{ flex: 3, fontSize: moderateScale(16), color: appColors.AppBlue, paddingVertical: 0 }}
+                                            secureTextEntry={!showPassword}
+                                            editable={!isLoading}
+                                            placeholder='Password'
+                                            value={password}
+                                            onChangeText={onChangePasswordHandler}
+                                        />
 
-                        {/* Verify Password Input Block */}
-                        <View style={ styles.inputBlockRow }>
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                <Icon type="material-community" name="lock"  color= {appColors.grey4} size= {25} />
-                            </View>
+                                        <View style={{ justifyContent: "center", alignItems: "center", paddingLeft: scale(10), }}>
+                                            <Icon
+                                                type="material-community"
+                                                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                                color={appColors.grey4}
+                                                size={moderateScale(25)}
+                                                onPress={() => togglePassword()}
+                                            />
+                                        </View>
+                                    </View>
 
-                            <TextInput 
-                                placeholderTextColor={ appColors.grey3 } 
-                                style={{ flex:3, fontSize:16, color:appColors.AppBlue, paddingVertical:0 }}
-                                secureTextEntry={!showVerifyPassword} 
-                                editable={!isLoading}
-                                placeholder='Confirm Password' 
-                                value={verifyPassword}
-                                onChangeText={ onChangeVerifyPasswordHandler }
-                                
-                            />  
+                                    {/* Verify Password Input Block */}
+                                    <View style={styles.inputBlockRow}>
+                                        <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                            <Icon type="material-community" name="lock" color={appColors.grey4} size={moderateScale(25)} />
+                                        </View>
 
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingLeft:10, }}>
-                                <Icon 
-                                    type="material-community" 
-                                    name={ showVerifyPassword ? "eye-off-outline" : "eye-outline" }  
-                                    color={appColors.grey4} 
-                                    size={25} 
-                                    onPress={ () => toggleVerifyPassword() }
-                                />
-                            </View> 
-                        </View>
+                                        <TextInput
+                                            placeholderTextColor={appColors.grey3}
+                                            style={{ flex: 3, fontSize: moderateScale(16), color: appColors.AppBlue, paddingVertical: 0 }}
+                                            secureTextEntry={!showVerifyPassword}
+                                            editable={!isLoading}
+                                            placeholder='Confirm Password'
+                                            value={verifyPassword}
+                                            onChangeText={onChangeVerifyPasswordHandler}
 
-                        {/* Step 3 Navigation */}
-                        <View style={{ flexDirection:'row', paddingVertical:15, gap:10 }}>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Back"
-                                    buttonStyle={ parameters.appButtonXLOutline }
-                                    titleStyle={ parameters.appButtonXLOutlineTitle } 
-                                    disabled={ isLoading }
-                                    onPress={ goToPreviousStep }
-                                /> 
-                            </View>
-                            <View style={{ flex:1 }}>
-                                <Button 
-                                    title="Sign Up"
-                                    buttonStyle={ parameters.appButtonXLBlue }
-                                    titleStyle={ parameters.appButtonXLTitleBlue } 
-                                    disabled={ isLoading }
-                                    onPress={ UserSignupHandler }
-                                /> 
-                            </View>
-                        </View>
-                            </View>
-                        )}
+                                        />
+
+                                        <View style={{ justifyContent: "center", alignItems: "center", paddingLeft: scale(10), }}>
+                                            <Icon
+                                                type="material-community"
+                                                name={showVerifyPassword ? "eye-off-outline" : "eye-outline"}
+                                                color={appColors.grey4}
+                                                size={moderateScale(25)}
+                                                onPress={() => toggleVerifyPassword()}
+                                            />
+                                        </View>
+                                    </View>
+
+                                    {/* Step 3 Navigation */}
+                                    <View style={{ flexDirection: 'row', paddingVertical: scale(15), gap: scale(10) }}>
+                                        <View style={{ flex: 1 }}>
+                                            <Button
+                                                title="Back"
+                                                buttonStyle={parameters.appButtonXLOutline}
+                                                titleStyle={parameters.appButtonXLOutlineTitle}
+                                                disabled={isLoading}
+                                                onPress={goToPreviousStep}
+                                            />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Button
+                                                title="Sign Up"
+                                                buttonStyle={parameters.appButtonXLBlue}
+                                                titleStyle={parameters.appButtonXLTitleBlue}
+                                                disabled={isLoading}
+                                                onPress={UserSignupHandler}
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
 
                         </Animated.View>
 
                         {/* Terms of Service - Always visible at bottom */}
-                        <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:15, flexDirection: 'row' }}>
-                            <Text style={{ color:appColors.grey3, fontSize:12, textAlign:'center', lineHeight:18 }}>By signing up, you accept our
-                                <Text 
-                                    style={{ color:appColors.AppBlue, fontSize:12, textDecorationLine:'underline' }} 
-                                    onPress={ 
-                                        () => { 
+                        <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: scale(15), flexDirection: 'row', paddingHorizontal: 10 }}>
+                            <Pressable
+                                onPress={() => setAgreeToTerms(!agreeToTerms)}
+                                style={{ marginRight: scale(10), marginTop: scale(2) }}
+                            >
+                                <Icon
+                                    type="material-community"
+                                    name={agreeToTerms ? "checkbox-marked" : "checkbox-blank-outline"}
+                                    color={agreeToTerms ? appColors.AppBlue : appColors.grey4}
+                                    size={moderateScale(24)}
+                                />
+                            </Pressable>
+                            <Text style={{ color: appColors.grey3, fontSize: moderateScale(12), flex: 1, lineHeight: scale(18) }}>By signing up, you accept our
+                                <Text
+                                    style={{ color: appColors.AppBlue, fontSize: moderateScale(12), textDecorationLine: 'underline' }}
+                                    onPress={
+                                        () => {
                                             navigation.navigate('TermsOfServiceScreen');
-                                        } 
+                                        }
                                     }
                                 > Terms of Service.</Text>
-                                <Text> Learn more about the use of your data in our </Text> 
-                                <Text 
-                                    style={{ color:appColors.AppBlue, fontSize:12, textDecorationLine:'underline' }}
-                                    onPress={ 
-                                        () => { 
+                                <Text> Learn more about the use of your data in our </Text>
+                                <Text
+                                    style={{ color: appColors.AppBlue, fontSize: moderateScale(12), textDecorationLine: 'underline' }}
+                                    onPress={
+                                        () => {
                                             navigation.navigate('PrivacyPolicyScreen');
-                                        } 
+                                        }
                                     }
                                 >Privacy Policy</Text>.
                             </Text>
                         </View>
-                        
+
                         {/* Already have an Account? - Always visible at bottom */}
-                        <View style={{ justifyContent:'center', paddingVertical:10, flexDirection: 'row' }}>
-                            <Text style={{ color:appColors.AppBlue }}>Already have an account? </Text>
-                            <Text 
-                                style={{ color:appColors.AppBlue, fontWeight:'bold' }} 
-                                onPress={ () => { navigation.navigate('SigninScreen') } }
+                        <View style={{ justifyContent: 'center', paddingVertical: scale(10), flexDirection: 'row' }}>
+                            <Text style={{ color: appColors.AppBlue, fontSize: moderateScale(14) }}>Already have an account? </Text>
+                            <Text
+                                style={{ color: appColors.AppBlue, fontWeight: 'bold', fontSize: moderateScale(14) }}
+                                onPress={() => { navigation.navigate('SigninScreen') }}
                             >Sign In</Text>
                         </View>
 
@@ -654,74 +684,74 @@ export default function SignupScreen({navigation}){
                 </ScrollView>
 
                 {/** Generic Feature Modal */}
-                <LHGenericFeatureModal 
-                    isModVisible={ isFeatureModalVisible } 
-                    visibilitySetter={setIsFeatureModalVisible} 
+                <LHGenericFeatureModal
+                    isModVisible={isFeatureModalVisible}
+                    visibilitySetter={setIsFeatureModalVisible}
                     isDismissable={true}
                     title="Stay Tuned"
                     description="Features currently under development. Please try again later."
                 />
 
                 {/* LH Fullscreen Loader Modal */}
-                <LHLoaderModal 
-                    visible={isLoading} 
-                    message="Getting Your Account Ready..." 
+                <LHLoaderModal
+                    visible={isLoading}
+                    message="Getting Your Account Ready..."
                 />
 
-              {/* Account Created Success Modal  */}
-              <BottomSheet
+                {/* Account Created Success Modal  */}
+                <BottomSheet
                     // containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
-                    containerStyle={{ backgroundColor: appColors.CardBackground, justifyContent:'center' }}
-                    modalProps = {{
-                        presentationStyle:"overFullScreen",
+                    containerStyle={{ backgroundColor: appColors.CardBackground, justifyContent: 'center' }}
+                    modalProps={{
+                        presentationStyle: "overFullScreen",
                         visible: showSuccessModal,
                         //transparent:false,
-                    }} 
-               >
+                    }}
+                >
 
-                    <View style={{ ...parameters.doffeeModalContainer, paddingVertical:180 }}>
-                        <View style={{ paddingVertical:15, paddingHorizontal:20 }}>
+                    <View style={{ ...parameters.doffeeModalContainer, paddingVertical: scale(180) }}>
+                        <View style={{ paddingVertical: scale(15), paddingHorizontal: scale(20) }}>
 
                             {/* Modal Content */}
-                            <View style={{ justifyContent:"center", alignItems:"center", paddingVertical:20 }}>
-                                
+                            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: scale(20) }}>
+
                                 {/* Success Icon with Background Circle */}
-                                <View style={{ 
-                                    justifyContent: "center", 
-                                    alignItems:"center",
+                                <View style={{
+                                    justifyContent: "center",
+                                    alignItems: "center",
                                     backgroundColor: appColors.AppBlue + '15',
-                                    borderRadius: 80,
-                                    width: 140,
-                                    height: 140,
-                                    marginBottom: 20
+                                    borderRadius: scale(80),
+                                    width: scale(140),
+                                    height: scale(140),
+                                    marginBottom: scale(20)
                                 }}>
-                                    <Icon 
-                                        type="font-awesome-5" 
-                                        name="user-check" 
-                                        color={appColors.AppBlue} 
-                                        size={70} 
+                                    <Icon
+                                        type="font-awesome-5"
+                                        name="user-check"
+                                        color={appColors.AppBlue}
+                                        size={scale(70)}
                                     />
                                 </View>
 
                                 {/* Success Message */}
-                                <View style={{ marginVertical:10, paddingHorizontal:15 }}>
-                                    <Text style={{ 
-                                        fontSize: 24, 
-                                        textAlign:'center', 
-                                        fontWeight:"700", 
-                                        paddingVertical:5, 
+                                <View style={{ marginVertical: 10, paddingHorizontal: 15 }}>
+                                    <Text style={{
+                                        fontSize: moderateScale(24),
+                                        textAlign: 'center',
+                                        fontWeight: "700",
+                                        paddingVertical: 5,
                                         color: appColors.black,
                                         letterSpacing: 0.3,
                                         fontFamily: appFonts.headerTextExtraBold
                                     }}>
                                         Welcome Aboard!
                                     </Text>
-                                    <Text style={{ 
-                                        fontSize: 15, 
-                                        textAlign:'center', 
-                                        paddingTop:8,
+                                    <Text style={{
+                                        fontSize: moderateScale(15),
+                                        textAlign: 'center',
+                                        paddingTop: scale(8),
                                         color: appColors.grey2,
-                                        lineHeight: 22
+                                        lineHeight: scale(22)
                                     }}>
                                         Your account has been created successfully. You can now access all features and start your wellness journey.
                                     </Text>
@@ -729,21 +759,21 @@ export default function SignupScreen({navigation}){
                             </View>
 
                             {/* Action Button */}
-                            <View style={{ justifyContent:"center", marginTop:10, marginBottom:5, paddingHorizontal:10 }}>
-                                <Button 
-                                    title="GET STARTED" 
-                                    buttonStyle={{ 
+                            <View style={{ justifyContent: "center", marginTop: scale(10), marginBottom: scale(5), paddingHorizontal: scale(10) }}>
+                                <Button
+                                    title="GET STARTED"
+                                    buttonStyle={{
                                         ...parameters.appButtonXLBlue,
-                                        paddingVertical: 16,
-                                        borderRadius: 12
+                                        paddingVertical: scale(16),
+                                        borderRadius: scale(12)
                                     }}
-                                    titleStyle={{ 
+                                    titleStyle={{
                                         ...parameters.appButtonXLTitle,
-                                        fontSize: 16,
+                                        fontSize: moderateScale(16),
                                         fontWeight: '600',
                                         letterSpacing: 0.5
                                     }}
-                                    onPress={() => { 
+                                    onPress={() => {
                                         setShowSuccessModal(false);
                                         navigation.popToTop();
                                         navigation.navigate('SigninScreen');
@@ -766,35 +796,35 @@ export default function SignupScreen({navigation}){
 // Local Styles
 const styles = StyleSheet.create({
     container: {
-        flex:1,
-        backgroundColor:appColors.CardBackground,
+        flex: 1,
+        backgroundColor: appColors.CardBackground,
     },
-    
+
     inputBlockRow: {
-        flexDirection:'row', 
-        alignItems:'center', 
-        paddingHorizontal:12, 
-        paddingVertical:8, 
-        borderWidth:1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: scale(12),
+        paddingVertical: scale(8),
+        borderWidth: scale(1),
         borderColor: appColors.grey4,
-        borderRadius:25, 
-        marginVertical:8
+        borderRadius: scale(25),
+        marginVertical: scale(8)
     },
 
     roundButton: {
-        width:50,
-        height:50,
-        backgroundColor:appColors.AppBlue,
-        padding:5,
-        borderRadius:60,
-        alignItems:'center',
-        justifyContent:'center'
-   },
+        width: scale(50),
+        height: scale(50),
+        backgroundColor: appColors.AppBlue,
+        padding: scale(5),
+        borderRadius: scale(60),
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
 
     genderButtons: {
-        paddingHorizontal:20,
+        paddingHorizontal: 20,
         // backgroundColor:' pink',
-        flex:1, 
+        flex: 1,
         width: '100%',
         borderRadius: 25,
 
@@ -802,46 +832,35 @@ const styles = StyleSheet.create({
 
     // Custom Gender Button Styles
     genderButtonActive: {
-       // copy the styles from appButtonXLBlue
-       // paddingHorizontal:20,
-       // backgroundColor:' pink',
-       // flex:1, 
-       // width: '100%',
-       ...parameters.appButtonXLBlue,
-       borderRadius: 25,
-       height:45,
+        ...parameters.appButtonXLBlue,
+        borderRadius: scale(25),
+        minHeight: verticalScale(45),
     },
 
     genderButtonInactive: {
-       // copy the styles from appButtonXLOutline
-       // paddingHorizontal:20,
-       // backgroundColor:' pink',
-       // flex:1, 
-       //width: '100%',
-       
-       ...parameters.appButtonXLOutline,
-       borderRadius: 25,
-       height:45,
+        ...parameters.appButtonXLOutline,
+        borderRadius: scale(25),
+        minHeight: verticalScale(45),
     },
 
     genderButtonTitleActive: {
         // copy the styles from appButtonXLTitleBlue
         ...parameters.appButtonXLTitle,
         color: appColors.grey4,
-        fontWeight:"600",
+        fontWeight: "600",
     },
 
     genderButtonTitleInactive: {
         // copy the styles from appButtonXLTitle
         ...parameters.appButtonXLOutlineTitle,
         color: appColors.grey4,
-        fontWeight:"600",
+        fontWeight: "600",
     },
 
     // Progress Indicator Styles
     progressContainer: {
-        paddingVertical: 20,
-        paddingHorizontal: 20,
+        paddingVertical: scale(20),
+        paddingHorizontal: scale(20),
     },
     progressBar: {
         flexDirection: 'row',
@@ -849,13 +868,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     progressStep: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: scale(36),
+        height: scale(36),
+        borderRadius: scale(18),
         backgroundColor: appColors.grey4,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
+        borderWidth: scale(2),
         borderColor: appColors.grey4,
     },
     progressStepActive: {
@@ -864,7 +883,7 @@ const styles = StyleSheet.create({
     },
     progressStepText: {
         color: appColors.CardBackground,
-        fontSize: 14,
+        fontSize: moderateScale(14),
         fontWeight: '700',
         fontFamily: appFonts.headerTextBold,
     },
@@ -872,10 +891,10 @@ const styles = StyleSheet.create({
         color: appColors.CardBackground,
     },
     progressLine: {
-        width: 60,
-        height: 2,
+        width: scale(60),
+        height: scale(2),
         backgroundColor: appColors.grey4,
-        marginHorizontal: 5,
+        marginHorizontal: scale(5),
     },
     progressLineActive: {
         backgroundColor: appColors.AppBlue,

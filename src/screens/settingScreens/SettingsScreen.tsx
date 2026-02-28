@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
@@ -52,13 +53,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch();
   const emergencyContacts = useSelector((state: any) => state.emergency?.emergencyContacts || []);
   const generalSettings = useSelector(selectGeneralSettings);
-  
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(generalSettings.notificationsEnabled);
   const [biometricEnabled, setBiometricEnabled] = useState(generalSettings.biometricEnabled);
   const [locationEnabled, setLocationEnabled] = useState(generalSettings.locationEnabled);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(generalSettings.analyticsEnabled);
-  
+
   // Sync with Redux when settings change
   useEffect(() => {
     setNotificationsEnabled(generalSettings.notificationsEnabled);
@@ -175,7 +176,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         },
       ],
     },
-    
+
     {
       id: 'wellness',
       title: 'Wellness & Health',
@@ -192,11 +193,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         {
           id: 'crisis_contacts',
           title: 'Emergency Contacts',
-          subtitle: emergencyContacts.length === 0 
-            ? 'No contacts configured' 
-            : emergencyContacts.length === 1 
-            ? '1 contact configured' 
-            : `${emergencyContacts.length} contacts configured`,
+          subtitle: emergencyContacts.length === 0
+            ? 'No contacts configured'
+            : emergencyContacts.length === 1
+              ? '1 contact configured'
+              : `${emergencyContacts.length} contacts configured`,
           icon: 'emergency',
           iconColor: '#F44336',
           hasChevron: true,
@@ -253,7 +254,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         },
       ],
     },
-    
+
 
 
 
@@ -272,7 +273,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             name={item.icon}
             type={item.iconType || 'material'}
             color={item.iconColor || appColors.grey3}
-            size={20}
+            size={moderateScale(20)}
           />
         </View>
         <View style={styles.settingItemContent}>
@@ -284,7 +285,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           )}
         </View>
       </View>
-      
+
       <View style={styles.settingItemRight}>
         {item.badge && (
           <View style={styles.badge}>
@@ -304,7 +305,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             name="chevron-right"
             type="material"
             color={appColors.grey4}
-            size={20}
+            size={moderateScale(20)}
           />
         )}
       </View>
@@ -334,7 +335,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={styles.placeholder} />
@@ -367,8 +368,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -379,37 +380,37 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   placeholder: {
-    width: 40,
+    width: scale(40),
   },
   scrollView: {
     flex: 1,
   },
   section: {
-    marginTop: 20,
+    marginTop: scale(20),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 20,
-    marginBottom: 8,
+    marginHorizontal: scale(20),
+    marginBottom: scale(8),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -420,8 +421,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
   },
   destructiveItem: {
     backgroundColor: '#FFEBEE',
@@ -432,28 +433,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(8),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   settingItemContent: {
     flex: 1,
   },
   settingTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   destructiveText: {
     color: '#D32F2F',
   },
   settingSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -463,13 +464,13 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginRight: 8,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    marginRight: scale(8),
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -477,26 +478,26 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: appColors.grey6,
-    marginLeft: 64,
+    marginLeft: scale(64),
   },
   versionContainer: {
     alignItems: 'center',
-    marginTop: 30,
-    marginBottom: 20,
+    marginTop: scale(30),
+    marginBottom: scale(20),
   },
   versionText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   buildText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
 });
 

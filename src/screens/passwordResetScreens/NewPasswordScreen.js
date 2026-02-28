@@ -4,34 +4,35 @@
  */
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
+import {
+    View,
+    Text,
+    StyleSheet,
     TextInput,
     Image,
-    ActivityIndicator, 
+    ActivityIndicator,
     ImageBackground,
     Pressable,
 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Icon , BottomSheet} from '@rneui/base';
+import { Button, Icon, BottomSheet } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters } from '../../global/Styles';
+import { scale, verticalScale, moderateScale } from '../../global/Scaling';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import { setNewPassword } from '../../api/shared/auth';
 
 
-export default function NewPasswordScreen({ navigation, route }){
+export default function NewPasswordScreen({ navigation, route }) {
 
     const toast = useToast();
     const [password, setPassword] = useState("");
     const [password1, setPassword1] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordResetModalVisible, setIsPasswordResetModalVisible] = useState(false);
-    const storedSessionUserId = useSelector(state => state.userData.sessionUserId ); // just for temporary use
+    const storedSessionUserId = useSelector(state => state.userData.sessionUserId); // just for temporary use
     const { resetToken, email } = route.params || {}; // Get resetToken and email from route params
 
 
@@ -48,8 +49,8 @@ export default function NewPasswordScreen({ navigation, route }){
         setPassword(password);
     }
 
-     // Password1 Handler
-     const onChangePassword1Handler = (password) => {
+    // Password1 Handler
+    const onChangePassword1Handler = (password) => {
         setPassword1(password);
     }
 
@@ -73,13 +74,13 @@ export default function NewPasswordScreen({ navigation, route }){
         // making a request to the API using auth.js setNewPassword function
         try {
             const response = await setNewPassword(email, resetToken, password.trim());
-            
+
             // checking the status
             if (response.status === 200) {
 
                 // IF status is successful
                 // JSON.stringify(response.data)
-                if (response.data.status == "success"){
+                if (response.data.status == "success") {
 
                     console.log(response.data);
                     notifyWithToast("Password reset successfully!"); // notify with Toast
@@ -112,152 +113,147 @@ export default function NewPasswordScreen({ navigation, route }){
     }
 
 
-    return(
-        <SafeAreaView style={ styles.container }>
+    return (
+        <SafeAreaView style={styles.container}>
             <ImageBackground source={appImages.laundryBg} style={{ flex: 1, }}>
 
                 {/* Header Block */}
-                <View style={{ paddingVertical:parameters.headerHeightTinier }}>
+                <View style={{ paddingVertical: parameters.headerHeightTinier }}>
                     <LHGenericHeader
-                        title='Reset Password' 
+                        title='Reset Password'
                         showTitle={false}
                         showLeftIcon={true}
-                        leftIconPressed={ () => { navigation.goBack(); } } 
+                        leftIconPressed={() => { navigation.goBack(); }}
                     />
                 </View>
 
                 {/* Main Content Block */}
-                <View style={{ flex:1, paddingHorizontal:15, paddingVertical:20, }}>
+                <View style={{ flex: 1, paddingHorizontal: scale(15), paddingVertical: verticalScale(20), }}>
 
                     {/* Logo and Header Text */}
-                    <View style={{ paddingVertical:2 }}>
-                        <View style={{ justifyContent: "center", alignItems:"center" }}>
-                            <Image source={appImages.logoRound} style={{ width:280, height:60, resizeMode:'contain' }} />
+                    <View style={{ paddingVertical: verticalScale(2) }}>
+                        <View style={{ justifyContent: "center", alignItems: "center" }}>
+                            <Image source={appImages.logoRound} style={{ width: scale(280), height: scale(60), resizeMode: 'contain' }} />
                         </View>
-                        <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:20, paddingHorizontal:10 }}>
-                            <Text style={{ fontSize:26, color:appColors.AppBlue, fontWeight:'bold', paddingVertical:5 }}>Create New Password</Text>
-                            <Text style={{ fontSize:15, color:appColors.AppBlue, fontWeight:'500', paddingVertical:5, textAlign:'center' }}>
+                        <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: verticalScale(20), paddingHorizontal: scale(10) }}>
+                            <Text style={{ fontSize: moderateScale(26), color: appColors.AppBlue, fontWeight: 'bold', paddingVertical: verticalScale(5) }}>Create New Password</Text>
+                            <Text style={{ fontSize: moderateScale(15), color: appColors.AppBlue, fontWeight: '500', paddingVertical: verticalScale(5), textAlign: 'center' }}>
                                 Enter your new password to continue
                             </Text>
                         </View>
                     </View>
 
                     {/* Password Input Block */}
-                    <View style={{ padding:15, borderRadius:10, }}>
+                    <View style={{ padding: moderateScale(15), borderRadius: moderateScale(10), }}>
 
                         {/* Password Input Block */}
                         <View style={styles.inputBlockRow}>
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                <Icon type="material-community" name="lock"  color={appColors.grey4} size={30} />
+                            <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                <Icon type="material-community" name="lock" color={appColors.grey4} size={moderateScale(30)} />
                             </View>
-                            <TextInput 
-                                placeholderTextColor={ appColors.grey3 } 
-                                style={{ flex:3, fontSize:16, fontWeight:'bold', color:appColors.black, paddingVertical:0 }}
-                                secureTextEntry={true} 
+                            <TextInput
+                                placeholderTextColor={appColors.grey3}
+                                style={{ flex: 3, fontSize: moderateScale(16), fontWeight: 'bold', color: appColors.black, paddingVertical: 0 }}
+                                secureTextEntry={true}
                                 editable={!isLoading}
-                                placeholder='Enter New Password' 
+                                placeholder='Enter New Password'
                                 value={password}
-                                onChangeText={ onChangePasswordHandler }
-                            />   
+                                onChangeText={onChangePasswordHandler}
+                            />
                         </View>
 
                         {/* Password1 Input Block */}
                         <View style={styles.inputBlockRow}>
-                            <View style={{ justifyContent: "center", alignItems:"center", paddingRight:10 }}>
-                                <Icon type="material-community" name="lock" color={appColors.grey4} size={30} />
+                            <View style={{ justifyContent: "center", alignItems: "center", paddingRight: scale(10) }}>
+                                <Icon type="material-community" name="lock" color={appColors.grey4} size={moderateScale(30)} />
                             </View>
-                            <TextInput 
-                                placeholderTextColor={ appColors.grey3 } 
-                                style={{ flex:3, fontSize:16, fontWeight:'bold', color:appColors.black, paddingVertical:0 }}
-                                secureTextEntry={true} 
+                            <TextInput
+                                placeholderTextColor={appColors.grey3}
+                                style={{ flex: 3, fontSize: moderateScale(16), fontWeight: 'bold', color: appColors.black, paddingVertical: 0 }}
+                                secureTextEntry={true}
                                 editable={!isLoading}
-                                placeholder='Verify New Password' 
+                                placeholder='Verify New Password'
                                 value={password1}
-                                onChangeText={ onChangePassword1Handler }
-                                
-                            /> 
+                                onChangeText={onChangePassword1Handler}
+
+                            />
                         </View>
 
-                        { isLoading && 
-                            <View style={{ flexDirection:'row', justifyContent:'center' }}>
-                                <ActivityIndicator style={{ marginHorizontal:5 }} />
-                                <Text style={{ color:appColors.black }}>Resetting Password...</Text>
+                        {isLoading &&
+                            <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                                <ActivityIndicator style={{ marginHorizontal: scale(5) }} />
+                                <Text style={{ color: appColors.black, fontSize: moderateScale(14) }}>Resetting Password...</Text>
                             </View>
                         }
 
-                        <View style={{ paddingVertical:15 }}>
-                            <Button 
+                        <View style={{ paddingVertical: verticalScale(15) }}>
+                            <Button
                                 title="Reset Password"
-                                buttonStyle={ parameters.appButtonXLBlue }
-                                titleStyle={ parameters.appButtonXLTitleBlue }   
-                                // onPress={ PasswordChangeHandler }
-                                onPress={
-                                    () => {
-                                        setIsPasswordResetModalVisible(true);
-                                    }                               
-                                }
+                                buttonStyle={parameters.appButtonXLBlue}
+                                titleStyle={parameters.appButtonXLTitleBlue}
+                                onPress={PasswordChangeHandler}
                                 disabled={isLoading}
-                            /> 
+                            />
                         </View>
 
                     </View>
                 </View>
-                
+
                 {/* Feature Discovery Modal */}
                 <BottomSheet
                     // containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.5)' }}
-                    containerStyle={{ 
-                        backgroundColor: appColors.CardBackground, 
+                    containerStyle={{
+                        backgroundColor: appColors.CardBackground,
                         justifyContent: 'center',
                     }}
-                    modalProps = {{
-                        presentationStyle:"overFullScreen",
+                    modalProps={{
+                        presentationStyle: "overFullScreen",
                         visible: isPasswordResetModalVisible,
-                    }} 
+                    }}
                 >
 
-                    <View style={{ ...parameters.doffeeModalContainer, paddingVertical:120 }}>
-                        <View style={{ paddingVertical:15, paddingHorizontal:20 }}>
+                    <View style={{ ...parameters.doffeeModalContainer, paddingVertical: verticalScale(120) }}>
+                        <View style={{ paddingVertical: verticalScale(15), paddingHorizontal: scale(20) }}>
 
                             {/* Modal Content */}
-                            <View style={{ justifyContent:"center", alignItems:"center", paddingVertical:20 }}>
-                                
+                            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: verticalScale(20) }}>
+
                                 {/* Success Icon with Background Circle */}
-                                <View style={{ 
-                                    justifyContent: "center", 
-                                    alignItems:"center",
+                                <View style={{
+                                    justifyContent: "center",
+                                    alignItems: "center",
                                     backgroundColor: appColors.AppBlue + '15',
-                                    borderRadius: 80,
-                                    width: 140,
-                                    height: 140,
-                                    marginBottom: 20
+                                    borderRadius: moderateScale(80),
+                                    width: scale(140),
+                                    height: scale(140),
+                                    marginBottom: verticalScale(20)
                                 }}>
-                                    <Icon 
-                                        type="material-community" 
-                                        name="check-circle" 
-                                        color={appColors.AppBlue} 
-                                        size={90} 
+                                    <Icon
+                                        type="material-community"
+                                        name="check-circle"
+                                        color={appColors.AppBlue}
+                                        size={moderateScale(90)}
                                     />
                                 </View>
 
                                 {/* Success Message */}
-                                <View style={{ marginVertical:10, paddingHorizontal:15 }}>
-                                    <Text style={{ 
-                                        fontSize: 24, 
-                                        textAlign:'center', 
-                                        fontWeight:"700", 
-                                        paddingVertical:5, 
+                                <View style={{ marginVertical: verticalScale(10), paddingHorizontal: scale(15) }}>
+                                    <Text style={{
+                                        fontSize: moderateScale(24),
+                                        textAlign: 'center',
+                                        fontWeight: "700",
+                                        paddingVertical: verticalScale(5),
                                         color: appColors.black,
                                         letterSpacing: 0.3
                                     }}>
                                         Password Updated!
                                     </Text>
-                                    <Text style={{ 
-                                        fontSize: 15, 
-                                        textAlign:'center', 
-                                        paddingTop:8,
+                                    <Text style={{
+                                        fontSize: moderateScale(15),
+                                        textAlign: 'center',
+                                        paddingTop: verticalScale(8),
                                         color: appColors.grey2,
-                                        lineHeight: 22
+                                        lineHeight: verticalScale(22)
                                     }}>
                                         Your password has been successfully updated. You can now sign in with your new password.
                                     </Text>
@@ -265,22 +261,22 @@ export default function NewPasswordScreen({ navigation, route }){
                             </View>
 
                             {/* Action Button */}
-                            <View style={{ justifyContent:"center", marginTop:10, marginBottom:5, paddingHorizontal:10 }}>
-                                <Button 
-                                    title="SIGN IN NOW" 
-                                    buttonStyle={{ 
+                            <View style={{ justifyContent: "center", marginTop: verticalScale(10), marginBottom: verticalScale(5), paddingHorizontal: scale(10) }}>
+                                <Button
+                                    title="SIGN IN NOW"
+                                    buttonStyle={{
                                         ...parameters.appButtonXLBlue,
-                                        paddingVertical: 16,
-                                        borderRadius: 12
+                                        paddingVertical: verticalScale(16),
+                                        borderRadius: moderateScale(12)
                                     }}
-                                    titleStyle={{ 
+                                    titleStyle={{
                                         ...parameters.appButtonXLTitle,
-                                        fontSize: 16,
+                                        fontSize: moderateScale(16),
                                         fontWeight: '600',
                                         letterSpacing: 0.5
                                     }}
-                                    onPress = { 
-                                        () => { 
+                                    onPress={
+                                        () => {
                                             navigation.popToTop();
                                             navigation.navigate('SigninScreen');
                                         }
@@ -295,34 +291,34 @@ export default function NewPasswordScreen({ navigation, route }){
 
             </ImageBackground>
         </SafeAreaView>
-       
+
     )
 }
 
 // local stylesheet for the screen
 const styles = StyleSheet.create({
-    container : {
+    container: {
         flex: 1,
         backgroundColor: appColors.CardBackground,
     },
 
     genericInput: {
-        paddingHorizontal:8, 
-        borderRadius:10, 
-        backgroundColor:appColors.grey7, 
-        marginVertical:8,
+        paddingHorizontal: scale(8),
+        borderRadius: moderateScale(10),
+        backgroundColor: appColors.grey7,
+        marginVertical: verticalScale(8),
         color: appColors.grey1,
     },
 
     inputBlockRow: {
-        flexDirection:'row', 
-        alignItems:'center', 
-        paddingHorizontal:12, 
-        paddingVertical:8, 
-        borderWidth:1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: scale(12),
+        paddingVertical: verticalScale(8),
+        borderWidth: 1,
         borderColor: appColors.grey4,
-        borderRadius:25, 
-        marginVertical:8
+        borderRadius: moderateScale(25),
+        marginVertical: verticalScale(8)
     },
 
 });

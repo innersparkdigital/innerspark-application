@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/themed';
 import DatePicker from 'react-native-date-picker';
 import { appColors, appFonts } from '../../../global/Styles';
+import { scale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
@@ -659,7 +660,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   typeCard: {
-    width: 140, // fixed width so they align uniformly across the scroll view
+    width: scale(140), // fixed width so they align uniformly across the scroll view
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: appColors.grey6,

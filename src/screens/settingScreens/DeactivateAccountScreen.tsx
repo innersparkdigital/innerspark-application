@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -149,7 +150,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
           {/* Info Section */}
           <View style={styles.infoCard}>
             <View style={styles.infoHeader}>
-              <Icon name="pause-circle" type="material" color="#FF9800" size={28} />
+              <Icon name="pause-circle" type="material" color="#FF9800" size={scale(28)} />
               <Text style={styles.infoTitle}>Temporary Deactivation</Text>
             </View>
             <Text style={styles.infoDescription}>
@@ -157,24 +158,24 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
             </Text>
             <View style={styles.infoList}>
               <View style={styles.infoItem}>
-                <Icon name="check-circle" type="material" color="#4CAF50" size={20} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={scale(20)} />
                 <Text style={styles.infoItemText}>Your data is safely preserved</Text>
               </View>
               <View style={styles.infoItem}>
-                <Icon name="check-circle" type="material" color="#4CAF50" size={20} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={scale(20)} />
                 <Text style={styles.infoItemText}>Your profile becomes invisible to others</Text>
               </View>
               <View style={styles.infoItem}>
-                <Icon name="check-circle" type="material" color="#4CAF50" size={20} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={scale(20)} />
                 <Text style={styles.infoItemText}>You won't receive any notifications</Text>
               </View>
               <View style={styles.infoItem}>
-                <Icon name="check-circle" type="material" color="#4CAF50" size={20} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={scale(20)} />
                 <Text style={styles.infoItemText}>Reactivate anytime by logging back in</Text>
               </View>
             </View>
             <View style={styles.reactivationBox}>
-              <Icon name="info" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="info" type="material" color={appColors.AppBlue} size={scale(20)} />
               <Text style={styles.reactivationText}>
                 To reactivate, simply log in with your email and password
               </Text>
@@ -313,9 +314,9 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: '#FFF3E0',
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
     borderWidth: 2,
     borderColor: '#FFE0B2',
   },
@@ -325,14 +326,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: '#E65100',
     fontFamily: appFonts.headerTextBold,
     marginLeft: 12,
   },
   infoDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#E65100',
     fontFamily: appFonts.headerTextRegular,
     marginBottom: 16,
@@ -347,7 +348,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   infoItemText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#E65100',
     fontFamily: appFonts.headerTextRegular,
     marginLeft: 8,
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reactivationText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
     marginLeft: 8,
@@ -370,10 +371,10 @@ const styles = StyleSheet.create({
   },
   comparisonCard: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 16,
+    marginHorizontal: scale(20),
+    marginBottom: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   comparisonTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -400,14 +401,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   comparisonLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
     marginBottom: 8,
   },
   comparisonValue: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     marginBottom: 4,
@@ -416,7 +417,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionDescription: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
     marginHorizontal: 20,
@@ -435,8 +436,8 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   checkboxText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -459,14 +460,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reasonTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     marginBottom: 2,
   },
   reasonDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -474,13 +475,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: appColors.grey5,
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    padding: scale(12),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
-    height: 100,
+    height: scale(100),
     textAlignVertical: 'top',
-    margin: 16,
+    margin: scale(16),
   },
   confirmationCheckbox: {
     backgroundColor: 'transparent',
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   confirmationText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     marginLeft: 8,
@@ -499,7 +500,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.grey6,
   },
   deactivateButtonContainer: {
-    padding: 20,
+    padding: scale(20),
     backgroundColor: appColors.CardBackground,
     elevation: 4,
     shadowColor: '#000',
@@ -509,20 +510,20 @@ const styles = StyleSheet.create({
   },
   deactivateButton: {
     backgroundColor: '#FF9800',
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginBottom: 8,
+    borderRadius: scale(12),
+    paddingVertical: scale(16),
+    marginBottom: scale(8),
   },
   disabledButton: {
     backgroundColor: appColors.grey4,
   },
   deactivateButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   deactivateButtonSubtext: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',

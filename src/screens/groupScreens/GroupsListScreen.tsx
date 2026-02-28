@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getGroups, joinGroup } from '../../api/client/groups';
@@ -54,7 +55,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
-  
+
   // Get membership info
   const membershipInfo = getMembershipInfo(groups);
 
@@ -93,7 +94,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       console.log('📞 Calling getGroups API...');
       const response = await getGroups(userId, 1, 50);
       console.log('✅ Groups API Response:', JSON.stringify(response, null, 2));
-      
+
       const apiGroups = response.data?.groups || [];
       const mappedGroups: SupportGroup[] = apiGroups.map((group: any) => ({
         id: group.id?.toString() || group._id?.toString(),
@@ -111,7 +112,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         meetingSchedule: group.meetingSchedule || group.meeting_schedule || group.schedule || 'Schedule TBD',
         tags: group.tags || [],
       }));
-      
+
       setGroups(mappedGroups);
       console.log('✅ Mapped Groups:', mappedGroups.length);
     } catch (error: any) {
@@ -162,14 +163,14 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
 
     // Validate membership limits
     const validation = validateGroupJoin(groups, groupId);
-    
+
     if (!validation.canJoin) {
       if (validation.reason === 'membership_limit') {
         // Show upgrade modal
         setShowLimitModal(true);
         return;
       }
-      
+
       if (validation.reason === 'already_joined') {
         toast.show({
           description: 'You are already a member of this group',
@@ -177,7 +178,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         });
         return;
       }
-      
+
       if (validation.reason === 'group_full') {
         toast.show({
           description: 'Group is full. You\'ve been added to the waiting list.',
@@ -206,9 +207,9 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       }
 
       // Update group membership in local state
-      setGroups(prev => 
-        prev.map(g => 
-          g.id === groupId 
+      setGroups(prev =>
+        prev.map(g =>
+          g.id === groupId
             ? { ...g, isJoined: true, memberCount: g.memberCount + 1 }
             : g
         )
@@ -223,16 +224,16 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       await loadGroups();
     } catch (error: any) {
       console.error('❌ Error joining group:', error);
-      
+
       // Handle specific error cases
       if (error.response?.data?.error) {
         const errorMsg = error.response.data.error;
-        
+
         if (errorMsg.includes('membership limit')) {
           setShowLimitModal(true);
           return;
         }
-        
+
         if (errorMsg.includes('already a member')) {
           toast.show({
             description: 'You are already a member of this group',
@@ -240,7 +241,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
           });
           return;
         }
-        
+
         if (errorMsg.includes('full')) {
           toast.show({
             description: 'Group is full. You\'ve been added to the waiting list.',
@@ -248,7 +249,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
           });
           return;
         }
-        
+
         toast.show({
           description: errorMsg,
           duration: 3000,
@@ -275,25 +276,25 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
 
   // Render group card
   const renderGroupCard = ({ item }: { item: SupportGroup }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.groupCard}
       onPress={() => handleGroupPress(item)}
     >
       <View style={styles.groupHeader}>
         <View style={styles.groupIconContainer}>
-          <Icon 
-            name={item.icon} 
-            type="material" 
-            color={getCategoryColor(item.category)} 
-            size={32} 
+          <Icon
+            name={item.icon}
+            type="material"
+            color={getCategoryColor(item.category)}
+            size={scale(32)}
           />
           {item.isPrivate && (
             <View style={styles.privateIndicator}>
-              <Icon name="lock" type="material" color={appColors.CardBackground} size={12} />
+              <Icon name="lock" type="material" color={appColors.CardBackground} size={scale(12)} />
             </View>
           )}
         </View>
-        
+
         <View style={styles.groupInfo}>
           <View style={styles.groupTitleRow}>
             <Text style={styles.groupName} numberOfLines={1}>{item.name}</Text>
@@ -303,7 +304,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
               </View>
             )}
           </View>
-          
+
           <Text style={styles.groupDescription} numberOfLines={2}>
             {item.description}
           </Text>
@@ -313,7 +314,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       <View style={styles.therapistSection}>
         <Avatar
           source={item.therapistAvatar}
-          size={32}
+          size={scale(32)}
           rounded
           containerStyle={styles.therapistAvatar}
         />
@@ -325,12 +326,12 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
 
       <View style={styles.groupMeta}>
         <View style={styles.memberInfo}>
-          <Icon name="group" type="material" color={appColors.grey3} size={16} />
+          <Icon name="group" type="material" color={appColors.grey3} size={scale(16)} />
           <Text style={styles.memberCount}>
             {item.memberCount}/{item.maxMembers} members
           </Text>
         </View>
-        
+
         <Text style={styles.schedule}>{item.meetingSchedule}</Text>
       </View>
 
@@ -362,7 +363,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   // Render category filter
   const renderCategoryFilter = ({ item }: { item: any }) => {
     const isActive = selectedCategory === item.id;
-    
+
     return (
       <TouchableOpacity
         style={[
@@ -386,7 +387,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   // Render empty state
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Icon name="group-add" type="material" color={appColors.grey3} size={80} />
+      <Icon name="group-add" type="material" color={appColors.grey3} size={scale(80)} />
       <Text style={styles.emptyTitle}>No groups found</Text>
       <Text style={styles.emptySubtitle}>
         {searchQuery ? 'Try adjusting your search or filters' : 'Check back later for new support groups'}
@@ -432,23 +433,23 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
             <View style={styles.combinedHeader}>
               {/* Plan Indicator */}
               <View style={styles.planIndicatorCompact}>
-                <Icon name="groups" type="material" color={appColors.AppBlue} size={18} />
+                <Icon name="groups" type="material" color={appColors.AppBlue} size={scale(18)} />
                 <Text style={styles.planTextCompact}>
                   {membershipInfo.joinedGroupsCount}/{membershipInfo.groupLimit === -1 ? '∞' : membershipInfo.groupLimit}
                 </Text>
                 {!membershipInfo.canJoinMore && membershipInfo.groupLimit !== -1 && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.upgradeLinkCompact}
                     onPress={() => setShowLimitModal(true)}
                   >
-                    <Icon name="arrow-upward" type="material" color={appColors.AppBlue} size={14} />
+                    <Icon name="arrow-upward" type="material" color={appColors.AppBlue} size={scale(14)} />
                   </TouchableOpacity>
                 )}
               </View>
 
               {/* Search Bar */}
               <View style={styles.searchContainerCompact}>
-                <Icon name="search" type="material" color={appColors.grey3} size={18} />
+                <Icon name="search" type="material" color={appColors.grey3} size={scale(18)} />
                 <TextInput
                   style={styles.searchInputCompact}
                   placeholder="Search..."
@@ -458,7 +459,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
                 />
                 {searchQuery.length > 0 && (
                   <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Icon name="clear" type="material" color={appColors.grey3} size={18} />
+                    <Icon name="clear" type="material" color={appColors.grey3} size={scale(18)} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -519,87 +520,87 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 5,
+    marginHorizontal: scale(5),
     marginTop: 0,
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    elevation: 2,
+    marginBottom: scale(8),
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(10),
+    borderRadius: scale(10),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   categoriesContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 12,
+    paddingHorizontal: scale(16),
+    paddingTop: scale(4),
+    paddingBottom: scale(12),
   },
   categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(10),
+    borderRadius: scale(20),
     backgroundColor: appColors.grey6,
-    marginRight: 8,
+    marginRight: scale(8),
     borderWidth: 1,
     borderColor: 'transparent',
-    height: 40,
+    height: scale(40),
     justifyContent: 'center',
   },
   categoryChipActive: {
     borderWidth: 1,
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
     fontWeight: '500',
   },
   listContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: scale(16),
     paddingTop: 0,
-    paddingBottom: 16,
+    paddingBottom: scale(16),
   },
   groupCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 3,
+    borderRadius: scale(16),
+    padding: scale(16),
+    marginBottom: scale(12),
+    elevation: scale(3),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   groupHeader: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   groupIconContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     backgroundColor: appColors.grey6,
   },
   privateIndicator: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: scale(-4),
+    right: scale(-4),
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(10),
     backgroundColor: appColors.grey2,
     justifyContent: 'center',
     alignItems: 'center',
@@ -610,10 +611,10 @@ const styles = StyleSheet.create({
   groupTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   groupName: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -621,44 +622,44 @@ const styles = StyleSheet.create({
   },
   joinedBadge: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    borderRadius: scale(10),
   },
   joinedBadgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   groupDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   therapistSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingTop: 12,
+    marginBottom: scale(12),
+    paddingTop: scale(12),
     borderTopWidth: 1,
     borderTopColor: appColors.grey6,
   },
   therapistAvatar: {
-    marginRight: 8,
+    marginRight: scale(8),
   },
   therapistInfo: {
     flex: 1,
   },
   therapistName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   therapistEmail: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
   },
@@ -666,20 +667,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   memberInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   memberCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   schedule: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
   },
@@ -694,47 +695,47 @@ const styles = StyleSheet.create({
   },
   tag: {
     backgroundColor: appColors.AppBlue + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginRight: 6,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    borderRadius: scale(10),
+    marginRight: scale(6),
   },
   tagText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.AppBlue,
     fontFamily: appFonts.bodyTextRegular,
   },
   joinButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(8),
+    borderRadius: scale(20),
   },
   joinButtonText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   emptyContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: scale(16),
     paddingTop: 0,
-    paddingBottom: 16,
+    paddingBottom: scale(16),
   },
   emptyState: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 40,
+    paddingHorizontal: scale(40),
+    paddingVertical: scale(40),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: scale(20),
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     textAlign: 'center',
     fontFamily: appFonts.bodyTextRegular,
@@ -742,29 +743,29 @@ const styles = StyleSheet.create({
   // Skeleton loading styles
   skeletonCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
+    borderRadius: scale(16),
+    padding: scale(16),
+    marginHorizontal: scale(16),
+    marginBottom: scale(12),
   },
   skeletonHeader: {
     flexDirection: 'row',
   },
   skeletonIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     backgroundColor: appColors.grey6,
-    marginRight: 12,
+    marginRight: scale(12),
   },
   skeletonInfo: {
     flex: 1,
   },
   skeletonLine: {
-    height: 16,
+    height: scale(16),
     backgroundColor: appColors.grey6,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
   },
   skeletonLineShort: {
     width: '60%',
@@ -774,51 +775,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 5,
-    marginTop: 8,
-    marginBottom: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    elevation: 2,
+    marginHorizontal: scale(5),
+    marginTop: scale(8),
+    marginBottom: scale(8),
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(10),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    gap: 12,
+    shadowRadius: scale(2),
+    gap: scale(12),
   },
   planIndicatorCompact: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: scale(6),
   },
   planTextCompact: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextSemiBold,
   },
   upgradeLinkCompact: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: appColors.AppBlue + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginLeft: scale(2),
   },
   searchContainerCompact: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.grey6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 6,
+    borderRadius: scale(8),
+    paddingHorizontal: scale(10),
+    height: scale(36),
+    gap: scale(8),
   },
   searchInputCompact: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
     padding: 0,

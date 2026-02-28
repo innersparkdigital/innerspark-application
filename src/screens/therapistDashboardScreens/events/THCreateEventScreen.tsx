@@ -13,6 +13,7 @@ import DatePicker from 'react-native-date-picker';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
+import { scale } from '../../../global/Scaling';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import { createEvent, updateEvent } from '../../../api/therapist';
@@ -106,12 +107,12 @@ const THCreateEventScreen = ({ navigation, route }: any) => {
             description,
             category,
             location,
-            maxAttendees: parseInt(maxAttendees) || 0,
-            price: parseInt(price) || 0,
+            maxAttendees,
+            price,
             date,
             startTime,
             endTime,
-        });
+        } as any);
 
         if (Object.keys(formErrors).length > 0) {
             setErrors(formErrors);
@@ -333,7 +334,10 @@ const THCreateEventScreen = ({ navigation, route }: any) => {
                             placeholder="50"
                             placeholderTextColor={appColors.grey3}
                             value={maxAttendees}
-                            onChangeText={(v) => { setMaxAttendees(v); clearError('maxAttendees'); }}
+                            onChangeText={(v) => {
+                                setMaxAttendees(v.replace(/[^0-9]/g, ''));
+                                clearError('maxAttendees');
+                            }}
                             keyboardType="number-pad"
                         />
                         <FieldError msg={errors.maxAttendees} />
@@ -345,7 +349,10 @@ const THCreateEventScreen = ({ navigation, route }: any) => {
                             placeholder="0 = Free"
                             placeholderTextColor={appColors.grey3}
                             value={price}
-                            onChangeText={(v) => { setPrice(v); clearError('price'); }}
+                            onChangeText={(v) => {
+                                setPrice(v.replace(/[^0-9]/g, ''));
+                                clearError('price');
+                            }}
                             keyboardType="number-pad"
                         />
                         <FieldError msg={errors.price} />
@@ -473,7 +480,7 @@ const styles = StyleSheet.create({
         borderColor: appColors.grey5,
         borderStyle: 'dashed',
         backgroundColor: '#FFF',
-        height: 160,
+        height: scale(160),
     },
     imagePreview: {
         width: '100%',

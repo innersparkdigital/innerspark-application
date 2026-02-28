@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getGroupById, joinGroup, leaveGroup } from '../../api/client/groups';
@@ -242,7 +243,8 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
   };
 
   const getAvatarInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    if (!name) return '??';
+    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
   };
 
   const renderMemberItem = ({ item }: { item: GroupMember }) => (
@@ -251,15 +253,15 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
         {item.avatar ? (
           <Avatar
             source={item.avatar}
-            size={40}
+            size={scale(40)}
             rounded
           />
         ) : (
           <Avatar
             title={getAvatarInitials(item.name)}
-            size={40}
+            size={scale(40)}
             rounded
-            backgroundColor={getRoleColor(item.role)}
+            containerStyle={{ backgroundColor: getRoleColor(item.role) }}
             titleStyle={styles.avatarText}
           />
         )}
@@ -274,7 +276,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
               name={getRoleIcon(item.role)}
               type="material"
               color={appColors.CardBackground}
-              size={12}
+              size={scale(12)}
             />
             <Text style={styles.roleText}>{item.role}</Text>
           </View>
@@ -295,7 +297,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={scale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Group Details</Text>
         {group?.id && (
@@ -307,7 +309,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
               userRole: userRole
             })}
           >
-            <Icon name="history" type="material" color={appColors.CardBackground} size={24} />
+            <Icon name="history" type="material" color={appColors.CardBackground} size={scale(24)} />
           </TouchableOpacity>
         )}
       </View>
@@ -323,11 +325,11 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
               name={group.icon}
               type="material"
               color={getCategoryColor(group.category)}
-              size={48}
+              size={scale(48)}
             />
             {group.isPrivate && (
               <View style={styles.privateBadge}>
-                <Icon name="lock" type="material" color={appColors.CardBackground} size={16} />
+                <Icon name="lock" type="material" color={appColors.CardBackground} size={scale(16)} />
               </View>
             )}
           </View>
@@ -363,7 +365,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           <View style={styles.therapistCard}>
             <Avatar
               source={group.therapistAvatar}
-              size={50}
+              size={scale(50)}
               rounded
               containerStyle={styles.therapistAvatar}
             />
@@ -375,7 +377,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
               </Text>
             </View>
             <TouchableOpacity style={styles.contactButtonDisabled} disabled>
-              <Icon name="message" type="material" color={appColors.grey4} size={20} />
+              <Icon name="message" type="material" color={appColors.grey4} size={scale(20)} />
             </TouchableOpacity>
           </View>
         </View>
@@ -385,7 +387,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           <View style={styles.scheduleSection}>
             <Text style={styles.sectionTitle}>Meeting Schedule</Text>
             <View style={styles.scheduleCard}>
-              <Icon name="schedule" type="material" color={appColors.AppBlue} size={24} />
+              <Icon name="schedule" type="material" color={appColors.AppBlue} size={scale(24)} />
               <Text style={styles.scheduleText}>{group.meetingSchedule}</Text>
             </View>
           </View>
@@ -413,19 +415,19 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           <Text style={styles.sectionTitle}>Group Guidelines</Text>
           <View style={styles.rulesCard}>
             <View style={styles.ruleItem}>
-              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={16} />
+              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={scale(16)} />
               <Text style={styles.ruleText}>Respect all members and their experiences</Text>
             </View>
             <View style={styles.ruleItem}>
-              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={16} />
+              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={scale(16)} />
               <Text style={styles.ruleText}>Maintain confidentiality of shared information</Text>
             </View>
             <View style={styles.ruleItem}>
-              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={16} />
+              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={scale(16)} />
               <Text style={styles.ruleText}>Use supportive and non-judgmental language</Text>
             </View>
             <View style={styles.ruleItem}>
-              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={16} />
+              <Icon name="check-circle" type="material" color={appColors.AppBlue} size={scale(16)} />
               <Text style={styles.ruleText}>Follow therapist guidance and recommendations</Text>
             </View>
           </View>
@@ -477,75 +479,75 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(16),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 4,
+    elevation: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
     flex: 1,
   },
   headerButton: {
-    padding: 8,
+    padding: scale(8),
   },
   content: {
     flex: 1,
   },
   profileSection: {
     backgroundColor: appColors.CardBackground,
-    padding: 24,
+    padding: scale(24),
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   groupIconLarge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: scale(80),
+    height: scale(80),
+    borderRadius: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
     position: 'relative',
   },
   privateBadge: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: scale(-8),
+    right: scale(-8),
+    width: scale(28),
+    height: scale(28),
+    borderRadius: scale(14),
     backgroundColor: appColors.grey2,
     justifyContent: 'center',
     alignItems: 'center',
   },
   groupName: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   groupDescription: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
+    lineHeight: scale(24),
+    marginBottom: scale(24),
   },
   groupStats: {
     flexDirection: 'row',
@@ -556,125 +558,125 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginTop: 4,
+    fontFamily: appFonts.bodyTextRegular,
+    marginTop: scale(4),
   },
   statDivider: {
     width: 1,
-    height: 30,
+    height: scale(30),
     backgroundColor: appColors.grey6,
-    marginHorizontal: 20,
+    marginHorizontal: scale(20),
   },
   therapistSection: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 12,
+    padding: scale(16),
+    marginBottom: scale(12),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   therapistCard: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   therapistAvatar: {
-    marginRight: 12,
+    marginRight: scale(12),
   },
   therapistInfo: {
     flex: 1,
   },
   therapistName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   therapistEmail: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   therapistSpecialty: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginTop: 2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginTop: scale(2),
   },
   contactButton: {
-    padding: 8,
+    padding: scale(8),
   },
   contactButtonDisabled: {
-    padding: 8,
+    padding: scale(8),
     opacity: 0.3,
   },
   scheduleSection: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 12,
+    padding: scale(16),
+    marginBottom: scale(12),
   },
   scheduleCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppBlue + '10',
-    padding: 12,
-    borderRadius: 8,
+    padding: scale(12),
+    borderRadius: scale(8),
   },
   scheduleText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
-    marginLeft: 8,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(8),
   },
   membersSection: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 12,
+    padding: scale(16),
+    marginBottom: scale(12),
   },
   membersSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   memberItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   memberAvatar: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   onlineIndicator: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: scale(12),
+    height: scale(12),
+    borderRadius: scale(6),
     backgroundColor: '#4CAF50',
-    borderWidth: 2,
+    borderWidth: scale(2),
     borderColor: appColors.CardBackground,
   },
   avatarText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.CardBackground,
   },
@@ -684,10 +686,10 @@ const styles = StyleSheet.create({
   memberNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   memberName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -696,58 +698,58 @@ const styles = StyleSheet.create({
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: scale(6),
+    paddingVertical: scale(2),
+    borderRadius: scale(8),
   },
   roleText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
-    marginLeft: 2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(2),
   },
   memberStatus: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   rulesSection: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 12,
+    padding: scale(16),
+    marginBottom: scale(12),
   },
   rulesCard: {
     backgroundColor: appColors.grey6,
-    padding: 12,
-    borderRadius: 8,
+    padding: scale(12),
+    borderRadius: scale(8),
   },
   ruleItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   ruleText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
-    marginLeft: 8,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(8),
     flex: 1,
   },
   bottomActions: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    elevation: 4,
+    padding: scale(16),
+    elevation: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   primaryButton: {
-    borderRadius: 25,
-    paddingVertical: 12,
+    borderRadius: scale(25),
+    paddingVertical: scale(12),
   },
   primaryButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -756,23 +758,23 @@ const styles = StyleSheet.create({
   },
   chatButton: {
     flex: 1,
-    borderRadius: 25,
-    paddingVertical: 12,
-    marginRight: 8,
+    borderRadius: scale(25),
+    paddingVertical: scale(12),
+    marginRight: scale(8),
   },
   chatButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   leaveButton: {
     backgroundColor: appColors.grey4,
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    borderRadius: scale(25),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
   },
   leaveButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,

@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -33,9 +34,9 @@ const LanguageRegionSettingsScreen: React.FC<LanguageRegionSettingsScreenProps> 
   const toast = useToast();
   const dispatch = useDispatch();
   const generalSettings = useSelector(selectGeneralSettings);
-  
+
   const [selectedLanguage, setSelectedLanguage] = useState(generalSettings.appLanguage || 'en');
-  
+
   // Sync with Redux when settings change
   useEffect(() => {
     if (generalSettings.appLanguage) {
@@ -90,9 +91,9 @@ const LanguageRegionSettingsScreen: React.FC<LanguageRegionSettingsScreenProps> 
       <ISGenericHeader
         title="Language & Region"
         navigation={navigation}
-              />
+      />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -141,42 +142,42 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   infoCard: {
     flexDirection: 'row',
     backgroundColor: appColors.AppBlue + '10',
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 20,
-    marginBottom: 20,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(20),
   },
   infoContent: {
     flex: 1,
     marginLeft: 16,
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 6,
+    marginBottom: scale(6),
   },
   infoText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -185,8 +186,8 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: scale(12),
+    padding: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -201,32 +202,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   optionSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   noteCard: {
     flexDirection: 'row',
     backgroundColor: appColors.AppBlue + '10',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: scale(12),
+    padding: scale(16),
+    marginBottom: scale(20),
     alignItems: 'center',
   },
   noteText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
-    lineHeight: 18,
+    marginLeft: scale(12),
+    lineHeight: scale(18),
   },
   bottomSpacing: {
     height: 20,

@@ -4,10 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
+import { moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getGroups } from '../../api/therapist';
 import { useFocusEffect } from '@react-navigation/native';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { getGroupIcon } from '../../utils/GroupUtils';
 
 
 
@@ -17,6 +20,7 @@ const THGroupsScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('active');
   const [refreshing, setRefreshing] = useState(false);
+  const alert = useISAlert();
 
   useEffect(() => {
     loadGroups();
@@ -89,7 +93,14 @@ const THGroupsScreen = ({ navigation }: any) => {
         navigation={navigation}
         hasRightIcon={true}
         rightIconName="add"
-        rightIconOnPress={() => navigation.navigate('THCreateGroupScreen')}
+        rightIconOnPress={() => {
+          alert.show({
+            type: 'info',
+            title: '✨ Premium Feature',
+            message: 'Support groups are configured via the Innerspark Web Dashboard to ensure clinical safety and data integrity. \n\nLog in to your dashboard at innersparkafrica.com to create or archive groups.',
+            confirmText: 'GOT IT'
+          });
+        }}
       />
 
       <ScrollView
@@ -170,7 +181,7 @@ const THGroupsScreen = ({ navigation }: any) => {
               >
                 <View style={styles.groupHeader}>
                   <View style={styles.groupIconContainer}>
-                    <Text style={styles.groupIcon}>{group.icon}</Text>
+                    <Text style={styles.groupIcon}>{getGroupIcon(group.icon)}</Text>
                   </View>
                   <View style={styles.groupInfo}>
                     <Text style={styles.groupName}>{group.name}</Text>
@@ -214,6 +225,7 @@ const THGroupsScreen = ({ navigation }: any) => {
             )))}
         </View>
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };
@@ -245,7 +257,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   statNumber: {
-    fontSize: 32,
+    fontSize: moderateScale(32),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
@@ -309,7 +321,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   groupIcon: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
   },
   groupInfo: {
     flex: 1,

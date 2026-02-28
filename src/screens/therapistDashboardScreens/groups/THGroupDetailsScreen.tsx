@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
-import { getGroupById, getGroupMembers } from '../../../api/therapist';
+import { getGroupById, getGroupMembers, startGroupSession } from '../../../api/therapist';
 import { ActivityIndicator } from 'react-native';
 import { useSelector } from 'react-redux';
+import { getGroupIcon } from '../../../utils/GroupUtils';
 
 const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const { group } = route.params || {};
@@ -19,11 +22,14 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const [members, setMembers] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const alert = useISAlert();
 
-  React.useEffect(() => {
-    loadGroupDetails();
-  }, [group?.id]);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadGroupDetails();
+    }, [group?.id])
+  );
 
   const loadGroupDetails = async () => {
     try {
@@ -72,7 +78,13 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
       console.error('Group Details Error:', errorMessage);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadGroupDetails();
   };
 
   const handleStartSession = () => {
@@ -82,9 +94,22 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
       message: 'Ready to start the session with all group members?',
       confirmText: 'Start',
       cancelText: 'Cancel',
-      onConfirm: () => {
-        // Navigate to session or open meeting
-        alert.show({ type: 'success', title: 'Session Started', message: 'Session started! Meeting link sent to all members.' });
+      onConfirm: async () => {
+        try {
+          const therapistId = userDetails?.userId;
+          // Use nextSessionId if available, or fallback to group ID for some backend implementations
+          const sessionId = groupDetails?.nextSessionId || groupDetails?.nextSession?.id;
+
+          if (sessionId) {
+            await startGroupSession(group.id, sessionId, therapistId);
+            alert.show({ type: 'success', title: 'Session Started', message: 'Session started! Meeting link sent to all members.' });
+          } else {
+            alert.show({ type: 'info', title: 'Start Meeting', message: 'No specific session ID found. Starting ad-hoc group meeting...' });
+            // Fallback ad-hoc logic or just open generic link
+          }
+        } catch (error: any) {
+          alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to start session' });
+        }
       },
     });
   };
@@ -151,11 +176,22 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
         rightIconOnPress={handleEditGroup}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      >
         {/* Group Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.groupIconLarge}>
-            <Text style={styles.groupIconLargeText}>{group?.icon}</Text>
+            <Text style={styles.groupIconLargeText}>{getGroupIcon(group?.icon)}</Text>
           </View>
           <Text style={styles.groupName}>{group?.name}</Text>
           <Text style={styles.groupDescription}>{group?.description}</Text>
@@ -169,13 +205,13 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Icon type="material" name="event" size={20} color={appColors.AppBlue} />
-              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statValue}>{sessions.length || groupDetails?.sessionsCount || '--'}</Text>
               <Text style={styles.statLabel}>Sessions</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Icon type="material" name="trending-up" size={20} color={appColors.AppBlue} />
-              <Text style={styles.statValue}>85%</Text>
+              <Text style={styles.statValue}>{groupDetails?.stats?.attendance || '--%'}</Text>
               <Text style={styles.statLabel}>Attendance</Text>
             </View>
           </View>
@@ -208,7 +244,7 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
             onPress={() => setSelectedTab('members')}
           >
             <Text style={[styles.tabText, selectedTab === 'members' && styles.tabTextActive]}>
-              Members ({members.length})
+              Members ({groupDetails?.members?.length || members.length || group?.members || 0})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -229,8 +265,8 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
               <View style={styles.nextSessionInfo}>
                 <Icon type="material" name="event" size={24} color={appColors.AppBlue} />
                 <View style={styles.nextSessionDetails}>
-                  <Text style={styles.nextSessionDate}>{group?.nextSession}</Text>
-                  <Text style={styles.nextSessionTopic}>Managing Anxiety Triggers</Text>
+                  <Text style={styles.nextSessionDate}>{groupDetails?.nextSession || 'No upcoming sessions'}</Text>
+                  <Text style={styles.nextSessionTopic}>{groupDetails?.nextSessionTopic || 'Topic not set'}</Text>
                 </View>
               </View>
               <TouchableOpacity style={styles.startButton} onPress={handleStartSession}>
@@ -315,10 +351,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   groupIconLargeText: {
-    fontSize: 40,
+    fontSize: moderateScale(40),
   },
   groupName: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -345,7 +381,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,

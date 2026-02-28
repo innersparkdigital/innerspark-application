@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -46,26 +47,26 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
   const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const notificationSettings = useSelector(selectNotificationSettings);
-  
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // General Notifications (synced with Redux/backend)
   const [pushNotifications, setPushNotifications] = useState(notificationSettings.pushNotifications);
   const [emailNotifications, setEmailNotifications] = useState(notificationSettings.emailNotifications);
   const [smsNotifications, setSmsNotifications] = useState(notificationSettings.smsNotifications);
-  
+
   // Wellness Notifications (synced with Redux/backend)
   const [moodReminders, setMoodReminders] = useState(notificationSettings.goalReminders);
   const [therapyReminders, setTherapyReminders] = useState(notificationSettings.appointmentReminders);
   const [wellnessGoals, setWellnessGoals] = useState(notificationSettings.goalReminders);
   const [weeklyReports, setWeeklyReports] = useState(notificationSettings.weeklyReports);
-  
+
   // Social Notifications (synced with Redux/backend)
   const [messages, setMessages] = useState(notificationSettings.messages);
   const [groupUpdates, setGroupUpdates] = useState(notificationSettings.eventUpdates);
   const [eventInvites, setEventInvites] = useState(notificationSettings.eventUpdates);
-  
+
   // System Notifications (synced with Redux)
   const [securityAlerts, setSecurityAlerts] = useState(notificationSettings.securityAlerts);
   const [systemUpdates, setSystemUpdates] = useState(notificationSettings.systemUpdates);
@@ -143,7 +144,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       const payload: any = {};
       payload[key] = value;
 
-      await updateNotificationSettings(userId, payload);
+      await updateNotificationSettings(userId, payload, undefined);
       dispatch(updateNotificationSettingRedux({ key, value }));
     } catch (error) {
       console.error('Failed to update notification setting:', error);
@@ -177,7 +178,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
         updateNotificationSettingHandler('smsNotifications', value);
         break;
     }
-    
+
     toast.show({
       description: `${type.toUpperCase()} notifications ${value ? 'enabled' : 'disabled'}`,
       duration: 2000,
@@ -400,7 +401,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
           )}
         </View>
       </View>
-      
+
       <View style={styles.notificationItemRight}>
         {item.hasSwitch && (
           <Switch
@@ -448,7 +449,7 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
       <ISGenericHeader
         title="Notifications"
         navigation={navigation}
-                hasRightIcon={true}
+        hasRightIcon={true}
         rightIconName="send"
         rightIconType="material"
         rightIconOnPress={() => {
@@ -476,25 +477,25 @@ const NotificationSettingsScreen: React.FC<NotificationSettingsScreenProps> = ({
           generalSettings,
           'Control how you receive notifications from the app'
         )}
-        
+
         {renderSection(
           'Wellness & Health',
           wellnessSettings,
           'Stay on track with your mental health journey'
         )}
-        
+
         {renderSection(
           'Social & Community',
           socialSettings,
           'Connect with your support network and community'
         )}
-        
+
         {renderSection(
           'System & Security',
           systemSettings,
           'Important updates and security notifications'
         )}
-        
+
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -524,8 +525,15 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
+  masterTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: 'bold',
+    color: '#FFF',
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: scale(4),
+  },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -539,15 +547,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    marginTop: 20,
+    marginBottom: scale(24),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
     marginHorizontal: 20,
-    marginBottom: 4,
+    marginBottom: scale(12),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -559,6 +567,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     lineHeight: 16,
   },
+  masterControlCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: appColors.AppBlue,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(24),
+    elevation: 4,
+    shadowColor: appColors.AppBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
     marginHorizontal: 20,
@@ -568,6 +591,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
+  },
+  contentContainer: {
+    paddingHorizontal: scale(20),
+    paddingBottom: scale(40),
   },
   notificationItem: {
     flexDirection: 'row',
@@ -584,13 +611,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: scale(16),
+  },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(16),
   },
   notificationItemContent: {
     flex: 1,
@@ -602,12 +634,24 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextMedium,
     marginBottom: 2,
   },
+  optionTitle: {
+    fontSize: moderateScale(16),
+    fontWeight: '600',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: scale(2),
+  },
   disabledText: {
     color: appColors.grey4,
   },
   notificationSubtitle: {
     fontSize: 14,
     color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+  },
+  masterSubtitle: {
+    fontSize: moderateScale(14),
+    color: 'rgba(255, 255, 255, 0.8)',
     fontFamily: appFonts.headerTextRegular,
   },
   disabledSubtitle: {
@@ -620,7 +664,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: appColors.grey6,
-    marginLeft: 64,
+    marginLeft: scale(72),
   },
   bottomSpacing: {
     height: 20,

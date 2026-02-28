@@ -18,8 +18,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
+import { NavigationProp } from '@react-navigation/native';
 import PanicButtonComponent from '../../components/PanicButtonComponent';
 import {
   selectAppointments,
@@ -45,7 +47,7 @@ interface Appointment {
 }
 
 interface AppointmentsScreenProps {
-  navigation: any;
+  navigation: NavigationProp<any>;
 }
 
 const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) => {
@@ -166,7 +168,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
 
   const filteredAppointments = appointments.filter((appointment: Appointment) => {
     let matchesTab = false;
-    
+
     if (selectedTab === 'upcoming') {
       matchesTab = appointment.status === 'upcoming' && appointment.paymentStatus === 'paid';
     } else if (selectedTab === 'past') {
@@ -174,10 +176,10 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
     } else if (selectedTab === 'pending') {
       matchesTab = appointment.paymentStatus === 'pending';
     }
-    
+
     const matchesSearch = appointment.therapistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         appointment.therapistType.toLowerCase().includes(searchQuery.toLowerCase());
-    
+      appointment.therapistType.toLowerCase().includes(searchQuery.toLowerCase());
+
     return matchesTab && matchesSearch;
   });
 
@@ -203,7 +205,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   const formatDate = (dateString: string) => {
     const [day, month, year] = dateString.split('/');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('en-US', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -247,7 +249,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
         reason: 'User requested cancellation',
         requestRefund: true,
       });
-      
+
       if (result.success) {
         toast.show({
           description: `Appointment cancelled successfully. ${result.data?.refundStatus ? 'Refund processing.' : ''}`,
@@ -292,7 +294,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       sessionType: appointment.sessionType || 'Individual Therapy',
       location: appointment.location || 'Virtual Session',
     };
-    
+
     navigation.navigate('BookingCheckoutScreen', checkoutData);
   };
 
@@ -327,17 +329,17 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
             )}
           </View>
         </View>
-        
+
         <View style={styles.statusContainer}>
           <View style={[
             styles.statusBadge,
             { backgroundColor: getStatusColor(appointment.status) + '20' }
           ]}>
-            <Icon 
+            <Icon
               name={appointment.status === 'upcoming' ? 'event' : appointment.status === 'completed' ? 'check-circle' : 'cancel'}
-              type="material" 
-              color={getStatusColor(appointment.status)} 
-              size={14} 
+              type="material"
+              color={getStatusColor(appointment.status)}
+              size={moderateScale(14)}
             />
             <Text style={[
               styles.statusText,
@@ -352,22 +354,22 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       <View style={styles.appointmentBody}>
         <Avatar
           source={appointment.image}
-          size={60}
+          size={scale(60)}
           rounded
           containerStyle={styles.therapistAvatar}
         />
-        
+
         <View style={styles.appointmentInfo}>
           <Text style={styles.therapistName}>{appointment.therapistName}</Text>
           <Text style={styles.therapistType}>{appointment.therapistType}</Text>
-          
+
           {appointment.sessionType && (
             <Text style={styles.sessionType}>{appointment.sessionType}</Text>
           )}
 
           {appointment.location && (
             <View style={styles.locationContainer}>
-              <Icon name="location-on" type="material" color={appColors.grey2} size={14} />
+              <Icon name="location-on" type="material" color={appColors.grey2} size={moderateScale(14)} />
               <Text style={styles.locationText}>{appointment.location}</Text>
             </View>
           )}
@@ -397,11 +399,11 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       {/* Meeting Link */}
       {appointment.meetingLink && appointment.status === 'upcoming' && (
         <View style={styles.meetingSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.meetingButton}
             onPress={() => handleJoinMeeting(appointment.meetingLink!)}
           >
-            <Icon name="videocam" type="material" color={appColors.CardBackground} size={18} />
+            <Icon name="videocam" type="material" color={appColors.CardBackground} size={moderateScale(18)} />
             <Text style={styles.meetingButtonText}>Join Meeting</Text>
           </TouchableOpacity>
         </View>
@@ -409,40 +411,40 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.detailsButton}
           onPress={() => handleViewDetails(appointment)}
         >
-          <Icon name="info" type="material" color={appColors.AppBlue} size={18} />
+          <Icon name="info" type="material" color={appColors.AppBlue} size={moderateScale(18)} />
           <Text style={styles.detailsButtonText}>Details</Text>
         </TouchableOpacity>
 
         {appointment.status === 'upcoming' && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => handleRequestCancellation(appointment)}
           >
-            <Icon name="event-busy" type="material" color="#F44336" size={18} />
+            <Icon name="event-busy" type="material" color="#F44336" size={moderateScale(18)} />
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         )}
-        
+
         {appointment.status === 'completed' && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.feedbackButton}
             onPress={() => navigation.navigate('PostSessionFeedbackScreen', { appointment })}
           >
-            <Icon name="rate-review" type="material" color="#FF9800" size={18} />
+            <Icon name="rate-review" type="material" color="#FF9800" size={moderateScale(18)} />
             <Text style={styles.feedbackButtonText}>Give Feedback</Text>
           </TouchableOpacity>
         )}
-        
+
         {appointment.paymentStatus === 'pending' && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.payButton}
             onPress={() => handlePayNow(appointment)}
           >
-            <Icon name="payment" type="material" color="#4CAF50" size={18} />
+            <Icon name="payment" type="material" color="#4CAF50" size={moderateScale(18)} />
             <Text style={styles.payButtonText}>Pay Now</Text>
           </TouchableOpacity>
         )}
@@ -453,14 +455,14 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">My Appointments</Text>
         <View style={styles.headerSpacer} />
@@ -473,7 +475,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
             name="search"
             type="material"
             color={appColors.grey3}
-            size={20}
+            size={moderateScale(20)}
             style={styles.searchIcon}
           />
           <TextInput
@@ -501,7 +503,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
               Upcoming
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[
               styles.tab,
@@ -516,7 +518,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
               Past
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[
               styles.tab,
@@ -540,7 +542,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
               name="schedule"
               type="material"
               color={appColors.grey3}
-              size={60}
+              size={scale(60)}
             />
             <Text style={styles.emptyText}>Loading appointments...</Text>
             <Text style={styles.emptySubtext}>Please wait while we fetch your appointments</Text>
@@ -565,21 +567,21 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
                   name="event-busy"
                   type="material"
                   color={appColors.grey3}
-                  size={60}
+                  size={scale(60)}
                 />
                 <Text style={styles.emptyText}>
-                  {selectedTab === 'upcoming' 
-                    ? 'No upcoming appointments' 
+                  {selectedTab === 'upcoming'
+                    ? 'No upcoming appointments'
                     : selectedTab === 'past'
-                    ? 'No past appointments'
-                    : 'No pending payments'}
+                      ? 'No past appointments'
+                      : 'No pending payments'}
                 </Text>
                 <Text style={styles.emptySubtext}>
-                  {selectedTab === 'upcoming' 
-                    ? 'Book your first appointment to get started' 
+                  {selectedTab === 'upcoming'
+                    ? 'Book your first appointment to get started'
                     : selectedTab === 'past'
-                    ? 'Your completed appointments will appear here'
-                    : 'All your appointments are paid for'}
+                      ? 'Your completed appointments will appear here'
+                      : 'All your appointments are paid for'}
                 </Text>
               </View>
             }
@@ -613,16 +615,16 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
             <Text style={styles.modalSubMessage}>
               Your therapist will review and respond to your request. You'll be notified of their decision.
             </Text>
-            
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCancelButton}
                 onPress={() => setShowCancelModal(false)}
               >
                 <Text style={styles.modalCancelText}>Keep Appointment</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.modalConfirmButton}
                 onPress={confirmRequestCancellation}
               >
@@ -634,10 +636,10 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       </Modal>
 
       {/* Panic Button */}
-      <PanicButtonComponent 
-        position="bottom-right" 
-        size="medium" 
-        quickAction="modal" 
+      <PanicButtonComponent
+        position="bottom-right"
+        size="medium"
+        quickAction="modal"
       />
     </SafeAreaView>
   );
@@ -650,105 +652,105 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
-    marginRight: 15,
+    padding: scale(8),
+    borderRadius: scale(20),
+    marginRight: scale(15),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 12,
+    marginHorizontal: scale(12),
   },
   headerSpacer: {
-    width: 40,
+    width: scale(40),
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: scale(20),
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 20,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(20),
+    fontFamily: appFonts.bodyTextBold,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    marginBottom: 20,
+    borderRadius: scale(25),
+    paddingHorizontal: scale(15),
+    marginBottom: scale(20),
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.05,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: scale(10),
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 15,
-    fontSize: 16,
+    paddingVertical: scale(15),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 5,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(5),
+    marginBottom: scale(20),
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.05,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: scale(12),
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: scale(10),
   },
   activeTab: {
     backgroundColor: appColors.AppBlue,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   activeTabText: {
     color: appColors.CardBackground,
     fontWeight: 'bold',
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingBottom: scale(20),
   },
   appointmentCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: scale(12),
+    padding: scale(16),
+    marginBottom: scale(12),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -761,76 +763,76 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   dateContainer: {
     flex: 1,
   },
   appointmentDate: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
-    marginBottom: 2,
+    fontFamily: appFonts.bodyTextBold,
+    marginBottom: scale(2),
   },
   appointmentTime: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   modifyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(15),
     backgroundColor: appColors.AppLightGray,
   },
   modifyText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    marginLeft: 5,
-    fontFamily: appFonts.appTextMedium,
+    marginLeft: scale(5),
+    fontFamily: appFonts.bodyTextMedium,
   },
   appointmentBody: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   therapistAvatar: {
-    marginRight: 12,
+    marginRight: scale(12),
   },
   appointmentInfo: {
     flex: 1,
   },
   therapistName: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 4,
+    marginBottom: scale(4),
     fontFamily: appFonts.headerTextBold,
   },
   therapistType: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 5,
-    fontFamily: appFonts.appTextRegular,
+    marginBottom: scale(5),
+    fontFamily: appFonts.bodyTextRegular,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: scale(3),
   },
   locationText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
-    marginLeft: 5,
-    fontFamily: appFonts.appTextRegular,
+    marginLeft: scale(5),
+    fontFamily: appFonts.bodyTextRegular,
   },
   sessionType: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   statusContainer: {
     alignItems: 'flex-end',
@@ -838,33 +840,33 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 4,
+    paddingHorizontal: scale(10),
+    paddingVertical: scale(6),
+    borderRadius: scale(12),
+    gap: scale(4),
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: scale(60),
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey2,
-    marginTop: 20,
-    marginBottom: 10,
-    fontFamily: appFonts.appTextBold,
+    marginTop: scale(20),
+    marginBottom: scale(10),
+    fontFamily: appFonts.bodyTextBold,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     textAlign: 'center',
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   bookingFooter: {
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -873,8 +875,8 @@ const styles = StyleSheet.create({
   },
   bookButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 15,
-    paddingVertical: 15,
+    borderRadius: scale(15),
+    paddingVertical: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -882,7 +884,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   bookButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
@@ -896,18 +898,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timezoneText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   statusText: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   paymentSection: {
-    paddingTop: 12,
-    marginTop: 12,
+    paddingTop: scale(12),
+    marginTop: scale(12),
     borderTopWidth: 1,
     borderTopColor: appColors.grey6 + '60',
   },
@@ -917,24 +919,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   amountText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   paymentStatusChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
   },
   paymentStatusText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   meetingSection: {
-    paddingTop: 12,
-    marginTop: 12,
+    paddingTop: scale(12),
+    marginTop: scale(12),
     borderTopWidth: 1,
     borderTopColor: appColors.grey6 + '60',
   },
@@ -943,84 +945,84 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(15),
+    borderRadius: scale(8),
   },
   meetingButtonText: {
     color: appColors.CardBackground,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
-    marginLeft: 8,
+    marginLeft: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 8,
-    paddingTop: 12,
-    marginTop: 12,
+    gap: scale(8),
+    paddingTop: scale(12),
+    marginTop: scale(12),
     borderTopWidth: 1,
     borderTopColor: appColors.grey6 + '60',
   },
   detailsButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(6),
     backgroundColor: appColors.AppBlue + '10',
   },
   detailsButtonText: {
     color: appColors.AppBlue,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     fontWeight: 'bold',
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextBold,
   },
   cancelButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(6),
     backgroundColor: '#F4433610',
   },
   cancelButtonText: {
     color: '#F44336',
-    fontSize: 13,
+    fontSize: moderateScale(13),
     fontWeight: 'bold',
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextBold,
   },
   payButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(6),
     backgroundColor: '#4CAF5010',
   },
   payButtonText: {
     color: '#4CAF50',
-    fontSize: 13,
+    fontSize: moderateScale(13),
     fontWeight: 'bold',
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextBold,
   },
   feedbackButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(12),
+    borderRadius: scale(6),
     backgroundColor: '#FF980010',
   },
   feedbackButtonText: {
     color: '#FF9800',
-    fontSize: 13,
+    fontSize: moderateScale(13),
     fontWeight: 'bold',
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextBold,
   },
   // Modal styles
@@ -1032,9 +1034,9 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    borderRadius: 15,
-    padding: 25,
+    margin: scale(20),
+    borderRadius: scale(15),
+    padding: scale(25),
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1043,25 +1045,25 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextBold,
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
     textAlign: 'center',
-    marginBottom: 10,
-    fontFamily: appFonts.regularText,
+    marginBottom: scale(10),
+    fontFamily: appFonts.bodyTextRegular,
   },
   modalSubMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     textAlign: 'center',
-    marginBottom: 25,
-    fontFamily: appFonts.regularText,
+    marginBottom: scale(25),
+    fontFamily: appFonts.bodyTextRegular,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -1070,30 +1072,30 @@ const styles = StyleSheet.create({
   },
   modalCancelButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
+    borderRadius: scale(8),
     backgroundColor: appColors.grey6,
-    marginRight: 10,
+    marginRight: scale(10),
     alignItems: 'center',
   },
   modalCancelText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
   },
   modalConfirmButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
+    borderRadius: scale(8),
     backgroundColor: '#F44336',
-    marginLeft: 10,
+    marginLeft: scale(10),
     alignItems: 'center',
   },
   modalConfirmText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,

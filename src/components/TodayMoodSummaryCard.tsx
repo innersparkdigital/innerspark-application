@@ -20,6 +20,8 @@ interface TodayMoodSummaryCardProps {
   showPoints?: boolean;
   showDetailsButton?: boolean;
   compact?: boolean; // Compact mode for HomeScreen
+  showToggleIcon?: boolean; // Show toggle visibility button
+  onToggleVisibility?: () => void; // Callback for toggle visibility
 }
 
 const TodayMoodSummaryCard: React.FC<TodayMoodSummaryCardProps> = ({
@@ -34,9 +36,11 @@ const TodayMoodSummaryCard: React.FC<TodayMoodSummaryCardProps> = ({
   showPoints = true,
   showDetailsButton = true,
   compact = false,
+  showToggleIcon = false,
+  onToggleVisibility,
 }) => {
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.card, containerStyle]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -44,7 +48,14 @@ const TodayMoodSummaryCard: React.FC<TodayMoodSummaryCardProps> = ({
       {/* Header with checkmark */}
       <View style={styles.header}>
         <Text style={styles.title}>Your mood today</Text>
-        <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
+        <View style={styles.headerIcons}>
+          {showToggleIcon && (
+            <TouchableOpacity onPress={onToggleVisibility} style={styles.toggleIcon}>
+              <Icon name="visibility-off" type="material" color={appColors.grey3} size={24} />
+            </TouchableOpacity>
+          )}
+          <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
+        </View>
       </View>
 
       {/* Mood Display */}
@@ -101,6 +112,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  toggleIcon: {
+    marginRight: 10,
+    padding: 4,
   },
   title: {
     fontSize: 16,

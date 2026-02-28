@@ -2,17 +2,13 @@
  * Mood Points Screen - Loyalty points earned from mood check-ins
  */
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { Dimensions, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated, RefreshControl, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale, verticalScale } from '../../global/Scaling';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
@@ -43,6 +39,7 @@ interface MoodPointsScreenProps {
 }
 
 const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
+  const tabWidth = (SCREEN_WIDTH - scale(40)) / 2;
   const toast = useToast();
   const alert = useISAlert();
   const [pointsBalance, setPointsBalance] = useState(0);
@@ -216,7 +213,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
   const processRedemption = async (option: RedemptionOption) => {
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise<void>(resolve => setTimeout(resolve, 1000));
 
       // Update balance
       setPointsBalance(prev => prev - option.pointsRequired);
@@ -267,7 +264,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
   const BalanceCard: React.FC = () => (
     <View style={styles.balanceCard}>
       <View style={styles.balanceHeader}>
-        <Icon name="stars" type="material" color="#FFD700" size={32} />
+        <Icon name="stars" type="material" color="#FFD700" size={moderateScale(32)} />
         <Text style={styles.balanceTitle}>Loyalty Points</Text>
       </View>
       <Text style={styles.balanceAmount}>{pointsBalance.toLocaleString()}</Text>
@@ -280,7 +277,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           style={styles.actionButton}
           onPress={() => navigation.navigate('TodayMoodScreen')}
         >
-          <Icon name="mood" type="material" color={appColors.AppBlue} size={20} />
+          <Icon name="mood" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
           <Text style={styles.actionButtonText}>Daily Check-in</Text>
         </TouchableOpacity>
 
@@ -288,7 +285,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           style={styles.actionButton}
           onPress={() => setSelectedTab('redeem')}
         >
-          <Icon name="redeem" type="material" color={appColors.AppBlue} size={20} />
+          <Icon name="redeem" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
           <Text style={styles.actionButtonText}>Redeem Points</Text>
         </TouchableOpacity>
       </View>
@@ -302,7 +299,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           name={item.type === 'earned' ? 'add' : 'remove'}
           type="material"
           color={item.type === 'earned' ? '#4CAF50' : '#F44336'}
-          size={20}
+          size={moderateScale(20)}
         />
       </View>
 
@@ -329,7 +326,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           name={item.icon}
           type="material"
           color={item.available ? appColors.AppBlue : appColors.grey3}
-          size={24}
+          size={moderateScale(24)}
         />
       </View>
 
@@ -382,7 +379,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
             name={tab.icon}
             type="material"
             color={selectedTab === tab.key ? appColors.AppBlue : appColors.grey3}
-            size={20}
+            size={moderateScale(20)}
           />
           <Text style={[
             styles.tabText,
@@ -422,7 +419,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>How to Earn Points</Text>
               <View style={styles.earnMethodItem}>
-                <Icon name="mood" type="material" color={appColors.AppBlue} size={24} />
+                <Icon name="mood" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
                 <View style={styles.earnMethodInfo}>
                   <Text style={styles.earnMethodTitle}>Daily Mood Check-in</Text>
                   <Text style={styles.earnMethodDescription}>Complete your daily mood tracking</Text>
@@ -430,7 +427,7 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
                 <Text style={styles.earnMethodPoints}>+500 points</Text>
               </View>
               <View style={styles.earnMethodItem}>
-                <Icon name="local-fire-department" type="material" color="#FF5722" size={24} />
+                <Icon name="local-fire-department" type="material" color="#FF5722" size={moderateScale(24)} />
                 <View style={styles.earnMethodInfo}>
                   <Text style={styles.earnMethodTitle}>Weekly Streak Bonus</Text>
                   <Text style={styles.earnMethodDescription}>Complete 7 consecutive days</Text>
@@ -447,8 +444,9 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
             <Text style={styles.sectionTitle}>Transaction History</Text>
             <FlatList
               data={transactions}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <TransactionItem item={item} />}
+              keyExtractor={(item: any) => item.id}
+              renderItem={({ item }: { item: any }) => (
+                <TransactionItem item={item} />)}
               scrollEnabled={false}
               showsVerticalScrollIndicator={false}
             />
@@ -485,14 +483,14 @@ const MoodPointsScreen: React.FC<MoodPointsScreenProps> = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Loyalty Points</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
         >
-          <Icon name="refresh" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="refresh" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
@@ -525,62 +523,74 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 4,
+    elevation: scale(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
+    padding: scale(5),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   refreshButton: {
-    padding: 8,
+    padding: scale(8),
+  },
+  infoButton: {
+    padding: scale(5),
   },
   loadingContainer: {
-    padding: 20,
+    padding: scale(20),
+  },
+  scrollView: {
+    flex: 1,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
+    backgroundColor: appColors.grey6,
+    marginHorizontal: scale(20),
+    padding: scale(4),
+    borderRadius: scale(12),
+    marginBottom: scale(20),
+    position: 'relative',
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
+    paddingVertical: scale(10),
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginHorizontal: 4,
+    zIndex: 1,
   },
   activeTab: {
     backgroundColor: appColors.AppBlue + '15',
   },
+  activeTabIndicator: {
+    position: 'absolute',
+    height: '100%',
+    top: scale(4),
+    backgroundColor: appColors.CardBackground,
+    borderRadius: scale(10),
+    elevation: scale(2),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: scale(1) },
+    shadowOpacity: 0.1,
+    shadowRadius: scale(2),
+  },
   tabText: {
-    fontSize: 12,
+    fontSize: moderateScale(14),
+    fontWeight: '600',
     color: appColors.grey3,
-    marginLeft: 6,
-    fontFamily: appFonts.headerTextRegular,
+    fontFamily: appFonts.headerTextSemiBold,
   },
   activeTabText: {
     color: appColors.AppBlue,
@@ -589,39 +599,50 @@ const styles = StyleSheet.create({
   },
   balanceCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    padding: 24,
-    borderRadius: 16,
-    elevation: 3,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
+    alignItems: 'center',
+    elevation: scale(3),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(3),
   },
   balanceHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   balanceTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: appColors.grey1,
-    fontFamily: appFonts.headerTextBold,
-    marginLeft: 12,
+    fontSize: moderateScale(14),
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    marginTop: scale(12),
   },
   balanceAmount: {
-    fontSize: 32,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: scale(4),
+  },
+  balanceValue: {
+    fontSize: moderateScale(40),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+  },
+  pointsLabel: {
+    fontSize: moderateScale(18),
+    fontWeight: 'bold',
+    color: appColors.AppBlue,
+    marginLeft: scale(4),
+    fontFamily: appFonts.headerTextBold,
   },
   balanceSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   balanceActions: {
     flexDirection: 'row',
@@ -631,25 +652,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(10),
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: scale(4),
     justifyContent: 'center',
   },
   actionButtonText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 6,
+    marginLeft: scale(6),
   },
   section: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    borderRadius: 16,
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -657,135 +678,159 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    padding: 20,
-    paddingBottom: 12,
+    padding: scale(20),
+    paddingBottom: scale(12),
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingHorizontal: scale(20),
+    paddingBottom: scale(16),
   },
   earnMethodItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(16),
+    borderBottomWidth: scale(1),
     borderBottomColor: appColors.grey6,
   },
   earnMethodInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: scale(16),
   },
   earnMethodTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   earnMethodDescription: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   earnMethodPoints: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: '#4CAF50',
     fontFamily: appFonts.headerTextBold,
   },
+  listContainer: {
+    paddingHorizontal: scale(20),
+    paddingBottom: scale(20),
+  },
   transactionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: appColors.grey6,
+    backgroundColor: appColors.CardBackground,
+    padding: scale(16),
+    borderRadius: scale(12),
+    marginBottom: scale(12),
+    elevation: scale(1),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: scale(1) },
+    shadowOpacity: 0.05,
+    shadowRadius: scale(2),
   },
   transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     backgroundColor: appColors.AppLightGray,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: scale(12),
   },
   transactionInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: scale(16),
+  },
+  transactionType: {
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
   },
   transactionDescription: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   transactionDate: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
+  },
+  transactionPoints: {
+    alignItems: 'flex-end',
+  },
+  pointsValue: {
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
   transactionAmount: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   redemptionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(16),
+    borderBottomWidth: scale(1),
     borderBottomColor: appColors.grey6,
   },
   unavailableItem: {
     opacity: 0.6,
   },
   redemptionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     backgroundColor: appColors.AppLightGray,
     alignItems: 'center',
     justifyContent: 'center',
   },
   redemptionInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: scale(16),
   },
   redemptionTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   redemptionDescription: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
-    marginBottom: 8,
+    marginTop: scale(2),
+    marginBottom: scale(8),
   },
   redemptionMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   redemptionPoints: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   redemptionValue: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#4CAF50',
     fontFamily: appFonts.headerTextBold,
   },
@@ -794,10 +839,10 @@ const styles = StyleSheet.create({
   },
   redeemButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginLeft: 12,
+    borderRadius: scale(16),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    marginLeft: scale(12),
   },
   disabledRedeemButton: {
     backgroundColor: appColors.grey5,

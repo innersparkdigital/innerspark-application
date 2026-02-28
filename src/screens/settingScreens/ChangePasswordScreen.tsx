@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -39,7 +40,7 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation 
   // Password strength validation
   const getPasswordStrength = (password: string) => {
     if (password.length === 0) return { strength: 0, label: '', color: '' };
-    
+
     let strength = 0;
     if (password.length >= 8) strength++;
     if (password.length >= 12) strength++;
@@ -85,17 +86,17 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation 
     setIsLoading(true);
     try {
       const response = await changePassword(userId, currentPassword, newPassword, confirmPassword);
-      
+
       if (response.success) {
         toast.show({
           description: response.message || 'Password changed successfully!',
           duration: 3000,
         });
-        
+
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
-        
+
         setTimeout(() => {
           navigation.goBack();
         }, 1000);
@@ -157,13 +158,13 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation 
       <ISGenericHeader
         title="Change Password"
         navigation={navigation}
-              />
+      />
 
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
@@ -367,17 +368,17 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     backgroundColor: appColors.AppBlue + '10',
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 20,
-    marginBottom: 20,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(20),
   },
   infoContent: {
     flex: 1,
     marginLeft: 16,
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
@@ -415,7 +416,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '500',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
@@ -433,7 +434,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -547,7 +548,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   changeButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },

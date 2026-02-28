@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Overlay } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
@@ -350,7 +351,7 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
             onPress={() => handleSetPrimary(contact.id)}
             activeOpacity={0.7}
           >
-            <Icon name="star" type="material" color={appColors.AppBlue} size={18} />
+            <Icon name="contact-phone" type="material" color={appColors.AppBlue} size={scale(48)} />
           </TouchableOpacity>
         )}
 
@@ -578,6 +579,13 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextRegular,
     lineHeight: 20,
   },
+  crisisTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: '600',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: 4,
+  },
   section: {
     marginBottom: 24,
   },
@@ -588,23 +596,25 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginHorizontal: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(10),
   },
   addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: appColors.AppBlue + '15',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: appColors.AppBlue,
+    marginHorizontal: scale(20),
+    marginVertical: scale(20),
+    paddingVertical: scale(14),
+    borderRadius: scale(10),
   },
   addButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
@@ -615,9 +625,10 @@ const styles = StyleSheet.create({
   },
   contactCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    marginHorizontal: scale(20),
+    marginBottom: scale(12),
+    padding: scale(16),
+    borderRadius: scale(12),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -636,7 +647,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   contactName: {
-    fontSize: 18,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -655,7 +666,7 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
   },
   contactRelationship: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     marginBottom: 6,
@@ -665,7 +676,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contactPhone: {
-    fontSize: 15,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
     marginLeft: 6,
@@ -705,20 +716,20 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 40,
+    borderRadius: scale(12),
+    padding: scale(40),
     alignItems: 'center',
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   emptySubtitle: {
-    fontSize: 15,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
@@ -730,8 +741,8 @@ const styles = StyleSheet.create({
   },
   hotlineCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: scale(12),
+    padding: scale(16),
   },
   hotlineItem: {
     flexDirection: 'row',
@@ -743,22 +754,22 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   hotlineName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     marginBottom: 2,
   },
   hotlineNumber: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
   },
   hotlineCallButton: {
     backgroundColor: '#F44336',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    margin: scale(20),
+    padding: scale(16),
+    borderRadius: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -784,7 +795,7 @@ const styles = StyleSheet.create({
     borderBottomColor: appColors.grey6,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -796,19 +807,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: appColors.grey6,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderWidth: 1,
+    borderColor: appColors.grey5,
+    borderRadius: scale(8),
+    padding: scale(12),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
+    marginBottom: scale(16),
   },
   modalButton: {
     marginTop: 8,

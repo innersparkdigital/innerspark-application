@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
@@ -29,21 +30,21 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
   const toast = useToast();
   const dispatch = useDispatch();
   const moodSettings = useSelector(selectMoodReminderSettings);
-  
+
   // Reminder Settings
   const [reminderEnabled, setReminderEnabled] = useState(moodSettings.moodReminderEnabled);
   const [reminderTime, setReminderTime] = useState(moodSettings.moodReminderTime);
-  
+
   // Days of Week
   const [selectedDays, setSelectedDays] = useState<string[]>(moodSettings.moodReminderDays);
-  
+
   // Reminder Frequency
   const [reminderFrequency, setReminderFrequency] = useState<'once' | 'twice' | 'thrice'>(moodSettings.moodReminderFrequency);
-  
+
   // Sound & Vibration
   const [soundEnabled, setSoundEnabled] = useState(moodSettings.moodReminderSound);
   const [vibrationEnabled, setVibrationEnabled] = useState(moodSettings.moodReminderVibration);
-  
+
   // Sync with Redux when settings change
   useEffect(() => {
     setReminderEnabled(moodSettings.moodReminderEnabled);
@@ -53,7 +54,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
     setSoundEnabled(moodSettings.moodReminderSound);
     setVibrationEnabled(moodSettings.moodReminderVibration);
   }, [moodSettings]);
-  
+
   // Time Picker
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedHour, setSelectedHour] = useState(20); // 8 PM
@@ -91,7 +92,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
   const handleTimePress = () => {
     setShowTimePicker(true);
   };
-  
+
   const handleTimeConfirm = () => {
     const period = selectedHour >= 12 ? 'PM' : 'AM';
     const displayHour = selectedHour > 12 ? selectedHour - 12 : selectedHour === 0 ? 12 : selectedHour;
@@ -109,22 +110,22 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
     });
     navigation.goBack();
   };
-  
+
   const handleReminderToggle = (value: boolean) => {
     setReminderEnabled(value);
     dispatch(updateMoodReminderSetting({ key: 'moodReminderEnabled', value }));
   };
-  
+
   const handleFrequencyChange = (freq: 'once' | 'twice' | 'thrice') => {
     setReminderFrequency(freq);
     dispatch(updateMoodReminderSetting({ key: 'moodReminderFrequency', value: freq }));
   };
-  
+
   const handleSoundToggle = (value: boolean) => {
     setSoundEnabled(value);
     dispatch(updateMoodReminderSetting({ key: 'moodReminderSound', value }));
   };
-  
+
   const handleVibrationToggle = (value: boolean) => {
     setVibrationEnabled(value);
     dispatch(updateMoodReminderSetting({ key: 'moodReminderVibration', value }));
@@ -135,10 +136,10 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
       <ISGenericHeader
         title="Mood Reminders"
         navigation={navigation}
-              />
+      />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        
+
         {/* Master Toggle */}
         <View style={styles.section}>
           <View style={styles.masterToggle}>
@@ -338,7 +339,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
                 <Icon name="close" type="material" color={appColors.grey2} size={24} />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.pickerRow}>
               <ScrollView style={styles.pickerColumn} showsVerticalScrollIndicator={false}>
                 {Array.from({ length: 24 }, (_, i) => (
@@ -353,9 +354,9 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              
+
               <Text style={styles.pickerSeparator}>:</Text>
-              
+
               <ScrollView style={styles.pickerColumn} showsVerticalScrollIndicator={false}>
                 {[0, 15, 30, 45].map((minute) => (
                   <TouchableOpacity
@@ -370,7 +371,7 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
                 ))}
               </ScrollView>
             </View>
-            
+
             <View style={styles.timePickerActions}>
               <TouchableOpacity
                 style={styles.cancelButton}
@@ -402,23 +403,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    marginTop: 20,
+    marginTop: scale(20),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 20,
-    marginBottom: 8,
+    marginHorizontal: scale(20),
+    marginBottom: scale(8),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
-    padding: 16,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
+    padding: scale(16),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -427,9 +428,9 @@ const styles = StyleSheet.create({
   },
   masterToggle: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 12,
-    padding: 16,
+    marginHorizontal: scale(20),
+    borderRadius: scale(12),
+    padding: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -445,18 +446,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   masterToggleText: {
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   masterToggleTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   masterToggleSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -470,31 +471,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   timeSelectorText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   timeSelectorRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   timeText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginRight: 8,
+    marginRight: scale(8),
   },
   daysContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   dayButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     backgroundColor: appColors.grey6,
     alignItems: 'center',
     justifyContent: 'center',
@@ -506,7 +507,7 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   dayButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(12),
     fontWeight: '600',
     color: appColors.grey3,
     fontFamily: appFonts.headerTextBold,
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
     color: appColors.CardBackground,
   },
   daysSubtext: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
@@ -524,38 +525,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: scale(12),
   },
   frequencyLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(10),
     borderWidth: 2,
     borderColor: appColors.grey4,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   radioActive: {
     borderColor: appColors.AppBlue,
   },
   radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: scale(10),
+    height: scale(10),
+    borderRadius: scale(5),
     backgroundColor: appColors.AppBlue,
   },
   frequencyText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
   },
   frequencyTime: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -563,46 +564,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   preferenceLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   preferenceText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   separator: {
     height: 1,
     backgroundColor: appColors.grey6,
-    marginVertical: 4,
+    marginVertical: scale(4),
   },
   infoCard: {
     backgroundColor: appColors.AppBlue + '10',
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: scale(20),
+    marginTop: scale(20),
+    padding: scale(16),
+    borderRadius: scale(12),
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   infoText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
-    lineHeight: 20,
+    marginLeft: scale(12),
+    lineHeight: scale(20),
   },
   saveButtonContainer: {
-    marginHorizontal: 20,
-    marginTop: 30,
+    marginHorizontal: scale(20),
+    marginTop: scale(30),
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   modalOverlay: {
     flex: 1,
@@ -611,20 +612,20 @@ const styles = StyleSheet.create({
   },
   timePickerContainer: {
     backgroundColor: appColors.CardBackground,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 30,
+    borderTopLeftRadius: scale(20),
+    borderTopRightRadius: scale(20),
+    paddingBottom: scale(30),
   },
   timePickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: scale(20),
     borderBottomWidth: 1,
     borderBottomColor: appColors.grey6,
   },
   timePickerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -633,22 +634,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
-    height: 200,
+    paddingVertical: scale(20),
+    height: scale(200),
   },
   pickerColumn: {
-    width: 80,
-    height: 200,
+    width: scale(80),
+    height: scale(200),
   },
   pickerItem: {
-    paddingVertical: 12,
+    paddingVertical: scale(12),
     alignItems: 'center',
   },
   pickerItemSelected: {
     backgroundColor: appColors.AppBlue + '15',
   },
   pickerText: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextMedium,
   },
@@ -658,40 +659,40 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
   },
   pickerSeparator: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey2,
-    marginHorizontal: 10,
+    marginHorizontal: scale(10),
   },
   timePickerActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    gap: 12,
+    paddingHorizontal: scale(20),
+    paddingTop: scale(20),
+    gap: scale(12),
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: scale(14),
+    borderRadius: scale(12),
     backgroundColor: appColors.grey6,
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
   },
   confirmButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: scale(14),
+    borderRadius: scale(12),
     backgroundColor: appColors.AppBlue,
     alignItems: 'center',
   },
   confirmButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,

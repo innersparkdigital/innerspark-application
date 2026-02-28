@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 
@@ -42,7 +43,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
   const [selectedAction, setSelectedAction] = useState<string>('');
   const [lastStatus, setLastStatus] = useState<string>('Ready');
   const [cooldownTime, setCooldownTime] = useState(0);
-  
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
@@ -100,10 +101,10 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
     setCountdown(seconds);
     setIsActive(true);
     setSelectedAction(action);
-    
+
     // Vibrate to alert user
     Vibration.vibrate([0, 500, 200, 500]);
-    
+
     countdownRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -124,7 +125,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
     setIsActive(false);
     setSelectedAction('');
     setLastStatus('Cancelled');
-    
+
     toast.show({
       description: 'Emergency action cancelled',
       duration: 2000,
@@ -136,10 +137,10 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
       clearInterval(countdownRef.current);
       countdownRef.current = null;
     }
-    
+
     setIsActive(false);
     setCountdown(0);
-    
+
     switch (action) {
       case 'call_counselor':
         await handleCall(recentContacts[0].phone, recentContacts[0].name);
@@ -160,7 +161,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
       default:
         setLastStatus('Action Completed');
     }
-    
+
     startCooldown();
   };
 
@@ -181,7 +182,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
     try {
       const phoneUrl = `tel:${phone}`;
       const canOpen = await Linking.canOpenURL(phoneUrl);
-      
+
       if (canOpen) {
         await Linking.openURL(phoneUrl);
         toast.show({
@@ -208,7 +209,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
       description: 'Emergency notifications sent to your contacts',
       duration: 4000,
     });
-    
+
     // Future: Implement actual SMS/notification sending
   };
 
@@ -217,7 +218,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
       description: 'Starting calming audio session...',
       duration: 3000,
     });
-    
+
     // Future: Navigate to audio player or start background audio
   };
 
@@ -229,7 +230,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
       });
       return;
     }
-    
+
     setShowConfirmModal(true);
   };
 
@@ -247,49 +248,49 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Icon name="warning" type="material" color="#F44336" size={48} />
+          <Icon name="warning" type="material" color="#F44336" size={moderateScale(48)} />
           <Text style={styles.modalTitle}>Emergency Action</Text>
           <Text style={styles.modalSubtitle}>Choose your emergency response:</Text>
-          
+
           <View style={styles.actionButtons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: '#F44336' }]}
               onPress={() => confirmAction('call_counselor', 5)}
             >
-              <Icon name="phone" type="material" color="#FFF" size={20} />
+              <Icon name="phone" type="material" color="#FFF" size={moderateScale(20)} />
               <Text style={styles.actionButtonText}>Call Counselor</Text>
               <Text style={styles.actionButtonSubtext}>5 sec countdown</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: '#FF5722' }]}
               onPress={() => confirmAction('call_crisis', 3)}
             >
-              <Icon name="support-agent" type="material" color="#FFF" size={20} />
+              <Icon name="support-agent" type="material" color="#FFF" size={moderateScale(20)} />
               <Text style={styles.actionButtonText}>Crisis Line</Text>
               <Text style={styles.actionButtonSubtext}>3 sec countdown</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: '#FF9800' }]}
               onPress={() => confirmAction('notify_contacts', 10)}
             >
-              <Icon name="group" type="material" color="#FFF" size={20} />
+              <Icon name="group" type="material" color="#FFF" size={moderateScale(20)} />
               <Text style={styles.actionButtonText}>Notify Contacts</Text>
               <Text style={styles.actionButtonSubtext}>10 sec countdown</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
               onPress={() => confirmAction('calming_audio', 0)}
             >
-              <Icon name="music-note" type="material" color="#FFF" size={20} />
+              <Icon name="music-note" type="material" color="#FFF" size={moderateScale(20)} />
               <Text style={styles.actionButtonText}>Calming Audio</Text>
               <Text style={styles.actionButtonSubtext}>Immediate</Text>
             </TouchableOpacity>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => setShowConfirmModal(false)}
           >
@@ -304,18 +305,18 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color="#FFF" size={24} />
+          <Icon name="arrow-back" type="material" color="#FFF" size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Emergency Help</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.infoButton}
           onPress={() => toast.show({ description: 'Panic button provides immediate emergency assistance' })}
         >
-          <Icon name="info" type="material" color="#FFF" size={24} />
+          <Icon name="info" type="material" color="#FFF" size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
@@ -350,11 +351,11 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
               onPress={isActive ? cancelCountdown : handlePanicButtonPress}
               disabled={cooldownTime > 0}
             >
-              <Icon 
-                name={isActive ? "stop" : "warning"} 
-                type="material" 
-                color="#FFF" 
-                size={48} 
+              <Icon
+                name={isActive ? "stop" : "warning"}
+                type="material"
+                color="#FFF"
+                size={moderateScale(48)}
               />
               <Text style={styles.panicButtonText}>
                 {isActive ? "CANCEL" : cooldownTime > 0 ? "COOLDOWN" : "PANIC"}
@@ -369,7 +370,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
             {isActive ? "Tap CANCEL to stop the countdown" : "Tap the button for emergency help"}
           </Text>
           <Text style={styles.instructionsText}>
-            {isActive 
+            {isActive
               ? "Your emergency action will execute automatically when countdown reaches zero"
               : "Choose from multiple emergency response options including calling counselors, crisis lines, or notifying emergency contacts"
             }
@@ -381,8 +382,8 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
           <View style={styles.recentContactsSection}>
             <Text style={styles.sectionTitle}>Recent Emergency Contacts</Text>
             {recentContacts.slice(0, 2).map((contact) => (
-              <TouchableOpacity 
-                key={contact.id} 
+              <TouchableOpacity
+                key={contact.id}
                 style={styles.contactItem}
                 onPress={() => handleCall(contact.phone, contact.name)}
               >
@@ -390,7 +391,7 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
                   <Text style={styles.contactName}>{contact.name}</Text>
                   <Text style={styles.contactRelationship}>{contact.relationship}</Text>
                 </View>
-                <Icon name="phone" type="material" color="#4CAF50" size={20} />
+                <Icon name="phone" type="material" color="#4CAF50" size={moderateScale(20)} />
               </TouchableOpacity>
             ))}
           </View>
@@ -409,96 +410,96 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#D32F2F',
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: '#FFF',
     fontFamily: appFonts.headerTextBold,
   },
   infoButton: {
-    padding: 8,
+    padding: scale(8),
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   statusSection: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: scale(20),
+    marginBottom: scale(20),
   },
   statusLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#FFCDD2',
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   statusText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   cooldownText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#FFAB91',
     fontFamily: appFonts.headerTextMedium,
-    marginTop: 4,
+    marginTop: scale(4),
   },
   countdownSection: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: scale(30),
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: scale(16),
+    padding: scale(20),
   },
   countdownLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: '#FFCDD2',
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   countdownText: {
-    fontSize: 72,
+    fontSize: moderateScale(72),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   actionLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#FFAB91',
     fontFamily: appFonts.headerTextBold,
-    marginTop: 8,
+    marginTop: scale(8),
   },
   panicButtonContainer: {
     alignItems: 'center',
-    marginVertical: 40,
+    marginVertical: scale(40),
   },
   panicButtonWrapper: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: scale(8) },
     shadowOpacity: 0.3,
-    shadowRadius: 16,
+    shadowRadius: scale(16),
     elevation: 16,
   },
   panicButton: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: scale(200),
+    height: scale(200),
+    borderRadius: scale(100),
     backgroundColor: '#F44336',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 8,
+    borderWidth: scale(8),
     borderColor: '#FFF',
   },
   activePanicButton: {
@@ -509,61 +510,61 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   panicButtonText: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginTop: 8,
+    marginTop: scale(8),
   },
   instructionsSection: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: scale(30),
   },
   instructionsTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   instructionsText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#FFCDD2',
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   recentContactsSection: {
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: scale(16),
+    padding: scale(16),
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
+    paddingVertical: scale(8),
+    borderBottomWidth: scale(1),
     borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   contactInfo: {
     flex: 1,
   },
   contactName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   contactRelationship: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#FFCDD2',
     fontFamily: appFonts.headerTextRegular,
   },
@@ -572,61 +573,61 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.8)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   modalContent: {
     backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: scale(20),
+    padding: scale(24),
     alignItems: 'center',
     width: '100%',
-    maxWidth: 400,
+    maxWidth: scale(400),
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   modalSubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   actionButtons: {
     width: '100%',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: scale(16),
+    borderRadius: scale(12),
+    marginBottom: scale(12),
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   actionButtonSubtext: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: 'rgba(255,255,255,0.8)',
     fontFamily: appFonts.headerTextRegular,
   },
   cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(24),
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextMedium,
   },

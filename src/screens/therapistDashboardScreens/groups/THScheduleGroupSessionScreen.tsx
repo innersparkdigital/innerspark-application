@@ -13,15 +13,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import DatePicker from 'react-native-date-picker';
 import { appColors, appFonts } from '../../../global/Styles';
+import { moderateScale } from '../../../global/Scaling';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { scheduleGroupSession } from '../../../api/therapist';
+import { validateGroupSession } from '../../../global/LHValidators';
+import { getGroupIcon } from '../../../utils/GroupUtils';
 
 const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
   const { group } = route.params;
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const alert = useISAlert();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -61,19 +66,36 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
   };
 
   const handleSchedule = async () => {
-    if (!sessionTitle.trim()) {
-      alert.show({ type: 'warning', title: 'Missing Info', message: 'Please enter a session title' });
+    const sessionData: any = {
+      topic: sessionTitle.trim(),
+      description: sessionDescription.trim(),
+      duration: duration,
+      type: sessionType,
+      meetingLink: meetingLink.trim(),
+      maxParticipants: maxParticipants
+    };
+
+    const errors = validateGroupSession(sessionData);
+
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0] as string;
+      alert.show({ type: 'warning', title: 'Validation Error', message: firstError });
       return;
     }
 
-    if (sessionType === 'virtual' && !meetingLink.trim()) {
-      alert.show({ type: 'warning', title: 'Link Required', message: 'Please enter a meeting link for virtual sessions' });
+    // Custom check for past dates
+    if (selectedDate < new Date()) {
+      alert.show({
+        type: 'warning',
+        title: 'Invalid Date',
+        message: 'Sessions cannot be scheduled in the past. Please select a future time.'
+      });
       return;
     }
 
     setIsLoading(true);
     try {
-      const sessionData = {
+      const submissionData = {
         date: selectedDate.toISOString().split('T')[0],
         time: selectedDate.toTimeString().split(' ')[0],
         topic: sessionTitle.trim(),
@@ -84,7 +106,8 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
         maxParticipants: parseInt(maxParticipants)
       };
 
-      await scheduleGroupSession(group.id, sessionData);
+      const therapistId = userDetails?.userId;
+      await scheduleGroupSession(group.id, therapistId, submissionData);
 
       alert.show({
         type: 'success',
@@ -94,7 +117,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
       });
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to schedule session';
-      console.error('Schedule Session Error:', errorMessage);
+      console.error('Schedule Error:', errorMessage);
       alert.show({ type: 'error', title: 'Error', message: errorMessage });
     } finally {
       setIsLoading(false);
@@ -109,7 +132,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Group Info Card */}
         <View style={styles.groupCard}>
-          <Text style={styles.groupIcon}>{group.icon}</Text>
+          <Text style={styles.groupIcon}>{getGroupIcon(group.icon)}</Text>
           <View style={styles.groupInfo}>
             <Text style={styles.groupName}>{group.name}</Text>
             <Text style={styles.groupMembers}>{group.members} members</Text>
@@ -239,7 +262,7 @@ const THScheduleGroupSessionScreen = ({ navigation, route }: any) => {
             placeholder="20"
             placeholderTextColor={appColors.grey3}
             value={maxParticipants}
-            onChangeText={setMaxParticipants}
+            onChangeText={(text) => setMaxParticipants(text.replace(/[^0-9]/g, ''))}
             keyboardType="number-pad"
             maxLength={3}
           />
@@ -410,7 +433,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   groupIcon: {
-    fontSize: 40,
+    fontSize: moderateScale(40),
     marginRight: 16,
   },
   groupInfo: {

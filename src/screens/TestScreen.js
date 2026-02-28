@@ -4,19 +4,19 @@
  */
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {  
-    StyleSheet, 
-    Text, 
-    View,
-    Image,
-    TouchableOpacity, 
-    TextInput, 
-    FlatList, 
-    SafeAreaView,
-    ImageBackground,
-    ScrollView 
-  
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  TextInput,
+  FlatList,
+  ImageBackground,
+  ScrollView
+
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { appColors, parameters } from "../global/Styles";
 import { appImages } from "../global/Data";
 import { Icon, Button } from "@rneui/themed";
@@ -24,143 +24,143 @@ import LHGenericHeader from "../components/LHGenericHeader";
 
 
 
-export default function TestScreen({navigation}) {
+export default function TestScreen({ navigation }) {
 
 
-      const steps = [
-        {
-          title: 'Booking Confirmed',
-          time: '10:00AM',
-          date: 'Aug 08, 2024',
-          completed: true,
-          icon: 'check-circle',
-          iconType: 'material-community'
-        },
-        {
-          title: 'Order Pick Up',
-          time: '12:00PM',
-          date: 'Aug 08, 2024',
-          completed: true,
-          icon: 'arrow-down-circle',
-          iconType: 'material-community'
-        },
-        {
-          title: 'Cleaning In Progress',
-          time: '15:00PM',
-          date: 'Aug 08, 2024',
-          completed: false,
-          icon: 'refresh',
-          iconType: 'material-community'
-        },
-        {
-          title: 'Ready For Drop Off',
-          time: '10:00AM',
-          date: 'Aug 08, 2024',
-          completed: false,
-          icon: 'arrow-down-circle',
-          iconType: 'material-community'
-        },
-        {
-          title: 'Order Shipped',
-          time: '10:00AM',
-          date: 'Aug 08, 2024',
-          completed: false,
-          icon: 'truck',
-          iconType: 'material-community'
-        },
-        {
-          title: 'Order Delivered',
-          time: '10:00AM',
-          date: 'Aug 08, 2024',
-          completed: false,
-          icon: 'check-circle',
-          iconType: 'material-community'
-        }
-      ];
+  const steps = [
+    {
+      title: 'Booking Confirmed',
+      time: '10:00AM',
+      date: 'Aug 08, 2024',
+      completed: true,
+      icon: 'check-circle',
+      iconType: 'material-community'
+    },
+    {
+      title: 'Order Pick Up',
+      time: '12:00PM',
+      date: 'Aug 08, 2024',
+      completed: true,
+      icon: 'arrow-down-circle',
+      iconType: 'material-community'
+    },
+    {
+      title: 'Cleaning In Progress',
+      time: '15:00PM',
+      date: 'Aug 08, 2024',
+      completed: false,
+      icon: 'refresh',
+      iconType: 'material-community'
+    },
+    {
+      title: 'Ready For Drop Off',
+      time: '10:00AM',
+      date: 'Aug 08, 2024',
+      completed: false,
+      icon: 'arrow-down-circle',
+      iconType: 'material-community'
+    },
+    {
+      title: 'Order Shipped',
+      time: '10:00AM',
+      date: 'Aug 08, 2024',
+      completed: false,
+      icon: 'truck',
+      iconType: 'material-community'
+    },
+    {
+      title: 'Order Delivered',
+      time: '10:00AM',
+      date: 'Aug 08, 2024',
+      completed: false,
+      icon: 'check-circle',
+      iconType: 'material-community'
+    }
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
-       <ImageBackground source={appImages.laundryBg} style={{ flex: 1, }}>
+      <ImageBackground source={appImages.laundryBg} style={{ flex: 1, }}>
 
 
-        
-          <ScrollView style={styles.scrollView}>
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                <Icon name="chevron-left" type="material-community" color="#0066cc" size={32} />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Track Order</Text>
-            </View>
 
-            {/* Store Info */}
-            <View style={styles.storeInfo}>
-              <Text style={styles.storeName}>Fast Boots & Dry Cleaning</Text>
-              <Text style={styles.storeAddress}>7th Floor, Shop 8. Rumee Building.</Text>
-            </View>
+        <ScrollView style={styles.scrollView}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Icon name="chevron-left" type="material-community" color="#0066cc" size={32} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Track Order</Text>
+          </View>
 
-            {/* Timeline */}
-            <View style={styles.timeline}>
-              {steps.map((step, index) => (
-                <View key={index} style={styles.timelineItem}>
-                  {/* Connector Line */}
-                  {index !== 0 && (
-                    <View
-                      style={[
-                        styles.connector,
-                        {
-                          backgroundColor: step.completed ? '#0066cc' : '#E0E0E0'
-                        }
-                      ]}
-                    />
-                  )}
+          {/* Store Info */}
+          <View style={styles.storeInfo}>
+            <Text style={styles.storeName}>Fast Boots & Dry Cleaning</Text>
+            <Text style={styles.storeAddress}>7th Floor, Shop 8. Rumee Building.</Text>
+          </View>
 
-                  {/* Step Circle */}
+          {/* Timeline */}
+          <View style={styles.timeline}>
+            {steps.map((step, index) => (
+              <View key={index} style={styles.timelineItem}>
+                {/* Connector Line */}
+                {index !== 0 && (
                   <View
                     style={[
-                      styles.circle,
+                      styles.connector,
                       {
-                        backgroundColor: step.completed ? '#0066cc' : '#FFFFFF',
-                        borderColor: step.completed ? '#0066cc' : '#E0E0E0'
+                        backgroundColor: step.completed ? '#0066cc' : '#E0E0E0'
                       }
                     ]}
-                  >
-                    <Icon
-                      name={step.icon}
-                      type={step.iconType}
-                      color={step.completed ? '#FFFFFF' : '#E0E0E0'}
-                      size={16}
-                    />
-                  </View>
+                  />
+                )}
 
-                  {/* Step Content */}
-                  <View style={styles.stepContent}>
-                    <Text
-                      style={[
-                        styles.stepTitle,
-                        { color: step.completed ? '#0066cc' : '#A0A0A0' }
-                      ]}
-                    >
-                      {step.title}
-                    </Text>
-                    <Text style={styles.stepTime}>
-                      Pick Up Date & Time | {step.date} | {step.time}
-                    </Text>
-                  </View>
+                {/* Step Circle */}
+                <View
+                  style={[
+                    styles.circle,
+                    {
+                      backgroundColor: step.completed ? '#0066cc' : '#FFFFFF',
+                      borderColor: step.completed ? '#0066cc' : '#E0E0E0'
+                    }
+                  ]}
+                >
+                  <Icon
+                    name={step.icon}
+                    type={step.iconType}
+                    color={step.completed ? '#FFFFFF' : '#E0E0E0'}
+                    size={16}
+                  />
                 </View>
-              ))}
-            </View>
 
-            {/* E-Receipt Button */}
-            <TouchableOpacity style={styles.receiptButton}>
-              <Text style={styles.receiptButtonText}>VIEW E-RECEIPT</Text>
-            </TouchableOpacity>
-          </ScrollView>
-      
+                {/* Step Content */}
+                <View style={styles.stepContent}>
+                  <Text
+                    style={[
+                      styles.stepTitle,
+                      { color: step.completed ? '#0066cc' : '#A0A0A0' }
+                    ]}
+                  >
+                    {step.title}
+                  </Text>
+                  <Text style={styles.stepTime}>
+                    Pick Up Date & Time | {step.date} | {step.time}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
 
-      
+          {/* E-Receipt Button */}
+          <TouchableOpacity style={styles.receiptButton}>
+            <Text style={styles.receiptButtonText}>VIEW E-RECEIPT</Text>
+          </TouchableOpacity>
+        </ScrollView>
 
-        </ImageBackground>
+
+
+
+      </ImageBackground>
     </SafeAreaView>
   );
 }
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   }
 
-  
+
 });
 
 

@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyStateTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
@@ -430,7 +431,7 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: scale(40),
     lineHeight: 22,
   },
 });

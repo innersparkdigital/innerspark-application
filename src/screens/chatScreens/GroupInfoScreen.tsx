@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 
@@ -55,7 +56,7 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
   const renderInfoCard = (icon: string, title: string, content: string, iconType: string = 'material') => (
     <View style={styles.infoCard}>
       <View style={styles.infoIconContainer}>
-        <Icon name={icon} type={iconType} size={20} color={appColors.AppBlue} />
+        <Icon name={icon} type={iconType} size={moderateScale(20)} color={appColors.AppBlue} />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoTitle}>{title}</Text>
@@ -87,24 +88,24 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
         {/* Privacy Notice */}
         <View style={styles.privacyCard}>
           <View style={styles.privacyHeader}>
-            <Icon name="lock" type="material" size={20} color={appColors.AppBlue} />
+            <Icon name="lock" type="material" size={moderateScale(20)} color={appColors.AppBlue} />
             <Text style={styles.privacyTitle}>Privacy & Protection</Text>
           </View>
           <Text style={styles.privacyText}>
-            Member identities are protected for privacy. All group members appear as "Group Member" 
+            Member identities are protected for privacy. All group members appear as "Group Member"
             to maintain confidentiality and create a safe, judgment-free space.
           </Text>
           <View style={styles.privacyFeatures}>
             <View style={styles.privacyFeature}>
-              <Icon name="check-circle" type="material" size={16} color={appColors.AppGreen} />
+              <Icon name="check-circle" type="material" size={moderateScale(16)} color={appColors.AppGreen} />
               <Text style={styles.privacyFeatureText}>Anonymous participation</Text>
             </View>
             <View style={styles.privacyFeature}>
-              <Icon name="check-circle" type="material" size={16} color={appColors.AppGreen} />
+              <Icon name="check-circle" type="material" size={moderateScale(16)} color={appColors.AppGreen} />
               <Text style={styles.privacyFeatureText}>Confidential discussions</Text>
             </View>
             <View style={styles.privacyFeature}>
-              <Icon name="check-circle" type="material" size={16} color={appColors.AppGreen} />
+              <Icon name="check-circle" type="material" size={moderateScale(16)} color={appColors.AppGreen} />
               <Text style={styles.privacyFeatureText}>Safe environment</Text>
             </View>
           </View>
@@ -147,7 +148,7 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
           <View style={styles.focusContainer}>
             {groupInfo.focus.map((item, index) => (
               <View key={index} style={styles.focusItem}>
-                <Icon name="arrow-right" type="material" size={20} color={appColors.AppBlue} />
+                <Icon name="arrow-right" type="material" size={moderateScale(20)} color={appColors.AppBlue} />
                 <Text style={styles.focusText}>{item}</Text>
               </View>
             ))}
@@ -171,9 +172,9 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
 
         {/* Support Info */}
         <View style={styles.supportCard}>
-          <Icon name="info" type="material" size={20} color={appColors.grey3} />
+          <Icon name="info" type="material" size={moderateScale(20)} color={appColors.grey3} />
           <Text style={styles.supportText}>
-            If you have questions or concerns about the group, please contact your facilitator 
+            If you have questions or concerns about the group, please contact your facilitator
             through the chat or schedule a private session.
           </Text>
         </View>
@@ -194,190 +195,190 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     backgroundColor: appColors.CardBackground,
-    paddingVertical: 30,
-    paddingHorizontal: 20,
+    paddingVertical: scale(30),
+    paddingHorizontal: scale(20),
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: scale(80),
+    height: scale(80),
+    borderRadius: scale(40),
     backgroundColor: appColors.AppBlue + '15',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   groupIcon: {
-    fontSize: 40,
+    fontSize: moderateScale(40),
   },
   groupName: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
     textAlign: 'center',
   },
   groupType: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   groupDescription: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: moderateScale(22),
   },
   privacyCard: {
     backgroundColor: appColors.AppBlue + '10',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
+    padding: scale(16),
+    marginHorizontal: scale(16),
+    marginBottom: scale(16),
+    borderRadius: scale(12),
+    borderLeftWidth: scale(4),
     borderLeftColor: appColors.AppBlue,
   },
   privacyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
+    marginBottom: scale(12),
+    gap: scale(8),
   },
   privacyTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   privacyText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: moderateScale(20),
+    marginBottom: scale(12),
   },
   privacyFeatures: {
-    gap: 8,
+    gap: scale(8),
   },
   privacyFeature: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: scale(8),
   },
   privacyFeatureText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
   },
   infoCard: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    marginHorizontal: 16,
+    padding: scale(16),
+    marginBottom: scale(12),
+    borderRadius: scale(12),
+    marginHorizontal: scale(16),
   },
   infoIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     backgroundColor: appColors.AppBlue + '15',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   infoContent: {
     flex: 1,
   },
   infoTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   infoText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   section: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 16,
+    padding: scale(16),
+    marginBottom: scale(16),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   focusContainer: {
-    gap: 12,
+    gap: scale(12),
   },
   focusItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: scale(8),
   },
   focusText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
     flex: 1,
   },
   guidelinesContainer: {
-    gap: 16,
+    gap: scale(16),
   },
   guidelineItem: {
     flexDirection: 'row',
-    gap: 12,
+    gap: scale(12),
   },
   guidelineNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: scale(24),
+    height: scale(24),
+    borderRadius: scale(12),
     backgroundColor: appColors.AppBlue,
     justifyContent: 'center',
     alignItems: 'center',
   },
   guidelineNumberText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   guidelineText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   supportCard: {
     flexDirection: 'row',
     backgroundColor: appColors.grey6,
-    padding: 16,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    gap: 12,
+    padding: scale(16),
+    marginHorizontal: scale(16),
+    borderRadius: scale(12),
+    gap: scale(12),
     alignItems: 'flex-start',
   },
   supportText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 18,
+    lineHeight: moderateScale(18),
   },
   bottomPadding: {
-    height: 30,
+    height: scale(30),
   },
 });
 

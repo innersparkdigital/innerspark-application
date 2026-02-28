@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 
 interface QuizAnswers {
@@ -87,7 +88,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
 
   const renderProgress = () => (
     <View style={styles.progressBarWrap}>
-      {[1,2,3,4,5].map(i => (
+      {[1, 2, 3, 4, 5].map(i => (
         <View key={i} style={[styles.progressDot, i <= step ? styles.progressDotActive : null]} />
       ))}
     </View>
@@ -105,12 +106,12 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Therapist Matching Quiz</Text>
         <TouchableOpacity style={styles.headerRight} onPress={handleSaveDraft}>
           {saving ? (
-            <Icon name="check" type="material" color={appColors.AppBlue} size={22} />
+            <Icon name="check" type="material" color={appColors.AppBlue} size={moderateScale(22)} />
           ) : (
             <Text style={styles.saveDraftText}>Save</Text>
           )}
@@ -123,7 +124,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
         {step === 1 && (
           <Section title="Gender Preference">
             <View style={styles.chipRow}>
-              {(['Any','Male','Female'] as const).map(opt => (
+              {(['Any', 'Male', 'Female'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
                   style={[styles.chip, answers.genderPreference === opt && styles.chipSelected]}
@@ -161,7 +162,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
         {step === 3 && (
           <Section title="Preferred Language">
             <View style={styles.chipRow}>
-              {(['Any','English','Luganda','French'] as const).map(opt => (
+              {(['Any', 'English', 'Luganda', 'French'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
                   style={[styles.chip, answers.language === opt && styles.chipSelected]}
@@ -179,7 +180,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
         {step === 4 && (
           <Section title="Budget per Session">
             <View style={styles.chipWrap}>
-              {(['Any','UGX 40k - 50k','UGX 50k - 60k','UGX 60k+'] as const).map(opt => (
+              {(['Any', 'UGX 40k - 50k', 'UGX 50k - 60k', 'UGX 60k+'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
                   style={[styles.chip, answers.budget === opt && styles.chipSelected]}
@@ -197,7 +198,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
         {step === 5 && (
           <Section title="Availability">
             <View style={styles.chipWrap}>
-              {(['Anytime','Weekdays','Weekends','Evenings'] as const).map(opt => (
+              {(['Anytime', 'Weekdays', 'Weekends', 'Evenings'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
                   style={[styles.chip, answers.availability === opt && styles.chipSelected]}
@@ -252,8 +253,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
@@ -262,37 +263,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  backButton: { padding: 8, marginRight: 8 },
+  backButton: { padding: scale(8), marginRight: scale(8) },
   headerTitle: {
     flex: 1,
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },
-  headerRight: { padding: 8, minWidth: 40, alignItems: 'flex-end' },
-  saveDraftText: { color: appColors.AppBlue, fontFamily: appFonts.appTextRegular, fontSize: 14, fontWeight: '600' },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
-  section: { backgroundColor: appColors.CardBackground, padding: 16, borderRadius: 12, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold, marginBottom: 8 },
+  headerRight: { padding: scale(8), minWidth: scale(40), alignItems: 'flex-end' },
+  saveDraftText: { color: appColors.AppBlue, fontFamily: appFonts.bodyTextRegular, fontSize: moderateScale(14), fontWeight: '600' },
+  content: { flex: 1, paddingHorizontal: scale(16), paddingTop: scale(12) },
+  section: { backgroundColor: appColors.CardBackground, padding: scale(16), borderRadius: scale(12), marginBottom: scale(12), elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+  sectionTitle: { fontSize: moderateScale(16), fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold, marginBottom: scale(8) },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  chip: { backgroundColor: appColors.grey6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8, marginBottom: 8 },
+  chip: { backgroundColor: appColors.grey6, paddingHorizontal: scale(14), paddingVertical: scale(8), borderRadius: scale(20), marginRight: scale(8), marginBottom: scale(8) },
   chipSelected: { backgroundColor: appColors.AppBlue + '20', borderWidth: 1, borderColor: appColors.AppBlue },
-  chipText: { fontSize: 14, color: appColors.grey2, fontFamily: appFonts.appTextRegular },
+  chipText: { fontSize: moderateScale(14), color: appColors.grey2, fontFamily: appFonts.bodyTextRegular },
   chipTextSelected: { color: appColors.AppBlue, fontWeight: '600' },
-  helperText: { fontSize: 12, color: appColors.grey3, marginBottom: 8, fontFamily: appFonts.appTextRegular },
-  errorText: { fontSize: 12, color: '#F44336', fontFamily: appFonts.appTextRegular, marginTop: 4 },
-  progressBarWrap: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 10, backgroundColor: appColors.CardBackground },
-  progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: appColors.grey6, marginHorizontal: 5 },
+  helperText: { fontSize: moderateScale(12), color: appColors.grey3, marginBottom: scale(8), fontFamily: appFonts.bodyTextRegular },
+  errorText: { fontSize: moderateScale(12), color: '#F44336', fontFamily: appFonts.bodyTextRegular, marginTop: scale(4) },
+  progressBarWrap: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: scale(10), backgroundColor: appColors.CardBackground },
+  progressDot: { width: scale(8), height: scale(8), borderRadius: scale(4), backgroundColor: appColors.grey6, marginHorizontal: scale(5) },
   progressDotActive: { backgroundColor: appColors.AppBlue },
-  footer: { backgroundColor: appColors.CardBackground, padding: 16, flexDirection: 'row', justifyContent: 'space-between', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-  backBtn: { borderColor: appColors.AppBlue, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12 },
-  backBtnText: { color: appColors.AppBlue, fontFamily: appFonts.appTextRegular, fontWeight: '600' },
-  nextBtn: { backgroundColor: appColors.AppBlue, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12 },
-  nextBtnText: { color: appColors.CardBackground, fontFamily: appFonts.appTextRegular, fontWeight: '700' },
-  bottomSpacer: { height: 100 },
+  footer: { backgroundColor: appColors.CardBackground, padding: scale(16), flexDirection: 'row', justifyContent: 'space-between', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  backBtn: { borderColor: appColors.AppBlue, paddingVertical: scale(12), paddingHorizontal: scale(24), borderRadius: scale(12) },
+  backBtnText: { color: appColors.AppBlue, fontFamily: appFonts.bodyTextRegular, fontWeight: '600' },
+  nextBtn: { backgroundColor: appColors.AppBlue, paddingVertical: scale(12), paddingHorizontal: scale(24), borderRadius: scale(12) },
+  nextBtnText: { color: appColors.CardBackground, fontFamily: appFonts.bodyTextRegular, fontWeight: '700' },
+  bottomSpacer: { height: scale(100) },
 });
 
 export default TherapistMatchingQuizScreen;

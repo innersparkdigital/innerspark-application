@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Skeleton } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
@@ -213,7 +214,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
       <View style={styles.quickActionsGrid}>
         <TouchableOpacity style={styles.quickActionButton} onPress={handlePanicButton}>
           <View style={[styles.quickActionIcon, { backgroundColor: '#F44336' }]}>
-            <Icon name="warning" type="material" color="#FFF" size={24} />
+            <Icon name="warning" type="material" color="#FFF" size={moderateScale(24)} />
           </View>
           <Text style={styles.quickActionText}>Panic Button</Text>
         </TouchableOpacity>
@@ -223,21 +224,21 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
           onPress={() => emergencyContacts.length > 0 && handleCall(emergencyContacts[0].phone, emergencyContacts[0].name)}
         >
           <View style={[styles.quickActionIcon, { backgroundColor: '#FF9800' }]}>
-            <Icon name="phone" type="material" color="#FFF" size={24} />
+            <Icon name="phone" type="material" color="#FFF" size={moderateScale(24)} />
           </View>
           <Text style={styles.quickActionText}>Call Counselor</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.quickActionButton} onPress={handleCalmingAudio}>
           <View style={[styles.quickActionIcon, { backgroundColor: '#4CAF50' }]}>
-            <Icon name="music-note" type="material" color="#FFF" size={24} />
+            <Icon name="music-note" type="material" color="#FFF" size={moderateScale(24)} />
           </View>
           <Text style={styles.quickActionText}>Calming Audio</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.quickActionButton} onPress={handleSafetyPlan}>
           <View style={[styles.quickActionIcon, { backgroundColor: '#2196F3' }]}>
-            <Icon name="security" type="material" color="#FFF" size={24} />
+            <Icon name="security" type="material" color="#FFF" size={moderateScale(24)} />
           </View>
           <Text style={styles.quickActionText}>Safety Plan</Text>
         </TouchableOpacity>
@@ -275,7 +276,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
             style={styles.callButton}
             onPress={() => handleCall(contact.phone, contact.name)}
           >
-            <Icon name="phone" type="material" color="#FFF" size={20} />
+            <Icon name="phone" type="material" color="#FFF" size={moderateScale(20)} />
           </TouchableOpacity>
         </View>
       ))}
@@ -301,7 +302,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
               name={category.icon}
               type="material"
               color={selectedCategory === category.key ? '#FFF' : appColors.grey3}
-              size={16}
+              size={moderateScale(16)}
             />
             <Text style={[
               styles.categoryText,
@@ -334,7 +335,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
             style={styles.crisisCallButton}
             onPress={() => handleCall(line.phone, line.name)}
           >
-            <Icon name="phone" type="material" color="#FFF" size={20} />
+            <Icon name="phone" type="material" color="#FFF" size={moderateScale(20)} />
             <Text style={styles.callButtonText}>Call</Text>
           </TouchableOpacity>
         </View>
@@ -350,7 +351,7 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.grey1} size={moderateScale(24)} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Emergency Help</Text>
           <View style={styles.placeholder} />
@@ -358,9 +359,9 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
 
         <ScrollView style={styles.scrollView}>
           <View style={styles.loadingContainer}>
-            <Skeleton animation="pulse" width="100%" height={120} style={{ marginBottom: 20 }} />
-            <Skeleton animation="pulse" width="100%" height={200} style={{ marginBottom: 20 }} />
-            <Skeleton animation="pulse" width="100%" height={300} />
+            <Skeleton animation="pulse" width="100%" height={scale(120)} style={{ marginBottom: scale(20) }} />
+            <Skeleton animation="pulse" width="100%" height={scale(200)} style={{ marginBottom: scale(20) }} />
+            <Skeleton animation="pulse" width="100%" height={scale(300)} />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -375,20 +376,20 @@ const EmergencyLandingScreen: React.FC<EmergencyLandingScreenProps> = ({ navigat
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.grey1} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Emergency Help</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={handleRefresh}
         >
-          <Icon name="refresh" type="material" color={appColors.AppBlue} size={24} />
+          <Icon name="refresh" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
       {/* Emergency Banner */}
       <View style={styles.emergencyBanner}>
-        <Icon name="warning" type="material" color="#F44336" size={24} />
+        <Icon name="warning" type="material" color="#F44336" size={moderateScale(24)} />
         <View style={styles.bannerText}>
           <Text style={styles.bannerTitle}>Need immediate help?</Text>
           <Text style={styles.bannerSubtitle}>If you're in immediate danger, call emergency services</Text>
@@ -431,67 +432,67 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.CardBackground,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   refreshButton: {
-    padding: 8,
+    padding: scale(8),
   },
   placeholder: {
-    width: 40,
+    width: scale(40),
   },
   emergencyBanner: {
     backgroundColor: '#FFEBEE',
-    margin: 20,
-    padding: 16,
-    borderRadius: 12,
+    margin: scale(20),
+    padding: scale(16),
+    borderRadius: scale(12),
     flexDirection: 'row',
     alignItems: 'center',
-    borderLeftWidth: 4,
+    borderLeftWidth: scale(4),
     borderLeftColor: '#F44336',
   },
   bannerText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   bannerTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: '#C62828',
     fontFamily: appFonts.headerTextBold,
   },
   bannerSubtitle: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#D32F2F',
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   emergencyCallButton: {
     backgroundColor: '#F44336',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginLeft: 12,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    marginLeft: scale(12),
   },
   emergencyCallText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -500,26 +501,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loadingContainer: {
-    padding: 20,
+    padding: scale(20),
   },
   quickActionsCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   quickActionsGrid: {
     flexDirection: 'row',
@@ -529,50 +530,50 @@ const styles = StyleSheet.create({
   quickActionButton: {
     width: '48%',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   quickActionIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   quickActionText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
     textAlign: 'center',
   },
   contactsCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   manageText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: scale(12),
+    borderBottomWidth: scale(1),
     borderBottomColor: appColors.grey6,
   },
   contactInfo: {
@@ -581,81 +582,81 @@ const styles = StyleSheet.create({
   contactHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   contactName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   availableBadge: {
     backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginLeft: 8,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    marginLeft: scale(8),
   },
   availableText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: '#FFF',
     fontFamily: appFonts.headerTextBold,
   },
   contactRelationship: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   contactPhone: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   lastContact: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
   },
   callButton: {
     backgroundColor: '#4CAF50',
-    borderRadius: 20,
-    padding: 10,
-    marginLeft: 12,
+    borderRadius: scale(20),
+    padding: scale(10),
+    marginLeft: scale(12),
   },
   crisisLinesCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   categoryFilter: {
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.grey6,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    marginRight: scale(8),
   },
   activeCategoryChip: {
     backgroundColor: appColors.AppBlue,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   activeCategoryText: {
     color: '#FFF',
@@ -665,8 +666,8 @@ const styles = StyleSheet.create({
   crisisLineItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: scale(12),
+    borderBottomWidth: scale(1),
     borderBottomColor: appColors.grey6,
   },
   crisisLineInfo: {
@@ -675,65 +676,65 @@ const styles = StyleSheet.create({
   crisisLineHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   crisisLineName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   activeBadge: {
     backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginLeft: 8,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    marginLeft: scale(8),
   },
   activeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: '#FFF',
     fontFamily: appFonts.headerTextBold,
   },
   crisisLineDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 8,
-    lineHeight: 20,
+    marginBottom: scale(8),
+    lineHeight: scale(20),
   },
   crisisLineMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   crisisLineAvailability: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   crisisLineLocation: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   crisisCallButton: {
     backgroundColor: '#F44336',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 12,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
+    marginLeft: scale(12),
     flexDirection: 'row',
     alignItems: 'center',
   },
   callButtonText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#FFF',
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
 });
 

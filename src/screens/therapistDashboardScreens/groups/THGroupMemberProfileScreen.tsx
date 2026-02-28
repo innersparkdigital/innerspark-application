@@ -7,6 +7,7 @@ import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
+import { scale, moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
@@ -197,8 +198,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   avatarLarge: {
-    width: 100,
-    height: 100,
+    width: scale(100),
+    height: scale(100),
     borderRadius: 50,
     backgroundColor: appColors.AppLightGray,
     justifyContent: 'center',
@@ -206,12 +207,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   avatarLargeImage: {
-    width: 100,
-    height: 100,
+    width: scale(100),
+    height: scale(100),
     borderRadius: 50,
   },
   memberName: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,

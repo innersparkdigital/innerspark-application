@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Skeleton, Tab, TabView, Button, FAB } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import ISStatusBar from '../components/ISStatusBar';
@@ -45,13 +46,13 @@ interface GoalsScreenProps {
 
 const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
   const toast = useToast();
-  
+
   // Get goals from Redux
   const goals = useSelector(selectGoals);
   const stats = useSelector(selectGoalsStats);
   const isLoading = useSelector(selectGoalsLoading);
   const isRefreshing = useSelector(selectGoalsRefreshing);
-  
+
   // Tab View State
   const [activeTabIndex, setActiveTabIndex] = useState(0);
 
@@ -158,7 +159,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
 
   const handleMarkComplete = async (goalId: number) => {
     const result = await markGoalComplete(goalId);
-    
+
     if (result.success) {
       toast.show({
         description: 'Goal marked as completed! 🎉',
@@ -195,13 +196,13 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
     const today = new Date();
     const diffTime = date.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Tomorrow';
     if (diffDays === -1) return 'Yesterday';
     if (diffDays < 0) return `${Math.abs(diffDays)} days overdue`;
     if (diffDays <= 7) return `${diffDays} days left`;
-    
+
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -209,7 +210,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
     const statusColor = getStatusColor(goal.status);
     const priorityColor = getPriorityColor(goal.priority);
     const isOverdue = new Date(goal.dueDate) < new Date() && goal.status !== 'completed';
-    
+
     return (
       <TouchableOpacity
         style={[styles.goalCard, isOverdue && styles.overdueCard]}
@@ -225,7 +226,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
             </View>
             <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
           </View>
-          
+
           {goal.status !== 'completed' && (
             <TouchableOpacity
               style={styles.completeButton}
@@ -234,7 +235,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
                 handleMarkComplete(goal.id);
               }}
             >
-              <Icon name="check" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="check" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
             </TouchableOpacity>
           )}
         </View>
@@ -244,11 +245,11 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
 
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View 
+            <View
               style={[
-                styles.progressFill, 
+                styles.progressFill,
                 { width: `${goal.progress}%`, backgroundColor: statusColor }
-              ]} 
+              ]}
             />
           </View>
           <Text style={styles.progressText}>{goal.progress}%</Text>
@@ -256,10 +257,10 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
 
         <View style={styles.cardFooter}>
           <View style={styles.categoryContainer}>
-            <Icon name="label" type="material" color={appColors.grey2} size={16} />
+            <Icon name="label" type="material" color={appColors.grey2} size={moderateScale(16)} />
             <Text style={styles.categoryText}>{goal.category}</Text>
           </View>
-          
+
           <Text style={[
             styles.dueDateText,
             isOverdue && styles.overdueText
@@ -325,7 +326,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
 
     return (
       <View style={styles.emptyContainer}>
-        <Icon name={content.icon} type="material" color={appColors.AppGray} size={80} />
+        <Icon name={content.icon} type="material" color={appColors.AppGray} size={moderateScale(80)} />
         <Text style={styles.emptyTitle}>{content.title}</Text>
         <Text style={styles.emptySubtitle}>{content.subtitle}</Text>
         {content.showButton && (
@@ -346,7 +347,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
   // Tab components
   const GoalsList: React.FC<{ status: 'active' | 'completed' | 'paused' }> = ({ status }) => {
     const filteredGoals = getGoalsByStatus(status);
-    
+
     // Show loading state on initial load
     if (isLoading && goals.length === 0) {
       return (
@@ -361,7 +362,7 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
         </View>
       );
     }
-    
+
     return (
       <View style={styles.tabContent}>
         <FlatList
@@ -457,9 +458,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: 10,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingTop: scale(10),
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -470,32 +471,32 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 12,
+    marginHorizontal: scale(12),
   },
   headerSpacer: {
-    width: 40,
+    width: scale(40),
   },
   tabIndicator: {
     backgroundColor: appColors.AppBlue,
-    height: 3,
+    height: scale(3),
   },
   tabItem: {
     backgroundColor: appColors.CardBackground,
-    paddingVertical: 12,
+    paddingVertical: scale(12),
   },
   activeTabItem: {
     backgroundColor: appColors.CardBackground,
   },
   tabTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
@@ -512,16 +513,16 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   fab: {
     position: 'absolute',
-    bottom: 30,
-    right: 20,
+    bottom: scale(30),
+    right: scale(20),
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -529,13 +530,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   listContainer: {
-    paddingVertical: 10,
+    paddingVertical: scale(10),
   },
   goalCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: scale(15),
+    padding: scale(16),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -543,75 +544,75 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   overdueCard: {
-    borderLeftWidth: 4,
+    borderLeftWidth: scale(4),
     borderLeftColor: '#F44336',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   statusChip: {
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginRight: 8,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    marginRight: scale(8),
   },
   statusText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
   },
   completeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
     backgroundColor: appColors.AppLightGray,
     alignItems: 'center',
     justifyContent: 'center',
   },
   goalTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   goalDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: moderateScale(20),
+    marginBottom: scale(16),
     fontFamily: appFonts.headerTextRegular,
   },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   progressBar: {
     flex: 1,
-    height: 8,
+    height: scale(8),
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 4,
-    marginRight: 12,
+    borderRadius: scale(4),
+    marginRight: scale(12),
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
   progressText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -626,13 +627,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
-    marginLeft: 4,
+    marginLeft: scale(4),
     fontFamily: appFonts.headerTextRegular,
   },
   dueDateText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -643,33 +644,33 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: scale(80),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: 16,
+    marginTop: scale(16),
     fontFamily: appFonts.headerTextBold,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     textAlign: 'center',
-    marginTop: 8,
-    marginHorizontal: 40,
+    marginTop: scale(8),
+    marginHorizontal: scale(40),
     fontFamily: appFonts.headerTextRegular,
   },
   createFirstGoalButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginTop: 20,
+    borderRadius: scale(25),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(24),
+    marginTop: scale(20),
   },
   createFirstGoalText: {
     color: appColors.CardBackground,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },

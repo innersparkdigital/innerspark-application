@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TextInput, TouchableOpacity, ScrollView, Text, StyleSheet } from 'react-native';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 
 export type EventFilterBarProps = {
   searchQuery: string;
@@ -23,7 +24,7 @@ const EventFilterBar: React.FC<EventFilterBarProps> = ({
   return (
     <View>
       <View style={styles.searchContainer}>
-        <Icon name="search" type="material" color={appColors.AppGray} size={20} />
+        <Icon name="search" type="material" color={appColors.AppGray} size={scale(20)} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search events..."
@@ -33,7 +34,7 @@ const EventFilterBar: React.FC<EventFilterBarProps> = ({
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => onChangeSearch('')}>
-            <Icon name="close" type="material" color={appColors.AppGray} size={20} />
+            <Icon name="close" type="material" color={appColors.AppGray} size={scale(20)} />
           </TouchableOpacity>
         )}
       </View>
@@ -62,33 +63,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    elevation: 2,
+    borderRadius: scale(25),
+    paddingHorizontal: scale(15),
+    marginBottom: scale(15),
+    elevation: scale(2),
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    fontSize: 16,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(10),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
   },
-  categoryContainer: { marginBottom: 20 },
+  categoryContainer: { marginBottom: scale(20) },
   categoryChip: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 10,
-    elevation: 1,
-    height: 36,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    marginRight: scale(10),
+    elevation: scale(1),
+    height: scale(36),
     justifyContent: 'center',
     alignItems: 'center',
   },
   selectedCategoryChip: { backgroundColor: appColors.AppBlue },
-  categoryChipText: { fontSize: 14, color: appColors.grey1, fontFamily: appFonts.headerTextMedium, textAlign: 'center' },
+  categoryChipText: { fontSize: moderateScale(14), color: appColors.grey1, fontFamily: appFonts.headerTextMedium, textAlign: 'center' },
   selectedCategoryText: { color: appColors.CardBackground, fontFamily: appFonts.headerTextMedium },
 });
 

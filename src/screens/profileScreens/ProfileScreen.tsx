@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
@@ -50,14 +51,14 @@ const ProfileSkeleton = () => (
     <View style={styles.skeletonHeader}>
       <View style={styles.skeletonAvatar} />
       <View style={styles.skeletonTextContainer}>
-        <View style={[styles.skeletonText, { width: '60%', height: 20 }]} />
-        <View style={[styles.skeletonText, { width: '80%', height: 16, marginTop: 8 }]} />
+        <View style={[styles.skeletonText, { width: '60%', height: scale(20) }]} />
+        <View style={[styles.skeletonText, { width: '80%', height: scale(16), marginTop: scale(8) }]} />
       </View>
     </View>
     {[1, 2, 3, 4].map((item) => (
       <View key={item} style={styles.skeletonField}>
-        <View style={[styles.skeletonText, { width: '30%', height: 14 }]} />
-        <View style={[styles.skeletonText, { width: '70%', height: 16, marginTop: 8 }]} />
+        <View style={[styles.skeletonText, { width: '30%', height: scale(14) }]} />
+        <View style={[styles.skeletonText, { width: '70%', height: scale(16), marginTop: scale(8) }]} />
       </View>
     ))}
   </View>
@@ -84,7 +85,7 @@ const ProfileField = ({
           type={iconType}
           name={icon}
           color={appColors.AppBlue}
-          size={20}
+          size={moderateScale(20)}
         />
         <Text style={styles.fieldLabel}>{label}</Text>
       </View>
@@ -246,7 +247,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <TouchableOpacity onPress={handleAvatarUpdate} style={styles.avatarContainer}>
             <Avatar
               rounded
-              size={120}
+              size={scale(120)}
               source={userDetails?.image || appImages.avatarDefault}
               containerStyle={styles.avatarStyle}
             />
@@ -255,7 +256,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                 type="material"
                 name="camera-alt"
                 color={appColors.CardBackground}
-                size={20}
+                size={moderateScale(20)}
               />
             </View>
           </TouchableOpacity>
@@ -284,7 +285,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
               style={styles.editProfileButton}
               onPress={() => navigation.navigate('ProfileUpdateScreen')}
             >
-              <Icon name="edit" type="material" color={appColors.AppBlue} size={18} />
+              <Icon name="edit" type="material" color={appColors.AppBlue} size={moderateScale(18)} />
               <Text style={styles.editProfileText}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -391,16 +392,16 @@ const styles = StyleSheet.create({
   profileHeader: {
     backgroundColor: appColors.CardBackground,
     alignItems: 'center',
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingVertical: scale(30),
+    paddingHorizontal: scale(20),
+    marginBottom: scale(20),
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   avatarStyle: {
-    borderWidth: 3,
+    borderWidth: scale(3),
     borderColor: appColors.AppBlue,
   },
   avatarEditOverlay: {
@@ -408,19 +409,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     backgroundColor: appColors.AppBlue,
-    borderRadius: 20,
-    width: 40,
-    height: 40,
+    borderRadius: scale(20),
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
+    borderWidth: scale(3),
     borderColor: appColors.CardBackground,
   },
   userName: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },
@@ -428,60 +429,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   userRole: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppGray,
     fontFamily: appFonts.bodyTextMedium,
-    marginRight: 12,
+    marginRight: scale(12),
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
     backgroundColor: '#4CAF50',
-    marginRight: 6,
+    marginRight: scale(6),
   },
   statusText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#4CAF50',
     fontFamily: appFonts.bodyTextMedium,
   },
   profileSection: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    paddingVertical: 20,
-    marginBottom: 20,
+    marginHorizontal: scale(20),
+    borderRadius: scale(16),
+    paddingVertical: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 20,
+    marginBottom: scale(15),
+    paddingHorizontal: scale(20),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
     // paddingHorizontal: 0,
   },
   profileField: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 0.5,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(15),
+    borderBottomWidth: scale(0.5),
     borderBottomColor: appColors.AppLightGray,
   },
   profileFieldLast: {
@@ -491,76 +492,76 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   fieldLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   fieldLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppGray,
     fontFamily: appFonts.bodyTextMedium,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   fieldValue: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: '#333',
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 22,
+    lineHeight: scale(22),
   },
   editButton: {
-    padding: 8,
+    padding: scale(8),
   },
   editProfileButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: scale(6),
+    paddingHorizontal: scale(12),
     backgroundColor: appColors.AppBlue + '10',
-    borderRadius: 8,
+    borderRadius: scale(8),
   },
   editProfileText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   actionSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: scale(20),
+    marginBottom: scale(20),
   },
   settingsButton: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: scale(1),
     borderColor: appColors.AppBlue,
-    borderRadius: 12,
-    paddingVertical: 15,
+    borderRadius: scale(12),
+    paddingVertical: scale(15),
   },
   settingsButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.bodyTextMedium,
   },
   bottomSpacing: {
-    height: 40,
+    height: scale(40),
   },
   // Skeleton styles
   skeletonHeader: {
     backgroundColor: appColors.CardBackground,
     alignItems: 'center',
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingVertical: scale(30),
+    paddingHorizontal: scale(20),
+    marginBottom: scale(20),
   },
   skeletonAvatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: scale(120),
+    height: scale(120),
+    borderRadius: scale(60),
     backgroundColor: appColors.AppLightGray,
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   skeletonTextContainer: {
     alignItems: 'center',
@@ -568,13 +569,13 @@ const styles = StyleSheet.create({
   },
   skeletonText: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
   skeletonField: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
+    marginHorizontal: scale(20),
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(12),
   },
 });

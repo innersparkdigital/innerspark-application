@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
 
@@ -98,15 +99,15 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise(resolve => setTimeout(() => resolve(null), 2000));
+
       setIsLoading(false);
       setShowSuccessModal(true);
-      
+
       // Reset form
       setDonationAmount('');
       setPhone('');
-      
+
     } catch (error) {
       setIsLoading(false);
       toast.show({
@@ -125,14 +126,14 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Donate to Therapist</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: scale(24) }} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -140,7 +141,7 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
         <View style={styles.therapistCard}>
           <Avatar
             source={therapist.image}
-            size={80}
+            size={scale(80)}
             rounded
             containerStyle={styles.therapistAvatar}
           />
@@ -156,7 +157,7 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
         {/* Donation Amount Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Donation Amount</Text>
-          
+
           {/* Predefined Amounts */}
           <View style={styles.predefinedAmountsContainer}>
             {predefinedAmounts.map((amount) => (
@@ -201,15 +202,13 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
           <Text style={styles.sectionSubtitle}>
             Enter your mobile money number for payment
           </Text>
-          
+
           <LHPhoneInput
-            phone={phone}
-            formattedPhone={formattedPhone}
-            setPhone={setPhone}
-            setFormattedPhone={setFormattedPhone}
-            onChangePhoneHandler={onChangePhoneHandler}
-            isCountrySupported={isCountrySupported}
-            setIsCountrySupported={setIsCountrySupported}
+            inputValue={phone}
+            inputValueSetter={setPhone}
+            formattedValueSetter={setFormattedPhone}
+            countrySupportSetter={setIsCountrySupported}
+            onPickerPress={() => { }}
           />
         </View>
 
@@ -259,7 +258,7 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Icon name="favorite" type="material" color={appColors.AppBlue} size={48} />
+            <Icon name="favorite" type="material" color={appColors.AppBlue} size={moderateScale(48)} />
             <Text style={styles.modalTitle}>Confirm Donation</Text>
             <Text style={styles.modalMessage}>
               You are about to donate UGX {parseInt(donationAmount).toLocaleString()} to {therapist.name}.
@@ -267,7 +266,7 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
             <Text style={styles.modalSubMessage}>
               A mobile money prompt will be sent to {formattedPhone || phone}.
             </Text>
-            
+
             <View style={styles.modalButtons}>
               <Button
                 title="Cancel"
@@ -295,7 +294,7 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={48} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(48)} />
             <Text style={styles.modalTitle}>Donation Successful!</Text>
             <Text style={styles.modalMessage}>
               Thank you for your generous donation of UGX {parseInt(donationAmount || '0').toLocaleString()} to {therapist.name}.
@@ -303,7 +302,7 @@ const DonateToTherapistScreen: React.FC<DonateToTherapistScreenProps> = ({ navig
             <Text style={styles.modalSubMessage}>
               Your support helps make mental health care more accessible to everyone.
             </Text>
-            
+
             <Button
               title="Done"
               buttonStyle={styles.confirmButton}
@@ -325,27 +324,27 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    padding: scale(20),
   },
   therapistCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -354,36 +353,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   therapistAvatar: {
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   therapistInfo: {
     alignItems: 'center',
   },
   therapistName: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 5,
+    marginBottom: scale(5),
     fontFamily: appFonts.headerTextBold,
   },
   therapistSpecialty: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    marginBottom: 15,
-    fontFamily: appFonts.regularText,
+    marginBottom: scale(15),
+    fontFamily: appFonts.bodyTextRegular,
   },
   donationMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     textAlign: 'center',
-    lineHeight: 20,
-    fontFamily: appFonts.regularText,
+    lineHeight: scale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   section: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -391,30 +390,30 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 5,
+    marginBottom: scale(5),
     fontFamily: appFonts.headerTextBold,
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 15,
-    fontFamily: appFonts.regularText,
+    marginBottom: scale(15),
+    fontFamily: appFonts.bodyTextRegular,
   },
   predefinedAmountsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   amountChip: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    borderRadius: scale(20),
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(15),
+    marginBottom: scale(10),
     borderWidth: 1,
     borderColor: appColors.grey4,
     width: '48%',
@@ -425,89 +424,89 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   amountChipText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontWeight: '500',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   selectedAmountChipText: {
     color: appColors.AppBlue,
     fontWeight: 'bold',
   },
   customAmountContainer: {
-    marginTop: 10,
+    marginTop: scale(10),
   },
   customAmountLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 10,
-    fontFamily: appFonts.regularText,
+    marginBottom: scale(10),
+    fontFamily: appFonts.bodyTextRegular,
   },
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(15),
     borderWidth: 1,
     borderColor: appColors.grey4,
   },
   currencyPrefix: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
-    marginRight: 10,
-    fontFamily: appFonts.regularText,
+    marginRight: scale(10),
+    fontFamily: appFonts.bodyTextRegular,
   },
   amountInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    paddingVertical: 15,
-    fontFamily: appFonts.regularText,
+    paddingVertical: scale(15),
+    fontFamily: appFonts.bodyTextRegular,
   },
   summaryCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    borderLeftWidth: 4,
+    borderLeftWidth: scale(4),
     borderLeftColor: appColors.AppBlue,
   },
   summaryTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextBold,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: scale(10),
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   summaryValue: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   footer: {
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -516,11 +515,11 @@ const styles = StyleSheet.create({
   },
   donateButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 15,
+    borderRadius: scale(25),
+    paddingVertical: scale(15),
   },
   donateButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
@@ -534,40 +533,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: scale(20),
   },
   modalContent: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 30,
+    borderRadius: scale(20),
+    padding: scale(30),
     alignItems: 'center',
     width: '100%',
-    maxWidth: 350,
+    maxWidth: scale(350),
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: scale(15),
+    marginBottom: scale(10),
     textAlign: 'center',
     fontFamily: appFonts.headerTextBold,
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 10,
-    fontFamily: appFonts.regularText,
+    lineHeight: scale(22),
+    marginBottom: scale(10),
+    fontFamily: appFonts.bodyTextRegular,
   },
   modalSubMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 25,
-    fontFamily: appFonts.regularText,
+    lineHeight: scale(20),
+    marginBottom: scale(25),
+    fontFamily: appFonts.bodyTextRegular,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -576,25 +575,25 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingVertical: 12,
+    borderRadius: scale(20),
+    paddingVertical: scale(12),
     flex: 1,
-    marginRight: 10,
+    marginRight: scale(10),
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   confirmButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 20,
-    paddingVertical: 12,
+    borderRadius: scale(20),
+    paddingVertical: scale(12),
     flex: 1,
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
   confirmButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,

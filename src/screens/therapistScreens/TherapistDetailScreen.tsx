@@ -15,30 +15,54 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+import { NavigationProp, RouteProp } from '@react-navigation/native';
+
+interface SessionType {
+  id: string;
+  name: string;
+  price: string;
+  duration: string;
+}
+
+interface Review {
+  id: number;
+  name: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+
+interface TimeSlot {
+  id: number;
+  date: string;
+  time: string;
+  available: boolean;
+}
+
+interface Therapist {
+  id: number;
+  name: string;
+  specialty: string;
+  rating: number;
+  experience: string;
+  price: string;
+  priceUnit: string;
+  image: any;
+  available: boolean;
+  bio: string;
+  nextAvailable: string;
+  reviews: number;
+  location?: string;
+}
+
 interface TherapistDetailScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      therapist: {
-        id: number;
-        name: string;
-        specialty: string;
-        rating: number;
-        experience: string;
-        price: string;
-        priceUnit: string;
-        image: any;
-        available: boolean;
-        bio: string;
-        nextAvailable: string;
-        reviews: number;
-      };
-    };
-  };
+  navigation: NavigationProp<any>;
+  route: RouteProp<{ params: { therapist: Therapist } }, 'params'>;
 }
 
 const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigation, route }) => {
@@ -50,7 +74,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
   const [selectedSlot, setSelectedSlot] = useState<any>(null); // Track selected slot
 
   const tabs = ['About', 'Reviews', 'Availability'];
-  
+
   // TODO: Fetch session types from therapist profile API
   // These should come from GET /api/v1/client/therapists/:therapistId
   const sessionTypes = [
@@ -59,7 +83,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
     { id: 'group', name: 'Group Session', price: 'UGX 30,000', duration: '60 min' },
     { id: 'consultation', name: 'Consultation', price: 'UGX 25,000', duration: '30 min' },
   ];
-  
+
   // TODO: Fetch availability from API
   // Use GET /api/v1/client/therapists/:therapistId/availability
   // Returns empty array if endpoint not implemented (404)
@@ -119,8 +143,8 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
     }
 
     const selectedSession = sessionTypes.find(st => st.id === selectedSessionType);
-    navigation.navigate('BookingCheckoutScreen', { 
-      therapist, 
+    navigation.navigate('BookingCheckoutScreen', {
+      therapist,
       selectedSlot: selectedSlot,
       sessionType: selectedSession?.name || 'Individual Therapy',
       location: therapist.location || 'Virtual Session',
@@ -145,7 +169,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
     }
   };
 
-  const handleSlotSelect = (slot: any) => {
+  const handleSlotSelect = (slot: TimeSlot) => {
     if (slot.available) {
       setSelectedSlot(slot);
       toast.show({
@@ -162,7 +186,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
         name="star"
         type="material"
         color={index < rating ? "#FFD700" : "#E0E0E0"}
-        size={16}
+        size={moderateScale(16)}
       />
     ));
   };
@@ -174,7 +198,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           <View style={styles.tabContent}>
             <Text style={styles.sectionTitle}>About</Text>
             <Text style={styles.bioText}>{therapist.bio}</Text>
-            
+
             <Text style={styles.sectionTitle}>Specializations</Text>
             <View style={styles.specializationContainer}>
               <View style={styles.specializationChip}>
@@ -190,11 +214,11 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
 
             <Text style={styles.sectionTitle}>Education & Credentials</Text>
             <View style={styles.credentialItem}>
-              <Icon name="school" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="school" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.credentialText}>PhD in Clinical Psychology - Stanford University</Text>
             </View>
             <View style={styles.credentialItem}>
-              <Icon name="verified" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="verified" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
               <Text style={styles.credentialText}>Licensed Clinical Psychologist</Text>
             </View>
           </View>
@@ -273,18 +297,18 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Custom Header matching screenshot */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{therapist.name} Profile</Text>
         <TouchableOpacity style={styles.menuButton}>
-          <Icon name="more-vert" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="more-vert" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
@@ -294,28 +318,28 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           <View style={styles.profileContent}>
             <Avatar
               source={therapist.image}
-              size={120}
+              size={scale(120)}
               rounded
               containerStyle={styles.profileAvatar}
             />
-            
+
             <View style={styles.profileInfo}>
               <View style={styles.nameSection}>
                 <Text style={styles.therapistName}>{therapist.name}</Text>
-                <Icon name="verified" type="material" color="#4CAF50" size={20} style={styles.verifiedIcon} />
+                <Icon name="verified" type="material" color="#4CAF50" size={moderateScale(20)} style={styles.verifiedIcon} />
               </View>
-              
+
               <Text style={styles.therapistSpecialty}>{therapist.specialty}</Text>
-              
+
               <View style={styles.ratingContainer}>
                 <View style={styles.starsContainer}>
                   {renderStars(therapist.rating)}
                 </View>
                 <Text style={styles.reviewCount}>({therapist.reviews})</Text>
               </View>
-              
+
               <View style={styles.locationContainer}>
-                <Icon name="location-on" type="material" color={appColors.grey2} size={16} />
+                <Icon name="location-on" type="material" color={appColors.grey2} size={moderateScale(16)} />
                 <Text style={styles.locationText}>2 Avenue Street{'\n'}Nakawa - Uganda - 3 km</Text>
               </View>
             </View>
@@ -423,7 +447,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
           onPress={handleBookNow}
           disabled={!therapist.available}
         />
-        
+
         <Button
           title="Direct Message"
           buttonStyle={[
@@ -440,7 +464,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
             name: 'chat',
             type: 'material',
             color: isDMEnabled ? appColors.AppBlue : appColors.AppGray,
-            size: 20,
+            size: moderateScale(20),
           }}
         />
       </View>
@@ -455,40 +479,40 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   menuButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
   },
   scrollView: {
     flex: 1,
   },
   profileHeader: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    borderRadius: 20,
-    padding: 20,
+    margin: scale(20),
+    borderRadius: scale(20),
+    padding: scale(20),
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -500,76 +524,76 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   profileAvatar: {
-    marginRight: 20,
+    marginRight: scale(20),
   },
   profileInfo: {
     flex: 1,
-    paddingTop: 10,
+    paddingTop: scale(10),
   },
   nameSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: scale(5),
   },
   verifiedIcon: {
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   therapistName: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   therapistSpecialty: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextRegular,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 8,
+    marginTop: scale(8),
   },
   locationText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginLeft: 6,
-    lineHeight: 18,
+    marginLeft: scale(6),
+    lineHeight: scale(18),
     fontFamily: appFonts.headerTextRegular,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: scale(5),
   },
   starsContainer: {
     flexDirection: 'row',
-    marginRight: 8,
+    marginRight: scale(8),
   },
   rating: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    marginLeft: 5,
+    marginLeft: scale(5),
     fontFamily: appFonts.headerTextMedium,
   },
   reviewCount: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginLeft: 5,
+    marginLeft: scale(5),
     fontFamily: appFonts.headerTextRegular,
   },
   experience: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   priceSection: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 15,
-    padding: 20,
+    marginHorizontal: scale(20),
+    marginBottom: scale(20),
+    borderRadius: scale(15),
+    padding: scale(20),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -583,20 +607,20 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   price: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   priceUnit: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   availabilityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(15),
   },
   available: {
     backgroundColor: '#E8F5E8',
@@ -605,8 +629,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE8E8',
   },
   availabilityText: {
-    fontSize: 14,
-    fontFamily: appFonts.appTextMedium,
+    fontSize: moderateScale(14),
+    fontFamily: appFonts.bodyTextMedium,
   },
   availableText: {
     color: '#4CAF50',
@@ -617,10 +641,10 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 15,
-    padding: 5,
+    marginHorizontal: scale(20),
+    marginBottom: scale(20),
+    borderRadius: scale(15),
+    padding: scale(5),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -629,17 +653,17 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: scale(12),
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: scale(10),
   },
   activeTab: {
     backgroundColor: appColors.AppBlue,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   activeTabText: {
     color: appColors.CardBackground,
@@ -647,10 +671,10 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 15,
-    padding: 20,
+    marginHorizontal: scale(20),
+    marginBottom: scale(20),
+    borderRadius: scale(15),
+    padding: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -658,95 +682,95 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(15),
+    fontFamily: appFonts.headerTextBold,
   },
   bioText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey2,
-    lineHeight: 22,
-    marginBottom: 20,
-    fontFamily: appFonts.appTextRegular,
+    lineHeight: scale(22),
+    marginBottom: scale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   specializationContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   specializationChip: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginRight: 10,
-    marginBottom: 10,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(15),
+    paddingVertical: scale(8),
+    marginRight: scale(10),
+    marginBottom: scale(10),
   },
   specializationText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   credentialItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   credentialText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   reviewsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   overallRating: {
     alignItems: 'center',
   },
   ratingNumber: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   reviewItem: {
     borderBottomWidth: 0.5,
     borderBottomColor: appColors.grey4,
-    paddingBottom: 15,
-    marginBottom: 15,
+    paddingBottom: scale(15),
+    marginBottom: scale(15),
   },
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   reviewerName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   reviewDate: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   reviewRating: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   reviewComment: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    lineHeight: 20,
-    fontFamily: appFonts.appTextRegular,
+    lineHeight: scale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   slotsContainer: {
     flexDirection: 'row',
@@ -755,10 +779,10 @@ const styles = StyleSheet.create({
   },
   slotItem: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: scale(12),
+    padding: scale(15),
     width: '48%',
-    marginBottom: 12,
+    marginBottom: scale(12),
     alignItems: 'center',
     borderWidth: 1,
     borderColor: appColors.grey4,
@@ -773,29 +797,29 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   slotDate: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 5,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(5),
+    fontFamily: appFonts.headerTextBold,
   },
   slotTime: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   slotTextUnavailable: {
     color: appColors.grey3,
   },
   slotUnavailableText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#F44336',
-    marginTop: 5,
-    fontFamily: appFonts.appTextMedium,
+    marginTop: scale(5),
+    fontFamily: appFonts.bodyTextMedium,
   },
   bookingFooter: {
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -804,8 +828,8 @@ const styles = StyleSheet.create({
   },
   bookButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 15,
-    paddingVertical: 15,
+    borderRadius: scale(15),
+    paddingVertical: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -813,10 +837,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   bookButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   disabledButton: {
     backgroundColor: appColors.AppLightGray,
@@ -825,15 +849,15 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   // Session Types Styles
   sessionTypesSection: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginBottom: 15,
-    padding: 20,
-    borderRadius: 15,
+    marginHorizontal: scale(20),
+    marginBottom: scale(15),
+    padding: scale(20),
+    borderRadius: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -841,14 +865,14 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sessionTypesScroll: {
-    marginTop: 10,
+    marginTop: scale(10),
   },
   sessionTypeCard: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 12,
-    padding: 15,
-    marginRight: 10,
-    minWidth: 140,
+    borderRadius: scale(12),
+    padding: scale(15),
+    marginRight: scale(10),
+    minWidth: scale(140),
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
@@ -858,53 +882,53 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   sessionTypeName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
     textAlign: 'center',
-    marginBottom: 5,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(5),
+    fontFamily: appFonts.headerTextBold,
   },
   selectedSessionTypeName: {
     color: appColors.AppBlue,
   },
   sessionTypePrice: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     textAlign: 'center',
-    marginBottom: 3,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(3),
+    fontFamily: appFonts.headerTextBold,
   },
   selectedSessionTypePrice: {
     color: appColors.AppBlue,
   },
   sessionTypeDuration: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
     textAlign: 'center',
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   selectedSessionTypeDuration: {
     color: appColors.AppBlue,
   },
   // Donate Tab Styles
   donateDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    lineHeight: 20,
-    marginBottom: 20,
-    fontFamily: appFonts.appTextRegular,
+    lineHeight: scale(20),
+    marginBottom: scale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   donateAmountContainer: {
-    marginBottom: 25,
+    marginBottom: scale(25),
   },
   donateAmountLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(15),
+    fontFamily: appFonts.headerTextBold,
   },
   donateAmountOptions: {
     flexDirection: 'row',
@@ -913,46 +937,46 @@ const styles = StyleSheet.create({
   },
   donateAmountChip: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginBottom: 10,
+    borderRadius: scale(20),
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(20),
+    marginBottom: scale(10),
     borderWidth: 1,
     borderColor: appColors.AppBlue,
   },
   donateAmountText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontWeight: '500',
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   donateButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 15,
+    borderRadius: scale(25),
+    paddingVertical: scale(15),
   },
   donateButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    marginLeft: 10,
-    fontFamily: appFonts.appTextBold,
+    marginLeft: scale(10),
+    fontFamily: appFonts.headerTextBold,
   },
   // DM Button Styles
   dmButton: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 25,
-    paddingVertical: 15,
-    marginTop: 10,
+    borderRadius: scale(25),
+    paddingVertical: scale(15),
+    marginTop: scale(10),
     borderWidth: 2,
     borderColor: appColors.AppBlue,
   },
   dmButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    marginLeft: 10,
-    fontFamily: appFonts.appTextBold,
+    marginLeft: scale(10),
+    fontFamily: appFonts.headerTextBold,
   },
 });
 

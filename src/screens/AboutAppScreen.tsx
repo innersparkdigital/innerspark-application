@@ -25,6 +25,7 @@ import HeaderBackButton from '../components/HeaderBackButton';
 import LHGenericHeader from '../components/LHGenericHeader';
 import ISGenericHeader from '../components/ISGenericHeader'; // generic header for Innerspark
 import ISAlert, { useISAlert } from '../components/alerts/ISAlert';
+import { scale, moderateScale } from '../global/Scaling';
 
 
 // App version
@@ -75,7 +76,7 @@ export default function AboutAppScreen({ navigation }: any) {
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Hero Section */}
                 <View style={styles.heroSection}>
-                    <View style={{ margin: 20 }}>
+                    <View style={{ margin: scale(20) }}>
                         <View style={styles.logoContainer}>
                             <Image
                                 style={styles.logoImage}
@@ -97,39 +98,39 @@ export default function AboutAppScreen({ navigation }: any) {
                     <OpenURLButton url={appLinks.appWebsite} alertRef={alert.ref}>
                         <View style={styles.actionRow}>
                             <View style={styles.actionIconContainer}>
-                                <Icon type="material" name="language" color={appColors.AppBlue} size={24} />
+                                <Icon type="material" name="language" color={appColors.AppBlue} size={moderateScale(24)} />
                             </View>
                             <View style={styles.actionContent}>
                                 <Text style={styles.actionTitle}>Visit Website</Text>
                                 <Text style={styles.actionSubtitle}>Learn more about us</Text>
                             </View>
-                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={20} />
+                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={moderateScale(20)} />
                         </View>
                     </OpenURLButton>
 
                     <OpenURLButton url={appLinks.appSupportEmail} alertRef={alert.ref}>
                         <View style={styles.actionRow}>
                             <View style={styles.actionIconContainer}>
-                                <Icon type="material" name="support-agent" color={appColors.AppBlue} size={24} />
+                                <Icon type="material" name="support-agent" color={appColors.AppBlue} size={moderateScale(24)} />
                             </View>
                             <View style={styles.actionContent}>
                                 <Text style={styles.actionTitle}>Get Support</Text>
                                 <Text style={styles.actionSubtitle}>We're here to help</Text>
                             </View>
-                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={20} />
+                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={moderateScale(20)} />
                         </View>
                     </OpenURLButton>
 
                     <OpenURLButton url={appLinks.appGooglePlayURL} alertRef={alert.ref}>
                         <View style={styles.actionRow}>
                             <View style={styles.actionIconContainer}>
-                                <Icon type="material" name="system-update" color={appColors.AppBlue} size={24} />
+                                <Icon type="material" name="system-update" color={appColors.AppBlue} size={moderateScale(24)} />
                             </View>
                             <View style={styles.actionContent}>
                                 <Text style={styles.actionTitle}>Check Updates</Text>
                                 <Text style={styles.actionSubtitle}>Stay up to date</Text>
                             </View>
-                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={20} />
+                            <Icon type="material" name="chevron-right" color={appColors.grey3} size={moderateScale(20)} />
                         </View>
                     </OpenURLButton>
                 </View>
@@ -140,25 +141,25 @@ export default function AboutAppScreen({ navigation }: any) {
                     <View style={styles.socialContainer}>
                         <OpenURLButton url={appLinks.appLinkedIn} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
-                                <Icon type="material-community" name="linkedin" color={appColors.CardBackground} size={24} />
+                                <Icon type="material-community" name="linkedin" color={appColors.CardBackground} size={moderateScale(24)} />
                             </View>
                         </OpenURLButton>
 
                         <OpenURLButton url={appLinks.appFacebook} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
-                                <Icon type="material-community" name="facebook" color={appColors.CardBackground} size={24} />
+                                <Icon type="material-community" name="facebook" color={appColors.CardBackground} size={moderateScale(24)} />
                             </View>
                         </OpenURLButton>
 
                         <OpenURLButton url={appLinks.appTwitter} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
-                                <Icon type="material-community" name="twitter" color={appColors.CardBackground} size={24} />
+                                <Icon type="material-community" name="twitter" color={appColors.CardBackground} size={moderateScale(24)} />
                             </View>
                         </OpenURLButton>
 
                         <OpenURLButton url={appLinks.appInstagram} alertRef={alert.ref}>
                             <View style={styles.socialButton}>
-                                <Icon type="material-community" name="instagram" color={appColors.CardBackground} size={24} />
+                                <Icon type="material-community" name="instagram" color={appColors.CardBackground} size={moderateScale(24)} />
                             </View>
                         </OpenURLButton>
                     </View>
@@ -186,39 +187,39 @@ const styles = StyleSheet.create({
     header: {
         backgroundColor: appColors.AppBlue,
         paddingTop: parameters.headerHeightS,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
+        paddingBottom: scale(20),
+        paddingHorizontal: scale(20),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         elevation: 4,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: scale(2) },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: scale(4),
     },
     backButton: {
-        padding: 8,
-        borderRadius: 20,
+        padding: scale(8),
+        borderRadius: scale(20),
     },
     headerTitle: {
-        fontSize: 20,
+        fontSize: moderateScale(20),
         fontWeight: 'bold',
         color: appColors.CardBackground,
         fontFamily: appFonts.headerTextBold,
     },
     headerSpacer: {
-        width: 40,
+        width: scale(40),
     },
     scrollView: {
         flex: 1,
     },
     heroSection: {
         backgroundColor: appColors.CardBackground,
-        marginBottom: 25,
+        marginBottom: scale(25),
         // borderRadius: 20,
-        paddingHorizontal: 5,
-        paddingVertical: 10,
+        paddingHorizontal: scale(5),
+        paddingVertical: scale(10),
         // alignItems: 'center',
         // elevation: 3,
         // shadowColor: '#000',
@@ -227,117 +228,117 @@ const styles = StyleSheet.create({
         // shadowRadius: 4,
     },
     logoContainer: {
-        marginBottom: 10,
+        marginBottom: scale(10),
     },
     logoImage: {
-        width: 250,
-        height: 70,
+        width: scale(250),
+        height: scale(70),
         resizeMode: 'contain',
     },
     descriptionCard: {
         //backgroundColor: appColors.CardBackground,
         // borderRadius: 15,
-        padding: 5,
+        padding: scale(5),
         width: '100%',
     },
     descriptionText: {
-        fontSize: 16,
-        lineHeight: 24,
+        fontSize: moderateScale(16),
+        lineHeight: moderateScale(24),
         color: appColors.grey1,
         fontFamily: appFonts.headerTextRegular,
         textAlign: 'left',
     },
     section: {
-        marginHorizontal: 20,
-        marginBottom: 25,
+        marginHorizontal: scale(20),
+        marginBottom: scale(25),
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: moderateScale(20),
         fontWeight: 'bold',
         color: appColors.grey1,
         fontFamily: appFonts.headerTextBold,
-        marginBottom: 15,
+        marginBottom: scale(15),
     },
     actionRow: {
         backgroundColor: appColors.CardBackground,
-        borderRadius: 15,
-        padding: 20,
+        borderRadius: scale(15),
+        padding: scale(20),
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: scale(12),
         elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: scale(1) },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: scale(2),
     },
     actionIconContainer: {
         backgroundColor: appColors.AppLightGray,
-        borderRadius: 25,
-        width: 45,
-        height: 45,
+        borderRadius: scale(25),
+        width: scale(45),
+        height: scale(45),
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 15,
+        marginRight: scale(15),
     },
     actionContent: {
         flex: 1,
     },
     actionTitle: {
-        fontSize: 16,
+        fontSize: moderateScale(16),
         fontWeight: 'bold',
         color: appColors.grey1,
         fontFamily: appFonts.headerTextBold,
-        marginBottom: 3,
+        marginBottom: scale(3),
     },
     actionSubtitle: {
-        fontSize: 13,
+        fontSize: moderateScale(13),
         color: appColors.grey2,
         fontFamily: appFonts.headerTextRegular,
-        lineHeight: 18,
+        lineHeight: moderateScale(18),
     },
     socialContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: appColors.CardBackground,
-        borderRadius: 15,
-        padding: 20,
+        borderRadius: scale(15),
+        padding: scale(20),
         elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: scale(1) },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: scale(2),
     },
     socialButton: {
         backgroundColor: appColors.AppBlue,
-        borderRadius: 25,
-        width: 50,
-        height: 50,
+        borderRadius: scale(25),
+        width: scale(50),
+        height: scale(50),
         alignItems: 'center',
         justifyContent: 'center',
-        marginHorizontal: 10,
+        marginHorizontal: scale(10),
         elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: scale(1) },
         shadowOpacity: 0.2,
-        shadowRadius: 2,
+        shadowRadius: scale(2),
     },
     infoCard: {
         backgroundColor: appColors.CardBackground,
-        borderRadius: 15,
-        padding: 20,
+        borderRadius: scale(15),
+        padding: scale(20),
         elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: scale(1) },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowRadius: scale(2),
     },
 
     infoCardPlain: {
         // backgroundColor: appColors.AppLightGray,
         // borderRadius: 15,
-        padding: 20,
+        padding: scale(20),
         //elevation: 2,
         // shadowColor: '#000',
         // shadowOffset: { width: 0, height: 1 },
@@ -347,33 +348,33 @@ const styles = StyleSheet.create({
     infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingVertical: scale(8),
     },
     infoText: {
-        fontSize: 14,
+        fontSize: moderateScale(14),
         color: appColors.grey1,
         fontFamily: appFonts.headerTextRegular,
-        marginLeft: 12,
+        marginLeft: scale(12),
         flex: 1,
     },
     bottomSpacing: {
-        height: 20,
+        height: scale(20),
     },
 
     /* App Version Information styles */
     versionContainer: {
         alignItems: 'center',
-        marginTop: 30,
-        marginBottom: 20,
+        marginTop: scale(30),
+        marginBottom: scale(20),
     },
     versionText: {
-        fontSize: 14,
+        fontSize: moderateScale(14),
         color: appColors.grey3,
         fontFamily: appFonts.headerTextMedium,
-        marginBottom: 4,
+        marginBottom: scale(4),
     },
     buildText: {
-        fontSize: 12,
+        fontSize: moderateScale(12),
         color: appColors.grey4,
         fontFamily: appFonts.headerTextRegular,
     },

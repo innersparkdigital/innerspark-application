@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getTherapists } from '../../api/client/therapists';
@@ -157,7 +158,8 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   };
 
   const getAvatarInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    if (!name) return '??';
+    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
   };
 
   const renderContactItem = ({ item }: { item: Contact }) => (
@@ -172,15 +174,15 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
         {item.avatar ? (
           <Avatar
             source={item.avatar}
-            size={50}
+            size={scale(50)}
             rounded
           />
         ) : (
           <Avatar
             title={getAvatarInitials(item.name)}
-            size={50}
+            size={scale(50)}
             rounded
-            backgroundColor={item.type === 'therapist' ? appColors.AppBlue : appColors.grey3}
+            containerStyle={{ backgroundColor: item.type === 'therapist' ? appColors.AppBlue : appColors.grey3 }}
             titleStyle={styles.avatarText}
           />
         )}
@@ -209,14 +211,14 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
       </View>
 
       {selectedContact?.id === item.id && (
-        <Icon name="check-circle" type="material" color={appColors.AppBlue} size={24} />
+        <Icon name="check-circle" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
       )}
     </TouchableOpacity>
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Icon name="person-search" type="material" color={appColors.grey3} size={80} />
+      <Icon name="person-search" type="material" color={appColors.grey3} size={moderateScale(80)} />
       <Text style={styles.emptyTitle}>No contacts found</Text>
       <Text style={styles.emptySubtitle}>
         Try searching with a different name or email
@@ -232,7 +234,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Message</Text>
         <View style={styles.headerSpacer} />
@@ -240,7 +242,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
 
       {/* Search */}
       <View style={styles.searchContainer}>
-        <Icon name="search" type="material" color={appColors.grey3} size={20} />
+        <Icon name="search" type="material" color={appColors.grey3} size={moderateScale(20)} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search contacts..."
@@ -250,7 +252,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Icon name="clear" type="material" color={appColors.grey3} size={20} />
+            <Icon name="clear" type="material" color={appColors.grey3} size={moderateScale(20)} />
           </TouchableOpacity>
         )}
       </View>
@@ -262,7 +264,7 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           <View style={styles.selectedContactChip}>
             <Text style={styles.selectedContactName}>{selectedContact.name}</Text>
             <TouchableOpacity onPress={() => setSelectedContact(null)}>
-              <Icon name="close" type="material" color={appColors.grey3} size={16} />
+              <Icon name="close" type="material" color={appColors.grey3} size={moderateScale(16)} />
             </TouchableOpacity>
           </View>
         </View>
@@ -330,22 +332,22 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
@@ -357,100 +359,100 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 25,
+    marginHorizontal: scale(16),
+    marginVertical: scale(12),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    borderRadius: scale(25),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
-    marginLeft: 12,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(12),
   },
   selectedContactContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+    marginHorizontal: scale(16),
+    marginBottom: scale(12),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    borderRadius: scale(12),
   },
   selectedContactLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
-    marginRight: 12,
+    fontFamily: appFonts.bodyTextRegular,
+    marginRight: scale(12),
   },
   selectedContactChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppBlue + '20',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(20),
   },
   selectedContactName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
-    marginRight: 8,
+    fontFamily: appFonts.bodyTextRegular,
+    marginRight: scale(8),
   },
   contactsContainer: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: scale(16),
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 8,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    borderRadius: scale(12),
+    marginBottom: scale(8),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   selectedContactItem: {
     borderColor: appColors.AppBlue,
-    borderWidth: 2,
+    borderWidth: scale(2),
   },
   contactAvatar: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   onlineIndicator: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: scale(14),
+    height: scale(14),
+    borderRadius: scale(7),
     backgroundColor: '#4CAF50',
-    borderWidth: 2,
+    borderWidth: scale(2),
     borderColor: appColors.CardBackground,
   },
   avatarText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
   },
@@ -460,10 +462,10 @@ const styles = StyleSheet.create({
   contactHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   contactName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -471,32 +473,32 @@ const styles = StyleSheet.create({
   },
   therapistBadge: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    borderRadius: scale(10),
   },
   therapistBadgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   contactEmail: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginBottom: 2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: scale(2),
   },
   contactSpecialty: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
-    marginBottom: 2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: scale(2),
   },
   lastSeen: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   emptyContainer: {
     flex: 1,
@@ -505,71 +507,71 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: scale(40),
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey2,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: scale(20),
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     textAlign: 'center',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   messageContainer: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
+    padding: scale(16),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   messageLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   messageInputContainer: {
-    borderWidth: 1,
+    borderWidth: scale(1),
     borderColor: appColors.grey5,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: scale(12),
+    marginBottom: scale(12),
   },
   messageInput: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 100,
-    maxHeight: 150,
+    fontFamily: appFonts.bodyTextRegular,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    minHeight: scale(100),
+    maxHeight: scale(150),
   },
   characterCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     textAlign: 'right',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    fontFamily: appFonts.regularText,
+    paddingHorizontal: scale(16),
+    paddingBottom: scale(8),
+    fontFamily: appFonts.bodyTextRegular,
   },
   sendButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 12,
+    borderRadius: scale(25),
+    paddingVertical: scale(12),
   },
   sendButtonDisabled: {
     backgroundColor: appColors.grey4,
   },
   sendButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },

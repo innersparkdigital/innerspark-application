@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
@@ -172,18 +173,18 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
       </Text>
       {safetyPlan.warningSignsPersonal.map((sign, index) => (
         <View key={index} style={styles.listItem}>
-          <Icon name="circle" type="material" color={appColors.AppBlue} size={8} style={styles.bulletIcon} />
+          <Icon name="circle" type="material" color={appColors.AppBlue} size={moderateScale(8)} style={styles.bulletIcon} />
           <Text style={styles.listItemText}>{sign}</Text>
         </View>
       ))}
 
-      <Text style={[styles.subsectionTitle, { marginTop: 20 }]}>Crisis Warning Signs</Text>
+      <Text style={[styles.subsectionTitle, { marginTop: scale(20) }]}>Crisis Warning Signs</Text>
       <Text style={styles.subsectionDescription}>
         More serious signs that indicate immediate help may be needed
       </Text>
       {safetyPlan.warningSignsCrisis.map((sign, index) => (
         <View key={index} style={styles.listItem}>
-          <Icon name="circle" type="material" color="#F44336" size={8} style={styles.bulletIcon} />
+          <Icon name="circle" type="material" color="#F44336" size={moderateScale(8)} style={styles.bulletIcon} />
           <Text style={styles.listItemText}>{sign}</Text>
         </View>
       ))}
@@ -197,7 +198,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
       </Text>
       {safetyPlan.copingStrategies.map((strategy, index) => (
         <View key={index} style={styles.listItem}>
-          <Icon name="circle" type="material" color="#4CAF50" size={8} style={styles.bulletIcon} />
+          <Icon name="circle" type="material" color="#4CAF50" size={moderateScale(8)} style={styles.bulletIcon} />
           <Text style={styles.listItemText}>{strategy}</Text>
         </View>
       ))}
@@ -225,7 +226,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
         </View>
       ))}
 
-      <Text style={[styles.subsectionTitle, { marginTop: 20 }]}>Professional Contacts</Text>
+      <Text style={[styles.subsectionTitle, { marginTop: scale(20) }]}>Professional Contacts</Text>
       <Text style={styles.subsectionDescription}>
         Mental health professionals and counselors
       </Text>
@@ -253,7 +254,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
       </Text>
       {safetyPlan.environmentSafety.map((step, index) => (
         <View key={index} style={styles.listItem}>
-          <Icon name="circle" type="material" color="#FF9800" size={8} style={styles.bulletIcon} />
+          <Icon name="circle" type="material" color="#FF9800" size={moderateScale(8)} style={styles.bulletIcon} />
           <Text style={styles.listItemText}>{step}</Text>
         </View>
       ))}
@@ -267,7 +268,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
       </Text>
       {safetyPlan.reasonsToLive.map((reason, index) => (
         <View key={index} style={styles.listItem}>
-          <Icon name="favorite" type="material" color="#E91E63" size={16} style={styles.bulletIcon} />
+          <Icon name="favorite" type="material" color="#E91E63" size={moderateScale(16)} style={styles.bulletIcon} />
           <Text style={styles.listItemText}>{reason}</Text>
         </View>
       ))}
@@ -297,7 +298,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
               style={styles.callIconButton}
               onPress={() => handleCall(contact.phone, contact.name)}
             >
-              <Icon name="phone" type="material" color="#F44336" size={20} />
+              <Icon name="phone" type="material" color="#F44336" size={moderateScale(20)} />
             </TouchableOpacity>
           </View>
         </View>
@@ -348,7 +349,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
                 name={section.icon}
                 type="material"
                 color={activeSection === section.key ? appColors.AppBlue : appColors.grey3}
-                size={18}
+                size={moderateScale(18)}
               />
               <Text style={[
                 styles.tabText,
@@ -393,7 +394,7 @@ const SafetyPlanScreen: React.FC<SafetyPlanScreenProps> = ({ navigation }) => {
 
               {/* Last Updated */}
               <View style={styles.lastUpdatedCard}>
-                <Icon name="update" type="material" color={appColors.grey3} size={16} />
+                <Icon name="update" type="material" color={appColors.grey3} size={moderateScale(16)} />
                 <Text style={styles.lastUpdatedText}>
                   Last updated: {new Date(safetyPlan.lastUpdated).toLocaleDateString()}
                 </Text>
@@ -419,30 +420,30 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.CardBackground,
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   tabsContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(16),
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 4,
-    borderRadius: 20,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    marginHorizontal: scale(4),
+    borderRadius: scale(20),
   },
   activeTab: {
     backgroundColor: appColors.AppBlue + '15',
   },
   tabText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 6,
+    marginLeft: scale(6),
   },
   activeTabText: {
     color: appColors.AppBlue,
@@ -457,85 +458,85 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
+    margin: scale(20),
+    padding: scale(20),
+    borderRadius: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   sectionContent: {
     flex: 1,
   },
   subsectionTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   subsectionDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 16,
-    lineHeight: 20,
+    marginBottom: scale(16),
+    lineHeight: scale(20),
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(12),
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
   },
   bulletIcon: {
-    marginRight: 12,
-    marginTop: 6,
+    marginRight: scale(12),
+    marginTop: scale(6),
   },
   listItemText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
     flex: 1,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(12),
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: scale(8),
+    marginBottom: scale(8),
   },
   callIconButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
     backgroundColor: appColors.CardBackground,
   },
   contactInfo: {
     flex: 1,
   },
   contactName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   contactDetails: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -545,56 +546,56 @@ const styles = StyleSheet.create({
   },
   availableBadge: {
     backgroundColor: '#4CAF50',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginRight: 8,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    marginRight: scale(8),
   },
   availableText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: '#FFF',
     fontFamily: appFonts.headerTextBold,
   },
   lastUpdatedCard: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
+    margin: scale(20),
     marginTop: 0,
-    padding: 16,
-    borderRadius: 12,
+    padding: scale(16),
+    borderRadius: scale(12),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.05,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   lastUpdatedText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   loadingContainer: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    padding: 40,
-    borderRadius: 16,
+    margin: scale(20),
+    padding: scale(40),
+    borderRadius: scale(16),
     alignItems: 'center',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 12,
+    marginTop: scale(12),
   },
 });
 

@@ -8,6 +8,8 @@ export const appImages = {
   logoRound: require("../assets/icons/app-icon-round.png"),
   logoRecBlue: require("../assets/icons/app-logo.png"),
   logoRecWhite: require("../assets/icons/app-logo-white.png"),
+  appIconWhite: require("../assets/icons/app-icon-white.png"),
+  appIconBlue: require("../assets/icons/app-icon-blue.png"),
 
   avatarDefault: require("../assets/icons/avatar.png"),
   avatarPlaceholder: require("../assets/images/avatar-placeholder.png"),
@@ -61,6 +63,15 @@ export const appContents = {
   supportEmail: "support@innersparkafrica.com", // support email address
   supportHours: "Monday - Friday, 9 AM - 6 PM", // support working hours
 
+}
+
+/**
+ * App Promotional Links
+ * These are links to be used for promotional purposes
+ */
+export const appPromotionalLinks = {
+  appPromotionalLink1: "https://www.innersparkafrica.com/mind-check",
+  appPromotionalLink2: "https://www.innersparkafrica.com/",
 }
 
 

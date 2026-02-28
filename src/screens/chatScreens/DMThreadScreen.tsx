@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadMessages, sendChatMessage, markConversationRead } from '../../utils/chatManager';
 import { selectMessages, selectChatLoading, selectChatSending } from '../../features/chat/chatSlice';
@@ -103,9 +104,11 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
       confirmText: 'Delete',
       cancelText: 'Cancel',
       onConfirm: () => {
-        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        // This component uses Redux for messages, so direct state manipulation like setMessages is not applicable here.
+        // A Redux action would be dispatched to delete the message from the store.
+        // For now, we'll just show a toast as the original code had a placeholder for setMessages.
         toast.show({
-          description: 'Message deleted',
+          description: 'Message deletion not implemented via Redux yet.',
           duration: 2000,
         });
       },
@@ -170,7 +173,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           {!item.isOwn && (
             <Avatar
               source={partnerAvatar}
-              size={32}
+              size={scale(32)}
               rounded
               containerStyle={styles.messageAvatar}
             />
@@ -201,11 +204,11 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
               {item.isOwn && (
                 <View style={styles.messageStatus}>
                   {!item.isSent ? (
-                    <Icon name="schedule" type="material" color={appColors.grey4} size={16} />
+                    <Icon name="schedule" type="material" color={appColors.grey4} size={moderateScale(16)} />
                   ) : item.isRead ? (
-                    <Icon name="done-all" type="material" color={appColors.AppBlue} size={16} />
+                    <Icon name="done-all" type="material" color={appColors.AppBlue} size={moderateScale(16)} />
                   ) : (
-                    <Icon name="done" type="material" color={appColors.grey4} size={16} />
+                    <Icon name="done" type="material" color={appColors.grey4} size={moderateScale(16)} />
                   )}
                 </View>
               )}
@@ -224,14 +227,14 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
           {partnerAvatar && (
             <Avatar
               source={partnerAvatar}
-              size={40}
+              size={scale(40)}
               rounded
               containerStyle={styles.headerAvatar}
             />
@@ -250,7 +253,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
             therapist: { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail }
           })}
         >
-          <Icon name="info" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="info" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
       </View>
 
@@ -294,7 +297,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
                 name="send"
                 type="material"
                 color={messageText.trim() ? appColors.CardBackground : appColors.grey3}
-                size={20}
+                size={moderateScale(20)}
               />
             </TouchableOpacity>
           </View>
@@ -313,19 +316,19 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerInfo: {
     flex: 1,
@@ -333,24 +336,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerAvatar: {
-    marginRight: 12,
+    marginRight: scale(12),
   },
   headerText: {
     flex: 1,
   },
   headerName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerStatus: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.CardBackground + 'CC',
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   headerButton: {
-    padding: 8,
+    padding: scale(8),
   },
   chatContainer: {
     flex: 1,
@@ -359,25 +362,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    paddingVertical: 16,
+    paddingVertical: scale(16),
   },
   dateSeparator: {
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: scale(16),
   },
   dateSeparatorText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     backgroundColor: appColors.grey6,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    fontFamily: appFonts.regularText,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
+    fontFamily: appFonts.bodyTextRegular,
   },
   messageContainer: {
     flexDirection: 'row',
-    marginVertical: 2,
-    paddingHorizontal: 16,
+    marginVertical: scale(2),
+    paddingHorizontal: scale(16),
   },
   ownMessageContainer: {
     justifyContent: 'flex-end',
@@ -386,33 +389,33 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   messageAvatar: {
-    marginRight: 8,
+    marginRight: scale(8),
     alignSelf: 'flex-end',
   },
   messageBubble: {
     maxWidth: '75%',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    marginVertical: 2,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    borderRadius: scale(20),
+    marginVertical: scale(2),
   },
   ownMessageBubble: {
     backgroundColor: appColors.AppBlue,
-    borderBottomRightRadius: 6,
+    borderBottomRightRadius: scale(6),
   },
   partnerMessageBubble: {
     backgroundColor: appColors.CardBackground,
-    borderBottomLeftRadius: 6,
+    borderBottomLeftRadius: scale(6),
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   messageText: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontFamily: appFonts.regularText,
+    fontSize: moderateScale(16),
+    lineHeight: moderateScale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   ownMessageText: {
     color: appColors.CardBackground,
@@ -424,11 +427,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: 4,
+    marginTop: scale(4),
   },
   messageTime: {
-    fontSize: 12,
-    fontFamily: appFonts.regularText,
+    fontSize: moderateScale(12),
+    fontFamily: appFonts.bodyTextRegular,
   },
   ownMessageTime: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -437,41 +440,41 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
   },
   messageStatus: {
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   composer: {
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     backgroundColor: appColors.grey6,
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: scale(25),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
   },
   textInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
-    maxHeight: 100,
-    paddingVertical: 8,
+    fontFamily: appFonts.bodyTextRegular,
+    maxHeight: scale(100),
+    paddingVertical: scale(8),
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   sendButtonActive: {
     backgroundColor: appColors.AppBlue,

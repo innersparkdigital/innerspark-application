@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 
@@ -48,20 +49,17 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
     });
   };
 
-  const getNotificationIcon = (type: string) => {
-    const iconMap = {
-      appointment: { name: 'event', color: appColors.AppBlue },
-      reminder: { name: 'notifications', color: '#FF9800' },
-      system: { name: 'info', color: appColors.grey2 },
-      event: { name: 'event-available', color: '#4CAF50' },
-      goal: { name: 'flag', color: '#9C27B0' },
-    };
-    return iconMap[type] || iconMap.system;
+  const typeConfig = {
+    appointment: { name: 'event', color: appColors.AppBlue },
+    reminder: { name: 'notifications', color: '#FF9800' },
+    system: { name: 'info', color: appColors.grey2 },
+    event: { name: 'event-available', color: '#4CAF50' },
+    goal: { name: 'flag', color: '#9C27B0' },
   };
 
   const handleAction = () => {
     const { type, actionData } = notification;
-    
+
     switch (type) {
       case 'appointment':
         if (actionData?.therapistId) {
@@ -99,19 +97,19 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
     }
   };
 
-  const iconConfig = getNotificationIcon(notification.type);
+  const config = typeConfig[notification.type as keyof typeof typeConfig] || typeConfig.system;
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.StatusBarColor} barStyle="light-content" />
-      
+      <StatusBar backgroundColor={appColors.CardBackground} barStyle="dark-content" />
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.grey1} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notification</Text>
         <View style={styles.placeholder} />
@@ -122,14 +120,14 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
           {/* Notification Icon/Avatar */}
           <View style={styles.iconSection}>
             {notification.avatar ? (
-              <Avatar source={notification.avatar} size={80} rounded />
+              <Avatar source={notification.avatar} size={scale(80)} rounded />
             ) : (
-              <View style={[styles.iconWrapper, { backgroundColor: iconConfig.color + '20' }]}>
+              <View style={[styles.iconWrapper, { backgroundColor: config.color + '20' }]}>
                 <Icon
-                  name={iconConfig.name}
+                  name={config.name}
                   type="material"
-                  color={iconConfig.color}
-                  size={40}
+                  color={config.color}
+                  size={scale(40)}
                 />
               </View>
             )}
@@ -138,7 +136,7 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
           {/* Notification Content */}
           <View style={styles.contentSection}>
             <Text style={styles.title}>{notification.title}</Text>
-            
+
             <View style={styles.metaRow}>
               <View style={styles.typeChip}>
                 <Text style={styles.typeText}>{notification.type?.toUpperCase() || 'NOTIFICATION'}</Text>
@@ -155,7 +153,7 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
               <View style={styles.extendedContent}>
                 <Text style={styles.extendedTitle}>Appointment Details</Text>
                 <Text style={styles.extendedText}>
-                  Don't forget to prepare any questions you'd like to discuss during your session. 
+                  Don't forget to prepare any questions you'd like to discuss during your session.
                   You can reschedule or cancel up to 24 hours before your appointment.
                 </Text>
               </View>
@@ -165,7 +163,7 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
               <View style={styles.extendedContent}>
                 <Text style={styles.extendedTitle}>Goal Progress</Text>
                 <Text style={styles.extendedText}>
-                  Keep up the great work! Consistency is key to building healthy habits. 
+                  Keep up the great work! Consistency is key to building healthy habits.
                   Check your progress and set new milestones to stay motivated.
                 </Text>
               </View>
@@ -175,7 +173,7 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
               <View style={styles.extendedContent}>
                 <Text style={styles.extendedTitle}>Event Information</Text>
                 <Text style={styles.extendedText}>
-                  This event is designed to help you learn valuable skills for mental health support. 
+                  This event is designed to help you learn valuable skills for mental health support.
                   Registration includes all materials and a certificate of completion.
                 </Text>
               </View>
@@ -185,7 +183,7 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
               <View style={styles.extendedContent}>
                 <Text style={styles.extendedTitle}>Why Track Your Mood?</Text>
                 <Text style={styles.extendedText}>
-                  Regular mood tracking helps identify patterns and triggers, leading to better 
+                  Regular mood tracking helps identify patterns and triggers, leading to better
                   self-awareness and improved mental health outcomes.
                 </Text>
               </View>
@@ -195,7 +193,7 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
               <View style={styles.extendedContent}>
                 <Text style={styles.extendedTitle}>What's New</Text>
                 <Text style={styles.extendedText}>
-                  We're constantly improving your experience with new features and enhancements. 
+                  We're constantly improving your experience with new features and enhancements.
                   Update to the latest version to enjoy all the benefits.
                 </Text>
               </View>
@@ -227,53 +225,57 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.CardBackground,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
+    shadowColor: appColors.black,
+    shadowOffset: { width: 0, height: scale(1) },
+    shadowOpacity: 0.1,
+    shadowRadius: scale(2),
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   placeholder: {
-    width: 40,
+    width: scale(40),
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 20,
+    padding: scale(20),
   },
   iconSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   iconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: scale(80),
+    height: scale(80),
+    borderRadius: scale(40),
     alignItems: 'center',
     justifyContent: 'center',
   },
   contentSection: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(20),
+    padding: scale(20),
+    marginBottom: scale(20),
   },
   title: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 16,
+    marginBottom: scale(16),
     textAlign: 'center',
     fontFamily: appFonts.headerTextBold,
   },
@@ -281,68 +283,68 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   typeChip: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
   },
   typeText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   timestamp: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.headerTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   message: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    lineHeight: 24,
-    marginBottom: 20,
-    fontFamily: appFonts.headerTextRegular,
+    lineHeight: scale(24),
+    marginBottom: scale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   extendedContent: {
     borderTopWidth: 1,
     borderTopColor: appColors.AppLightGray,
-    paddingTop: 20,
+    paddingTop: scale(20),
   },
   extendedTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 12,
+    marginBottom: scale(12),
     fontFamily: appFonts.headerTextBold,
   },
   extendedText: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey2,
-    lineHeight: 22,
-    fontFamily: appFonts.headerTextRegular,
+    lineHeight: scale(22),
+    fontFamily: appFonts.bodyTextRegular,
   },
   bottomContainer: {
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   actionButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 15,
+    borderRadius: scale(25),
+    paddingVertical: scale(15),
   },
   actionButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
-    fontFamily: appFonts.headerTextBold,
+    fontFamily: appFonts.buttonTextBold,
   },
 });
 

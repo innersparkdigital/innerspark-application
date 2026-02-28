@@ -26,6 +26,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getGroupMessages, sendGroupMessage } from '../../api/client/groups';
@@ -365,7 +366,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   const renderGroupInfoHeader = () => (
     <View style={styles.groupInfoCard}>
       <View style={styles.groupIconContainer}>
-        <Icon name={groupIcon} type="material" color={appColors.AppBlue} size={40} />
+        <Icon name={groupIcon} type="material" color={appColors.AppBlue} size={scale(40)} />
       </View>
       <View style={styles.groupInfo}>
         <Text style={styles.groupInfoName}>{groupName}</Text>
@@ -374,7 +375,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
         )}
         {privacyMode && (
           <View style={styles.privacyNotice}>
-            <Icon name="lock" type="material" size={14} color={appColors.grey3} />
+            <Icon name="lock" type="material" size={scale(14)} color={appColors.grey3} />
             <Text style={styles.privacyText}>Member identities are protected for privacy</Text>
           </View>
         )}
@@ -400,7 +401,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           )}
           <View style={styles.announcementContainer}>
             <View style={styles.announcementBadge}>
-              <Icon name="campaign" type="material" size={14} color={appColors.CardBackground} />
+              <Icon name="campaign" type="material" size={scale(14)} color={appColors.CardBackground} />
               <Text style={styles.announcementBadgeText}>Announcement</Text>
             </View>
             <Text style={styles.announcementText}>{item.content}</Text>
@@ -446,11 +447,10 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           {!item.isOwn && (
             <Avatar
               title={displayName.charAt(0)}
-              size={32}
+              size={scale(32)}
               rounded
-              backgroundColor={getRoleColor(item.senderRole)}
+              containerStyle={{ backgroundColor: getRoleColor(item.senderRole), marginBottom: scale(4), marginRight: scale(8) }}
               titleStyle={styles.avatarText}
-              containerStyle={styles.messageAvatar}
             />
           )}
 
@@ -490,11 +490,11 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               {item.isOwn && (
                 <View style={styles.messageStatus}>
                   {!item.isDelivered ? (
-                    <Icon name="schedule" type="material" color={appColors.grey4} size={14} />
+                    <Icon name="schedule" type="material" color={appColors.grey4} size={scale(14)} />
                   ) : item.isSeen ? (
-                    <Icon name="done-all" type="material" color={appColors.AppBlue} size={14} />
+                    <Icon name="done-all" type="material" color={appColors.AppBlue} size={scale(14)} />
                   ) : (
-                    <Icon name="done" type="material" color={appColors.grey4} size={14} />
+                    <Icon name="done" type="material" color={appColors.grey4} size={scale(14)} />
                   )}
                 </View>
               )}
@@ -558,7 +558,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       {/* Offline Banner */}
       {!isOnline && (
         <View style={styles.offlineBanner}>
-          <Icon name="wifi-off" type="material" color={appColors.CardBackground} size={16} />
+          <Icon name="wifi-off" type="material" color={appColors.CardBackground} size={scale(16)} />
           <Text style={styles.offlineBannerText}>
             You're offline. Messages will be sent when connection is restored.
           </Text>
@@ -616,7 +616,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
                 name="send"
                 type="material"
                 color={messageText.trim() && isOnline ? appColors.CardBackground : appColors.grey3}
-                size={20}
+                size={scale(20)}
               />
             </TouchableOpacity>
           </View>
@@ -637,14 +637,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(16),
   },
   offlineBannerText: {
     color: appColors.CardBackground,
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontFamily: appFonts.bodyTextRegular,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   chatContainer: {
     flex: 1,
@@ -653,76 +653,76 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: scale(16),
+    paddingBottom: scale(16),
   },
   groupInfoCard: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    borderRadius: 12,
-    marginVertical: 16,
-    elevation: 2,
+    padding: scale(16),
+    borderRadius: scale(12),
+    marginVertical: scale(16),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   groupIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
     backgroundColor: appColors.AppBlue + '20',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   groupInfo: {
     flex: 1,
   },
   groupInfoName: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   groupInfoDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   privacyNotice: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: scale(6),
   },
   privacyText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     fontStyle: 'italic',
   },
   dateSeparator: {
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: scale(16),
   },
   dateSeparatorText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     backgroundColor: appColors.grey6,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
     fontFamily: appFonts.bodyTextRegular,
   },
   announcementContainer: {
     backgroundColor: appColors.AppBlue + '15',
-    padding: 12,
-    borderRadius: 12,
-    marginVertical: 8,
-    borderLeftWidth: 4,
+    padding: scale(12),
+    borderRadius: scale(12),
+    marginVertical: scale(8),
+    borderLeftWidth: scale(4),
     borderLeftColor: appColors.AppBlue,
   },
   announcementBadge: {
@@ -730,48 +730,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: appColors.AppBlue,
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 8,
-    gap: 4,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
+    marginBottom: scale(8),
+    gap: scale(4),
   },
   announcementBadgeText: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   announcementText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
   announcementTime: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
-    marginTop: 4,
+    marginTop: scale(4),
   },
   systemMessage: {
     alignItems: 'center',
-    marginVertical: 8,
-    paddingHorizontal: 16,
+    marginVertical: scale(8),
+    paddingHorizontal: scale(16),
   },
   systemMessageText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     backgroundColor: appColors.AppBlue + '20',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    borderRadius: scale(16),
     textAlign: 'center',
     fontFamily: appFonts.bodyTextRegular,
   },
   messageContainer: {
     flexDirection: 'row',
-    marginVertical: 2,
+    marginVertical: scale(2),
     alignItems: 'flex-end',
   },
   ownMessageContainer: {
@@ -781,43 +781,43 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   messageAvatar: {
-    marginRight: 8,
-    marginBottom: 4,
+    marginRight: scale(8),
+    marginBottom: scale(4),
   },
   avatarText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     color: appColors.CardBackground,
   },
   messageBubble: {
     maxWidth: '75%',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    marginVertical: 2,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    borderRadius: scale(20),
+    marginVertical: scale(2),
   },
   ownMessageBubble: {
     backgroundColor: appColors.AppBlue,
-    borderBottomRightRadius: 6,
+    borderBottomRightRadius: scale(4),
   },
   otherMessageBubble: {
     backgroundColor: appColors.CardBackground,
-    borderBottomLeftRadius: 6,
-    elevation: 1,
+    borderBottomLeftRadius: scale(4),
+    elevation: scale(1),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   senderName: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   messageText: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: moderateScale(15),
+    lineHeight: scale(22),
     fontFamily: appFonts.bodyTextRegular,
   },
   ownMessageText: {
@@ -830,10 +830,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: 4,
+    marginTop: scale(4),
+    gap: scale(4),
   },
   messageTime: {
-    fontSize: 12,
+    fontSize: moderateScale(10),
     fontFamily: appFonts.bodyTextRegular,
   },
   ownMessageTime: {
@@ -843,51 +844,55 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
   },
   messageStatus: {
-    marginLeft: 4,
+    marginLeft: scale(2),
   },
   typingContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
   },
   typingText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontStyle: 'italic',
     fontFamily: appFonts.bodyTextRegular,
   },
   composer: {
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    borderTopWidth: 1,
+    borderTopColor: appColors.grey6,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     backgroundColor: appColors.grey6,
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: scale(24),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    minHeight: scale(48),
   },
   textInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontFamily: appFonts.bodyTextRegular,
-    maxHeight: 100,
-    paddingVertical: 8,
+    maxHeight: scale(100),
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: scale(32),
+    height: scale(32),
+    borderRadius: scale(16),
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   sendButtonActive: {
     backgroundColor: appColors.AppBlue,

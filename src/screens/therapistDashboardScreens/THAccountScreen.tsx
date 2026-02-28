@@ -5,6 +5,7 @@ import { Icon, Button, BottomSheet } from '@rneui/themed';
 import { useSelector, useDispatch } from 'react-redux';
 import { signout } from '../../features/user/userSlice';
 import { appColors, appFonts, parameters } from '../../global/Styles';
+import { moderateScale } from '../../global/Scaling';
 import { removeItemLS, retrieveItemLS } from '../../global/StorageActions';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   avatarText: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontWeight: 'bold',
     color: '#FFFFFF',
     fontFamily: appFonts.headerTextBold,
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -360,7 +361,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,

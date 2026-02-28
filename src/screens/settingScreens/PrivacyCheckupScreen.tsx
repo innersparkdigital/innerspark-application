@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -119,10 +120,10 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
     const fetchPrivacyData = async () => {
       try {
         const response = await getPrivacySettings(userId);
-        
+
         if (response.success) {
           const settings = response.data;
-          
+
           const checks: PrivacyCheckItem[] = [
             {
               id: 'profile_visibility',
@@ -131,8 +132,8 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
               description: `Your profile is set to ${settings.profileVisibility || 'private'}`,
               status: settings.profileVisibility === 'private' ? 'good' : 'warning',
               icon: settings.profileVisibility === 'private' ? 'visibility-off' : 'visibility',
-              recommendation: settings.profileVisibility === 'private' 
-                ? 'Your profile information is protected' 
+              recommendation: settings.profileVisibility === 'private'
+                ? 'Your profile information is protected'
                 : 'Consider setting your profile to private for better privacy',
               action: settings.profileVisibility !== 'private' ? {
                 label: 'Review Settings',
@@ -146,8 +147,8 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
               description: settings.dataSharing ? 'Data sharing with partners is enabled' : 'Data sharing with partners is disabled',
               status: settings.dataSharing ? 'warning' : 'good',
               icon: 'shield',
-              recommendation: settings.dataSharing 
-                ? 'Consider disabling data sharing for better privacy' 
+              recommendation: settings.dataSharing
+                ? 'Consider disabling data sharing for better privacy'
                 : 'Your data is not shared with third parties',
               action: settings.dataSharing ? {
                 label: 'Adjust Settings',
@@ -161,8 +162,8 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
               description: settings.showOnlineStatus ? 'Your online status is visible' : 'Your online status is hidden',
               status: settings.showOnlineStatus ? 'warning' : 'good',
               icon: settings.showOnlineStatus ? 'visibility' : 'visibility-off',
-              recommendation: settings.showOnlineStatus 
-                ? 'Consider hiding your online status for more privacy' 
+              recommendation: settings.showOnlineStatus
+                ? 'Consider hiding your online status for more privacy'
                 : 'Good! Your online status is private',
             },
             {
@@ -172,8 +173,8 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
               description: settings.allowMessages ? 'Messages from all users are allowed' : 'Messages are restricted',
               status: settings.allowMessages ? 'warning' : 'good',
               icon: 'chat',
-              recommendation: settings.allowMessages 
-                ? 'Consider restricting messages to connections only' 
+              recommendation: settings.allowMessages
+                ? 'Consider restricting messages to connections only'
                 : 'Good! Message privacy is enabled',
               action: settings.allowMessages ? {
                 label: 'Adjust Settings',
@@ -194,7 +195,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
               },
             },
           ];
-          
+
           setPrivacyChecks(checks);
         }
       } catch (error) {
@@ -290,7 +291,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
       </View>
       <Text style={styles.scanningTitle}>Running Privacy Checkup</Text>
       <Text style={styles.scanningSubtitle}>Analyzing your privacy settings...</Text>
-      
+
       <View style={styles.progressBarContainer}>
         <View style={styles.progressBarBackground}>
           <View style={[styles.progressBarFill, { width: `${scanProgress}%` }]} />
@@ -327,7 +328,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
           <Icon name="verified-user" type="material" color={appColors.AppBlue} size={32} />
           <Text style={styles.summaryTitle}>Privacy Checkup Complete</Text>
         </View>
-        
+
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <View style={[styles.statCircle, { backgroundColor: '#4CAF50' + '20' }]}>
@@ -335,14 +336,14 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
             </View>
             <Text style={styles.statLabel}>Good</Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <View style={[styles.statCircle, { backgroundColor: '#FF9800' + '20' }]}>
               <Text style={[styles.statNumber, { color: '#FF9800' }]}>{stats.warning}</Text>
             </View>
             <Text style={styles.statLabel}>Review</Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <View style={[styles.statCircle, { backgroundColor: '#F44336' + '20' }]}>
               <Text style={[styles.statNumber, { color: '#F44336' }]}>{stats.critical}</Text>
@@ -355,15 +356,15 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
           {stats.critical > 0
             ? `${stats.critical} critical issue${stats.critical > 1 ? 's' : ''} require${stats.critical === 1 ? 's' : ''} your attention`
             : stats.warning > 0
-            ? `${stats.warning} setting${stats.warning > 1 ? 's' : ''} could be improved`
-            : 'Your privacy settings look great!'}
+              ? `${stats.warning} setting${stats.warning > 1 ? 's' : ''} could be improved`
+              : 'Your privacy settings look great!'}
         </Text>
       </View>
 
       {/* Privacy Check Items */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>DETAILED RESULTS</Text>
-        
+
         {privacyChecks.map((item, index) => (
           <View key={item.id} style={styles.checkItem}>
             <View style={styles.checkItemHeader}>
@@ -447,7 +448,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
           titleStyle={parameters.appButtonXLTitleBlue}
           onPress={() => navigation.navigate('PrivacySettingsScreen')}
         />
-        
+
         <TouchableOpacity
           style={styles.runAgainButton}
           onPress={async () => {
@@ -459,7 +460,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
               description: 'Running privacy checkup again...',
               duration: 2000,
             });
-            
+
             try {
               const response = await getPrivacySettings(userId);
               if (response.success) {
@@ -472,8 +473,8 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
                     description: `Your profile is set to ${settings.profileVisibility || 'private'}`,
                     status: settings.profileVisibility === 'private' ? 'good' : 'warning',
                     icon: settings.profileVisibility === 'private' ? 'visibility-off' : 'visibility',
-                    recommendation: settings.profileVisibility === 'private' 
-                      ? 'Your profile information is protected' 
+                    recommendation: settings.profileVisibility === 'private'
+                      ? 'Your profile information is protected'
                       : 'Consider setting your profile to private for better privacy',
                   },
                   {
@@ -510,7 +511,7 @@ const PrivacyCheckupScreen: React.FC<PrivacyCheckupScreenProps> = ({ navigation 
       <ISGenericHeader
         title="Privacy Checkup"
         navigation={navigation}
-              />
+      />
 
       {isScanning ? renderScanningView() : renderCheckupResults()}
     </SafeAreaView>
@@ -525,79 +526,79 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  
+
   // Scanning View Styles
   scanningContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: scale(30),
   },
   scanningIcon: {
-    marginBottom: 30,
+    marginBottom: scale(30),
   },
   scanningTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 8,
+    marginBottom: scale(8),
     textAlign: 'center',
   },
   scanningSubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 40,
+    marginBottom: scale(40),
     textAlign: 'center',
   },
   progressBarContainer: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: scale(40),
   },
   progressBarBackground: {
     width: '100%',
-    height: 8,
+    height: scale(8),
     backgroundColor: appColors.grey6,
-    borderRadius: 4,
+    borderRadius: scale(4),
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: appColors.AppBlue,
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
   progressText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   scanningSteps: {
     width: '100%',
-    marginTop: 20,
+    marginTop: scale(20),
   },
   scanStep: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   scanStepText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
 
   // Results View Styles
   summaryCard: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 16,
-    padding: 20,
+    marginHorizontal: scale(20),
+    marginTop: scale(20),
+    borderRadius: scale(16),
+    padding: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -606,70 +607,70 @@ const styles = StyleSheet.create({
   },
   summaryHeader: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   summaryTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 12,
+    marginTop: scale(12),
     textAlign: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   statItem: {
     alignItems: 'center',
   },
   statCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: scale(60),
+    height: scale(60),
+    borderRadius: scale(30),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   summaryDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: scale(20),
   },
 
   // Check Items Styles
   section: {
-    marginTop: 20,
+    marginTop: scale(20),
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginHorizontal: 20,
-    marginBottom: 12,
+    marginHorizontal: scale(20),
+    marginBottom: scale(12),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   checkItem: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderRadius: 12,
-    padding: 16,
+    marginHorizontal: scale(20),
+    marginBottom: scale(12),
+    borderRadius: scale(12),
+    padding: scale(16),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -681,121 +682,121 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   checkIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   checkItemContent: {
     flex: 1,
   },
   checkItemCategory: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey4,
     fontFamily: appFonts.headerTextRegular,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: scale(2),
   },
   checkItemTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   checkItemDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 18,
+    lineHeight: scale(18),
   },
   checkStatusBadge: {
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   recommendationBox: {
     flexDirection: 'row',
     backgroundColor: appColors.grey6,
-    borderLeftWidth: 3,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
+    borderLeftWidth: scale(3),
+    borderRadius: scale(8),
+    padding: scale(12),
+    marginTop: scale(12),
     alignItems: 'flex-start',
   },
   recommendationText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
-    lineHeight: 18,
+    marginLeft: scale(8),
+    lineHeight: scale(18),
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    marginTop: scale(12),
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(16),
     backgroundColor: appColors.AppBlue + '10',
-    borderRadius: 8,
+    borderRadius: scale(8),
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: '600',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
-    marginRight: 4,
+    marginRight: scale(4),
   },
   checkItemSeparator: {
     height: 1,
     backgroundColor: appColors.grey6,
-    marginTop: 16,
+    marginTop: scale(16),
   },
 
   // Tips Card Styles
   tipsCard: {
     backgroundColor: appColors.AppBlue + '10',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 12,
-    padding: 16,
+    marginHorizontal: scale(20),
+    marginTop: scale(20),
+    borderRadius: scale(12),
+    padding: scale(16),
   },
   tipsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   tipsTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   tipsList: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   tipItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   tipText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
-    lineHeight: 20,
+    marginLeft: scale(12),
+    lineHeight: scale(20),
   },
 
   // Action Buttons
   actionButtonsContainer: {
-    marginHorizontal: 20,
-    marginTop: 30,
+    marginHorizontal: scale(20),
+    marginTop: scale(30),
   },
   runAgainButton: {
     flexDirection: 'row',

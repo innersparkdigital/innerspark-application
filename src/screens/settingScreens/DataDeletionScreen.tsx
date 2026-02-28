@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, CheckBox } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
@@ -371,10 +372,10 @@ const styles = StyleSheet.create({
   warningCard: {
     flexDirection: 'row',
     backgroundColor: '#FFEBEE',
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginTop: scale(20),
+    marginBottom: scale(16),
     borderWidth: 2,
     borderColor: '#FFCDD2',
   },
@@ -383,7 +384,7 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   warningTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: '#D32F2F',
     fontFamily: appFonts.headerTextBold,
@@ -421,7 +422,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
@@ -433,7 +434,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectButton: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#F44336',
     fontFamily: appFonts.headerTextBold,
     fontWeight: '600',
@@ -469,9 +470,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   alternativesTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.grey4,
   },
   deleteButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },

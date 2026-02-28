@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button, BottomSheet } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
@@ -186,13 +187,13 @@ const EditModal = ({
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>{config.title}</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon type="material" name="close" color={appColors.AppGray} size={24} />
+            <Icon type="material" name="close" color={appColors.AppGray} size={moderateScale(24)} />
           </TouchableOpacity>
         </View>
 
         {requiresVerification && (
           <View style={styles.warningContainer}>
-            <Icon type="material" name="warning" color="#FF9800" size={20} />
+            <Icon type="material" name="warning" color="#FF9800" size={moderateScale(20)} />
             <Text style={styles.warningText}>
               Changing this will require verification via OTP
             </Text>
@@ -413,12 +414,12 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
               type={iconType}
               name={icon}
               color={appColors.AppBlue}
-              size={20}
+              size={moderateScale(20)}
             />
             <Text style={styles.fieldLabel}>{label}</Text>
             {requiresVerification && (
               <View style={styles.verificationBadge}>
-                <Icon type="material" name="verified-user" color="#FF9800" size={14} />
+                <Icon type="material" name="verified-user" color="#FF9800" size={moderateScale(14)} />
               </View>
             )}
           </View>
@@ -426,7 +427,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
             type="material"
             name="edit"
             color={appColors.AppBlue}
-            size={18}
+            size={moderateScale(18)}
           />
         </View>
         <Text style={styles.fieldValue}>{value || 'Not provided'}</Text>
@@ -459,7 +460,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
           <View style={styles.profileHeader}>
             <Avatar
               rounded
-              size={100}
+              size={scale(100)}
               source={userDetails?.image || appImages.avatarDefault}
               containerStyle={styles.avatarStyle}
             />
@@ -533,8 +534,8 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
                   type="material"
                   name="save"
                   color={appColors.CardBackground}
-                  size={20}
-                  style={{ marginRight: 8 }}
+                  size={moderateScale(20)}
+                  style={{ marginRight: scale(8) }}
                 />
               }
             />
@@ -578,12 +579,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   avatarStyle: {
-    borderWidth: 3,
+    borderWidth: scale(3),
     borderColor: appColors.AppBlue,
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   userName: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     marginBottom: 8,
@@ -591,7 +592,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   userRole: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppGray,
     fontFamily: appFonts.bodyTextMedium,
   },
@@ -608,11 +609,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    paddingHorizontal: 20,
-    marginBottom: 15,
+    paddingHorizontal: scale(20),
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextBold,
   },
   profileField: {
@@ -628,23 +629,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   fieldLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   fieldLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppGray,
     fontFamily: appFonts.bodyTextMedium,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   fieldValue: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: '#333',
     fontFamily: appFonts.bodyTextRegular,
-    lineHeight: 22,
+    lineHeight: scale(22),
   },
   verificationBadge: {
     marginLeft: 8,
@@ -664,7 +665,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   saveProfileButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
   },
@@ -688,7 +689,7 @@ const styles = StyleSheet.create({
     borderBottomColor: appColors.AppLightGray,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
@@ -706,10 +707,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   warningText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: '#F57C00',
     fontFamily: appFonts.bodyTextMedium,
-    marginLeft: 8,
+    marginLeft: scale(8),
     flex: 1,
   },
   inputContainer: {
@@ -722,20 +723,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 15,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontFamily: appFonts.bodyTextRegular,
     color: '#333',
     backgroundColor: appColors.CardBackground,
   },
   textInputMultiline: {
-    height: 100,
+    height: scale(100),
     textAlignVertical: 'top',
   },
   characterCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppGray,
     textAlign: 'right',
-    marginTop: 5,
+    marginTop: scale(5),
     fontFamily: appFonts.bodyTextRegular,
   },
   modalActions: {
@@ -753,7 +754,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.AppGray,
     fontFamily: appFonts.bodyTextMedium,
@@ -765,7 +766,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     fontFamily: appFonts.bodyTextMedium,
   },
@@ -790,12 +791,12 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue + '10',
   },
   genderRadio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(10),
+    borderWidth: scale(2),
     borderColor: appColors.AppGray,
-    marginRight: 12,
+    marginRight: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -803,19 +804,19 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   genderRadioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: scale(10),
+    height: scale(10),
+    borderRadius: scale(5),
     backgroundColor: appColors.AppBlue,
   },
   genderOptionText: {
-    fontSize: 16,
-    color: appColors.AppGray,
-    fontFamily: appFonts.bodyTextRegular,
+    fontSize: moderateScale(16),
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextMedium,
   },
   genderOptionTextSelected: {
     color: appColors.AppBlue,
-    fontFamily: appFonts.bodyTextMedium,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
 });

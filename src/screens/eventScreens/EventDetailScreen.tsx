@@ -20,6 +20,7 @@ import { Icon, Avatar, Button } from '@rneui/base';
 import PaymentModal from '../../components/payments/PaymentModal';
 import PaymentSuccessModal from '../../components/payments/PaymentSuccessModal';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { isValidPhoneNumber } from '../../global/LHValidators';
 import { getPhoneNumberOperator } from '../../global/LHShortcuts';
 import { useToast } from 'native-base';
@@ -364,7 +365,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
 
   // Payment Confirmation 
   const handlePaymentConfirm = async () => {
-    if (isProcessingPayment) return;
+    if (isProcessingPayment || !event) return;
     if (selectedPaymentMethod === 'wellnessvault') {
       if (event.price > walletBalance) {
         toast.show({ description: 'Insufficient WellnessVault balance', duration: 3000 });
@@ -602,7 +603,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
             </View>
             {isRegistered && (
               <View style={styles.registeredBadge}>
-                <Icon name="check-circle" type="material" color="#4CAF50" size={16} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={scale(16)} />
                 <Text style={styles.registeredText}>Registered</Text>
               </View>
             )}
@@ -613,7 +614,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
           {/* Event Meta Info */}
           <View style={styles.metaContainer}>
             <View style={styles.metaItem}>
-              <Icon name="event" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="event" type="material" color={appColors.AppBlue} size={scale(20)} />
               <Text style={styles.metaText}>{formatDate(event.date)} at {event.time}</Text>
             </View>
 
@@ -622,7 +623,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
                 name={event.isOnline ? 'videocam' : 'location-on'}
                 type="material"
                 color={appColors.AppBlue}
-                size={20}
+                size={scale(20)}
               />
               <Text style={[styles.metaText, event.locationLink && styles.linkText]}>
                 {event.isOnline ? 'Online Event' : event.location}
@@ -630,7 +631,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
             </TouchableOpacity>
 
             <View style={styles.metaItem}>
-              <Icon name="people" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="people" type="material" color={appColors.AppBlue} size={scale(20)} />
               <Text style={styles.metaText}>
                 {event.availableSeats} of {event.totalSeats} seats available
               </Text>
@@ -769,34 +770,34 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   shareButton: {
-    padding: 8,
+    padding: scale(8),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: scale(20),
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: scale(16),
+    fontSize: moderateScale(16),
     color: appColors.AppGray,
     fontFamily: appFonts.headerTextMedium,
   },
@@ -805,32 +806,32 @@ const styles = StyleSheet.create({
   },
   eventImage: {
     width: '100%',
-    height: 250,
+    height: scale(250),
     backgroundColor: appColors.AppBlueOpacity,
   },
   content: {
     backgroundColor: appColors.CardBackground,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    marginTop: -20,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    borderTopLeftRadius: scale(20),
+    borderTopRightRadius: scale(20),
+    marginTop: scale(-20),
+    paddingTop: scale(20),
+    paddingHorizontal: scale(20),
+    paddingBottom: scale(100),
   },
   eventHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   categoryBadge: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: scale(15),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -839,36 +840,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#E8F5E8',
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: scale(15),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
   },
   registeredText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#4CAF50',
-    marginLeft: 4,
+    marginLeft: scale(4),
     fontFamily: appFonts.headerTextMedium,
   },
   eventTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 20,
-    lineHeight: 30,
+    marginBottom: scale(20),
+    lineHeight: moderateScale(30),
     fontFamily: appFonts.headerTextBold,
   },
   metaContainer: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   metaText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    marginLeft: 12,
+    marginLeft: scale(12),
     fontFamily: appFonts.headerTextRegular,
   },
   linkText: {
@@ -876,13 +877,13 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   organizerSection: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 12,
+    marginBottom: scale(12),
     fontFamily: appFonts.headerTextBold,
   },
   organizerContainer: {
@@ -890,75 +891,75 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   organizerName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    marginLeft: 12,
+    marginLeft: scale(12),
     fontFamily: appFonts.headerTextMedium,
   },
   descriptionSection: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   description: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
-    lineHeight: 24,
+    lineHeight: moderateScale(24),
     fontFamily: appFonts.headerTextRegular,
   },
   scheduleSection: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   scheduleTime: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: scale(16),
     fontFamily: appFonts.headerTextBold,
   },
   agendaItem: {
     flexDirection: 'row',
-    marginBottom: 12,
-    paddingBottom: 12,
+    marginBottom: scale(12),
+    paddingBottom: scale(12),
     borderBottomWidth: 1,
     borderBottomColor: appColors.AppLightGray,
   },
   agendaTime: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontWeight: 'bold',
-    width: 80,
+    width: scale(80),
     fontFamily: appFonts.headerTextBold,
   },
   agendaContent: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   agendaActivity: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
   },
   agendaSpeaker: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
-    marginTop: 2,
+    marginTop: scale(2),
     fontFamily: appFonts.headerTextRegular,
   },
   actionButtons: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   calendarButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    borderRadius: scale(25),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(20),
   },
   calendarButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
-    marginLeft: 8,
+    marginLeft: scale(8),
     fontFamily: appFonts.headerTextMedium,
   },
   bottomContainer: {
@@ -967,19 +968,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   registerButton: {
-    borderRadius: 25,
-    paddingVertical: 15,
+    borderRadius: scale(25),
+    paddingVertical: scale(15),
   },
   registerButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -991,46 +992,46 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: appColors.CardBackground,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    borderTopLeftRadius: scale(20),
+    borderTopRightRadius: scale(20),
+    paddingTop: scale(20),
+    paddingHorizontal: scale(20),
+    paddingBottom: scale(40),
     maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   modalCloseButton: {
-    padding: 4,
+    padding: scale(4),
   },
   eventSummary: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: scale(12),
+    padding: scale(16),
+    marginBottom: scale(20),
   },
   eventSummaryTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   eventSummaryDate: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   priceContainer: {
     flexDirection: 'row',
@@ -1038,28 +1039,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   totalAmount: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   paymentMethodsSection: {
-    marginBottom: 30,
+    marginBottom: scale(30),
   },
   paymentMethodOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: scale(16),
+    borderRadius: scale(12),
     borderWidth: 1,
     borderColor: appColors.grey5,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   selectedPaymentMethod: {
     borderColor: appColors.AppBlue,
@@ -1071,25 +1072,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   paymentMethodDetails: {
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   paymentMethodName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   paymentMethodBalance: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 2,
+    marginTop: scale(2),
   },
   radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(10),
     borderWidth: 2,
     borderColor: appColors.grey4,
     alignItems: 'center',
@@ -1099,9 +1100,9 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   radioButtonInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: scale(10),
+    height: scale(10),
+    borderRadius: scale(5),
     backgroundColor: appColors.AppBlue,
   },
   modalActions: {
@@ -1111,11 +1112,11 @@ const styles = StyleSheet.create({
   processingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: scale(40),
   },
   processingText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: scale(12),
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -1123,13 +1124,13 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: appColors.grey4,
-    borderRadius: 25,
-    paddingVertical: 14,
-    marginRight: 8,
+    borderRadius: scale(25),
+    paddingVertical: scale(14),
+    marginRight: scale(8),
     alignItems: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
     fontWeight: '600',
     fontFamily: appFonts.headerTextBold,
@@ -1137,51 +1138,51 @@ const styles = StyleSheet.create({
   payButton: {
     flex: 2,
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 14,
-    marginLeft: 8,
+    borderRadius: scale(25),
+    paddingVertical: scale(14),
+    marginLeft: scale(8),
     alignItems: 'center',
   },
   payButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
   // Success Modal styles
   successCheckCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: scale(72),
+    height: scale(72),
+    borderRadius: scale(36),
     backgroundColor: '#4CAF50',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   successTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 6,
+    marginBottom: scale(6),
     textAlign: 'center',
   },
   successSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginBottom: 20,
+    marginBottom: scale(20),
     textAlign: 'center',
   },
   successButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    marginTop: 4,
+    borderRadius: scale(24),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(28),
+    marginTop: scale(4),
   },
   successButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
@@ -1189,36 +1190,36 @@ const styles = StyleSheet.create({
   },
   // Mobile Money styles
   mmSection: {
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 12,
+    marginTop: scale(12),
+    padding: scale(12),
+    borderRadius: scale(12),
     backgroundColor: appColors.AppLightGray,
   },
   mmLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextMedium,
   },
   mmInput: {
     backgroundColor: appColors.CardBackground,
     borderWidth: 1,
     borderColor: appColors.grey5,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(10),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
   },
   mmHelp: {
-    marginTop: 8,
-    fontSize: 12,
+    marginTop: scale(8),
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   mmRow: {
-    marginTop: 10,
+    marginTop: scale(10),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1229,7 +1230,7 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
   },
   mmChangeLink: {
-    marginTop: 10,
+    marginTop: scale(10),
     color: appColors.AppBlue,
     textDecorationLine: 'underline',
     fontFamily: appFonts.headerTextRegular,

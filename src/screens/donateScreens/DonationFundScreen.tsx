@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
 import { isValidPhoneNumber } from '../../global/LHValidators';
@@ -116,12 +117,12 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       setIsLoading(false);
       setShowSuccessModal(true);
-      
+
       // Form will be reset when modal closes
-      
+
     } catch (error) {
       setIsLoading(false);
       toast.show({
@@ -143,20 +144,20 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Support Our Community</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: scale(24) }} />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Hero Section */}
         <View style={styles.heroCard}>
-          <Icon name="favorite" type="material" color={appColors.AppBlue} size={48} />
+          <Icon name="favorite" type="material" color={appColors.AppBlue} size={moderateScale(48)} />
           <Text style={styles.heroTitle}>Help Make Therapy Accessible</Text>
           <Text style={styles.heroMessage}>
             Your donation goes directly to Innerspark's Community Therapy Fund, helping members access affordable mental health support.
@@ -171,25 +172,25 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
         <View style={styles.howItWorksCard}>
           <Text style={styles.sectionTitle}>How Your Donation Helps</Text>
           <View style={styles.howItWorksItem}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(24)} />
             <Text style={styles.howItWorksText}>
               100% of donations go to subsidizing therapy sessions
             </Text>
           </View>
           <View style={styles.howItWorksItem}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(24)} />
             <Text style={styles.howItWorksText}>
               Members in need receive discounted or free sessions
             </Text>
           </View>
           <View style={styles.howItWorksItem}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(24)} />
             <Text style={styles.howItWorksText}>
               Transparent fund management and regular impact reports
             </Text>
           </View>
           <View style={styles.howItWorksItem}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(24)} />
             <Text style={styles.howItWorksText}>
               Supporting mental health accessibility for all
             </Text>
@@ -199,7 +200,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
         {/* Donation Amount Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Choose Your Contribution</Text>
-          
+
           {/* Predefined Amounts with Impact */}
           <View style={styles.predefinedAmountsContainer}>
             {predefinedAmounts.map((item) => (
@@ -217,13 +218,6 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
                 ]}>
                   UGX {parseInt(item.amount).toLocaleString()}
                 </Text>
-                {/* Hide the impact text for now */}
-                {/* <Text style={[ 
-                  styles.impactText, 
-                  donationAmount === item.amount && styles.selectedImpactText
-                ]}>
-                  {item.impact}
-                </Text> */}
               </TouchableOpacity>
             ))}
           </View>
@@ -251,7 +245,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
           <Text style={styles.sectionSubtitle}>
             Enter your mobile money number for payment
           </Text>
-          
+
           <LHPhoneInput
             inputValue={phone}
             inputValueSetter={setPhone}
@@ -301,7 +295,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
         />
       </View>
 
-      {/* Confirmation Modal */} 
+      {/* Confirmation Modal */}
       <Modal
         visible={showConfirmModal}
         transparent={true}
@@ -310,7 +304,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Icon name="favorite" type="material" color={appColors.AppBlue} size={48} />
+            <Icon name="favorite" type="material" color={appColors.AppBlue} size={moderateScale(48)} />
             <Text style={styles.modalTitle}>Confirm Donation</Text>
             <Text style={styles.modalMessage}>
               You are about to donate UGX {parseInt(donationAmount).toLocaleString()} to Innerspark's Community Therapy Fund.
@@ -318,7 +312,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
             <Text style={styles.modalSubMessage}>
               A mobile money prompt will be sent to {formattedPhone}.
             </Text>
-            
+
             <View style={styles.modalButtons}>
               <Button
                 title="Cancel"
@@ -346,7 +340,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Icon name="check-circle" type="material" color="#4CAF50" size={48} />
+            <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(48)} />
             <Text style={styles.modalTitle}>Thank You!</Text>
             <Text style={styles.modalMessage}>
               Your generous donation of UGX {parseInt(donationAmount || '0').toLocaleString()} has been received.
@@ -354,7 +348,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
             <Text style={styles.modalSubMessage}>
               You're helping make mental health care accessible to those who need it most. Together, we're building a healthier community.
             </Text>
-            
+
             <Button
               title="Done"
               buttonStyle={styles.successButton}
@@ -376,58 +370,58 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    padding: scale(20),
   },
   heroCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 25,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(25),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
     alignItems: 'center',
   },
   heroTitle: {
-    fontSize: 22,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: scale(15),
+    marginBottom: scale(10),
     textAlign: 'center',
     fontFamily: appFonts.headerTextBold,
   },
   heroMessage: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey2,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: moderateScale(22),
     fontFamily: appFonts.headerTextRegular,
   },
   impactSection: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextBold,
   },
   statsGrid: {
@@ -437,83 +431,83 @@ const styles = StyleSheet.create({
   },
   statCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: scale(12),
+    padding: scale(15),
     width: '48%',
-    marginBottom: 12,
+    marginBottom: scale(12),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    marginBottom: 5,
+    marginBottom: scale(5),
     fontFamily: appFonts.headerTextBold,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
     textAlign: 'center',
     fontFamily: appFonts.headerTextRegular,
   },
   howItWorksCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   howItWorksItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   howItWorksText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginLeft: 12,
-    lineHeight: 20,
+    marginLeft: scale(12),
+    lineHeight: moderateScale(20),
     fontFamily: appFonts.headerTextRegular,
   },
   section: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 15,
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextRegular,
   },
   predefinedAmountsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   amountChip: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 15,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    marginBottom: 10,
+    borderRadius: scale(15),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(15),
+    marginBottom: scale(10),
     borderWidth: 2,
     borderColor: appColors.grey4,
     width: '48%',
@@ -524,17 +518,17 @@ const styles = StyleSheet.create({
     borderColor: appColors.AppBlue,
   },
   amountChipText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   selectedAmountChipText: {
     color: appColors.AppBlue,
   },
   impactText: {
-    fontSize: 11,
+    fontSize: moderateScale(11),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
@@ -543,92 +537,92 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   customAmountContainer: {
-    marginTop: 10,
+    marginTop: scale(10),
   },
   customAmountLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginBottom: 10,
+    marginBottom: scale(10),
     fontFamily: appFonts.headerTextRegular,
   },
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    borderRadius: scale(10),
+    paddingHorizontal: scale(15),
     borderWidth: 1,
     borderColor: appColors.grey4,
   },
   currencyPrefix: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
-    marginRight: 10,
+    marginRight: scale(10),
     fontFamily: appFonts.headerTextRegular,
   },
   amountInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    paddingVertical: 15,
+    paddingVertical: scale(15),
     fontFamily: appFonts.headerTextRegular,
   },
   summaryCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    borderLeftWidth: 4,
+    shadowRadius: scale(2),
+    borderLeftWidth: scale(4),
     borderLeftColor: appColors.AppBlue,
   },
   summaryTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
+    marginBottom: scale(15),
     fontFamily: appFonts.headerTextBold,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: scale(10),
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   summaryValue: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
   footer: {
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   donateButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 25,
-    paddingVertical: 15,
+    borderRadius: scale(25),
+    paddingVertical: scale(15),
   },
   donateButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
@@ -642,39 +636,39 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: scale(20),
   },
   modalContent: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 30,
+    borderRadius: scale(20),
+    padding: scale(30),
     alignItems: 'center',
     width: '100%',
-    maxWidth: 350,
+    maxWidth: scale(350),
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: 15,
-    marginBottom: 10,
+    marginTop: scale(15),
+    marginBottom: scale(10),
     textAlign: 'center',
     fontFamily: appFonts.headerTextBold,
   },
   modalMessage: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey2,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 10,
+    lineHeight: moderateScale(22),
+    marginBottom: scale(10),
     fontFamily: appFonts.headerTextRegular,
   },
   modalSubMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 25,
+    lineHeight: moderateScale(20),
+    marginBottom: scale(25),
     fontFamily: appFonts.headerTextRegular,
   },
   modalButtons: {
@@ -684,35 +678,35 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 20,
-    paddingVertical: 12,
+    borderRadius: scale(20),
+    paddingVertical: scale(12),
     flex: 1,
-    marginRight: 10,
+    marginRight: scale(10),
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   confirmButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 20,
-    paddingVertical: 12,
+    borderRadius: scale(20),
+    paddingVertical: scale(12),
     flex: 1,
-    marginLeft: 10,
+    marginLeft: scale(10),
   },
   confirmButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   successButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    minWidth: 120,
+    borderRadius: scale(20),
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(40),
+    minWidth: scale(120),
   },
 });
 

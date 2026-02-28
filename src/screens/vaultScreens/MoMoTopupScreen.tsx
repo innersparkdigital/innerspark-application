@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
 
@@ -72,7 +73,7 @@ const MoMoTopupScreen = ({ navigation }) => {
 
     // Process topup
     setIsLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
@@ -80,12 +81,12 @@ const MoMoTopupScreen = ({ navigation }) => {
         description: `Successfully topped up UGX ${parseInt(topupAmount).toLocaleString()}`,
         duration: 3000,
       });
-      
+
       // Clear form
       setTopupAmount('');
       setPhone('');
       setFormattedPhone('');
-      
+
       // Navigate back
       navigation.goBack();
     }, 2000);
@@ -95,18 +96,18 @@ const MoMoTopupScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.headerBottomRow}>
           <Text style={styles.headerTitle}>MoMo Top-up</Text>
           <Text style={styles.headerSubtitle}>Add more funds to your WellnessVault</Text>
@@ -115,7 +116,7 @@ const MoMoTopupScreen = ({ navigation }) => {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.formContainer}>
-          
+
           {/* Topup Amount Section */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Topup Amount</Text>
@@ -142,6 +143,7 @@ const MoMoTopupScreen = ({ navigation }) => {
               inputValueSetter={setPhone}
               countrySupportSetter={setIsCountrySupported}
               formattedValueSetter={setFormattedPhone}
+              onPickerPress={() => { }}
               isInputEditable={!isLoading}
             />
           </View>
@@ -171,34 +173,34 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
+    paddingBottom: scale(30),
+    paddingHorizontal: scale(20),
   },
   headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   headerBottomRow: {
     alignItems: 'center',
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: scale(5),
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
     opacity: 0.9,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
   },
   scrollView: {
@@ -206,67 +208,67 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     backgroundColor: appColors.CardBackground,
-    margin: 20,
-    borderRadius: 20,
-    padding: 30,
+    margin: scale(20),
+    borderRadius: scale(20),
+    padding: scale(30),
     elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowRadius: scale(3),
   },
   inputSection: {
-    marginBottom: 30,
+    marginBottom: scale(30),
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontWeight: '600',
-    marginBottom: 15,
-    fontFamily: appFonts.appTextMedium,
+    marginBottom: scale(15),
+    fontFamily: appFonts.bodyTextMedium,
   },
   inputBlockRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
     borderWidth: 1,
     borderColor: appColors.grey4,
-    borderRadius: 25,
-    marginVertical: 8,
+    borderRadius: scale(25),
+    marginVertical: scale(8),
   },
   currencyPrefix: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    marginRight: 15,
-    fontFamily: appFonts.appTextBold,
+    marginRight: scale(15),
+    fontFamily: appFonts.headerTextBold,
   },
   amountInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
     paddingVertical: 0,
   },
   buttonContainer: {
-    marginTop: 20,
+    marginTop: scale(20),
   },
   topupButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 12,
-    paddingVertical: 18,
+    borderRadius: scale(12),
+    paddingVertical: scale(18),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   topupButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
 });
 

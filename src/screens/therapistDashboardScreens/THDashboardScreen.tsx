@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Badge } from '@rneui/themed';
 import { useSelector, useDispatch } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getFirstName } from '../../global/LHShortcuts';
 import { appImages } from '../../global/Data';
@@ -11,6 +12,8 @@ import { getDashboardStats, getAvailability, getAnalyticsOverview, getRevenueAna
 import { updateDashboardStats, updateAvailability, updateTherapistProfile, updateUpcomingEventsCount } from '../../features/therapist/dashboardSlice';
 import { updateRevenueAnalytics } from '../../features/therapist/analyticsSlice';
 import { useFocusEffect } from '@react-navigation/native';
+import { useNotificationsSync } from '../../hooks/useNotificationsSync';
+import { selectUnreadCount } from '../../features/notifications/notificationSlice';
 
 const THDashboardScreen = ({ navigation }: any) => {
   const dispatch = useDispatch();
@@ -18,8 +21,12 @@ const THDashboardScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const dashboardStats = useSelector((state: any) => state.therapistDashboard.stats);
   const upcomingEventsCount = useSelector((state: any) => state.therapistDashboard.upcomingEventsCount);
+  const unreadNotifications = useSelector(selectUnreadCount);
   const [loading, setLoading] = useState(!dashboardStats);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Initialize Global Notifications Sync
+  useNotificationsSync(userDetails?.userId, 60000);
 
   // Responsive scaling factor (based on standard 375 width)
   const scale = width / 375;
@@ -243,9 +250,9 @@ const THDashboardScreen = ({ navigation }: any) => {
           >
             <View style={styles.notificationIconContainer}>
               <Icon name="notifications" type="material" color={appColors.CardBackground} size={normalizeSize(26)} />
-              {(dashboardStats?.unreadMessages || 0) > 0 && (
+              {unreadNotifications > 0 && (
                 <Badge
-                  value={(dashboardStats?.unreadMessages || 0) > 99 ? '99+' : (dashboardStats?.unreadMessages || 0)}
+                  value={unreadNotifications > 99 ? '99+' : unreadNotifications}
                   status="error"
                   containerStyle={styles.badgeContainer}
                   textStyle={styles.badgeText}
@@ -331,7 +338,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: 140,
+    width: scale(140),
     height: 36,
   },
   iconButton: {
@@ -478,7 +485,7 @@ const styles = StyleSheet.create({
     minWidth: 50,
   },
   cardCount: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,

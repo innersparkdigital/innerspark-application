@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Skeleton } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
 import PanicButtonComponent from '../components/PanicButtonComponent';
 import { useToast } from 'native-base';
 import LHGenericHeader from '../components/LHGenericHeader';
@@ -95,9 +96,9 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
       console.log('🔄 Loading events...');
       console.log('📋 Active Tab:', activeTab);
       console.log('👤 User ID:', userId);
-      
+
       let apiResponse;
-      
+
       if (activeTab === 'my-events') {
         console.log('📞 Calling getMyEvents API...');
         apiResponse = await getMyEvents(userId);
@@ -105,13 +106,13 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
         console.log('📞 Calling getEvents API...');
         apiResponse = await getEvents(1, 20);
       }
-      
+
       console.log('✅ API Response:', JSON.stringify(apiResponse, null, 2));
-      
+
       // Extract events from API response
       const apiEvents = apiResponse?.data?.events || [];
       console.log('📊 Events count:', apiEvents.length);
-      
+
       // Map API events to our Event interface
       const mappedEvents: Event[] = apiEvents
         .filter((event: any) => {
@@ -128,9 +129,9 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
           date: event.date,
           time: event.time,
           // Handle cover image - prepend uploads base URL if it's a relative path, fallback to default
-          coverImage: event.coverImage && !event.coverImage.startsWith('http') 
+          coverImage: event.coverImage && !event.coverImage.startsWith('http')
             ? { uri: `${UPLOADS_BASE_URL}/${event.coverImage}` }
-            : event.coverImage 
+            : event.coverImage
               ? { uri: event.coverImage }
               : require('../assets/images/is-default.png'),
           location: event.location || 'Location TBD',
@@ -160,12 +161,12 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
             paidAmount: event.paidAmount,
           }),
         }));
-      
+
       console.log('✅ Mapped Events:', mappedEvents.length);
-      
+
       // Use real API data
       setEvents(mappedEvents);
-      
+
       // Update Redux store with registered event IDs
       if (activeTab === 'my-events') {
         // If viewing my-events, these are all registered
@@ -178,13 +179,13 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
         dispatch(setRegisteredEventIds(registeredIds));
         console.log('✅ Updated registered event IDs in store:', registeredIds);
       }
-      
+
       // toast.show({
       //   description: `Loaded ${mappedEvents.length} event${mappedEvents.length !== 1 ? 's' : ''} successfully!`,
       //   duration: 2000,
       //   placement: 'top',
       // });
-      
+
     } catch (error: any) {
       console.error('❌ Error loading events:', {
         message: error.message,
@@ -192,10 +193,10 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
         status: error.response?.status,
         stack: error.stack,
       });
-      
+
       // Clear events on error
       setEvents([]);
-      
+
       // Only show user-friendly message in toast
       const userMessage = error.response?.data?.message || 'Failed to load events. Please try again.';
       toast.show({
@@ -216,21 +217,21 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
   const filteredEvents = events.filter(event => {
     // Search filter - check title, description, location, organizer
     const searchLower = searchQuery.toLowerCase().trim();
-    const matchesSearch = searchLower === '' || 
+    const matchesSearch = searchLower === '' ||
       event.title.toLowerCase().includes(searchLower) ||
       event.shortDescription.toLowerCase().includes(searchLower) ||
       event.location.toLowerCase().includes(searchLower) ||
       event.organizer.toLowerCase().includes(searchLower) ||
       event.category.toLowerCase().includes(searchLower);
-    
+
     // Category filter (only for events tab)
     const matchesCategory = activeTab === 'events'
       ? (selectedCategory === 'All' || event.category === selectedCategory)
       : true;
-    
+
     // Tab filter
     const matchesTab = activeTab === 'events' ? true : event.isRegistered;
-    
+
     return matchesSearch && matchesCategory && matchesTab;
   });
 
@@ -272,18 +273,18 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
 
   const EventSkeleton: React.FC = () => (
     <View style={styles.eventCard}>
-      <Skeleton animation="pulse" width="100%" height={180} style={styles.skeletonImage} />
+      <Skeleton animation="pulse" width="100%" height={scale(180)} style={styles.skeletonImage} />
       <View style={styles.eventContent}>
-        <Skeleton animation="pulse" width="90%" height={24} style={{ marginVertical: 8 }} />
-        <Skeleton animation="pulse" width="100%" height={16} />
-        <Skeleton animation="pulse" width="80%" height={16} style={{ marginTop: 4 }} />
+        <Skeleton animation="pulse" width="90%" height={scale(24)} style={{ marginVertical: scale(8) }} />
+        <Skeleton animation="pulse" width="100%" height={scale(16)} />
+        <Skeleton animation="pulse" width="80%" height={scale(16)} style={{ marginTop: scale(4) }} />
       </View>
     </View>
   );
 
   const EmptyState: React.FC = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="event-busy" type="material" color={appColors.AppGray} size={80} />
+      <Icon name="event-busy" type="material" color={appColors.AppGray} size={moderateScale(80)} />
       <Text style={styles.emptyTitle}>
         {activeTab === 'my-events' ? 'No Registered Events' : 'No Events Found'}
       </Text>
@@ -304,12 +305,12 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
       <PanicButtonComponent position="bottom-right" size="medium" quickAction="screen" />
-      
+
       <View style={styles.header}>
         <View style={styles.headerRow}>
           {navigation.canGoBack && navigation.canGoBack() ? (
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+              <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
             </TouchableOpacity>
           ) : (
             <View style={styles.backButton} />
@@ -324,15 +325,15 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'events' && styles.activeTab]}
           onPress={() => setActiveTab('events')}
         >
-          <Icon 
-            name="event" 
-            type="material" 
-            color={activeTab === 'events' ? appColors.AppBlue : appColors.grey3} 
-            size={20} 
+          <Icon
+            name="event"
+            type="material"
+            color={activeTab === 'events' ? appColors.AppBlue : appColors.grey3}
+            size={moderateScale(20)}
           />
           <Text style={[
             styles.tabText,
@@ -342,15 +343,15 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'my-events' && styles.activeTab]}
           onPress={() => setActiveTab('my-events')}
         >
-          <Icon 
-            name="event-available" 
-            type="material" 
-            color={activeTab === 'my-events' ? appColors.AppBlue : appColors.grey3} 
-            size={20} 
+          <Icon
+            name="event-available"
+            type="material"
+            color={activeTab === 'my-events' ? appColors.AppBlue : appColors.grey3}
+            size={moderateScale(20)}
           />
           <Text style={[
             styles.tabText,
@@ -397,7 +398,7 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
                     {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'} found
                   </Text>
                   {(searchQuery.trim() !== '' || selectedCategory !== 'All') && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => {
                         setSearchQuery('');
                         setSelectedCategory('All');
@@ -433,9 +434,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: 16,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingTop: scale(16),
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
   },
   headerRow: {
     flexDirection: 'row',
@@ -443,8 +444,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: scale(8),
+    borderRadius: scale(20),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerCenter: {
@@ -452,53 +453,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerRightPlaceholder: {
-    width: 40,
+    width: scale(40),
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.CardBackground,
     opacity: 0.9,
-    marginTop: 4,
+    marginTop: scale(4),
     fontFamily: appFonts.headerTextRegular,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: scale(20),
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    elevation: 2,
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(10),
+    elevation: scale(2),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 25,
-    marginHorizontal: 4,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(16),
+    borderRadius: scale(25),
+    marginHorizontal: scale(4),
   },
   activeTab: {
     backgroundColor: appColors.AppBlue + '15',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextRegular,
   },
   activeTabText: {
@@ -510,30 +511,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    elevation: 2,
+    borderRadius: scale(25),
+    paddingHorizontal: scale(15),
+    marginBottom: scale(15),
+    elevation: scale(2),
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    fontSize: 16,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(10),
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
   },
   categoryContainer: {
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   categoryChip: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 10,
+    borderRadius: scale(20),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    marginRight: scale(10),
     elevation: 1,
-    height: 36,
+    height: scale(36),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -541,7 +542,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue,
   },
   categoryChipText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
     textAlign: 'center',
@@ -551,82 +552,82 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextMedium,
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingBottom: scale(20),
   },
   eventCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    marginBottom: 20,
-    elevation: 3,
+    borderRadius: scale(15),
+    marginBottom: scale(20),
+    elevation: scale(3),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   eventImage: {
     width: '100%',
-    height: 180,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+    height: scale(180),
+    borderTopLeftRadius: scale(15),
+    borderTopRightRadius: scale(15),
     backgroundColor: appColors.AppLightGray,
   },
   skeletonImage: {
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+    borderTopLeftRadius: scale(15),
+    borderTopRightRadius: scale(15),
   },
   eventContent: {
-    padding: 16,
+    padding: scale(16),
   },
   eventHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   eventDateContainer: {
     alignItems: 'flex-start',
   },
   eventDate: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   eventTime: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
   },
   categoryBadge: {
     backgroundColor: appColors.AppLightGray,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
   },
   eventTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 8,
+    marginBottom: scale(8),
     fontFamily: appFonts.headerTextBold,
   },
   eventDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: moderateScale(20),
+    marginBottom: scale(12),
     fontFamily: appFonts.headerTextRegular,
   },
   eventFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   locationContainer: {
     flexDirection: 'row',
@@ -634,13 +635,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   locationText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextRegular,
   },
   seatsText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -655,22 +656,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   organizerText: {
-    fontSize: 13,
+    fontSize: moderateScale(13),
     color: appColors.grey2,
-    marginLeft: 8,
+    marginLeft: scale(8),
     fontFamily: appFonts.headerTextRegular,
   },
   priceContainer: {
     alignItems: 'flex-end',
   },
   freeText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: '#4CAF50',
     fontFamily: appFonts.headerTextBold,
   },
   priceText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
@@ -678,47 +679,47 @@ const styles = StyleSheet.create({
   registeredBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
+    marginTop: scale(8),
+    paddingTop: scale(8),
+    borderTopWidth: scale(1),
     borderTopColor: appColors.AppLightGray,
   },
   registeredText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: '#4CAF50',
-    marginLeft: 6,
+    marginLeft: scale(6),
     fontFamily: appFonts.headerTextMedium,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: scale(60),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: 16,
+    marginTop: scale(16),
     fontFamily: appFonts.headerTextBold,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     textAlign: 'center',
-    marginTop: 8,
-    marginHorizontal: 40,
+    marginTop: scale(8),
+    marginHorizontal: scale(40),
     fontFamily: appFonts.headerTextRegular,
   },
   retryButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginTop: 16,
+    borderRadius: scale(20),
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(20),
+    marginTop: scale(16),
   },
   retryButtonText: {
     color: appColors.CardBackground,
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
@@ -726,21 +727,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 4,
-    paddingVertical: 8,
-    marginBottom: 12,
+    paddingHorizontal: scale(4),
+    paddingVertical: scale(8),
+    marginBottom: scale(12),
   },
   searchResultsText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextMedium,
   },
   clearFiltersButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingVertical: scale(4),
+    paddingHorizontal: scale(12),
   },
   clearFiltersText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
   },

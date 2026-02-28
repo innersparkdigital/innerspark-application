@@ -15,11 +15,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 
 const BookingCheckoutScreen = ({ navigation, route }) => {
-  const { 
-    therapist, 
+  const {
+    therapist,
     selectedSlot,
     isExistingAppointment = false,
     appointmentId = null,
@@ -27,7 +28,7 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
     location = '2 Avenue Street, Nakawa - Kampala Uganda, 3 km',
   } = route.params;
   const toast = useToast();
-  
+
   const [message, setMessage] = useState('');
   const [reason, setReason] = useState(isExistingAppointment ? 'Payment for scheduled appointment' : '');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wellness_vault');
@@ -72,14 +73,14 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
     // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false);
-      
+
       if (isExistingAppointment) {
         // Payment for existing appointment
         toast.show({
           description: 'Payment successful! Your appointment is now confirmed.',
           duration: 3000,
         });
-        
+
         // Navigate back to appointments screen
         navigation.navigate('AppointmentsScreen');
       } else {
@@ -106,41 +107,41 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>
-          {isExistingAppointment ? 'Complete Payment' : `${therapist.name} Confirmation`}
-        </Text>
+            {isExistingAppointment ? 'Complete Payment' : `${therapist.name} Confirmation`}
+          </Text>
         </View>
         <Avatar
           source={therapist.image}
-          size={40}
+          size={scale(40)}
           rounded
         />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        
+
         {/* Appointment Details */}
         <View style={styles.appointmentCard}>
           <View style={styles.dateTimeContainer}>
             <Text style={styles.appointmentDate}>{appointmentDetails.date}</Text>
             <Text style={styles.appointmentTime}>{appointmentDetails.time}</Text>
           </View>
-          
+
           <View style={styles.locationContainer}>
-            <Icon name="location-on" type="material" color={appColors.grey2} size={18} />
+            <Icon name="location-with-marker" type="entypo" color={appColors.grey2} size={moderateScale(18)} />
             <Text style={styles.locationText}>{appointmentDetails.location}</Text>
           </View>
-          
+
           <View style={styles.sessionDetails}>
             <Text style={styles.sessionType}>{appointmentDetails.sessionType}</Text>
             <Text style={styles.sessionDuration}>{appointmentDetails.duration}</Text>
@@ -194,7 +195,7 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
             <Text style={styles.sectionTitle}>Pay via WellnessVault</Text>
             <TouchableOpacity style={styles.manageVaultButton}>
               <Text style={styles.manageVaultText}>Manage Vault</Text>
-              <Icon name="chevron-right" type="material" color={appColors.AppBlue} size={20} />
+              <Icon name="chevron-right" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
             </TouchableOpacity>
           </View>
 
@@ -212,11 +213,11 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
                   styles.paymentMethodIcon,
                   method.id === 'wellness_vault' && styles.wellnessVaultIcon
                 ]}>
-                  <Icon 
-                    name={method.icon} 
-                    type="material" 
-                    color={method.id === 'wellness_vault' ? '#FFF' : appColors.AppBlue} 
-                    size={24} 
+                  <Icon
+                    name={method.icon}
+                    type="material"
+                    color={method.id === 'wellness_vault' ? '#FFF' : appColors.AppBlue}
+                    size={moderateScale(24)}
                   />
                 </View>
                 <View style={styles.paymentMethodInfo}>
@@ -224,9 +225,9 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
                   <Text style={styles.paymentMethodBalance}>{method.balance}</Text>
                 </View>
               </View>
-              
+
               {selectedPaymentMethod === method.id && (
-                <Icon name="check-circle" type="material" color="#4CAF50" size={24} />
+                <Icon name="check-circle" type="material" color="#4CAF50" size={moderateScale(24)} />
               )}
             </TouchableOpacity>
           ))}
@@ -260,8 +261,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.AppBlue,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingBottom: scale(20),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
@@ -271,29 +272,29 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
-    marginRight: 15,
+    padding: scale(8),
+    borderRadius: scale(20),
+    marginRight: scale(15),
   },
   headerInfo: {
     flex: 1,
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.headerTextBold,
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    padding: scale(20),
   },
   appointmentCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 20,
-    padding: 25,
-    marginBottom: 20,
+    borderRadius: scale(20),
+    padding: scale(25),
+    marginBottom: scale(20),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -303,32 +304,32 @@ const styles = StyleSheet.create({
   dateTimeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   appointmentDate: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginRight: 20,
-    fontFamily: appFonts.appTextBold,
+    marginRight: scale(20),
+    fontFamily: appFonts.bodyTextBold,
   },
   appointmentTime: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: '#4CAF50',
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.bodyTextBold,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   locationText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    marginLeft: 8,
+    marginLeft: scale(8),
     flex: 1,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   sessionDetails: {
     flexDirection: 'row',
@@ -336,21 +337,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sessionType: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
-    fontFamily: appFonts.appTextMedium,
+    fontFamily: appFonts.bodyTextMedium,
   },
   sessionDuration: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   inputCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(15),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -358,24 +359,24 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
-    marginBottom: 10,
-    fontFamily: appFonts.appTextMedium,
+    marginBottom: scale(10),
+    fontFamily: appFonts.bodyTextMedium,
   },
   textInput: {
-    fontSize: 15,
+    fontSize: moderateScale(15),
     color: appColors.grey1,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
     textAlignVertical: 'top',
-    minHeight: 60,
+    minHeight: scale(60),
   },
   paymentSummaryCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(15),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -383,32 +384,32 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginBottom: 15,
-    fontFamily: appFonts.appTextBold,
+    marginBottom: scale(15),
+    fontFamily: appFonts.bodyTextBold,
   },
   priceContainer: {
     alignItems: 'center',
   },
   priceAmount: {
-    fontSize: 32,
+    fontSize: moderateScale(32),
     fontWeight: 'bold',
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextBold,
-    marginBottom: 5,
+    fontFamily: appFonts.bodyTextBold,
+    marginBottom: scale(5),
   },
   priceLabel: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   paymentMethodsCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: scale(15),
+    padding: scale(20),
+    marginBottom: scale(20),
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -419,26 +420,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: scale(15),
   },
   manageVaultButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   manageVaultText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    fontFamily: appFonts.appTextMedium,
-    marginRight: 5,
+    fontFamily: appFonts.bodyTextMedium,
+    marginRight: scale(5),
   },
   paymentMethodItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    borderRadius: 12,
-    marginBottom: 10,
+    paddingVertical: scale(15),
+    paddingHorizontal: scale(15),
+    borderRadius: scale(12),
+    marginBottom: scale(10),
     borderWidth: 1,
     borderColor: appColors.grey4,
   },
@@ -452,13 +453,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   paymentMethodIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
+    width: scale(45),
+    height: scale(45),
+    borderRadius: scale(22.5),
     backgroundColor: appColors.AppLightGray,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 15,
+    marginRight: scale(15),
   },
   wellnessVaultIcon: {
     backgroundColor: '#FF9800',
@@ -467,20 +468,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   paymentMethodName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
-    fontFamily: appFonts.appTextMedium,
-    marginBottom: 3,
+    fontFamily: appFonts.bodyTextMedium,
+    marginBottom: scale(3),
   },
   paymentMethodBalance: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.appTextRegular,
+    fontFamily: appFonts.bodyTextRegular,
   },
   paymentFooter: {
     backgroundColor: appColors.CardBackground,
-    padding: 20,
+    padding: scale(20),
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -489,8 +490,8 @@ const styles = StyleSheet.create({
   },
   payButton: {
     backgroundColor: appColors.AppBlue,
-    borderRadius: 15,
-    paddingVertical: 15,
+    borderRadius: scale(15),
+    paddingVertical: scale(15),
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -501,10 +502,10 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.grey3,
   },
   payButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
-    fontFamily: appFonts.appTextBold,
+    fontFamily: appFonts.buttonTextBold,
   },
 });
 

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
@@ -230,15 +231,15 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
+          <Icon name="arrow-back" type="material" color={appColors.grey1} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Report Details</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-            <Icon name="share" type="material" color={appColors.AppBlue} size={20} />
+            <Icon name="share" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={handleEmail}>
-            <Icon name="email" type="material" color={appColors.AppBlue} size={20} />
+            <Icon name="email" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
           </TouchableOpacity>
         </View>
       </View>
@@ -256,7 +257,7 @@ const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ navigation, rou
                 name={tab.icon}
                 type="material"
                 color={selectedTab === tab.key ? appColors.AppBlue : appColors.grey3}
-                size={18}
+                size={moderateScale(18)}
               />
               <Text style={[
                 styles.tabText,
@@ -287,22 +288,22 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: appColors.CardBackground,
     paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(20),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   backButton: {
-    padding: 8,
+    padding: scale(8),
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
@@ -313,34 +314,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   actionButton: {
-    padding: 8,
-    marginLeft: 8,
+    padding: scale(8),
+    marginLeft: scale(8),
   },
   tabBar: {
     backgroundColor: appColors.CardBackground,
-    paddingVertical: 10,
+    paddingVertical: scale(10),
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 4,
-    borderRadius: 20,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    marginHorizontal: scale(4),
+    borderRadius: scale(20),
   },
   activeTab: {
     backgroundColor: appColors.AppBlue + '15',
   },
   tabText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 6,
+    marginLeft: scale(6),
   },
   activeTabText: {
     color: appColors.AppBlue,
@@ -351,39 +352,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailSection: {
-    padding: 20,
+    padding: scale(20),
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(24),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 20,
+    marginBottom: scale(20),
   },
   trendCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   cardDescription: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: moderateScale(20),
+    marginBottom: scale(16),
   },
   detailMetrics: {
     flexDirection: 'row',
@@ -393,147 +394,147 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   metricValue: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
-    marginTop: 4,
+    marginTop: scale(4),
     textAlign: 'center',
   },
   insightsCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   insightsList: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   insightItem: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 22,
-    marginBottom: 4,
+    lineHeight: moderateScale(22),
+    marginBottom: scale(4),
   },
   themesCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   themesList: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   themeItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: scale(8),
     borderBottomWidth: 1,
     borderBottomColor: appColors.grey6,
   },
   themeName: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextMedium,
   },
   themeCount: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
   },
   achievementsCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   achievementsList: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   achievementItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   achievementText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
   },
   goalsCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   goalsList: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   goalItem: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    lineHeight: 22,
-    marginBottom: 4,
+    lineHeight: moderateScale(22),
+    marginBottom: scale(4),
   },
   recommendationsCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: scale(16),
+    padding: scale(20),
+    marginBottom: scale(16),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   recommendationsList: {
-    marginTop: 8,
+    marginTop: scale(8),
   },
   recommendationItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   recommendationText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.headerTextRegular,
-    marginLeft: 12,
+    marginLeft: scale(12),
     flex: 1,
-    lineHeight: 20,
+    lineHeight: moderateScale(20),
   },
   bottomSpacing: {
-    height: 20,
+    height: scale(20),
   },
 });
 

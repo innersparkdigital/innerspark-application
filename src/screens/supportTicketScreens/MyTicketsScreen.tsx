@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadTickets, refreshTickets } from '../../utils/supportTicketsManager';
@@ -58,7 +59,7 @@ const MyTicketsScreen: React.FC<MyTicketsScreenProps> = ({ navigation }) => {
   }, [selectedFilter]);
 
   const loadTicketsData = async () => {
-    const result = await dispatch(loadTickets(userId));
+    const result = await (dispatch as any)(loadTickets(userId));
     if (!result.success) {
       toast.show({
         description: 'Failed to load tickets',
@@ -68,7 +69,7 @@ const MyTicketsScreen: React.FC<MyTicketsScreenProps> = ({ navigation }) => {
   };
 
   const handleRefresh = async () => {
-    const result = await dispatch(refreshTickets(userId));
+    const result = await (dispatch as any)(refreshTickets(userId));
     if (!result.success) {
       toast.show({
         description: 'Failed to refresh tickets',
@@ -96,8 +97,8 @@ const MyTicketsScreen: React.FC<MyTicketsScreenProps> = ({ navigation }) => {
     } else if (diffInDays < 7) {
       return `${Math.floor(diffInDays)} days ago`;
     } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
       });
@@ -178,11 +179,11 @@ const MyTicketsScreen: React.FC<MyTicketsScreenProps> = ({ navigation }) => {
       <View style={styles.ticketHeader}>
         <View style={styles.ticketInfo}>
           <View style={styles.ticketIdRow}>
-            <Icon 
-              name={getCategoryIcon(item.category)} 
-              type="material" 
-              color={appColors.AppBlue} 
-              size={16} 
+            <Icon
+              name={getCategoryIcon(item.category)}
+              type="material"
+              color={appColors.AppBlue}
+              size={16}
             />
             <Text style={styles.ticketId}>{item.id}</Text>
             {item.isUnread && <View style={styles.unreadBadge} />}
@@ -260,15 +261,15 @@ const MyTicketsScreen: React.FC<MyTicketsScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" type="material" color={appColors.grey1} size={24} />
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>My Support Tickets</Text>
-        
+
         <View style={styles.headerSpacer} />
       </View>
 
@@ -317,9 +318,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.CardBackground,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
@@ -329,42 +330,42 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },
   headerSpacer: {
-    width: 40,
+    width: scale(40),
   },
   filtersContainer: {
     backgroundColor: appColors.CardBackground,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    borderBottomWidth: scale(1),
     borderBottomColor: appColors.grey6,
   },
   filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    borderRadius: scale(20),
+    marginRight: scale(8),
     backgroundColor: appColors.grey6,
   },
   filterButtonActive: {
     backgroundColor: appColors.AppBlue,
   },
   filterButtonText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: '500',
   },
   filterButtonTextActive: {
@@ -374,29 +375,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ticketsContent: {
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   ticketCard: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: scale(16),
+    marginVertical: scale(6),
+    padding: scale(16),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   unreadTicket: {
-    borderLeftWidth: 4,
+    borderLeftWidth: scale(4),
     borderLeftColor: appColors.AppBlue,
   },
   ticketHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   ticketInfo: {
     flex: 1,
@@ -404,193 +405,193 @@ const styles = StyleSheet.create({
   ticketIdRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   ticketId: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   unreadBadge: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
     backgroundColor: appColors.AppBlue,
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
+    marginRight: scale(8),
   },
   statusText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
   priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    borderRadius: scale(12),
+    borderWidth: scale(1),
   },
   priorityText: {
-    fontSize: 12,
-    fontFamily: appFonts.regularText,
+    fontSize: moderateScale(12),
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
   updatedTime: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   ticketSubject: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '600',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 12,
-    lineHeight: 22,
+    marginBottom: scale(12),
+    lineHeight: scale(22),
   },
   ticketFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   responseInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   responseCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
-    marginLeft: 4,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(4),
   },
   lastResponse: {
     backgroundColor: appColors.grey6,
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
+    padding: scale(12),
+    borderRadius: scale(8),
+    marginTop: scale(8),
   },
   lastResponseText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
-    lineHeight: 18,
+    fontFamily: appFonts.bodyTextRegular,
+    lineHeight: scale(18),
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 64,
+    paddingHorizontal: scale(32),
+    paddingVertical: scale(64),
   },
   emptyStateTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey2,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   emptyStateText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: scale(20),
+    marginBottom: scale(24),
   },
   createTicketButton: {
     backgroundColor: appColors.AppBlue,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: scale(32),
+    paddingVertical: scale(12),
+    borderRadius: scale(8),
   },
   createTicketButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    bottom: scale(24),
+    right: scale(24),
+    width: scale(56),
+    height: scale(56),
+    borderRadius: scale(28),
     backgroundColor: appColors.AppBlue,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: scale(4) },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: scale(8),
   },
   skeletonContainer: {
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   skeletonCard: {
     backgroundColor: appColors.CardBackground,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: scale(16),
+    marginVertical: scale(6),
+    padding: scale(16),
+    borderRadius: scale(12),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   skeletonHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: scale(12),
   },
   skeletonLine: {
-    height: 16,
-    width: 120,
+    height: scale(16),
+    width: scale(120),
     backgroundColor: appColors.grey6,
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
   skeletonSmallLine: {
-    height: 12,
-    width: 60,
+    height: scale(12),
+    width: scale(60),
     backgroundColor: appColors.grey6,
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
   skeletonContent: {
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   skeletonLongLine: {
-    height: 14,
+    height: scale(14),
     width: '100%',
     backgroundColor: appColors.grey6,
-    borderRadius: 4,
-    marginBottom: 8,
+    borderRadius: scale(4),
+    marginBottom: scale(8),
   },
   skeletonMediumLine: {
-    height: 14,
+    height: scale(14),
     width: '70%',
     backgroundColor: appColors.grey6,
-    borderRadius: 4,
+    borderRadius: scale(4),
   },
 });
 

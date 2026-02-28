@@ -1,37 +1,38 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateSessionUserId } from '../../features/user/userDataSlice';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    TextInput,  
-    Image, 
-    Pressable, 
-    ActivityIndicator, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    TextInput,
+    Image,
+    Pressable,
+    ActivityIndicator,
     ImageBackground,
 
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';  
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Icon } from '@rneui/base';
 import { useToast } from 'native-base';
 import { appColors, parameters } from '../../global/Styles';
+import { scale, moderateScale, verticalScale } from '../../global/Scaling';
 import { appImages } from '../../global/Data';
 import LHGenericHeader from '../../components/LHGenericHeader';
 import OTPInputView from '@twotalltotems/react-native-otp-input';
 import { verifyResetCode, resetPassword } from '../../api/shared/auth';
 
 
-export default function PasswordResetOTPScreen({ navigation, route }){
+export default function PasswordResetOTPScreen({ navigation, route }) {
 
     const dispatch = useDispatch();
     const toast = useToast();
-    
+
     // Get data from previous screen
-    const { passwordResetData } = route.params; 
+    const { passwordResetData } = route.params;
     const userEmail = passwordResetData?.email || ''; // email or phone number
     const resetType = passwordResetData?.type || 'email'; // password reset type: email or phone
-    
+
     const [finalOTP, setFinalOTP] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isReloadingOTP, setIsReloadingOTP] = useState(false);
@@ -41,8 +42,8 @@ export default function PasswordResetOTPScreen({ navigation, route }){
     const [otpCode, setOTPCode] = useState('');
     const [restartSMSListener, setRestartSMSListener] = useState(false);
 
-     // Toast Notifications
-     const notifyWithToast = (description) => {
+    // Toast Notifications
+    const notifyWithToast = (description) => {
         toast.show({
             description: description,
             duration: 1000,
@@ -54,14 +55,14 @@ export default function PasswordResetOTPScreen({ navigation, route }){
         // Validation
         if (!isSubmitEnabled) {
             console.log('OTP not complete');
-            return; 
+            return;
         }
 
         let OTP_Code = code || finalOTP;
 
         if (OTP_Code.length < 6) {
             notifyWithToast("Enter complete OTP code");
-            return; 
+            return;
         }
 
         setIsLoading(true);
@@ -75,12 +76,12 @@ export default function PasswordResetOTPScreen({ navigation, route }){
         // making API request to verify OTP Code using auth.js
         try {
             const response = await verifyResetCode(userEmail, OTP_Code);
-            
+
             // checking the status
             if (response.status === 200) {
 
                 // IF status is successful
-                if (response.data.status === "success") { 
+                if (response.data.status === "success") {
 
                     console.log(response.data);
                     notifyWithToast("OTP Verified Successfully!");
@@ -93,9 +94,9 @@ export default function PasswordResetOTPScreen({ navigation, route }){
                         resetToken: resetToken,
                         email: userEmail,
                     });
-                    
+
                     setIsLoading(false);
-                    
+
                 } else {
                     console.log(response.data);
                     notifyWithToast(response.data.message || "OTP Verification Failed!");
@@ -112,48 +113,48 @@ export default function PasswordResetOTPScreen({ navigation, route }){
             setIsLoading(false);
         }
     }
-    
 
-    return(
-        <SafeAreaView style={ styles.container }>
-            <ImageBackground source={appImages.laundryBg} style={{ flex: 1, backgroundColor:appColors.CardBackground }}>
-                <View style={{ flex:1, backgroundColor:appColors.CardBackgroundFade2 }}>
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <ImageBackground source={appImages.laundryBg} style={{ flex: 1, backgroundColor: appColors.CardBackground }}>
+                <View style={{ flex: 1, backgroundColor: appColors.CardBackgroundFade2 }}>
 
                     {/* Header Back Button */}
-                    <View style={{ paddingVertical:parameters.headerHeightTinier }}>
+                    <View style={{ paddingVertical: parameters.headerHeightTinier }}>
                         <LHGenericHeader
-                            title='Sign In' 
+                            title='Sign In'
                             showTitle={false}
                             showLeftIcon={true}
-                            leftIconPressed={ () => { navigation.goBack(); } } 
+                            leftIconPressed={() => { navigation.goBack(); }}
                         />
                     </View>
 
                     {/* OTP Container */}
-                    <View style={{ flex:1, paddingVertical:20 }}>
-                        <View style={ styles.OPTContainer }>
-                            
+                    <View style={{ flex: 1, paddingVertical: verticalScale(20) }}>
+                        <View style={styles.OPTContainer}>
+
                             {/* Logo */}
-                            <View style={{ justifyContent: "center", alignItems:"center" }}>
-                                <Image source={appImages.logoRound} style={{ width:280, height:60, resizeMode:'contain' }} />
+                            <View style={{ justifyContent: "center", alignItems: "center" }}>
+                                <Image source={appImages.logoRound} style={{ width: scale(280), height: scale(60), resizeMode: 'contain' }} />
                             </View>
-                  
+
                             {/* OTP Header */}
-                            <View style={{ justifyContent:'center', alignItems:'center', paddingVertical:10 }}>
-                                <Text style={{ fontSize:28, color:appColors.AppBlue, fontWeight:'bold', paddingVertical:5 }}>Verify OTP</Text>
-                                <Text style={{ fontSize:14, color:appColors.AppBlue, fontWeight:'500', paddingVertical:5, textAlign:'center' }}>
-                                   Please enter the 6-digit code sent to your { resetType === 'email' ? 'email address' : 'phone number'} to complete verification.
+                            <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: verticalScale(10) }}>
+                                <Text style={{ fontSize: moderateScale(28), color: appColors.AppBlue, fontWeight: 'bold', paddingVertical: verticalScale(5) }}>Verify OTP</Text>
+                                <Text style={{ fontSize: moderateScale(14), color: appColors.AppBlue, fontWeight: '500', paddingVertical: verticalScale(5), textAlign: 'center' }}>
+                                    Please enter the 6-digit code sent to your {resetType === 'email' ? 'email address' : 'phone number'} to complete verification.
                                 </Text>
                             </View>
 
                             {/* OTP Input Container */}
-                            <View style={ styles.OTPInputContainer }>
+                            <View style={styles.OTPInputContainer}>
                                 <OTPInputView
-                                    style={{ width: '100%', height: 70}}
+                                    style={{ width: '100%', height: verticalScale(70) }}
                                     pinCount={6}
                                     code={otpCode} //You can supply this prop or not. The component will be used as a controlled / uncontrolled component respectively.
-                                    onCodeChanged = {
-                                        code => { 
+                                    onCodeChanged={
+                                        code => {
                                             setOTPCode(code);
                                             if (code.length < 6) {
                                                 setIsSubmitEnabled(false);
@@ -162,11 +163,11 @@ export default function PasswordResetOTPScreen({ navigation, route }){
                                             }
                                         }
                                     }
-                                    autoFocusOnLoad = {true}
+                                    autoFocusOnLoad={true}
                                     codeInputFieldStyle={styles.OTPVerifyInput}
                                     keyboardType='number-pad'
                                     codeInputHighlightStyle={styles.underlineStyleHighLighted}
-                                    onCodeFilled = { (code) => {
+                                    onCodeFilled={(code) => {
                                         // Enable the submit OTP button
                                         setOTPCode(code);
                                         setFinalOTP(code);
@@ -178,17 +179,17 @@ export default function PasswordResetOTPScreen({ navigation, route }){
                                 />
                             </View>
 
-                            { isLoading && 
-                                <View style={{ flexDirection:'row', justifyContent:'center', paddingVertical:8 }}>
-                                    <ActivityIndicator style={{ marginHorizontal:5 }} color={appColors.AppBlue} size="small" />
-                                    <Text style={{ color:appColors.black }}>Checking OTP...</Text>
+                            {isLoading &&
+                                <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: verticalScale(8) }}>
+                                    <ActivityIndicator style={{ marginHorizontal: scale(5) }} color={appColors.AppBlue} size="small" />
+                                    <Text style={{ color: appColors.black, fontSize: moderateScale(14) }}>Checking OTP...</Text>
                                 </View>
                             }
 
                             {/* Resend OTP Code */}
-                            <View style={{ paddingVertical:5, alignItems:'center', flexDirection:'row', justifyContent:'center' }}>
-                                <Text style={{ fontSize:14, color:appColors.grey2, }}>Didn't receive the code? </Text>
-                                <Pressable 
+                            <View style={{ paddingVertical: verticalScale(5), alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                                <Text style={{ fontSize: moderateScale(14), color: appColors.grey2, }}>Didn't receive the code? </Text>
+                                <Pressable
                                     onPress={async () => {
                                         setIsReloadingOTP(true);
                                         try {
@@ -205,28 +206,28 @@ export default function PasswordResetOTPScreen({ navigation, route }){
                                     }}
                                     disabled={isReloadingOTP}
                                 >
-                                    <Text style={{ fontSize:14, color:appColors.AppBlue, fontWeight:'bold', textDecorationLine:'underline' }}>Resend Code</Text>
+                                    <Text style={{ fontSize: moderateScale(14), color: appColors.AppBlue, fontWeight: 'bold', textDecorationLine: 'underline' }}>Resend Code</Text>
                                 </Pressable>
-                                { isReloadingOTP && 
-                                    <View style={{ justifyContent:'center', paddingVertical:5 }}>
-                                        <ActivityIndicator style={{ marginHorizontal:5 }} color={appColors.AppBlue} size="small" />
+                                {isReloadingOTP &&
+                                    <View style={{ justifyContent: 'center', paddingVertical: verticalScale(5) }}>
+                                        <ActivityIndicator style={{ marginHorizontal: scale(5) }} color={appColors.AppBlue} size="small" />
                                     </View>
                                 }
                             </View>
 
 
                             {/* Verify OTP Button */}
-                            <View style={{ paddingVertical:15 , paddingHorizontal:15}}>
-                                <Button 
+                            <View style={{ paddingVertical: verticalScale(15), paddingHorizontal: scale(15) }}>
+                                <Button
                                     title="Verify"
-                                    buttonStyle={ parameters.appButtonXLBlue }
-                                    titleStyle={ parameters.appButtonXLTitleBlue } 
+                                    buttonStyle={parameters.appButtonXLBlue}
+                                    titleStyle={parameters.appButtonXLTitleBlue}
                                     onPress={() => OTPVerificationHandler(finalOTP)}
                                     disabled={isLoading || !isSubmitEnabled}
-                                /> 
+                                />
                             </View>
 
-                        </View>  
+                        </View>
                     </View>
 
 
@@ -234,89 +235,89 @@ export default function PasswordResetOTPScreen({ navigation, route }){
                 </View>
             </ImageBackground>
         </SafeAreaView>
-       
+
     )
 }
 
 // local stylesheet for the screen
 const styles = StyleSheet.create({
-    container : {
+    container: {
         flex: 1,
         //backgroundColor: '#fff',
     },
 
     OPTContainer: {
-        paddingHorizontal:20, 
+        paddingHorizontal: scale(20),
         // backgroundColor:appColors.CardBackground, 
-        flex:1, 
+        flex: 1,
     },
 
     OTPContainerHeader: {
-        justifyContent:'center', 
-        alignItems:'center', 
-        paddingVertical:15, 
-        paddingHorizontal:12, 
-        marginTop:15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: verticalScale(15),
+        paddingHorizontal: scale(12),
+        marginTop: verticalScale(15),
     },
 
     OTPInputContainer: {
         //backgroundColor:appColors.CardBackground, 
-        paddingVertical:30, 
-        paddingHorizontal:12, 
-        borderRadius:10, 
-        flexDirection: 'row', 
+        paddingVertical: verticalScale(30),
+        paddingHorizontal: scale(12),
+        borderRadius: moderateScale(10),
+        flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems:'center',
+        alignItems: 'center',
     },
 
     OTPInput: {
-        paddingHorizontal:8,
-        paddingVertical:10,
-        borderRadius:10, 
-        backgroundColor:appColors.grey6, 
-        marginVertical:5,
+        paddingHorizontal: scale(8),
+        paddingVertical: verticalScale(10),
+        borderRadius: moderateScale(10),
+        backgroundColor: appColors.grey6,
+        marginVertical: verticalScale(5),
         color: appColors.grey1,
         fontWeight: 'bold',
-        fontSize: 30,
-        flex:1,
+        fontSize: moderateScale(30),
+        flex: 1,
         textAlign: 'center',
-        margin:5, 
-        borderWidth:2,
-        borderColor:appColors.grey4,
-        
+        margin: scale(5),
+        borderWidth: 2,
+        borderColor: appColors.grey4,
+
     },
 
     // OTP Verify Inputs styles -----------------
     OTPVerifyInput: {
-        paddingHorizontal:8,
-        paddingVertical:10,
-        borderRadius:40, 
-        backgroundColor:appColors.grey6, 
-        marginVertical:5,
+        paddingHorizontal: scale(8),
+        paddingVertical: verticalScale(10),
+        borderRadius: moderateScale(40),
+        backgroundColor: appColors.grey6,
+        marginVertical: verticalScale(5),
         color: appColors.grey2,
         fontWeight: 'bold',
-        fontSize: 25,
-        flex:1,
+        fontSize: moderateScale(25),
+        flex: 1,
         textAlign: 'center',
-        margin:2, 
-        borderWidth:2,
-        borderColor:appColors.grey4,
-        width: 60,
-        
+        margin: scale(2),
+        borderWidth: 2,
+        borderColor: appColors.grey4,
+        width: scale(60),
+
     },
 
     borderStyleBase: {
-        width: 30,
-        height: 45
+        width: scale(30),
+        height: verticalScale(45)
     },
-    
+
     borderStyleHighLighted: {
         borderColor: "orange",
     },
-    
+
     underlineStyleHighLighted: {
         borderColor: appColors.AppBlue,
     },
-    
+
 
 });

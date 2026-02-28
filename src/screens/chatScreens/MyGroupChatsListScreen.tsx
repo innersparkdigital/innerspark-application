@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getMyGroups } from '../../api/client/groups';
@@ -87,7 +88,7 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
       console.log('📞 Calling getMyGroups API...');
       const response = await getMyGroups(userId);
       console.log('✅ My Groups API Response:', JSON.stringify(response, null, 2));
-      
+
       const apiGroups = response.data?.groups || [];
       const mappedGroups: GroupChat[] = apiGroups.map((group: any) => ({
         id: group.id?.toString() || group._id?.toString(),
@@ -100,7 +101,7 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
         unreadCount: group.unreadCount || group.unread_count || 0,
         userRole: group.userRole || group.user_role || group.role || 'member',
       }));
-      
+
       setGroups(mappedGroups);
       console.log('✅ Mapped Groups:', mappedGroups.length);
     } catch (error: any) {
@@ -135,13 +136,13 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
   };
 
   const renderGroupCard = ({ item }: { item: GroupChat }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.groupCard}
       onPress={() => handleGroupPress(item)}
       activeOpacity={0.7}
     >
       <View style={styles.groupIconContainer}>
-        <Icon name={item.icon} type="material" color={appColors.AppBlue} size={32} />
+        <Icon name={item.icon} type="material" color={appColors.AppBlue} size={moderateScale(32)} />
       </View>
 
       <View style={styles.groupContent}>
@@ -158,7 +159,7 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
 
         <View style={styles.groupFooter}>
           <View style={styles.memberCount}>
-            <Icon name="group" type="material" color={appColors.grey3} size={14} />
+            <Icon name="group" type="material" color={appColors.grey3} size={moderateScale(14)} />
             <Text style={styles.memberCountText}>{item.memberCount} members</Text>
           </View>
 
@@ -180,12 +181,12 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Icon name="forum" type="material" color={appColors.grey3} size={80} />
+      <Icon name="forum" type="material" color={appColors.grey3} size={moderateScale(80)} />
       <Text style={styles.emptyTitle}>No Group Chats</Text>
       <Text style={styles.emptySubtitle}>
         Join support groups to connect with others
       </Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.browseButton}
         onPress={() => navigation.navigate('GroupsScreen')}
       >
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppLightGray,
   },
   listContainer: {
-    padding: 16,
+    padding: scale(16),
   },
   emptyContainer: {
     flex: 1,
@@ -239,23 +240,23 @@ const styles = StyleSheet.create({
   groupCard: {
     flexDirection: 'row',
     backgroundColor: appColors.CardBackground,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: scale(12),
+    padding: scale(16),
+    marginBottom: scale(12),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   groupIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: scale(56),
+    height: scale(56),
+    borderRadius: scale(28),
     backgroundColor: appColors.AppBlue + '20',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: scale(12),
   },
   groupContent: {
     flex: 1,
@@ -264,26 +265,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: scale(4),
   },
   groupName: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginRight: 8,
+    marginRight: scale(8),
   },
   lastMessageTime: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
   },
   lastMessage: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   groupFooter: {
     flexDirection: 'row',
@@ -295,75 +296,75 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   memberCountText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
-    marginLeft: 4,
+    marginLeft: scale(4),
   },
   moderatorBadge: {
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    borderRadius: scale(8),
   },
   moderatorBadgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   unreadBadge: {
     backgroundColor: appColors.AppBlue,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: scale(24),
+    height: scale(24),
+    borderRadius: scale(12),
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   unreadBadgeText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   emptyState: {
     alignItems: 'center',
-    padding: 32,
+    padding: scale(32),
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: scale(16),
+    marginBottom: scale(8),
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   browseButton: {
     backgroundColor: appColors.AppBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 25,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(24),
+    borderRadius: scale(25),
   },
   browseButtonText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    marginTop: 32,
+    marginTop: scale(32),
   },
 });
 

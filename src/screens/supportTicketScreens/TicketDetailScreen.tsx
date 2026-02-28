@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadTicketById, addMessageToTicketAction, closeTicketAction, reopenTicketAction } from '../../utils/supportTicketsManager';
@@ -61,6 +62,12 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
   const [newResponse, setNewResponse] = useState('');
   const [hasNewReplies, setHasNewReplies] = useState(false);
 
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
   // Removed mock data - now using Redux state
   const responses = currentTicket?.messages || [];
 
@@ -69,7 +76,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
   }, [ticketId]);
 
   const loadTicketData = async () => {
-    const result = await dispatch(loadTicketById(userId, ticketId));
+    const result = await (dispatch as any)(loadTicketById(userId, ticketId));
     if (!result.success) {
       toast.show({
         description: 'Failed to load ticket details',
@@ -87,7 +94,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
       return;
     }
 
-    const result = await dispatch(addMessageToTicketAction(userId, ticketId, newResponse.trim()));
+    const result = await (dispatch as any)(addMessageToTicketAction(userId, ticketId, newResponse.trim()));
 
     if (result.success) {
       setNewResponse('');
@@ -96,9 +103,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
         duration: 2000,
       });
       // Scroll to bottom to show new message
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      scrollToBottom();
     } else {
       toast.show({
         description: 'Failed to send message',
@@ -115,7 +120,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
       confirmText: 'Close',
       cancelText: 'Cancel',
       onConfirm: async () => {
-        const result = await dispatch(closeTicketAction(userId, ticketId));
+        const result = await (dispatch as any)(closeTicketAction(userId, ticketId));
         if (result.success) {
           toast.show({
             description: 'Ticket closed successfully',
@@ -133,7 +138,7 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
   };
 
   const handleReopenTicket = async () => {
-    const result = await dispatch(reopenTicketAction(userId, ticketId));
+    const result = await (dispatch as any)(reopenTicketAction(userId, ticketId));
     if (result.success) {
       toast.show({
         description: 'Ticket reopened successfully',
@@ -195,9 +200,9 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
         <View style={styles.responseHeader}>
           <Avatar
             title={item.authorName.charAt(0)}
-            size={32}
+            size={scale(32)}
             rounded
-            backgroundColor={isUser ? appColors.AppBlue : '#4CAF50'}
+            containerStyle={{ backgroundColor: isUser ? appColors.AppBlue : '#4CAF50' }}
             titleStyle={styles.avatarText}
           />
           <View style={styles.responseInfo}>
@@ -226,41 +231,45 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
     );
   };
 
-  const renderHeader = () => (
-    <View style={styles.ticketHeader}>
-      <View style={styles.ticketTitleRow}>
-        <Text style={styles.ticketSubject}>{ticket.subject}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(ticket.status) }]}>
-          <Text style={styles.statusText}>{ticket.status}</Text>
-        </View>
-      </View>
+  const renderHeader = () => {
+    if (!currentTicket) return null;
 
-      <View style={styles.ticketMeta}>
-        <View style={styles.metaItem}>
-          <Icon name="confirmation-number" type="material" color={appColors.grey3} size={16} />
-          <Text style={styles.metaText}>{ticket.id}</Text>
+    return (
+      <View style={styles.ticketHeader}>
+        <View style={styles.ticketTitleRow}>
+          <Text style={styles.ticketSubject}>{currentTicket.subject}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(currentTicket.status) }]}>
+            <Text style={styles.statusText}>{currentTicket.status}</Text>
+          </View>
         </View>
-        <View style={styles.metaItem}>
-          <Icon name="category" type="material" color={appColors.grey3} size={16} />
-          <Text style={styles.metaText}>{ticket.category}</Text>
-        </View>
-        <View style={styles.metaItem}>
-          <Icon name="schedule" type="material" color={appColors.grey3} size={16} />
-          <Text style={styles.metaText}>Created {formatDateTime(ticket.createdAt)}</Text>
-        </View>
-      </View>
 
-      {ticket.status !== 'Resolved' && (
-        <TouchableOpacity
-          style={styles.closeRequestButton}
-          onPress={handleRequestClose}
-        >
-          <Icon name="check-circle" type="material" color={appColors.AppBlue} size={20} />
-          <Text style={styles.closeRequestText}>Request Closure</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+        <View style={styles.ticketMeta}>
+          <View style={styles.metaItem}>
+            <Icon name="confirmation-number" type="material" color={appColors.grey3} size={moderateScale(16)} />
+            <Text style={styles.metaText}>{currentTicket.id}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Icon name="category" type="material" color={appColors.grey3} size={moderateScale(16)} />
+            <Text style={styles.metaText}>{currentTicket.category}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Icon name="schedule" type="material" color={appColors.grey3} size={moderateScale(16)} />
+            <Text style={styles.metaText}>Created {formatDateTime(currentTicket.createdAt)}</Text>
+          </View>
+        </View>
+
+        {currentTicket.status !== 'Resolved' && (
+          <TouchableOpacity
+            style={styles.closeRequestButton}
+            onPress={handleCloseTicket}
+          >
+            <Icon name="check-circle" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
+            <Text style={styles.closeRequestText}>Request Closure</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -298,9 +307,9 @@ const TicketDetailScreen: React.FC<TicketDetailScreenProps> = ({ navigation, rou
         {/* Response Composer */}
         <View style={[
           styles.composer,
-          ticket.status === 'Resolved' && styles.composerDisabled
+          currentTicket.status === 'Resolved' && styles.composerDisabled
         ]}>
-          {ticket.status === 'Resolved' ? (
+          {currentTicket.status === 'Resolved' ? (
             <View style={styles.resolvedNotice}>
               <Icon name="check-circle" type="material" color="#4CAF50" size={20} />
               <Text style={styles.resolvedNoticeText}>
@@ -352,113 +361,123 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: appColors.AppLightGray,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: moderateScale(16),
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+  },
   header: {
     backgroundColor: appColors.CardBackground,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: 15,
-    paddingHorizontal: 16,
+    paddingTop: scale(parameters.headerHeightS),
+    paddingBottom: scale(15),
+    paddingHorizontal: scale(16),
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
+    padding: scale(8),
+    marginRight: scale(8),
   },
   headerTitle: {
     flex: 1,
-    fontSize: 20,
+    fontSize: moderateScale(20),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
     textAlign: 'center',
   },
   headerSpacer: {
-    width: 40,
+    width: scale(40),
   },
   content: {
     flex: 1,
   },
   ticketHeader: {
     backgroundColor: appColors.CardBackground,
-    padding: 16,
-    marginBottom: 8,
+    padding: scale(16),
+    marginBottom: scale(8),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: scale(2),
   },
   ticketTitleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   ticketSubject: {
     flex: 1,
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    lineHeight: 24,
-    marginRight: 12,
+    lineHeight: scale(24),
+    marginRight: scale(12),
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(16),
   },
   statusText: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
   ticketMeta: {
-    marginBottom: 16,
+    marginBottom: scale(16),
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   metaText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
-    marginLeft: 8,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(8),
   },
   closeRequestButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
+    borderRadius: scale(8),
+    borderWidth: scale(1),
     borderColor: appColors.AppBlue,
   },
   closeRequestText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.AppBlue,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   responsesList: {
     flex: 1,
   },
   responsesContent: {
-    paddingVertical: 8,
+    paddingVertical: scale(8),
   },
   responseContainer: {
-    marginHorizontal: 16,
-    marginVertical: 6,
+    marginHorizontal: scale(16),
+    marginVertical: scale(6),
   },
   userResponse: {
     alignItems: 'flex-end',
@@ -469,40 +488,40 @@ const styles = StyleSheet.create({
   responseHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: scale(8),
   },
   responseInfo: {
-    marginLeft: 12,
+    marginLeft: scale(12),
   },
   authorName: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
   responseTime: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
   },
   newBadge: {
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 8,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    borderRadius: scale(10),
+    marginLeft: scale(8),
   },
   newBadgeText: {
-    fontSize: 10,
+    fontSize: moderateScale(10),
     color: appColors.CardBackground,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     fontWeight: 'bold',
   },
   responseContent: {
     maxWidth: '85%',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
+    borderRadius: scale(16),
   },
   userResponseContent: {
     backgroundColor: appColors.AppBlue,
@@ -510,17 +529,17 @@ const styles = StyleSheet.create({
   },
   supportResponseContent: {
     backgroundColor: appColors.CardBackground,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: scale(4),
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: scale(1),
   },
   responseText: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: appFonts.regularText,
+    fontSize: moderateScale(14),
+    lineHeight: scale(20),
+    fontFamily: appFonts.bodyTextRegular,
   },
   userResponseText: {
     color: appColors.CardBackground,
@@ -535,13 +554,13 @@ const styles = StyleSheet.create({
   },
   composer: {
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(12),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowOffset: { width: 0, height: scale(-2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
   },
   composerDisabled: {
     backgroundColor: appColors.grey6,
@@ -550,25 +569,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     backgroundColor: appColors.grey6,
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    borderRadius: scale(25),
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(8),
   },
   textInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: appColors.grey1,
-    fontFamily: appFonts.regularText,
-    maxHeight: 100,
-    paddingVertical: 8,
+    fontFamily: appFonts.bodyTextRegular,
+    maxHeight: scale(100),
+    paddingVertical: scale(8),
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: scale(8),
   },
   sendButtonActive: {
     backgroundColor: appColors.AppBlue,
@@ -577,11 +596,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   characterCount: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     color: appColors.grey3,
-    fontFamily: appFonts.regularText,
+    fontFamily: appFonts.bodyTextRegular,
     textAlign: 'right',
-    marginTop: 4,
+    marginTop: scale(4),
   },
   resolvedNotice: {
     flexDirection: 'row',
@@ -590,10 +609,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   resolvedNoticeText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     color: appColors.grey2,
-    fontFamily: appFonts.regularText,
-    marginLeft: 8,
+    fontFamily: appFonts.bodyTextRegular,
+    marginLeft: scale(8),
     textAlign: 'center',
   },
 });

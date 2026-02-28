@@ -2,8 +2,16 @@
  * Therapist Group Members Management Screen
  */
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Image } from 'react-native';
+import {
+  View, Text, StyleSheet, FlatList,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  RefreshControl,
+  ActivityIndicator
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import { appImages } from '../../../global/Data';
@@ -36,13 +44,17 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'inactive' | 'muted'>(filter || 'all');
 
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  const [loading, setLoading] = useState(false);
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
   const alert = useISAlert();
 
-  React.useEffect(() => {
-    loadMembers();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMembers();
+    }, [])
+  );
 
   const loadMembers = async () => {
     if (!group?.id) return;
@@ -60,7 +72,13 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
       console.error('Group Members Error:', errorMessage);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadMembers();
   };
 
   const filteredMembers = members.filter((member) => {
@@ -74,16 +92,22 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
       { text: 'View Profile', onPress: () => navigation.navigate('THGroupMemberProfileScreen', { member }) },
     ];
 
+    const therapistId = userDetails?.userId;
+
     if (member.role === 'member') {
       actions.push({
         text: 'Make Moderator',
         onPress: async () => {
           try {
-            await updateGroupMemberRole(group.id, member.id, 'moderator');
+            await updateGroupMemberRole(group.id, member.id, therapistId, 'moderator');
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'moderator' as const } : m));
-            alert.show({ type: 'success', title: 'Success', message: `${member.name} is now a moderator` });
+            setTimeout(() => {
+              alert.show({ type: 'success', title: 'Success', message: `${member.name} is now a moderator` });
+            }, 300);
           } catch (error: any) {
-            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to update role' });
+            setTimeout(() => {
+              alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to update role' });
+            }, 300);
           }
         },
       });
@@ -92,11 +116,15 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
         text: 'Remove Moderator',
         onPress: async () => {
           try {
-            await updateGroupMemberRole(group.id, member.id, 'member');
+            await updateGroupMemberRole(group.id, member.id, therapistId, 'member');
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'member' as const } : m));
-            alert.show({ type: 'success', title: 'Success', message: `${member.name} is no longer a moderator` });
+            setTimeout(() => {
+              alert.show({ type: 'success', title: 'Success', message: `${member.name} is no longer a moderator` });
+            }, 300);
           } catch (error: any) {
-            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to update role' });
+            setTimeout(() => {
+              alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to update role' });
+            }, 300);
           }
         },
       });
@@ -107,11 +135,15 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
         text: 'Unmute Member',
         onPress: async () => {
           try {
-            await unmuteGroupMember(group.id, member.id);
+            await unmuteGroupMember(group.id, member.id, therapistId);
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'active' as const } : m));
-            alert.show({ type: 'success', title: 'Success', message: `${member.name} has been unmuted` });
+            setTimeout(() => {
+              alert.show({ type: 'success', title: 'Success', message: `${member.name} has been unmuted` });
+            }, 300);
           } catch (error: any) {
-            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to unmute member' });
+            setTimeout(() => {
+              alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to unmute member' });
+            }, 300);
           }
         },
       });
@@ -120,11 +152,15 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
         text: 'Mute Member (5m)',
         onPress: async () => {
           try {
-            await muteGroupMember(group.id, member.id, 300); // Mute for 5 minutes
+            await muteGroupMember(group.id, member.id, therapistId, 300); // Mute for 5 minutes
             setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'muted' as const } : m));
-            alert.show({ type: 'success', title: 'Success', message: `${member.name} has been muted` });
+            setTimeout(() => {
+              alert.show({ type: 'success', title: 'Success', message: `${member.name} has been muted` });
+            }, 300);
           } catch (error: any) {
-            alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to mute member' });
+            setTimeout(() => {
+              alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to mute member' });
+            }, 300);
           }
         },
       });
@@ -134,22 +170,30 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
       text: 'Remove from Group',
       style: 'destructive',
       onPress: () => {
-        alert.show({
-          type: 'destructive',
-          title: 'Remove Member',
-          message: `Are you sure you want to remove ${member.name} from the group?`,
-          confirmText: 'Remove',
-          cancelText: 'Cancel',
-          onConfirm: async () => {
-            try {
-              await removeGroupMember(group.id, member.id);
-              setMembers((prev) => prev.filter((m) => m.id !== member.id));
-              alert.show({ type: 'success', title: 'Removed', message: `${member.name} has been removed` });
-            } catch (error: any) {
-              alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to remove member' });
-            }
-          },
-        });
+        // Delay ensures the previous 'Member Options' alert is fully hidden before showing confirmation
+        setTimeout(() => {
+          alert.show({
+            type: 'destructive',
+            title: 'Remove Member',
+            message: `Are you sure you want to remove ${member.name} from the group?`,
+            confirmText: 'Remove',
+            cancelText: 'Cancel',
+            onConfirm: async () => {
+              try {
+                await removeGroupMember(group.id, member.id, therapistId);
+                setMembers((prev) => prev.filter((m) => m.id !== member.id));
+                // Delay ensures the 'Remove Member' confirmation is hidden before showing success
+                setTimeout(() => {
+                  alert.show({ type: 'success', title: 'Removed', message: `${member.name} has been removed` });
+                }, 400);
+              } catch (error: any) {
+                setTimeout(() => {
+                  alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to remove member' });
+                }, 400);
+              }
+            },
+          });
+        }, 400);
       },
     });
 
@@ -302,6 +346,14 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[appColors.AppBlue]}
+              tintColor={appColors.AppBlue}
+            />
+          }
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Icon type="material" name="people-outline" size={60} color={appColors.grey3} />
