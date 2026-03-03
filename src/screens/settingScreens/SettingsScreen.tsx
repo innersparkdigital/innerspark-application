@@ -203,15 +203,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           hasChevron: true,
           onPress: () => navigation.navigate('EmergencyContactsScreen'),
         },
-        {
-          id: 'wellness_goals',
-          title: 'Wellness Goals',
-          subtitle: 'Set and track your goals',
-          icon: 'flag',
-          iconColor: '#4CAF50',
-          hasChevron: true,
-          onPress: () => navigation.navigate('GoalsScreen'),
-        },
       ],
     },
 
@@ -220,15 +211,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       id: 'support',
       title: 'Support & Feedback',
       items: [
-        {
-          id: 'help_center',
-          title: 'Help Center',
-          subtitle: 'FAQs and support articles',
-          icon: 'help',
-          iconColor: appColors.AppBlue,
-          hasChevron: true,
-          onPress: () => navigation.navigate('HelpCenterScreen'),
-        },
         {
           id: 'feedback',
           title: 'Send Feedback',

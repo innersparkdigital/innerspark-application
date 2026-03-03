@@ -16,8 +16,8 @@ import {
     Image,
     TouchableOpacity,
     Linking,
-    Pressable,
     ImageBackground,
+    Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button, Avatar, BottomSheet } from '@rneui/base';
@@ -68,6 +68,35 @@ export default function AccountScreen({ navigation }) {
 
     const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
 
+    // Animation Values
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+    // Interpolations for the Main Banner fade out
+    const headerOpacity = scrollY.interpolate({
+        inputRange: [0, scale(100)],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+    });
+
+    const headerTranslateY = scrollY.interpolate({
+        inputRange: [0, scale(100)],
+        outputRange: [0, scale(-50)],
+        extrapolate: 'clamp',
+    });
+
+    const headerScale = scrollY.interpolate({
+        inputRange: [-scale(100), 0, scale(100)],
+        outputRange: [1.2, 1, 0.8],
+        extrapolate: 'clamp',
+    });
+
+    // Interpolations for the Sticky Top Bar fade in
+    const stickyHeaderOpacity = scrollY.interpolate({
+        inputRange: [scale(80), scale(120)],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+    });
+
     // Toast Notifications
     const notifyWithToast = (description) => {
         toast.show({
@@ -105,35 +134,80 @@ export default function AccountScreen({ navigation }) {
         <SafeAreaView style={styles.container}>
             <ISStatusBar />
 
-            {/* Curved Header with Profile */}
-            <View style={styles.curvedHeader}>
-                <View style={styles.profileSection}>
-                    <View style={styles.avatarContainer}>
-                        <Avatar
-                            rounded
-                            size={moderateScale(90)}
-                            source={userProfile?.profileImage || userDetails?.image || appImages.avatarDefault}
-                            containerStyle={styles.avatarStyle}
-                            avatarStyle={styles.avatarImageStyle}
-                        />
-                    </View>
-                    <Text style={styles.userName}>
-                        {getFullname(
-                            userProfile?.firstName || userDetails?.firstName || '',
-                            userProfile?.lastName || userDetails?.lastName || ''
-                        ) || 'Jane Doe'}
-                    </Text>
-                    <Text style={styles.userEmail}>
-                        {userProfile?.email || userDetails?.email || 'user@example.com'}
-                    </Text>
-                    <View style={styles.memberBadge}>
-                        <Icon name="verified" type="material" color="#4CAF50" size={moderateScale(14)} />
-                        <Text style={styles.memberText}>Verified Member</Text>
+            {/* Sticky Compact Header (Fades in on scroll) */}
+            <Animated.View style={[styles.stickyHeader, { opacity: stickyHeaderOpacity }]}>
+                <View style={styles.stickyHeaderContent}>
+                    <Avatar
+                        rounded
+                        size={scale(36)}
+                        source={(userProfile?.profileImage || userDetails?.image) ? { uri: userProfile?.profileImage || userDetails?.image } : undefined}
+                        icon={!(userProfile?.profileImage || userDetails?.image) ? { name: 'person', type: 'material', size: scale(24), color: appColors.CardBackground } : undefined}
+                        containerStyle={styles.stickyAvatarContainer}
+                    />
+                    <View style={styles.stickyNameRow}>
+                        <Text style={styles.stickyUserName} numberOfLines={1}>
+                            {getFullname(
+                                userProfile?.firstName || userDetails?.firstName || '',
+                                userProfile?.lastName || userDetails?.lastName || ''
+                            ) || 'Innerspark User'}
+                        </Text>
+                        <Icon name="verified" type="material" color="#FFFFFF" size={scale(14)} style={{ marginLeft: scale(4) }} />
                     </View>
                 </View>
-            </View>
+            </Animated.View>
 
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: true }
+                )}
+                scrollEventThrottle={16}
+            >
+                {/* Curved Header with Profile (Fades out on scroll) */}
+                <Animated.View style={[
+                    styles.curvedHeader,
+                    {
+                        opacity: headerOpacity,
+                        transform: [
+                            { translateY: headerTranslateY },
+                            { scale: headerScale }
+                        ]
+                    }
+                ]}>
+                    <View style={styles.profileSection}>
+                        <View style={styles.avatarContainer}>
+                            <Avatar
+                                rounded
+                                size={scale(85)}
+                                source={(userProfile?.profileImage || userDetails?.image) ? { uri: userProfile?.profileImage || userDetails?.image } : undefined}
+                                icon={!(userProfile?.profileImage || userDetails?.image) ? { name: 'person', type: 'material', size: scale(64), color: appColors.CardBackground } : undefined}
+                                containerStyle={styles.avatarStyle}
+                                avatarStyle={styles.avatarImageStyle}
+                            />
+                        </View>
+
+                        <View style={styles.nameBadgeRow}>
+                            <Text style={styles.userName}>
+                                {getFullname(
+                                    userProfile?.firstName || userDetails?.firstName || '',
+                                    userProfile?.lastName || userDetails?.lastName || ''
+                                ) || 'Innerspark User'}
+                            </Text>
+                            <View style={styles.inlineBadge}>
+                                <Icon name="verified" type="material" color="#FFFFFF" size={moderateScale(14)} />
+                            </View>
+                        </View>
+
+                        <Text style={styles.userEmail}>
+                            {userProfile?.email || userDetails?.email || 'user@example.com'}
+                        </Text>
+                    </View>
+                </Animated.View>
+
+                {/* Spacer to push content down below absolute header visually if needed, but since it's inside ScrollView, 
+                    the header scrolls with the content naturally! */}
 
                 {/* Wellness Shortcuts */}
                 <View style={styles.shortcutsSection}>
@@ -174,8 +248,11 @@ export default function AccountScreen({ navigation }) {
                     </View>
                 </View>
 
-                {/* My Services Section */}
-                <View style={styles.menuSection}>
+                {/* 
+                  HIDDEN FOR MVP: The platform is currently operating on a Pay-Per-Use model. 
+                  Subscriptions and Events packages will be restored Post-MVP.
+                */}
+                {/* <View style={styles.menuSection}>
                     <Text style={styles.menuSectionTitle}>My Services</Text>
                     <MenuRow
                         icon="card-membership"
@@ -193,7 +270,7 @@ export default function AccountScreen({ navigation }) {
                         iconColor="#E91E63"
                         isLast={true}
                     />
-                </View>
+                </View> */}
 
                 {/* Account Section */}
                 <View style={styles.menuSection}>
@@ -282,7 +359,7 @@ export default function AccountScreen({ navigation }) {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
 
             {/** Logout BottomSheet Modal */}
             <BottomSheet
@@ -366,6 +443,49 @@ const styles = StyleSheet.create({
         paddingBottom: scale(30),
         paddingTop: scale(20),
     },
+    stickyHeader: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: scale(80),
+        backgroundColor: appColors.AppBlue,
+        zIndex: 20,
+        justifyContent: 'flex-end',
+        paddingBottom: scale(10),
+        paddingHorizontal: scale(20),
+    },
+    stickyHeaderContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    stickyAvatarContainer: {
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.8)',
+    },
+    stickyNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: scale(10),
+        flex: 1,
+    },
+    stickyUserName: {
+        fontSize: moderateScale(16),
+        color: appColors.CardBackground,
+        fontFamily: appFonts.headerTextBold,
+        fontWeight: '700',
+    },
+    nameBadgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    inlineBadge: {
+        marginLeft: scale(6),
+        backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        borderRadius: scale(12),
+        padding: scale(3),
+    },
     profileSection: {
         alignItems: 'center',
         paddingHorizontal: scale(20),
@@ -373,18 +493,13 @@ const styles = StyleSheet.create({
     avatarContainer: {
         marginBottom: scale(15),
         alignItems: 'center',
-        backgroundColor: appColors.AppBlue,
     },
     avatarStyle: {
-        borderWidth: scale(2),
+        borderWidth: scale(3),
         borderColor: appColors.CardBackground,
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: 'transparent',
     },
     avatarImageStyle: {
-        width: scale(86),
-        height: scale(86),
-        borderRadius: scale(45),
         resizeMode: 'cover',
     },
     editAvatarButton: {
@@ -438,11 +553,11 @@ const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
         backgroundColor: appColors.AppLightGray,
-        paddingTop: scale(20),
     },
     shortcutsSection: {
         paddingHorizontal: scale(20),
         marginBottom: scale(20),
+        marginTop: scale(20),
     },
     shortcutsTitle: {
         fontSize: moderateScale(16),
