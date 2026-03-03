@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
@@ -17,6 +18,8 @@ import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { getTherapists } from '../../api/client/therapists';
+import { sendChatMessage } from '../../api/client/messages';
+import { humanizeLastSeen } from '../../utils/dateHelpers';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
@@ -45,22 +48,23 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     loadContacts();
-  }, []);
+  }, [searchQuery]);
 
   useEffect(() => {
     filterContacts();
   }, [searchQuery, contacts]);
 
-  const loadContacts = async () => {
-    setIsLoading(true);
+  const loadContacts = async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
     try {
-      console.log('📞 Calling getTherapists API...');
+      if (!isSilent) console.log('📞 Calling getTherapists API...');
       const response = await getTherapists({ search: searchQuery });
-      console.log('✅ Therapists API Response:', JSON.stringify(response, null, 2));
+      if (!isSilent) console.log('✅ Therapists API Response:', JSON.stringify(response, null, 2));
 
       if (response.success && response.data?.therapists) {
         const apiTherapists = response.data.therapists;
@@ -72,25 +76,34 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           type: 'therapist' as const,
           specialty: therapist.specialty || therapist.specialization || '',
           isOnline: therapist.isOnline || therapist.is_online || false,
-          lastSeen: therapist.lastSeen || therapist.last_seen,
+          lastSeen: humanizeLastSeen(therapist.lastSeen || therapist.last_seen || null),
         }));
 
         setContacts(mappedContacts);
-        console.log('✅ Mapped Contacts:', mappedContacts.length);
+        if (!isSilent) console.log('✅ Mapped Contacts:', mappedContacts.length);
       } else {
-        console.log('ℹ️ No therapists found - empty state');
+        if (!isSilent) console.log('ℹ️ No therapists found - empty state');
         setContacts([]);
       }
     } catch (error: any) {
       console.error('❌ Error loading therapists:', error);
       setContacts([]);
-      toast.show({
-        description: 'Failed to load therapists',
-        duration: 3000,
-      });
+      if (!isSilent) {
+        toast.show({
+          description: 'Failed to load therapists',
+          duration: 3000,
+        });
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadContacts(false);
+    setIsRefreshing(false);
   };
 
   const filterContacts = () => {
@@ -127,24 +140,26 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
     setIsSending(true);
 
     try {
-      // TODO: Implement API call to start conversation/send first message
-      // For now, just navigate to the thread screen
-      setTimeout(() => {
-        setIsSending(false);
-        toast.show({
-          description: `Opening conversation with ${selectedContact.name}`,
-          duration: 2000,
-        });
+      // Intentionally omitting chatId. Backend infers or creates chat ID when it evaluates string pairings
+      console.log(`📡 Initializing New Thread with ${selectedContact.id}...`);
+      await sendChatMessage('', String(userId), messageText);
 
-        navigation.replace('DMThreadScreen', {
-          partnerId: selectedContact.id,
-          partnerName: selectedContact.name,
-          partnerAvatar: selectedContact.avatar,
-          isOnline: selectedContact.isOnline,
-          lastSeen: selectedContact.lastSeen,
-        });
-      }, 1000);
-    } catch (error) {
+      setIsSending(false);
+      toast.show({
+        description: `Message sent to ${selectedContact.name}`,
+        duration: 2000,
+      });
+
+      // Transfer state into threaded view bypassing list screen structurally
+      navigation.replace('DMThreadScreen', {
+        partnerId: selectedContact.id,
+        partnerName: selectedContact.name,
+        partnerAvatar: selectedContact.avatar,
+        isOnline: selectedContact.isOnline,
+        lastSeen: selectedContact.lastSeen,
+      });
+    } catch (error: any) {
+      console.error('❌ Error initializing chat message:', error.response?.data || error.message);
       setIsSending(false);
       alert.show({
         type: 'error',
@@ -283,6 +298,13 @@ const NewMessageScreen: React.FC<NewMessageScreenProps> = ({ navigation }) => {
           ListEmptyComponent={renderEmptyState}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={filteredContacts.length === 0 ? styles.emptyContainer : undefined}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[appColors.AppBlue]}
+            />
+          }
         />
       </View>
 

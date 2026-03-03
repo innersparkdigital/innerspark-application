@@ -16,10 +16,11 @@ import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { getMyGroups, leaveGroup } from '../../api/client/groups';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { removeJoinedGroupId, setJoinedGroupIds } from '../../features/groups/groupsSlice';
 
 interface MyGroup {
   id: string;
@@ -44,6 +45,7 @@ interface MyGroupsScreenProps {
 const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const alert = useISAlert();
+  const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [myGroups, setMyGroups] = useState<MyGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,6 +130,10 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
       }));
 
       setMyGroups(mappedGroups);
+      // Sync Redux
+      const joinedIds = mappedGroups.map(g => g.id);
+      dispatch(setJoinedGroupIds(joinedIds));
+
       console.log('✅ Mapped My Groups:', mappedGroups.length);
     } catch (error: any) {
       console.error('❌ Error loading my groups:', error);
@@ -178,9 +184,17 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
           console.log('Group ID:', group.id);
           console.log('User ID:', userId);
 
-          // Call API to leave group
-          const response = await leaveGroup(group.id, userId, '', '');
+          // Call API to leave group with required body string configurations
+          const response = await leaveGroup(
+            group.id,
+            userId,
+            'Schedule conflict',
+            'Great group, but can\'t attend anymore'
+          );
           console.log('✅ Leave group response:', response);
+
+          // Sync Global Redux removal
+          dispatch(removeJoinedGroupId(group.id));
 
           // Remove group from list
           setMyGroups(prev => prev.filter(g => g.id !== group.id));

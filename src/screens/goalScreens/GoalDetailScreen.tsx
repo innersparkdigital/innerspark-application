@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon, Button } from '@rneui/base';
+import { Icon, Button, Slider } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
@@ -41,7 +41,9 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
   const toast = useToast();
   const alert = useISAlert();
   const [currentGoal, setCurrentGoal] = useState(goal);
+  const [localProgress, setLocalProgress] = useState(goal.progress);
   const [isLoading, setIsLoading] = useState(false);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -103,6 +105,7 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
           status: 'completed',
           progress: 100
         }));
+        setLocalProgress(100);
 
         toast.show({
           description: 'Congratulations! Goal marked as completed! 🎉',
@@ -198,6 +201,35 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
     }
   };
 
+  const handleProgressChange = async (newProgress: number) => {
+    // Only fire API if the progress actually changed after sliding
+    if (newProgress === currentGoal.progress) return;
+
+    try {
+      const result = await updateExistingGoal(currentGoal.id, { progress: newProgress });
+
+      if (result.success) {
+        setCurrentGoal(prev => ({ ...prev, progress: newProgress }));
+        // Ensure local matches backend correctly
+        setLocalProgress(newProgress);
+      } else {
+        toast.show({
+          description: result.error || 'Failed to sync progress',
+          duration: 3000,
+        });
+        // Revert local slider UI if backend fails
+        setLocalProgress(currentGoal.progress);
+      }
+    } catch (error) {
+      console.error('Error syncing progress:', error);
+      toast.show({
+        description: 'Failed to sync progress',
+        duration: 3000,
+      });
+      setLocalProgress(currentGoal.progress);
+    }
+  };
+
   const statusColor = getStatusColor(currentGoal.status);
   const priorityColor = getPriorityColor(currentGoal.priority);
   const isOverdue = new Date(currentGoal.dueDate) < new Date() && currentGoal.status !== 'completed';
@@ -212,12 +244,20 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Goal Details</Text>
-        <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-          <Icon name="edit" type="material" color={appColors.CardBackground} size={moderateScale(22)} />
-        </TouchableOpacity>
+        {currentGoal.status !== 'completed' ? (
+          <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+            <Icon name="edit" type="material" color={appColors.CardBackground} size={moderateScale(22)} />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: scale(40) }} /> // Spacer to balance header securely
+        )}
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={scrollEnabled}
+      >
         <View style={styles.content}>
           {/* Goal Header */}
           <View style={styles.goalHeader}>
@@ -245,29 +285,49 @@ const GoalDetailScreen: React.FC<GoalDetailScreenProps> = ({ navigation, route }
 
           {/* Progress Section */}
           <View style={styles.progressSection}>
-            <Text style={styles.sectionTitle}>Progress</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scale(10) }}>
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Progress</Text>
+              <Text style={styles.progressText}>{localProgress}%</Text>
+            </View>
+
             <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${currentGoal.progress}%`, backgroundColor: statusColor }
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressText}>{currentGoal.progress}%</Text>
+              <Slider
+                key={`slider-${currentGoal.id}-${currentGoal.status}`}
+                value={localProgress}
+                onValueChange={setLocalProgress}
+                onSlidingStart={() => setScrollEnabled(false)}
+                onSlidingComplete={(newProgress) => {
+                  setScrollEnabled(true);
+                  handleProgressChange(newProgress);
+                }}
+                maximumValue={100}
+                minimumValue={0}
+                step={1}
+                allowTouchTrack
+                trackStyle={{ height: scale(8), borderRadius: scale(4) }}
+                thumbStyle={{ height: scale(20), width: scale(20), backgroundColor: statusColor }}
+                minimumTrackTintColor={statusColor}
+                maximumTrackTintColor={appColors.AppLightGray}
+                disabled={currentGoal.status === 'completed'} // Lock if done
+              />
             </View>
 
             <View style={styles.progressStats}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{currentGoal.progress}%</Text>
+                <Text style={styles.statValue}>{localProgress}%</Text>
                 <Text style={styles.statLabel}>Complete</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={[styles.statValue, isOverdue && styles.overdueText]}>
-                  {getDaysRemaining(currentGoal.dueDate)}
-                </Text>
-                <Text style={styles.statLabel}>Time Left</Text>
+                {currentGoal.status === 'completed' ? (
+                  <Text style={[styles.statValue, { color: '#4CAF50' }]}>Achieved</Text>
+                ) : currentGoal.status === 'paused' ? (
+                  <Text style={[styles.statValue, { color: '#FF9800' }]}>Paused</Text>
+                ) : (
+                  <Text style={[styles.statValue, isOverdue && styles.overdueText]}>
+                    {getDaysRemaining(currentGoal.dueDate)}
+                  </Text>
+                )}
+                <Text style={styles.statLabel}>{currentGoal.status === 'active' ? 'Time Left' : 'Status'}</Text>
               </View>
             </View>
           </View>
@@ -454,8 +514,7 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: '100%',
     marginBottom: scale(20),
   },
   progressBar: {

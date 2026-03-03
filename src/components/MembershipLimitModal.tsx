@@ -1,6 +1,6 @@
 /**
  * MembershipLimitModal - Beautiful modal shown when user reaches group limit
- * Encourages upgrade with clear benefits and CTA
+ * Instructs user to leave an existing group when configured LIMIT is reached.
  */
 import React from 'react';
 import {
@@ -13,29 +13,21 @@ import {
 } from 'react-native';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
-import { MembershipPlan, getPlanDisplayName, getUpgradeBenefits, getNextUpgradePlan } from '../services/MembershipService';
+import { GLOBAL_MEMBERSHIP_LIMIT } from '../services/MembershipService';
 
 interface MembershipLimitModalProps {
   visible: boolean;
-  currentPlan: MembershipPlan;
   currentGroupCount: number;
   maxAllowed: number;
-  onUpgrade: () => void;
   onClose: () => void;
 }
 
 const MembershipLimitModal: React.FC<MembershipLimitModalProps> = ({
   visible,
-  currentPlan,
   currentGroupCount,
   maxAllowed,
-  onUpgrade,
   onClose,
 }) => {
-  const nextPlan = getNextUpgradePlan(currentPlan);
-  const benefits = getUpgradeBenefits(currentPlan);
-  const nextPlanName = nextPlan ? getPlanDisplayName(nextPlan) : '';
-
   return (
     <Modal
       visible={visible}
@@ -46,7 +38,7 @@ const MembershipLimitModal: React.FC<MembershipLimitModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
           {/* Close Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.closeButton}
             onPress={onClose}
           >
@@ -57,30 +49,25 @@ const MembershipLimitModal: React.FC<MembershipLimitModalProps> = ({
             {/* Icon */}
             <View style={styles.iconContainer}>
               <View style={styles.iconCircle}>
-                <Icon 
-                  name="lock" 
-                  type="material" 
-                  color={appColors.AppBlue} 
-                  size={48} 
+                <Icon
+                  name="lock"
+                  type="material"
+                  color={appColors.AppBlue}
+                  size={48}
                 />
               </View>
             </View>
 
             {/* Title */}
             <Text style={styles.title}>Group Limit Reached</Text>
-            
+
             {/* Subtitle */}
             <Text style={styles.subtitle}>
-              You've reached the maximum number of support groups for your current plan
+              You have reached the maximum allowed limit of {GLOBAL_MEMBERSHIP_LIMIT} group(s). Please leave an existing group before joining a new one.
             </Text>
 
             {/* Current Status */}
             <View style={styles.statusCard}>
-              <View style={styles.statusRow}>
-                <Text style={styles.statusLabel}>Current Plan</Text>
-                <Text style={styles.statusValue}>{getPlanDisplayName(currentPlan)}</Text>
-              </View>
-              <View style={styles.divider} />
               <View style={styles.statusRow}>
                 <Text style={styles.statusLabel}>Groups Joined</Text>
                 <Text style={styles.statusValueHighlight}>
@@ -89,57 +76,20 @@ const MembershipLimitModal: React.FC<MembershipLimitModalProps> = ({
               </View>
             </View>
 
-            {/* Upgrade Benefits */}
-            {nextPlan && (
-              <>
-                <Text style={styles.benefitsTitle}>
-                  Upgrade to {nextPlanName} and get:
-                </Text>
-                
-                <View style={styles.benefitsList}>
-                  {benefits.map((benefit, index) => (
-                    <View key={index} style={styles.benefitItem}>
-                      <Icon 
-                        name="check-circle" 
-                        type="material" 
-                        color="#4CAF50" 
-                        size={20} 
-                      />
-                      <Text style={styles.benefitText}>{benefit}</Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-
             {/* CTA Buttons */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.upgradeButton}
-              onPress={onUpgrade}
+              onPress={onClose}
               activeOpacity={0.8}
             >
-              <Icon 
-                name="arrow-upward" 
-                type="material" 
-                color={appColors.CardBackground} 
-                size={20} 
-              />
               <Text style={styles.upgradeButtonText}>
-                Upgrade to {nextPlanName}
+                Understood
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.laterButton}
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.laterButtonText}>Maybe Later</Text>
             </TouchableOpacity>
 
             {/* Additional Info */}
             <Text style={styles.footerText}>
-              You can manage your subscription anytime in Settings
+              Navigate to 'My Groups' to manage your active group memberships.
             </Text>
           </ScrollView>
         </View>

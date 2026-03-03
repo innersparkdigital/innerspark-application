@@ -25,7 +25,10 @@ import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { getGroupMessages } from '../../api/client/groups';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { maskName, generateAnonymousName } from '../../utils/privacyHelpers';
 
 interface HistoryMessage {
   id: string;
@@ -35,6 +38,7 @@ interface HistoryMessage {
   content: string;
   createdAt: string;
   type: 'text' | 'system' | 'announcement';
+  isOwn: boolean;
   isReported?: boolean;
   isDeleted?: boolean;
 }
@@ -54,6 +58,7 @@ interface GroupMessagesHistoryScreenProps {
 const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const alert = useISAlert();
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const { groupId, groupName, userRole, privacyMode = true } = route.params;
 
   const [messages, setMessages] = useState<HistoryMessage[]>([]);
@@ -74,146 +79,6 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
   const isTherapist = userRole === 'therapist';
   const isModerator = userRole === 'moderator' || userRole === 'therapist';
 
-  // Mock messages data
-  const mockMessages: HistoryMessage[] = [
-    {
-      id: '1',
-      senderId: 'therapist_1',
-      senderName: 'Dr. Sarah Johnson',
-      senderRole: 'therapist',
-      content: 'Welcome to the Anxiety Support Group. This is a safe space for everyone to share their experiences.',
-      createdAt: '2025-01-20T10:00:00Z',
-      type: 'announcement',
-    },
-    {
-      id: '2',
-      senderId: 'member_1',
-      senderName: 'Michael',
-      senderRole: 'member',
-      content: 'Thank you for creating this group. I\'ve been struggling with anxiety for years.',
-      createdAt: '2025-01-20T10:05:00Z',
-      type: 'text',
-    },
-    {
-      id: '3',
-      senderId: 'member_2',
-      senderName: 'Emma',
-      senderRole: 'member',
-      content: 'I find that deep breathing exercises really help when I feel anxious. Has anyone else tried this?',
-      createdAt: '2025-01-20T10:15:00Z',
-      type: 'text',
-    },
-    {
-      id: '4',
-      senderId: 'member_3',
-      senderName: 'James',
-      senderRole: 'member',
-      content: 'Yes Emma! I use the 4-7-8 breathing technique. Breathe in for 4, hold for 7, exhale for 8.',
-      createdAt: '2025-01-20T10:20:00Z',
-      type: 'text',
-    },
-    {
-      id: '5',
-      senderId: 'therapist_1',
-      senderName: 'Dr. Sarah Johnson',
-      senderRole: 'therapist',
-      content: 'Those are excellent techniques! Breathing exercises are scientifically proven to activate the parasympathetic nervous system.',
-      createdAt: '2025-01-20T10:25:00Z',
-      type: 'text',
-    },
-    {
-      id: '6',
-      senderId: 'member_4',
-      senderName: 'Lisa',
-      senderRole: 'member',
-      content: 'I\'ve been having panic attacks lately. Does anyone have advice for dealing with them?',
-      createdAt: '2025-01-21T14:30:00Z',
-      type: 'text',
-    },
-    {
-      id: '7',
-      senderId: 'moderator_1',
-      senderName: 'Alex (Moderator)',
-      senderRole: 'moderator',
-      content: 'Lisa, I\'m sorry you\'re going through this. Remember the grounding technique: 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, 1 you can taste.',
-      createdAt: '2025-01-21T14:35:00Z',
-      type: 'text',
-    },
-    {
-      id: '8',
-      senderId: 'member_5',
-      senderName: 'David',
-      senderRole: 'member',
-      content: 'I want to share that I had my first anxiety-free day in months yesterday! Thank you all for the support.',
-      createdAt: '2025-01-22T09:15:00Z',
-      type: 'text',
-    },
-    {
-      id: '9',
-      senderId: 'member_1',
-      senderName: 'Michael',
-      senderRole: 'member',
-      content: 'That\'s amazing David! It gives me hope that I can have days like that too.',
-      createdAt: '2025-01-22T09:20:00Z',
-      type: 'text',
-    },
-    {
-      id: '10',
-      senderId: 'therapist_1',
-      senderName: 'Dr. Sarah Johnson',
-      senderRole: 'therapist',
-      content: 'David, that\'s wonderful progress! Remember to celebrate these victories, no matter how small they might seem.',
-      createdAt: '2025-01-22T09:25:00Z',
-      type: 'text',
-    },
-    {
-      id: '11',
-      senderId: 'system',
-      senderName: 'System',
-      senderRole: 'member',
-      content: 'Emma joined the group',
-      createdAt: '2025-01-23T11:00:00Z',
-      type: 'system',
-    },
-    {
-      id: '12',
-      senderId: 'member_6',
-      senderName: 'Sophie',
-      senderRole: 'member',
-      content: 'Hi everyone! I\'m new here. Looking forward to connecting with people who understand what I\'m going through.',
-      createdAt: '2025-01-23T11:05:00Z',
-      type: 'text',
-    },
-    {
-      id: '13',
-      senderId: 'member_7',
-      senderName: 'Tom',
-      senderRole: 'member',
-      content: 'This is inappropriate content that should be moderated',
-      createdAt: '2025-01-24T16:30:00Z',
-      type: 'text',
-      isReported: true,
-    },
-    {
-      id: '14',
-      senderId: 'member_2',
-      senderName: 'Emma',
-      senderRole: 'member',
-      content: 'I\'ve been practicing mindfulness meditation and it\'s really helping with my anxiety levels.',
-      createdAt: '2025-01-25T08:45:00Z',
-      type: 'text',
-    },
-    {
-      id: '15',
-      senderId: 'therapist_1',
-      senderName: 'Dr. Sarah Johnson',
-      senderRole: 'therapist',
-      content: 'Mindfulness is an excellent tool Emma. For those interested, I can share some guided meditation resources.',
-      createdAt: '2025-01-25T08:50:00Z',
-      type: 'text',
-    },
-  ];
-
   useEffect(() => {
     loadMessages();
   }, []);
@@ -223,17 +88,38 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
   }, [messages, searchQuery]);
 
   const loadMessages = async () => {
+    // Basic Security Check
+    if (userRole === 'none') {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setMessages(mockMessages);
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
+      console.log('📞 Calling getGroupMessages API for Group:', groupId);
+      const response = await getGroupMessages(groupId, userId, 1, 50);
+      const apiMessages = response.data?.messages || response.messages || [];
+      console.log('✅ Received Group Messages (History):', apiMessages.length);
+
+      const mappedMessages = apiMessages.map((msg: any) => ({
+        id: msg.id || msg.message_id,
+        senderId: String(msg.sender_id || msg.senderId),
+        senderName: msg.sender_name || msg.senderName || 'Unknown',
+        senderRole: msg.sender_role || msg.senderRole || 'member',
+        content: msg.content || msg.message || '',
+        createdAt: msg.timestamp || msg.created_at || msg.createdAt || new Date().toISOString(),
+        type: msg.type || 'text',
+        isOwn: String(msg.sender_id || msg.senderId || '') === String(userId),
+      }));
+
+      // Ensure newest messages render at the bottom identically to Live Chat logic.
+      setMessages(mappedMessages.reverse());
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error('❌ Error loading message history:', error);
       setIsLoading(false);
       toast.show({
-        description: 'Failed to load message history',
+        description: error.response?.data?.error || 'Failed to load message history',
         duration: 3000,
       });
     }
@@ -242,15 +128,8 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Simulate refresh
-      setTimeout(() => {
-        setIsRefreshing(false);
-        toast.show({
-          description: 'Messages refreshed',
-          duration: 2000,
-        });
-      }, 1000);
-    } catch (error) {
+      await loadMessages();
+    } finally {
       setIsRefreshing(false);
     }
   };
@@ -359,20 +238,19 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
 
   // Get display name based on privacy mode
   const getDisplayName = (message: HistoryMessage, index: number) => {
-    // Always show therapist names
-    if (message.senderRole === 'therapist') {
+    // Always show own messages as 'You'
+    if (message.isOwn) {
+      return 'You';
+    }
+
+    // Always show therapist and moderator names
+    if (message.senderRole === 'therapist' || message.senderRole === 'moderator') {
       return message.senderName;
     }
 
-    // Privacy mode: show anonymous names for members
+    // Privacy mode: show anonymous names for members using utility
     if (privacyMode && message.senderRole === 'member') {
-      // Use index + 1 as anonymous ID (simple approach)
-      return `Member ${(index % 20) + 1}`;
-    }
-
-    // Moderators: show name with badge
-    if (message.senderRole === 'moderator') {
-      return privacyMode ? `Member ${(index % 20) + 1}` : message.senderName;
+      return generateAnonymousName(message.senderId, message.senderName);
     }
 
     // Default: show real name
@@ -414,10 +292,15 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
           />
           <View style={styles.messageInfo}>
             <View style={styles.senderInfo}>
-              <Text style={[styles.senderName, { color: getRoleColor(item.senderRole) }]}>
+              <Text style={[styles.senderName, { color: item.isOwn ? appColors.grey3 : getRoleColor(item.senderRole) }]}>
                 {displayName}
               </Text>
-              {item.senderRole === 'therapist' && (
+              {item.isOwn && (
+                <View style={[styles.roleBadge, { backgroundColor: appColors.grey4 }]}>
+                  <Text style={styles.roleBadgeText}>You (Private)</Text>
+                </View>
+              )}
+              {!item.isOwn && item.senderRole === 'therapist' && (
                 <View style={styles.roleBadge}>
                   <Text style={styles.roleBadgeText}>Therapist</Text>
                 </View>
@@ -469,6 +352,34 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
       )}
     </View>
   );
+
+  if (userRole === 'none') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={scale(24)} />
+          </TouchableOpacity>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Access Denied</Text>
+          </View>
+        </View>
+        <View style={styles.emptyState}>
+          <Icon name="lock" type="material" color={appColors.grey3} size={scale(64)} />
+          <Text style={styles.emptyStateTitle}>Restricted Access</Text>
+          <Text style={styles.emptyStateText}>
+            You must be an active member of this support group to view the message history.
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={() => navigation.goBack()}
+            buttonStyle={styles.clearSearchButton}
+            titleStyle={styles.clearSearchButtonText}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

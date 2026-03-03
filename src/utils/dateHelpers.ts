@@ -44,3 +44,104 @@ export const isPastEvent = (eventDate: string, endTime: string): boolean => {
         return false;
     }
 };
+
+/**
+ * Checks if a client-side event has already passed.
+ * Assumes the event has ended if 3 hours have passed since its start time.
+ */
+export const isClientEventPassed = (eventDate: string, eventTime: string): boolean => {
+    try {
+        if (!eventDate || !eventTime) return false;
+
+        const eventStart = new Date(`${eventDate} ${eventTime}`);
+        if (isNaN(eventStart.getTime())) return false;
+
+        // Assume event is "passed" 3 hours after its start time
+        const eventEndTime = new Date(eventStart.getTime() + 3 * 60 * 60000);
+        return eventEndTime < new Date();
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * Returns a smart teaser badge (hint and color) based on the event's start time.
+ * Calculates urgency (e.g., "Starting soon", "This week") or marks it "Passed"
+ */
+export const getEventStatusTeaser = (eventDate: string, eventTime: string): { hint: string, hintColor: string } => {
+    try {
+        if (!eventDate || !eventTime) return { hint: '', hintColor: '' };
+
+        const start = new Date(`${eventDate} ${eventTime}`);
+        if (isNaN(start.getTime())) return { hint: '', hintColor: '' };
+
+        const now = new Date();
+        const diffMs = start.getTime() - now.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        const diffHrs = Math.floor(diffMin / 60);
+        const diffDays = Math.floor(diffHrs / 24);
+
+        if (diffMin <= 0 && diffMin >= -180) {
+            return { hint: 'Join now', hintColor: '#4CAF50' }; // Green
+        }
+        if (diffMin < -180) {
+            return { hint: 'Passed', hintColor: '#9E9E9E' }; // Grey
+        }
+        if (diffMin > 0 && diffHrs < 24) {
+            return { hint: 'Starting soon', hintColor: '#FF9800' }; // Orange
+        }
+        if (diffHrs >= 24 && diffDays <= 3) {
+            return { hint: 'This week', hintColor: '#2196F3' }; // Blue
+        }
+        return { hint: '', hintColor: '' };
+    } catch {
+        return { hint: '', hintColor: '' };
+    }
+};
+
+/**
+ * Humanizes an ISO timestamp into conversational chat strings.
+ * @param dateString The raw ISO date/time string from the backend.
+ * @returns string Formatted "last seen" text (e.g., "active recently", "2h ago", "Yesterday", "MMM DD")
+ */
+export const humanizeLastSeen = (dateString?: string | null): string | null => {
+    if (!dateString || String(dateString).toLowerCase() === 'null') return null;
+
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return null;
+
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+
+        // Under 10 minutes
+        if (diffMins < 10) return 'active recently';
+
+        // Under 1 hour
+        if (diffMins < 60) return `${diffMins}m ago`;
+
+        // Under 24 hours & same day
+        if (diffHours < 24 && date.getDate() === now.getDate()) {
+            return `${diffHours}h ago`;
+        }
+
+        // Yesterday check
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        if (date.getDate() === yesterday.getDate() && date.getMonth() === yesterday.getMonth() && date.getFullYear() === yesterday.getFullYear()) {
+            return 'Yesterday';
+        }
+
+        // Same year fallback
+        if (date.getFullYear() === now.getFullYear()) {
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Full date
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+        return null; // Silent fallback
+    }
+};

@@ -10,17 +10,18 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
-  InteractionManager,
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
-import { useSelector } from 'react-redux';
-import { getGroups, joinGroup } from '../../api/client/groups';
+import { getGroups, joinGroup, getMyGroups } from '../../api/client/groups';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import { getMembershipInfo, validateGroupJoin } from '../../services/MembershipService';
 import MembershipLimitModal from '../../components/MembershipLimitModal';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { useDispatch, useSelector } from 'react-redux';
+import { setJoinedGroupIds, addJoinedGroupId, selectJoinedGroupIds } from '../../features/groups/groupsSlice';
 
 interface SupportGroup {
   id: string;
@@ -45,7 +46,10 @@ interface GroupsListScreenProps {
 
 const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
+  const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  const joinedGroupIds = useSelector(selectJoinedGroupIds);
   const groupsListRef = useRef<FlatList>(null);
   const isInitialMountRef = useRef<boolean>(true);
   const [groups, setGroups] = useState<SupportGroup[]>([]);
@@ -56,8 +60,8 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
 
-  // Get membership info
-  const membershipInfo = getMembershipInfo(groups);
+  // Get membership info instantly from local Redux state tracking
+  const membershipInfo = getMembershipInfo(joinedGroupIds.length);
 
   // Groups categories
   const categories = [
@@ -70,8 +74,19 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   ];
 
   useEffect(() => {
+    syncJoinedGroups();
     loadGroups();
   }, []);
+
+  useEffect(() => {
+    // Whenever Redux `joinedGroupIds` changes, re-evaluate the local state.
+    if (groups.length > 0) {
+      setGroups(prevGroups => prevGroups.map(group => ({
+        ...group,
+        isJoined: joinedGroupIds.includes(group.id)
+      })));
+    }
+  }, [joinedGroupIds, groups.length]);
 
   useEffect(() => {
     filterGroups();
@@ -88,6 +103,17 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     });
   }, [filteredGroups]);
 
+  const syncJoinedGroups = async () => {
+    try {
+      const response = await getMyGroups(userId);
+      const apiGroups = response.data?.groups || [];
+      const joinedIds = apiGroups.map((group: any) => group.id?.toString() || group._id?.toString());
+      dispatch(setJoinedGroupIds(joinedIds));
+    } catch (error) {
+      console.log('Failed to sync joined groups:', error);
+    }
+  };
+
   const loadGroups = async () => {
     setIsLoading(true);
     try {
@@ -96,22 +122,28 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       console.log('✅ Groups API Response:', JSON.stringify(response, null, 2));
 
       const apiGroups = response.data?.groups || [];
-      const mappedGroups: SupportGroup[] = apiGroups.map((group: any) => ({
-        id: group.id?.toString() || group._id?.toString(),
-        name: group.name || group.groupName || group.group_name || 'Unnamed Group',
-        description: group.description || '',
-        therapistName: group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown',
-        therapistEmail: group.therapistEmail || group.therapist_email || group.facilitatorEmail || group.facilitator_email || '',
-        therapistAvatar: getImageSource(group.therapistAvatar || group.therapist_avatar || group.facilitatorAvatar || group.facilitator_avatar, FALLBACK_IMAGES.avatar),
-        memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
-        maxMembers: group.maxMembers || group.max_members || group.capacity || 50,
-        icon: group.icon || 'group',
-        category: group.category || 'general',
-        isJoined: group.isJoined || group.is_joined || group.isMember || group.is_member || false,
-        isPrivate: group.isPrivate || group.is_private || false,
-        meetingSchedule: group.meetingSchedule || group.meeting_schedule || group.schedule || 'Schedule TBD',
-        tags: group.tags || [],
-      }));
+      const mappedGroups: SupportGroup[] = apiGroups.map((group: any) => {
+        const id = group.id?.toString() || group._id?.toString();
+        // Priority: Redux strict local synchronization state array
+        const dynamicallyJoined = joinedGroupIds.includes(id);
+
+        return {
+          id,
+          name: group.name || group.groupName || group.group_name || 'Unnamed Group',
+          description: group.description || '',
+          therapistName: group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown',
+          therapistEmail: group.therapistEmail || group.therapist_email || group.facilitatorEmail || group.facilitator_email || '',
+          therapistAvatar: getImageSource(group.therapistAvatar || group.therapist_avatar || group.facilitatorAvatar || group.facilitator_avatar, FALLBACK_IMAGES.avatar),
+          memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
+          maxMembers: group.maxMembers || group.max_members || group.capacity || 50,
+          icon: group.icon || 'group',
+          category: group.category || 'general',
+          isJoined: dynamicallyJoined,
+          isPrivate: group.isPrivate || group.is_private || false,
+          meetingSchedule: group.meetingSchedule || group.meeting_schedule || group.schedule || 'Schedule TBD',
+          tags: group.tags || [],
+        };
+      });
 
       setGroups(mappedGroups);
       console.log('✅ Mapped Groups:', mappedGroups.length);
@@ -162,7 +194,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     if (!group) return;
 
     // Validate membership limits
-    const validation = validateGroupJoin(groups, groupId);
+    const validation = validateGroupJoin(groups, groupId, joinedGroupIds.length);
 
     if (!validation.canJoin) {
       if (validation.reason === 'membership_limit') {
@@ -188,79 +220,95 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       }
     }
 
-    try {
-      console.log('📞 Calling joinGroup API...');
-      console.log('Group ID:', groupId);
-      console.log('User ID:', userId);
+    alert.show({
+      type: 'confirm',
+      title: `Join ${group.name}`,
+      message: 'Are you sure you want to join this support group? You agree to follow the community guidelines.',
+      confirmText: 'Join Group',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          console.log('📞 Calling joinGroup API...');
+          console.log('Group ID:', groupId);
+          console.log('User ID:', userId);
 
-      // Call API to join group
-      const response = await joinGroup(groupId, userId, '', true);
-      console.log('✅ Join group response:', response);
+          // Call API to join group with requested payload parameters
+          const response = await joinGroup(
+            groupId,
+            userId,
+            'I struggle with anxiety and need support',
+            true
+          );
 
-      // Handle private groups (request sent)
-      if (group.isPrivate) {
-        toast.show({
-          description: response.message || 'Join request sent to group therapist',
-          duration: 3000,
-        });
-        return;
-      }
+          console.log('✅ Join group response:', response);
 
-      // Update group membership in local state
-      setGroups(prev =>
-        prev.map(g =>
-          g.id === groupId
-            ? { ...g, isJoined: true, memberCount: g.memberCount + 1 }
-            : g
-        )
-      );
+          // Handle private groups (request sent)
+          if (group.isPrivate) {
+            toast.show({
+              description: response.message || 'Join request sent to group therapist',
+              duration: 3000,
+            });
+            return;
+          }
 
-      toast.show({
-        description: response.message || `Successfully joined ${group.name}`,
-        duration: 3000,
-      });
+          // Update group membership in local state and Redux
+          dispatch(addJoinedGroupId(groupId));
+          setGroups(prev =>
+            prev.map(g =>
+              g.id === groupId
+                ? { ...g, isJoined: true, memberCount: g.memberCount + 1 }
+                : g
+            )
+          );
 
-      // Reload groups to get fresh data
-      await loadGroups();
-    } catch (error: any) {
-      console.error('❌ Error joining group:', error);
-
-      // Handle specific error cases
-      if (error.response?.data?.error) {
-        const errorMsg = error.response.data.error;
-
-        if (errorMsg.includes('membership limit')) {
-          setShowLimitModal(true);
-          return;
-        }
-
-        if (errorMsg.includes('already a member')) {
           toast.show({
-            description: 'You are already a member of this group',
+            description: response.message || `Successfully joined ${group.name}`,
             duration: 3000,
           });
-          return;
-        }
 
-        if (errorMsg.includes('full')) {
-          toast.show({
-            description: 'Group is full. You\'ve been added to the waiting list.',
-            duration: 3000,
-          });
-          return;
-        }
+          // Reload groups to get fresh data
+          await loadGroups();
+        } catch (error: any) {
+          console.error('❌ Error joining group:', error);
 
-        toast.show({
-          description: errorMsg,
-          duration: 3000,
-        });
-      } else {
-        toast.show({
-          description: 'Failed to join group. Please try again.',
-          duration: 3000,
-        });
+          // Handle specific error cases
+          if (error.response?.data?.error) {
+            const errorMsg = error.response.data.error;
+
+            if (errorMsg.includes('membership limit')) {
+              setShowLimitModal(true);
+              return;
+            }
+
+            if (errorMsg.includes('already a member')) {
+              toast.show({
+                description: 'You are already a member of this group',
+                duration: 3000,
+              });
+              return;
+            }
+
+            if (errorMsg.includes('full')) {
+              toast.show({
+                description: 'Group is full. You\'ve been added to the waiting list.',
+                duration: 3000,
+              });
+              return;
+            }
+
+            toast.show({
+              description: errorMsg,
+              duration: 3000,
+            });
+          } else {
+            toast.show({
+              description: 'Failed to join group. Please try again.',
+              duration: 3000,
+            });
+          }
+        }
       }
-    }
+    });
   };
 
   // Handle group press
@@ -507,6 +555,9 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         }}
         onClose={() => setShowLimitModal(false)}
       />
+
+      {/* Alert Component */}
+      <ISAlert ref={alert.ref} />
     </View>
   );
 };

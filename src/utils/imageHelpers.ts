@@ -25,12 +25,17 @@ import { ImageSourcePropType } from 'react-native';
  * // Returns: require('../assets/images/is-default.png')
  */
 export const getImageSource = (
-  imagePath: string | null | undefined,
+  imagePath: any,
   fallbackImage: ImageSourcePropType
 ): ImageSourcePropType => {
   // If no image path provided, use fallback
   if (!imagePath) {
     return fallbackImage;
+  }
+
+  // If imagePath is not a string (e.g. it's already a required static local asset or uri object), return it as is
+  if (typeof imagePath !== 'string') {
+    return imagePath as ImageSourcePropType;
   }
 
   // If already a full URL (starts with http/https), use as is
@@ -51,13 +56,13 @@ export const getImageSource = (
  * getUploadUrl('uploads/img_123.jpg')
  * // Returns: 'https://app.innersparkafrica.us/uploads/img_123.jpg'
  */
-export const getUploadUrl = (imagePath: string | null | undefined): string => {
-  if (!imagePath) return '';
-  
+export const getUploadUrl = (imagePath: any): string => {
+  if (!imagePath || typeof imagePath !== 'string') return '';
+
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
-  
+
   return `${UPLOADS_BASE_URL}/${imagePath}`;
 };
 
@@ -68,22 +73,22 @@ export const getUploadUrl = (imagePath: string | null | undefined): string => {
 export const FALLBACK_IMAGES = {
   /** Default placeholder for general content (events, articles, etc.) */
   default: require('../assets/images/is-default.png'),
-  
+
   /** Avatar placeholder for users, organizers, therapists, etc. */
   avatar: require('../assets/images/avatar-placeholder.png'),
-  
+
   /** Event cover image fallback */
   event: require('../assets/images/is-default.png'),
-  
+
   /** Profile/user image fallback */
   profile: require('../assets/images/avatar-placeholder.png'),
-  
+
   /** Group image fallback */
   group: require('../assets/images/is-default.png'),
-  
+
   /** Meditation/article image fallback */
   meditation: require('../assets/images/is-default.png'),
-  
+
   /** User/chat partner image fallback */
   user: require('../assets/images/avatar-placeholder.png'),
 };

@@ -32,6 +32,7 @@ import { addRegisteredEventId, removeRegisteredEventId, selectIsEventRegistered 
 import { UPLOADS_BASE_URL } from '../../config/env';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
+import { isClientEventPassed } from '../../utils/dateHelpers';
 
 interface Event {
   id: number;
@@ -229,40 +230,49 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
       return;
     }
 
-    // If unregistering, proceed directly
+    // If unregistering, ask for confirmation first
     if (isRegistered) {
-      setIsLoading(true);
-      try {
-        console.log('🔄 Unregistering from event:', event.id);
-        await unregisterFromEvent(event.id.toString(), userId);
+      alert.show({
+        type: 'confirm',
+        title: 'Cancel Ticket',
+        message: 'Are you sure you want to cancel your registration for this event?',
+        confirmText: 'Yes, Cancel',
+        cancelText: 'Keep Ticket',
+        onConfirm: async () => {
+          setIsLoading(true);
+          try {
+            console.log('🔄 Unregistering from event:', event.id);
+            await unregisterFromEvent(event.id.toString(), userId);
 
-        // Update Redux store immediately
-        dispatch(removeRegisteredEventId(event.id));
+            // Update Redux store immediately so the global state knows we are not registered
+            dispatch(removeRegisteredEventId(event.id));
 
-        toast.show({
-          description: 'Successfully unregistered from event',
-          duration: 3000,
-        });
+            toast.show({
+              description: 'Successfully unregistered from event',
+              duration: 3000,
+            });
 
-        // Reload event data to update seat count
-        await loadEventData();
-      } catch (error: any) {
-        console.error('❌ Unregistration error:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          stack: error.stack,
-        });
+            // Redirect smoothly back to the My Events tab so the UI fully resets
+            resetToMyEvents();
+          } catch (error: any) {
+            console.error('❌ Unregistration error:', {
+              message: error.message,
+              response: error.response?.data,
+              status: error.response?.status,
+              stack: error.stack,
+            });
 
-        // Only show user-friendly message in toast
-        const userMessage = error.response?.data?.message || 'Unregistration failed. Please try again.';
-        toast.show({
-          description: userMessage,
-          duration: 3000,
-        });
-      } finally {
-        setIsLoading(false);
-      }
+            // Only show user-friendly message in toast
+            const userMessage = error.response?.data?.message || 'Unregistration failed. Please try again.';
+            toast.show({
+              description: userMessage,
+              duration: 3000,
+            });
+          } finally {
+            setIsLoading(false);
+          }
+        },
+      });
       return;
     }
 
@@ -510,9 +520,19 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
       };
     }
 
+    const isPassed = isClientEventPassed(event.date, event.time);
+
+    if (isPassed) {
+      return {
+        title: 'Event Passed',
+        disabled: true,
+        color: appColors.AppGray,
+      };
+    }
+
     if (isRegistered) {
       return {
-        title: 'Unregister',
+        title: 'Registered - Cancel Ticket',
         disabled: false,
         color: '#F44336',
       };

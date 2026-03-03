@@ -13,6 +13,9 @@ export interface MembershipInfo {
   remainingSlots: number;
 }
 
+// Global configurable limit allowing manual override across all plans.
+export const GLOBAL_MEMBERSHIP_LIMIT = 1;
+
 export interface PlanLimits {
   free: number;
   basic: number;
@@ -20,13 +23,7 @@ export interface PlanLimits {
   unlimited: number;
 }
 
-// Plan limits configuration
-const PLAN_LIMITS: PlanLimits = {
-  free: 0,        // No groups for free users
-  basic: 3,       // 3 groups for basic plan
-  premium: 4,     // 4 groups for premium plan
-  unlimited: -1,  // Unlimited groups
-};
+// Plan limits configuration originally here - Replaced by GLOBAL_MEMBERSHIP_LIMIT
 
 // Plan display names
 const PLAN_NAMES: Record<MembershipPlan, string> = {
@@ -72,7 +69,7 @@ export const getMembershipPlan = (): MembershipPlan => {
   // TODO: Get from Redux store
   // const userDetails = useSelector(state => state.userData.userDetails);
   // return userDetails?.membershipPlan || 'free';
-  
+
   // For now, return mock data
   return 'basic';
 };
@@ -80,8 +77,9 @@ export const getMembershipPlan = (): MembershipPlan => {
 /**
  * Get the group limit for a specific plan
  */
-export const getGroupLimit = (plan: MembershipPlan): number => {
-  return PLAN_LIMITS[plan] || 0;
+export const getGroupLimit = (_plan: MembershipPlan): number => {
+  // Configured universally via GLOBAL_MEMBERSHIP_LIMIT configuration
+  return GLOBAL_MEMBERSHIP_LIMIT;
 };
 
 /**
@@ -103,12 +101,12 @@ export const getJoinedGroupsCount = (groups: any[]): number => {
  */
 export const canJoinMoreGroups = (plan: MembershipPlan, joinedCount: number): boolean => {
   const limit = getGroupLimit(plan);
-  
+
   // Unlimited plan
   if (limit === -1) {
     return true;
   }
-  
+
   // Check if under limit
   return joinedCount < limit;
 };
@@ -118,30 +116,30 @@ export const canJoinMoreGroups = (plan: MembershipPlan, joinedCount: number): bo
  */
 export const getRemainingGroupSlots = (plan: MembershipPlan, joinedCount: number): number => {
   const limit = getGroupLimit(plan);
-  
+
   // Unlimited plan
   if (limit === -1) {
     return -1;
   }
-  
+
   const remaining = limit - joinedCount;
   return remaining > 0 ? remaining : 0;
 };
 
 /**
  * Get comprehensive membership info for user
+ * @param joinedDatabaseCount The raw Redux array length calculating exact numbers instantly.
  */
-export const getMembershipInfo = (groups: any[]): MembershipInfo => {
+export const getMembershipInfo = (joinedDatabaseCount: number): MembershipInfo => {
   const plan = getMembershipPlan();
   const groupLimit = getGroupLimit(plan);
-  const joinedGroupsCount = getJoinedGroupsCount(groups);
-  const canJoinMore = canJoinMoreGroups(plan, joinedGroupsCount);
-  const remainingSlots = getRemainingGroupSlots(plan, joinedGroupsCount);
-  
+  const canJoinMore = canJoinMoreGroups(plan, joinedDatabaseCount);
+  const remainingSlots = getRemainingGroupSlots(plan, joinedDatabaseCount);
+
   return {
     plan,
     groupLimit,
-    joinedGroupsCount,
+    joinedGroupsCount: joinedDatabaseCount,
     canJoinMore,
     remainingSlots,
   };
@@ -149,13 +147,17 @@ export const getMembershipInfo = (groups: any[]): MembershipInfo => {
 
 /**
  * Validate if user can join a specific group
+ * @param groups The FlatList array objects evaluating active metadata metrics natively.
+ * @param groupId 
+ * @param joinedCount The instant Redux sync counter value mapping.
  */
 export const validateGroupJoin = (
   groups: any[],
-  groupId: string
+  groupId: string,
+  joinedCount: number
 ): { canJoin: boolean; reason?: string } => {
-  const membershipInfo = getMembershipInfo(groups);
-  
+  const membershipInfo = getMembershipInfo(joinedCount);
+
   // Check if already joined
   const group = groups.find(g => g.id === groupId);
   if (group?.isJoined) {
@@ -164,7 +166,7 @@ export const validateGroupJoin = (
       reason: 'already_joined',
     };
   }
-  
+
   // Check if group is full
   if (group && group.memberCount >= group.maxMembers && !group.isPrivate) {
     return {
@@ -172,7 +174,7 @@ export const validateGroupJoin = (
       reason: 'group_full',
     };
   }
-  
+
   // Check membership limit
   if (!membershipInfo.canJoinMore) {
     return {
@@ -180,7 +182,7 @@ export const validateGroupJoin = (
       reason: 'membership_limit',
     };
   }
-  
+
   return { canJoin: true };
 };
 
@@ -194,7 +196,7 @@ export const getNextUpgradePlan = (currentPlan: MembershipPlan): MembershipPlan 
     premium: 'unlimited',
     unlimited: null,
   };
-  
+
   return upgradePath[currentPlan];
 };
 
@@ -204,7 +206,7 @@ export const getNextUpgradePlan = (currentPlan: MembershipPlan): MembershipPlan 
 export const getUpgradeBenefits = (currentPlan: MembershipPlan): string[] => {
   const nextPlan = getNextUpgradePlan(currentPlan);
   if (!nextPlan) return [];
-  
+
   return PLAN_BENEFITS[nextPlan];
 };
 

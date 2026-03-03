@@ -6,9 +6,9 @@
  * @description: Push Notification API Functions for the InnerSpark App
 */
 
-import notifee, { 
-  AndroidImportance, 
-  AndroidStyle, 
+import notifee, {
+  AndroidImportance,
+  AndroidStyle,
   TriggerType,
   AndroidCategory,
   AndroidVisibility,
@@ -20,7 +20,7 @@ import { Linking } from 'react-native';
 import { APIInstance } from './LHAPI';
 
 // ### NOTIFICATION CHANNELS ###
-const CHANNELS = {
+export const CHANNELS = {
   APPOINTMENTS: 'appointments',
   GOALS: 'goals',
   REMINDERS: 'reminders',
@@ -168,7 +168,7 @@ const getNotificationColor = (type: string): string => {
     [NOTIFICATION_TYPES.THERAPIST_MESSAGE]: '#4CAF50', // Green for therapist messages
     [NOTIFICATION_TYPES.COMMUNITY_UPDATE]: '#9C27B0', // Purple for community
   };
-  
+
   return colorMap[type] || '#87CEEB'; // Default to sky blue
 };
 
@@ -237,7 +237,7 @@ export const displayNotification = async (notificationData) => {
 export const scheduleNotification = async (notificationData, triggerTime) => {
   try {
     const notificationId = await displayNotification(notificationData);
-    
+
     const trigger = {
       type: TriggerType.TIMESTAMP,
       timestamp: triggerTime,
@@ -261,7 +261,7 @@ export const scheduleNotification = async (notificationData, triggerTime) => {
 // Appointment Notifications
 export const sendAppointmentReminder = async (appointmentData) => {
   const { therapistName, appointmentTime, appointmentId } = appointmentData;
-  
+
   return await displayNotification({
     title: 'Appointment Reminder',
     body: `Your session with ${therapistName} is scheduled for ${appointmentTime}`,
@@ -278,7 +278,7 @@ export const sendAppointmentReminder = async (appointmentData) => {
 
 export const sendAppointmentConfirmation = async (appointmentData) => {
   const { therapistName, appointmentTime, appointmentId } = appointmentData;
-  
+
   return await displayNotification({
     title: 'Appointment Confirmed',
     body: `Your appointment with ${therapistName} has been confirmed for ${appointmentTime}`,
@@ -292,7 +292,7 @@ export const sendAppointmentConfirmation = async (appointmentData) => {
 // Goal Notifications
 export const sendGoalAchievement = async (goalData) => {
   const { goalTitle, goalId } = goalData;
-  
+
   return await displayNotification({
     title: '🎉 Goal Achieved!',
     body: `Congratulations! You completed "${goalTitle}". Keep up the great work!`,
@@ -309,7 +309,7 @@ export const sendGoalAchievement = async (goalData) => {
 
 export const sendGoalReminder = async (goalData) => {
   const { goalTitle, goalId } = goalData;
-  
+
   return await displayNotification({
     title: 'Goal Reminder',
     body: `Don't forget to work on "${goalTitle}" today. Small steps lead to big changes!`,
@@ -338,7 +338,7 @@ export const sendMoodCheckInReminder = async () => {
 // Event Notifications
 export const sendEventAvailable = async (eventData) => {
   const { eventTitle, eventDate, eventId } = eventData;
-  
+
   return await displayNotification({
     title: 'New Event Available',
     body: `"${eventTitle}" is now open for registration. Event date: ${eventDate}`,
@@ -356,7 +356,7 @@ export const sendEventAvailable = async (eventData) => {
 // System Notifications
 export const sendSystemUpdate = async (updateData) => {
   const { version, features } = updateData;
-  
+
   return await displayNotification({
     title: 'App Updated',
     body: `InnerSpark v${version} is now available with new features: ${features}`,
@@ -369,7 +369,7 @@ export const sendSystemUpdate = async (updateData) => {
 // Wellness Tips
 export const sendWellnessTip = async (tipData) => {
   const { tip, category } = tipData;
-  
+
   return await displayNotification({
     title: '💡 Wellness Tip',
     body: tip,
@@ -383,7 +383,7 @@ export const sendWellnessTip = async (tipData) => {
 // Progress Updates
 export const sendProgressUpdate = async (progressData) => {
   const { message, achievements } = progressData;
-  
+
   return await displayNotification({
     title: '📊 Your Progress This Week',
     body: message,
@@ -412,7 +412,7 @@ export const sendEmergencySupport = async () => {
 // ### MOCK NOTIFICATION TESTING ###
 export const triggerTestNotifications = async () => {
   console.log('🧪 Triggering test notifications...');
-  
+
   try {
     // Test appointment reminder (immediate)
     await sendAppointmentReminder({
@@ -473,11 +473,11 @@ export const setupNotificationEventListeners = () => {
     // Listen for notification press events (when user taps notification)
     const unsubscribePress = notifee.onForegroundEvent(({ type, detail }) => {
       console.log('🔔 Foreground notification event:', type, detail);
-      
+
       if (type === EventType.PRESS) {
         handleNotificationPress(detail.notification);
       }
-      
+
       if (type === EventType.ACTION_PRESS) {
         handleNotificationAction(detail.pressAction?.id, detail.notification);
       }
@@ -486,11 +486,11 @@ export const setupNotificationEventListeners = () => {
     // Listen for background notification events
     notifee.onBackgroundEvent(async ({ type, detail }) => {
       console.log('🔔 Background notification event:', type, detail);
-      
+
       if (type === EventType.PRESS) {
         await handleNotificationPress(detail.notification);
       }
-      
+
       if (type === EventType.ACTION_PRESS) {
         await handleNotificationAction(detail.pressAction?.id, detail.notification);
       }
@@ -508,14 +508,14 @@ export const handleNotificationPress = async (notificationData) => {
   try {
     console.log('📱 Notification pressed:', notificationData);
     const { data } = notificationData || {};
-    
+
     if (data?.deepLink) {
       console.log('🔗 Opening deep link:', data.deepLink);
       await Linking.openURL(data.deepLink);
     } else {
       console.log('⚠️ No deep link found in notification data');
     }
-    
+
   } catch (error) {
     console.error('❌ Failed to handle notification press:', error);
   }
@@ -524,7 +524,7 @@ export const handleNotificationPress = async (notificationData) => {
 export const handleNotificationAction = async (actionId, notificationData) => {
   try {
     const { data } = notificationData;
-    
+
     switch (actionId) {
       case 'view':
         if (data?.deepLink) {
@@ -545,7 +545,7 @@ export const handleNotificationAction = async (actionId, notificationData) => {
       default:
         console.log('🔄 Unknown action:', actionId);
     }
-    
+
     console.log('⚡ Notification action handled:', actionId);
   } catch (error) {
     console.error('❌ Failed to handle notification action:', error);
@@ -556,7 +556,7 @@ export const handleNotificationAction = async (actionId, notificationData) => {
 export const requestNotificationPermissions = async () => {
   try {
     const settings = await notifee.requestPermission();
-    
+
     if (settings.authorizationStatus >= 1) {
       console.log('✅ Notification permissions granted');
       return true;
@@ -620,7 +620,7 @@ interface BackendNotification {
   scheduled_at?: string;
   image_url?: string;
   deep_link?: string;
-  actions?: Array<{id: string, title: string}>;
+  actions?: Array<{ id: string, title: string }>;
   priority: 'low' | 'normal' | 'high';
   created_at: string;
   expires_at?: string;
@@ -632,11 +632,11 @@ export const fetchNotificationsFromBackend = async (userId?: string, lastFetchTi
     const params: any = {};
     if (userId) params.user_id = userId;
     if (lastFetchTime) params.since = lastFetchTime;
-    
+
     const response = await APIInstance.get('/notifications', { params });
     const data = response.data;
     console.log(`✅ Fetched ${data.notifications?.length || 0} notifications from backend`);
-    
+
     return {
       notifications: data.notifications || [],
       hasMore: data.has_more || false,
@@ -675,11 +675,11 @@ export const processBackendNotifications = async (notifications: BackendNotifica
 
       // Display the notification
       await displayNotification(notificationData);
-      
+
       // Mark as delivered on backend
       await markNotificationAsDelivered(notification.id);
     }
-    
+
     console.log(`✅ Processed ${notifications.length} backend notifications`);
   } catch (error) {
     console.error('❌ Failed to process backend notifications:', error);
@@ -698,7 +698,7 @@ const getChannelForType = (type: string): string => {
     [NOTIFICATION_TYPES.THERAPIST_MESSAGE]: CHANNELS.MESSAGES,
     [NOTIFICATION_TYPES.COMMUNITY_UPDATE]: CHANNELS.EVENTS,
   };
-  
+
   return channelMap[type] || CHANNELS.SYSTEM;
 };
 
@@ -706,7 +706,7 @@ const getChannelForType = (type: string): string => {
 export const markNotificationAsDelivered = async (notificationId: string) => {
   try {
     await APIInstance.post(`/notifications/${notificationId}/delivered`);
-    
+
     console.log(`✅ Marked notification ${notificationId} as delivered`);
   } catch (error) {
     console.error(`❌ Failed to mark notification ${notificationId} as delivered:`, error);
@@ -717,7 +717,7 @@ export const markNotificationAsDelivered = async (notificationId: string) => {
 export const markNotificationAsRead = async (notificationId: string) => {
   try {
     await APIInstance.post(`/notifications/${notificationId}/read`);
-    
+
     console.log(`✅ Marked notification ${notificationId} as read`);
   } catch (error) {
     console.error(`❌ Failed to mark notification ${notificationId} as read:`, error);
@@ -728,24 +728,24 @@ export const markNotificationAsRead = async (notificationId: string) => {
 export const syncNotificationsWithBackend = async (userId?: string) => {
   try {
     console.log('🔄 Syncing notifications with backend...');
-    
+
     // Get last sync time from storage (you might want to use AsyncStorage)
     const lastSyncTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // Last 24 hours
-    
+
     // Fetch new notifications
     const result = await fetchNotificationsFromBackend(userId, lastSyncTime);
-    
+
     if (result.notifications.length > 0) {
       // Process and display notifications
       await processBackendNotifications(result.notifications);
-      
+
       // Update badge count
       const unreadCount = result.notifications.filter(n => !n.data?.read).length;
       if (unreadCount > 0) {
         await setBadgeCount(unreadCount);
       }
     }
-    
+
     console.log('✅ Notification sync completed');
     return result;
   } catch (error) {
@@ -763,7 +763,7 @@ export const registerDeviceForPushNotifications = async (userId: string, fcmToke
       platform: 'android',
       app_version: '1.0.0', // You can get this from your app config
     });
-    
+
     console.log('✅ Device registered for push notifications');
   } catch (error) {
     console.error('❌ Failed to register device for push notifications:', error);
@@ -774,7 +774,7 @@ export const registerDeviceForPushNotifications = async (userId: string, fcmToke
 // Admin Dashboard Notification Functions
 export const sendAdminAnnouncement = async (announcementData: any) => {
   const { title, message, imageUrl, priority = 'normal' } = announcementData;
-  
+
   return await displayNotification({
     title: `📢 ${title}`,
     body: message,
@@ -789,7 +789,7 @@ export const sendAdminAnnouncement = async (announcementData: any) => {
 
 export const sendAdminUpdate = async (updateData: any) => {
   const { title, message, version, features } = updateData;
-  
+
   return await displayNotification({
     title: title || 'App Update Available',
     body: message || `New features: ${features}`,
@@ -802,7 +802,7 @@ export const sendAdminUpdate = async (updateData: any) => {
 
 export const sendMaintenanceNotification = async (maintenanceData: any) => {
   const { title, message, startTime, endTime } = maintenanceData;
-  
+
   return await displayNotification({
     title: title || '🔧 Scheduled Maintenance',
     body: message || `Maintenance scheduled from ${startTime} to ${endTime}`,
@@ -821,7 +821,7 @@ export default {
   displayNotification,
   scheduleNotification,
   requestNotificationPermissions,
-  
+
   // Local Notification Functions
   sendAppointmentReminder,
   sendAppointmentConfirmation,
@@ -834,7 +834,7 @@ export default {
   sendProgressUpdate,
   sendEmergencySupport,
   triggerTestNotifications,
-  
+
   // Backend Integration Functions
   fetchNotificationsFromBackend,
   processBackendNotifications,
@@ -842,12 +842,12 @@ export default {
   markNotificationAsDelivered,
   markNotificationAsRead,
   registerDeviceForPushNotifications,
-  
+
   // Admin Dashboard Functions
   sendAdminAnnouncement,
   sendAdminUpdate,
   sendMaintenanceNotification,
-  
+
   // Notification Management
   handleNotificationPress,
   handleNotificationAction,
@@ -855,7 +855,7 @@ export default {
   cancelAllNotifications,
   setBadgeCount,
   clearBadge,
-  
+
   // Constants
   NOTIFICATION_TYPES,
   DEEP_LINK_ACTIONS,

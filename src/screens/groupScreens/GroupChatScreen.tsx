@@ -33,6 +33,8 @@ import { getGroupMessages, sendGroupMessage } from '../../api/client/groups';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { maskName, generateAnonymousName } from '../../utils/privacyHelpers';
+import { displayNotification, NOTIFICATION_TYPES, CHANNELS } from '../../api/LHNotifications';
 
 interface GroupMessage {
   id: string;
@@ -73,9 +75,12 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     groupDescription,
     memberCount,
     userRole = 'member',
-    privacyMode = true, // Default to privacy ON
+    privacyMode: _privacyMode, // Safely alias from params
     showModeration = false,
   } = route.params || {};
+
+  // For Client Apps, ALWAYS default to Privacy Mode enabled.
+  const privacyMode = _privacyMode !== undefined ? _privacyMode : true;
 
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [messageText, setMessageText] = useState('');
@@ -89,15 +94,20 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
   useEffect(() => {
     loadMessages();
-    simulateSocketEvents();
+
+    // Auto-poll for new messages every 5 seconds silently without loading spinners
+    const intervalId = setInterval(() => {
+      loadMessages(true);
+    }, 5000);
 
     return () => {
+      clearInterval(intervalId);
       handleSocketLeave();
     };
   }, []);
 
-  const loadMessages = async () => {
-    setIsLoading(true);
+  const loadMessages = async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
     try {
       console.log('📞 Calling getGroupMessages API...');
       console.log('Group ID:', groupId);
@@ -106,22 +116,48 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       const response = await getGroupMessages(groupId, userId, 1, 50);
       console.log('✅ Group messages response:', response);
 
-      // Map API response to local message format
-      if (response.messages && response.messages.length > 0) {
-        const mappedMessages = response.messages.map((msg: any) => ({
+      // Map API response to local message format safely unpacking nested "data" objects
+      const apiMessages = response.data?.messages || response.messages;
+
+      if (apiMessages && apiMessages.length > 0) {
+        const mappedMessages = apiMessages.map((msg: any) => ({
           id: msg.id || msg.message_id,
           senderId: msg.sender_id || msg.senderId,
           senderName: msg.sender_name || msg.senderName || 'Unknown',
           senderRole: msg.sender_role || msg.senderRole || 'member',
           anonymousId: msg.anonymous_id || msg.anonymousId,
           content: msg.content || msg.message || '',
-          createdAt: msg.created_at || msg.createdAt || new Date().toISOString(),
+          createdAt: msg.timestamp || msg.created_at || msg.createdAt || new Date().toISOString(),
           isDelivered: msg.is_delivered !== undefined ? msg.is_delivered : true,
           isSeen: msg.is_seen !== undefined ? msg.is_seen : false,
-          isOwn: msg.sender_id === userId || msg.senderId === userId,
+          isOwn: String(msg.sender_id) === String(userId) || String(msg.senderId) === String(userId),
           type: msg.type || 'text',
-        }));
-        setMessages(mappedMessages);
+        })).reverse(); // Reverse array so newest items (index 0 in API) sit at the bottom visually
+
+        setMessages(prev => {
+          if (isSilent && prev.length > 0) {
+            // Compare new mappedMessages with previous state to find net-new messages
+            const newMessages = mappedMessages.filter((newMsg: GroupMessage) => !prev.some((oldMsg: GroupMessage) => oldMsg.id === newMsg.id));
+
+            // Only notify for messages from other users
+            const incomingMessages = newMessages.filter((msg: GroupMessage) => !msg.isOwn);
+
+            incomingMessages.forEach((msg: GroupMessage) => {
+              const senderDisplayName = (msg.senderRole === 'member' && privacyMode)
+                ? generateAnonymousName(msg.senderId, msg.senderName)
+                : msg.senderName;
+
+              displayNotification({
+                title: `New message in ${groupName || 'Group'}`,
+                body: `${senderDisplayName}: ${msg.content || 'Sent an attachment'}`,
+                type: NOTIFICATION_TYPES.MESSAGE_RECEIVED,
+                channelId: CHANNELS.MESSAGES,
+              });
+            });
+          }
+          return mappedMessages;
+        });
+
       } else {
         // Empty state - no messages
         console.log('ℹ️ No messages found - showing empty state');
@@ -134,13 +170,16 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     } catch (error: any) {
       console.error('❌ Error loading messages:', error);
 
-      // Empty state on error - no mock fallback
-      setMessages([]);
-      setIsLoading(false);
-      toast.show({
-        description: 'Failed to load messages',
-        duration: 3000,
-      });
+      if (!isSilent) {
+        setMessages([]);
+        setIsLoading(false);
+      }
+      if (!isSilent) {
+        toast.show({
+          description: 'Failed to load messages',
+          duration: 3000,
+        });
+      }
     }
   };
 
@@ -150,30 +189,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     setIsRefreshing(false);
   };
 
-  const simulateSocketEvents = () => {
-    setTimeout(() => {
-      setTypingUsers([{ id: 'member_3', name: 'James', anonymousId: 5 }]);
-    }, 3000);
 
-    setTimeout(() => {
-      setTypingUsers([]);
-      const newMessage: GroupMessage = {
-        id: Date.now().toString(),
-        senderId: 'member_3',
-        senderName: 'James Carter',
-        senderRole: 'member',
-        anonymousId: 5,
-        content: 'Thank you Dr. Johnson, that breathing exercise really helps!',
-        createdAt: new Date().toISOString(),
-        isDelivered: true,
-        isSeen: false,
-        isOwn: false,
-        type: 'text',
-      };
-      setMessages(prev => [...prev, newMessage]);
-      scrollToBottom();
-    }, 6000);
-  };
 
   const handleSocketJoin = () => {
     console.log(`Joined group chat: ${groupId}`);
@@ -236,7 +252,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           msg.id === tempId
             ? {
               ...msg,
-              id: response.message?.id || response.id || tempId,
+              id: response.data?.message?.id || response.message?.id || response.data?.id || response.id || tempId,
               isDelivered: true,
             }
             : msg
@@ -339,8 +355,8 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
   // Get display name based on privacy mode
   const getDisplayName = (message: GroupMessage) => {
-    // Always show therapist names
-    if (message.senderRole === 'therapist') {
+    // Always show therapist and moderator names
+    if (message.senderRole === 'therapist' || message.senderRole === 'moderator') {
       return message.senderName;
     }
 
@@ -351,12 +367,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
     // Privacy mode: show anonymous names for members
     if (privacyMode && message.senderRole === 'member') {
-      return `Member ${message.anonymousId || '?'}`;
-    }
-
-    // Moderators: show name with badge
-    if (message.senderRole === 'moderator') {
-      return privacyMode ? `Member ${message.anonymousId || '?'}` : message.senderName;
+      return generateAnonymousName(message.senderId, message.senderName);
     }
 
     // Default: show real name
@@ -461,6 +472,15 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
             ]}
             onLongPress={() => item.isOwn && handleDeleteMessage(item.id)}
           >
+            {item.isOwn && (
+              <Text style={[
+                styles.senderName,
+                { color: appColors.grey3, alignSelf: 'flex-end', fontSize: scale(11), marginBottom: scale(2) }
+              ]}>
+                You (Private)
+              </Text>
+            )}
+
             {!item.isOwn && (
               <Text style={[
                 styles.senderName,
@@ -510,7 +530,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
     const typingNames = typingUsers.map(user => {
       if (privacyMode && user.anonymousId) {
-        return `Member ${user.anonymousId}`;
+        return generateAnonymousName(user.id, user.name);
       }
       return user.name;
     }).join(', ');
@@ -541,10 +561,10 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               icon: groupIcon,
               description: groupDescription,
               memberCount: memberCount,
-              // Pass therapist info from route params or use defaults
-              therapistName: route.params?.therapistName || 'Dr. Sarah Johnson',
+              // Pass therapist info from route params or use defaults without mocks
+              therapistName: route.params?.therapistName || '',
               therapistAvatar: route.params?.therapistAvatar,
-              therapistEmail: route.params?.therapistEmail || 'sarah.johnson@innerspark.com',
+              therapistEmail: route.params?.therapistEmail || '',
               category: route.params?.category || 'Mental Health',
               isPrivate: route.params?.isPrivate || false,
               maxMembers: route.params?.maxMembers || 20,
@@ -577,10 +597,21 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           style={styles.messagesList}
-          contentContainerStyle={styles.messagesContent}
+          contentContainerStyle={[styles.messagesContent, messages.length === 0 && { flexGrow: 1 }]}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
           ListHeaderComponent={renderGroupInfoHeader}
+          ListEmptyComponent={
+            !isLoading ? (
+              <View style={styles.emptyStateContainer}>
+                <Icon name="chat-bubble-outline" type="material" size={scale(48)} color={appColors.grey4} />
+                <Text style={styles.emptyStateTitle}>No Messages Yet</Text>
+                <Text style={styles.emptyStateDescription}>
+                  Be the first to say hello and start the conversation!
+                </Text>
+              </View>
+            ) : null
+          }
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -799,6 +830,27 @@ const styles = StyleSheet.create({
   ownMessageBubble: {
     backgroundColor: appColors.AppBlue,
     borderBottomRightRadius: scale(4),
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: scale(64),
+    paddingHorizontal: scale(32),
+  },
+  emptyStateTitle: {
+    fontSize: moderateScale(16),
+    fontFamily: appFonts.headerTextBold,
+    color: appColors.grey2,
+    marginTop: scale(16),
+    marginBottom: scale(8),
+  },
+  emptyStateDescription: {
+    fontSize: moderateScale(14),
+    fontFamily: appFonts.bodyTextRegular,
+    color: appColors.grey3,
+    textAlign: 'center',
+    lineHeight: scale(20),
   },
   otherMessageBubble: {
     backgroundColor: appColors.CardBackground,

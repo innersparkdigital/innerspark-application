@@ -15,10 +15,14 @@ import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { getGroupById, joinGroup, leaveGroup } from '../../api/client/groups';
-import { mockGroupDetailMembers } from '../../global/MockData';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { generateAnonymousName } from '../../utils/privacyHelpers';
+import { addJoinedGroupId, removeJoinedGroupId, selectIsGroupJoined, selectJoinedGroupIds } from '../../features/groups/groupsSlice';
+import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
+import { validateGroupJoin, getMembershipInfo } from '../../services/MembershipService';
+import MembershipLimitModal from '../../components/MembershipLimitModal';
 
 interface GroupMember {
   id: string;
@@ -38,21 +42,25 @@ interface GroupDetailScreenProps {
 const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const alert = useISAlert();
+  const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const { group } = route.params;
+  const isGroupJoined = useSelector(selectIsGroupJoined(group.id));
   const [groupDetails, setGroupDetails] = useState(group);
   const [members, setMembers] = useState<GroupMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<'member' | 'moderator' | 'none'>('none');
+  const [showLimitModal, setShowLimitModal] = useState(false);
+
+  const joinedGroupIds = useSelector(selectJoinedGroupIds);
+  const membershipInfo = getMembershipInfo(joinedGroupIds.length);
 
 
-  useEffect(() => {
-    loadGroupDetails();
-  }, []);
-
-  const loadGroupDetails = async () => {
+  const loadGroupDetails = React.useCallback(async (isJoinedOverride?: boolean) => {
     setIsLoading(true);
     try {
+      const effectiveJoined = isJoinedOverride !== undefined ? isJoinedOverride : isGroupJoined;
+
       console.log('📞 Calling getGroupById API...');
       console.log('Group ID:', group.id);
       console.log('User ID:', userId);
@@ -60,57 +68,43 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       const response = await getGroupById(group.id, userId);
       console.log('✅ Group details response:', response);
 
-      // Update group details from API
-      if (response.group) {
-        setGroupDetails(response.group);
+      // Update group details from API safely handling nested 'data' objects
+      const groupData = response.group || response.data || {};
+
+      if (Object.keys(groupData).length > 0) {
+        setGroupDetails((prev: any) => ({ ...prev, ...groupData }));
       }
 
-      // Set members from API or fallback to mock
-      if (response.members && response.members.length > 0) {
-        setMembers(response.members);
-      } else {
-        // Fallback to mock data
-        const membersWithTherapist = [
-          {
-            id: 'therapist_1',
-            name: groupDetails.therapistName || 'Dr. Sarah Johnson',
-            avatar: groupDetails.therapistAvatar,
-            role: 'therapist' as const,
-            joinedDate: '2024-01-15',
-            isOnline: true,
-          },
-          ...mockGroupDetailMembers.slice(1),
-        ];
-        setMembers(membersWithTherapist);
+      // Set members from API natively without mock fallbacks
+      const membersData = response.members || response.data?.members || [];
+      setMembers(membersData);
+
+      // Determine accurate resolved role based on strict global state logic
+      let resolvedRole = response.userRole || response.data?.userRole;
+      if (!resolvedRole || resolvedRole === 'none') {
+        resolvedRole = effectiveJoined ? 'member' : 'none';
       }
 
-      // Set user role from API
-      setUserRole(response.userRole || (groupDetails.isJoined ? 'member' : 'none'));
+      setUserRole(resolvedRole);
+      setGroupDetails((prev: any) => ({ ...prev, ...groupData, isJoined: effectiveJoined }));
       setIsLoading(false);
     } catch (error: any) {
       console.error('❌ Error loading group details:', error);
+      const effectiveJoined = isJoinedOverride !== undefined ? isJoinedOverride : isGroupJoined;
 
-      // Fallback to mock data on error
-      const membersWithTherapist = [
-        {
-          id: 'therapist_1',
-          name: groupDetails.therapistName || 'Dr. Sarah Johnson',
-          avatar: groupDetails.therapistAvatar,
-          role: 'therapist' as const,
-          joinedDate: '2024-01-15',
-          isOnline: true,
-        },
-        ...mockGroupDetailMembers.slice(1),
-      ];
-      setMembers(membersWithTherapist);
-      setUserRole(groupDetails.isJoined ? 'member' : 'none');
+      setMembers([]);
+      setUserRole(effectiveJoined ? 'member' : 'none');
       setIsLoading(false);
       toast.show({
         description: 'Failed to load group details',
         duration: 3000,
       });
     }
-  };
+  }, [group.id, isGroupJoined, toast, userId]);
+
+  useEffect(() => {
+    loadGroupDetails();
+  }, [loadGroupDetails]);
 
   const handleEnterChat = () => {
     if (userRole === 'none') {
@@ -126,46 +120,84 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
     }
 
     navigation.navigate('GroupChatScreen', {
-      groupId: group.id,
-      groupName: group.name,
-      groupIcon: group.icon,
-      memberCount: group.memberCount,
+      groupId: groupDetails.id,
+      groupName: groupDetails.name,
+      groupIcon: groupDetails.icon,
+      groupDescription: groupDetails.description,
+      memberCount: groupDetails.memberCount,
       userRole: userRole,
+      therapistName: groupDetails.therapistName,
+      therapistAvatar: groupDetails.therapistAvatar,
+      therapistEmail: groupDetails.therapistEmail,
+      category: groupDetails.category,
+      isPrivate: groupDetails.isPrivate,
+      maxMembers: groupDetails.maxMembers,
+      meetingSchedule: groupDetails.meetingSchedule,
     });
   };
 
-  const handleJoinGroup = async () => {
-    try {
-      console.log('📞 Calling joinGroup API from GroupDetailScreen...');
-      const response = await joinGroup(groupDetails.id, userId, '', true);
-      console.log('✅ Join group response:', response);
+  const handleJoinGroup = () => {
+    // Validate membership limits before confirming
+    const validation = validateGroupJoin([groupDetails], groupDetails.id, joinedGroupIds.length);
 
-      if (groupDetails.isPrivate) {
+    if (!validation.canJoin) {
+      if (validation.reason === 'membership_limit') {
+        setShowLimitModal(true);
+      } else {
         toast.show({
-          description: response.message || 'Join request sent to group therapist',
+          description: 'You cannot join this group.',
           duration: 3000,
         });
-        return;
       }
-
-      toast.show({
-        description: response.message || `Successfully joined ${groupDetails.name}`,
-        duration: 3000,
-      });
-
-      // Update local state
-      setUserRole('member');
-      setGroupDetails({ ...groupDetails, isJoined: true });
-
-      // Reload group details
-      await loadGroupDetails();
-    } catch (error: any) {
-      console.error('❌ Error joining group:', error);
-      toast.show({
-        description: error.response?.data?.error || 'Failed to join group. Please try again.',
-        duration: 3000,
-      });
+      return;
     }
+
+    alert.show({
+      type: 'confirm',
+      title: 'Join Group',
+      message: 'Are you sure you want to join this support group? You agree to follow the community guidelines.',
+      confirmText: 'Join Group',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          console.log('📞 Calling joinGroup API from GroupDetailScreen...');
+          const response = await joinGroup(
+            groupDetails.id,
+            userId,
+            'I struggle with anxiety and need support',
+            true
+          );
+          console.log('✅ Join group response:', response);
+
+          if (groupDetails.isPrivate) {
+            toast.show({
+              description: response.message || 'Join request sent to group therapist',
+              duration: 3000,
+            });
+            return;
+          }
+
+          toast.show({
+            description: response.message || `Successfully joined ${groupDetails.name}`,
+            duration: 3000,
+          });
+
+          // Update local state and sync Redux globally
+          dispatch(addJoinedGroupId(groupDetails.id));
+          setUserRole('member');
+          setGroupDetails((prev: any) => ({ ...prev, isJoined: true }));
+
+          // Reload group details
+          await loadGroupDetails(true);
+        } catch (error: any) {
+          console.error('❌ Error joining group:', error);
+          toast.show({
+            description: error.response?.data?.error || 'Failed to join group. Please try again.',
+            duration: 3000,
+          });
+        }
+      }
+    });
   };
 
   const handleLeaveGroup = () => {
@@ -178,13 +210,20 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       onConfirm: async () => {
         try {
           console.log('📞 Calling leaveGroup API from GroupDetailScreen...');
-          const response = await leaveGroup(groupDetails.id, userId, '', '');
+          const response = await leaveGroup(
+            groupDetails.id,
+            userId,
+            'Schedule conflict',
+            'Great group, but can\'t attend anymore'
+          );
           console.log('✅ Leave group response:', response);
 
           toast.show({
             description: response.message || `You have left ${groupDetails.name}`,
             duration: 3000,
           });
+
+          dispatch(removeJoinedGroupId(groupDetails.id));
           setUserRole('none');
           setGroupDetails({ ...groupDetails, isJoined: false });
           navigation.goBack();
@@ -242,52 +281,65 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
     }
   };
 
-  const getAvatarInitials = (name: string) => {
-    if (!name) return '??';
-    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
-  };
+  const renderMemberItem = ({ item }: { item: GroupMember }) => {
+    // Privacy Logic: only mask names & hide photos for regular 'members'
+    const isStandardMember = item.role === 'member';
+    const displayName = isStandardMember ? generateAnonymousName(item.id, item.name) : item.name;
+    const displayAvatar = isStandardMember ? null : item.avatar;
 
-  const renderMemberItem = ({ item }: { item: GroupMember }) => (
-    <View style={styles.memberItem}>
-      <View style={styles.memberAvatar}>
-        {item.avatar ? (
-          <Avatar
-            source={item.avatar}
-            size={scale(40)}
-            rounded
-          />
-        ) : (
-          <Avatar
-            title={getAvatarInitials(item.name)}
-            size={scale(40)}
-            rounded
-            containerStyle={{ backgroundColor: getRoleColor(item.role) }}
-            titleStyle={styles.avatarText}
-          />
-        )}
-        {item.isOnline && <View style={styles.onlineIndicator} />}
-      </View>
+    // Use initial from the masked proxy (e.g. 'M' from 'Member 1234A') if no avatar
+    const getSafeInitials = (name: string) => {
+      if (!name) return '??';
+      const parsed = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+      const parts = parsed.split(' ').filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return parsed[0]?.toUpperCase() || '??';
+    };
 
-      <View style={styles.memberInfo}>
-        <View style={styles.memberNameRow}>
-          <Text style={styles.memberName}>{item.name}</Text>
-          <View style={[styles.roleBadge, { backgroundColor: getRoleColor(item.role) }]}>
-            <Icon
-              name={getRoleIcon(item.role)}
-              type="material"
-              color={appColors.CardBackground}
-              size={scale(12)}
+    return (
+      <View style={styles.memberItem}>
+        <View style={styles.memberAvatar}>
+          {displayAvatar ? (
+            <Avatar
+              source={displayAvatar}
+              size={scale(40)}
+              rounded
             />
-            <Text style={styles.roleText}>{item.role}</Text>
-          </View>
+          ) : (
+            <Avatar
+              title={getSafeInitials(displayName)}
+              size={scale(40)}
+              rounded
+              containerStyle={{ backgroundColor: getRoleColor(item.role) }}
+              titleStyle={styles.avatarText}
+            />
+          )}
+          {item.isOnline && <View style={styles.onlineIndicator} />}
         </View>
 
-        <Text style={styles.memberStatus}>
-          {item.isOnline ? 'Online' : `Last seen ${item.lastSeen}`}
-        </Text>
+        <View style={styles.memberInfo}>
+          <View style={styles.memberNameRow}>
+            <Text style={styles.memberName}>{displayName}</Text>
+            <View style={[styles.roleBadge, { backgroundColor: getRoleColor(item.role) }]}>
+              <Icon
+                name={getRoleIcon(item.role)}
+                type="material"
+                color={appColors.CardBackground}
+                size={scale(12)}
+              />
+              <Text style={styles.roleText}>{item.role}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.memberStatus}>
+            {item.isOnline ? 'Online' : (item.lastSeen ? `Last seen ${item.lastSeen}` : '')}
+          </Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -300,12 +352,12 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={scale(24)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Group Details</Text>
-        {group?.id && (
+        {groupDetails?.id && userRole !== 'none' && (
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => navigation.navigate('GroupMessagesHistoryScreen', {
-              groupId: group.id,
-              groupName: group.name,
+              groupId: groupDetails.id,
+              groupName: groupDetails.name,
               userRole: userRole
             })}
           >
@@ -319,27 +371,27 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
         <View style={styles.profileSection}>
           <View style={[
             styles.groupIconLarge,
-            { backgroundColor: getCategoryColor(group.category) + '20' }
+            { backgroundColor: getCategoryColor(groupDetails.category) + '20' }
           ]}>
             <Icon
-              name={group.icon}
+              name={groupDetails.icon}
               type="material"
-              color={getCategoryColor(group.category)}
+              color={getCategoryColor(groupDetails.category)}
               size={scale(48)}
             />
-            {group.isPrivate && (
+            {groupDetails.isPrivate && (
               <View style={styles.privateBadge}>
                 <Icon name="lock" type="material" color={appColors.CardBackground} size={scale(16)} />
               </View>
             )}
           </View>
 
-          <Text style={styles.groupName}>{group.name}</Text>
-          <Text style={styles.groupDescription}>{group.description}</Text>
+          <Text style={styles.groupName}>{groupDetails.name}</Text>
+          <Text style={styles.groupDescription}>{groupDetails.description}</Text>
 
           <View style={styles.groupStats}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{group.memberCount}</Text>
+              <Text style={styles.statNumber}>{groupDetails.memberCount}</Text>
               <Text style={styles.statLabel}>Members</Text>
             </View>
             <View style={styles.statDivider} />
@@ -352,7 +404,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {group.isPrivate ? 'Private' : 'Public'}
+                {groupDetails.isPrivate ? 'Private' : 'Public'}
               </Text>
               <Text style={styles.statLabel}>Type</Text>
             </View>
@@ -364,16 +416,16 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           <Text style={styles.sectionTitle}>Group Therapist</Text>
           <View style={styles.therapistCard}>
             <Avatar
-              source={group.therapistAvatar}
+              source={getImageSource(groupDetails.therapistAvatar, FALLBACK_IMAGES.avatar)}
               size={scale(50)}
               rounded
               containerStyle={styles.therapistAvatar}
             />
             <View style={styles.therapistInfo}>
-              <Text style={styles.therapistName}>{group.therapistName}</Text>
-              <Text style={styles.therapistEmail}>{group.therapistEmail}</Text>
+              <Text style={styles.therapistName}>{groupDetails.therapistName || ''}</Text>
+              <Text style={styles.therapistEmail}>{groupDetails.therapistEmail || ''}</Text>
               <Text style={styles.therapistSpecialty}>
-                Specializes in {group.category} support
+                Specializes in {groupDetails.category || 'General'} support
               </Text>
             </View>
             <TouchableOpacity style={styles.contactButtonDisabled} disabled>
@@ -383,32 +435,35 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
         </View>
 
         {/* Meeting Schedule */}
-        {group.meetingSchedule && (
+        {groupDetails.meetingSchedule && (
           <View style={styles.scheduleSection}>
             <Text style={styles.sectionTitle}>Meeting Schedule</Text>
             <View style={styles.scheduleCard}>
               <Icon name="schedule" type="material" color={appColors.AppBlue} size={scale(24)} />
-              <Text style={styles.scheduleText}>{group.meetingSchedule}</Text>
+              <Text style={styles.scheduleText}>{groupDetails.meetingSchedule}</Text>
             </View>
           </View>
         )}
 
-        {/* Members List */}
-        <View style={styles.membersSection}>
-          <View style={styles.membersSectionHeader}>
-            <Text style={styles.sectionTitle}>Members ({members.length})</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Members List - Only Visible to existing members */}
+        {userRole !== 'none' && (
+          <View style={styles.membersSection}>
+            <View style={styles.membersSectionHeader}>
+              <Text style={styles.sectionTitle}>Members ({members.length})</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
 
-          <FlatList
-            data={members.slice(0, 5)}
-            renderItem={renderMemberItem}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-          />
-        </View>
+            <FlatList
+              data={members.slice(0, 5)}
+              renderItem={renderMemberItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              ListEmptyComponent={<Text style={{ fontFamily: appFonts.bodyTextRegular, color: appColors.grey3 }}>No members to display</Text>}
+            />
+          </View>
+        )}
 
         {/* Group Rules/Guidelines */}
         <View style={styles.rulesSection}>
@@ -467,6 +522,15 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           </View>
         )}
       </View>
+
+      {/* Membership Limit Modal */}
+      <MembershipLimitModal
+        visible={showLimitModal}
+        currentGroupCount={membershipInfo.joinedGroupsCount}
+        maxAllowed={membershipInfo.groupLimit}
+        onClose={() => setShowLimitModal(false)}
+      />
+
       <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );

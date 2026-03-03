@@ -261,12 +261,15 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
             <Text style={styles.categoryText}>{goal.category}</Text>
           </View>
 
-          <Text style={[
-            styles.dueDateText,
-            isOverdue && styles.overdueText
-          ]}>
-            {formatDate(goal.dueDate)}
-          </Text>
+          {goal.status === 'completed' ? (
+            <Text style={[styles.dueDateText, { color: '#4CAF50' }]}>Done</Text>
+          ) : goal.status === 'paused' ? (
+            <Text style={[styles.dueDateText, { color: '#FF9800' }]}>Paused</Text>
+          ) : (
+            <Text style={[styles.dueDateText, isOverdue && styles.overdueText]}>
+              {formatDate(goal.dueDate)}
+            </Text>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -340,8 +343,8 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
 
   // Filter goals by status
   const getGoalsByStatus = (status: 'active' | 'completed' | 'paused') => {
-    return goals.filter(goal => goal.status === status)
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    return goals.filter((goal: Goal) => goal.status === status)
+      .sort((a: Goal, b: Goal) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   };
 
   // Tab components
@@ -384,9 +387,9 @@ const GoalsScreen: React.FC<GoalsScreenProps> = ({ navigation }) => {
     );
   };
 
-  const activeGoals = goals.filter(g => g.status === 'active').length;
-  const completedGoals = goals.filter(g => g.status === 'completed').length;
-  const pausedGoals = goals.filter(g => g.status === 'paused').length;
+  const activeGoals = goals.filter((g: Goal) => g.status === 'active').length;
+  const completedGoals = goals.filter((g: Goal) => g.status === 'completed').length;
+  const pausedGoals = goals.filter((g: Goal) => g.status === 'paused').length;
 
   const tabData = [
     { title: `Active (${activeGoals})`, status: 'active' as const },

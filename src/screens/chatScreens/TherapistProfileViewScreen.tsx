@@ -2,13 +2,14 @@
  * Therapist Profile View Screen - For clients to view their therapist's profile
  * Accessible from DMThreadScreen via info icon
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
@@ -16,6 +17,7 @@ import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import { getTherapistAvailability } from '../../api/client/therapists';
 
 interface TherapistProfileViewScreenProps {
   navigation: any;
@@ -24,23 +26,45 @@ interface TherapistProfileViewScreenProps {
 
 const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({ navigation, route }) => {
   const { therapist } = route.params || {};
+  const [profileData, setProfileData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock therapist profile data
+  useEffect(() => {
+    if (therapist?.partnerId) {
+      fetchProfile();
+    } else {
+      setIsLoading(false);
+    }
+  }, [therapist]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await getTherapistAvailability(therapist.partnerId);
+      setProfileData(response.data || response.therapist || response);
+    } catch (error) {
+      console.error('❌ Error fetching therapist profile', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const therapistProfile = {
-    id: therapist?.partnerId || 'therapist_1',
-    name: therapist?.partnerName || 'Dr. Sarah Johnson',
-    credentials: 'PhD, Licensed Clinical Psychologist',
-    avatar: therapist?.partnerAvatar,
-    specialty: 'Anxiety & Depression',
-    yearsOfExperience: 12,
-    bio: 'I specialize in helping individuals overcome anxiety and depression through evidence-based therapeutic approaches. My practice focuses on creating a safe, non-judgmental space where clients can explore their thoughts and feelings.',
-    approach: 'Cognitive Behavioral Therapy (CBT), Mindfulness-Based Therapy',
-    languages: ['English', 'Spanish'],
-    availability: 'Monday - Friday, 9:00 AM - 6:00 PM',
-    responseTime: 'Usually responds within 2-4 hours',
+    id: profileData?.user_id || therapist?.partnerId || '',
+    name: profileData?.firstName && profileData?.lastName
+      ? `${profileData.firstName} ${profileData.lastName}`
+      : profileData?.name || therapist?.partnerName || 'Unknown Therapist',
+    credentials: profileData?.credentials || '',
+    avatar: profileData?.avatar || therapist?.partnerAvatar,
+    specialty: profileData?.specialities || profileData?.specialty || '',
+    yearsOfExperience: profileData?.experience || profileData?.yearsOfExperience || profileData?.years_of_experience || '',
+    bio: profileData?.bio || '',
+    approach: profileData?.approach || '',
+    languages: profileData?.languages ? profileData.languages.split(',').map((l: string) => l.trim()) : [],
+    availability: profileData?.availability === 1 ? 'Available' : 'Unavailable',
+    responseTime: profileData?.responseTime || profileData?.response_time || '',
     isOnline: therapist?.isOnline || false,
-    email: therapist?.partnerEmail || 'sarah.johnson@innerspark.com',
-    sessionTypes: ['Individual Therapy', 'Group Therapy', 'Online Sessions'],
+    email: profileData?.email || therapist?.partnerEmail || '',
+    sessionTypes: profileData?.sessionTypes || profileData?.session_types || [],
   };
 
   const renderInfoCard = (icon: string, title: string, content: string, iconType: string = 'material') => (
@@ -65,115 +89,112 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
       />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
-        <View style={styles.headerCard}>
-          <View style={styles.avatarContainer}>
-            {therapistProfile.avatar ? (
-              <Avatar
-                source={therapistProfile.avatar}
-                size={scale(100)}
-                rounded
-              />
-            ) : (
-              <Avatar
-                title={therapistProfile.name.split(' ').map((n: string) => n[0]).join('')}
-                size={scale(100)}
-                rounded
-                containerStyle={{ backgroundColor: appColors.AppBlue }}
-                titleStyle={styles.avatarText}
-              />
-            )}
-            {therapistProfile.isOnline && <View style={styles.onlineIndicator} />}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={appColors.AppBlue} />
           </View>
-
-          <Text style={styles.therapistName}>{therapistProfile.name}</Text>
-          <Text style={styles.credentials}>{therapistProfile.credentials}</Text>
-
-          <View style={styles.specialtyBadge}>
-            <Icon name="psychology" type="material" size={moderateScale(16)} color={appColors.AppBlue} />
-            <Text style={styles.specialtyText}>{therapistProfile.specialty}</Text>
-          </View>
-
-          <View style={styles.experienceBadge}>
-            <Text style={styles.experienceText}>
-              {therapistProfile.yearsOfExperience} years of experience
-            </Text>
-          </View>
-        </View>
-
-        {/* About Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.bioText}>{therapistProfile.bio}</Text>
-        </View>
-
-        {/* Approach */}
-        {renderInfoCard(
-          'lightbulb',
-          'Therapeutic Approach',
-          therapistProfile.approach
-        )}
-
-        {/* Languages */}
-        {renderInfoCard(
-          'language',
-          'Languages',
-          therapistProfile.languages.join(', ')
-        )}
-
-        {/* Availability */}
-        {renderInfoCard(
-          'schedule',
-          'Availability',
-          therapistProfile.availability
-        )}
-
-        {/* Response Time */}
-        {renderInfoCard(
-          'access-time',
-          'Response Time',
-          therapistProfile.responseTime
-        )}
-
-        {/* Session Types */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Session Types</Text>
-          <View style={styles.sessionTypesContainer}>
-            {therapistProfile.sessionTypes.map((type, index) => (
-              <View key={index} style={styles.sessionTypeBadge}>
-                <Icon name="check-circle" type="material" size={moderateScale(16)} color={appColors.AppGreen} />
-                <Text style={styles.sessionTypeText}>{type}</Text>
+        ) : (
+          <>
+            {/* Profile Header */}
+            <View style={styles.headerCard}>
+              <View style={styles.avatarContainer}>
+                {therapistProfile.avatar ? (
+                  <Avatar source={therapistProfile.avatar} size={scale(100)} rounded />
+                ) : (
+                  <Avatar
+                    title={therapistProfile.name.split(' ').map((n: string) => n[0]).join('')}
+                    size={scale(100)}
+                    rounded
+                    containerStyle={{ backgroundColor: appColors.AppBlue }}
+                    titleStyle={styles.avatarText}
+                  />
+                )}
+                {therapistProfile.isOnline && <View style={styles.onlineIndicator} />}
               </View>
-            ))}
-          </View>
-        </View>
 
-        {/* Contact Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact</Text>
-          <View style={styles.contactCard}>
-            <Icon name="email" type="material" size={moderateScale(20)} color={appColors.grey3} />
-            <Text style={styles.contactText}>{therapistProfile.email}</Text>
-          </View>
-          <View style={styles.contactNote}>
-            <Icon name="info" type="material" size={moderateScale(16)} color={appColors.grey3} />
-            <Text style={styles.contactNoteText}>
-              For session-related questions, please use the chat or schedule an appointment
-            </Text>
-          </View>
-        </View>
+              <Text style={styles.therapistName}>{therapistProfile.name}</Text>
+              {!!therapistProfile.credentials && <Text style={styles.credentials}>{therapistProfile.credentials}</Text>}
 
-        {/* Action Button */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Icon name="chat" type="material" size={moderateScale(20)} color={appColors.CardBackground} />
-            <Text style={styles.primaryButtonText}>Back to Chat</Text>
-          </TouchableOpacity>
-        </View>
+              {!!therapistProfile.specialty && (
+                <View style={styles.specialtyBadge}>
+                  <Icon name="psychology" type="material" size={moderateScale(16)} color={appColors.AppBlue} />
+                  <Text style={styles.specialtyText}>{therapistProfile.specialty}</Text>
+                </View>
+              )}
 
+              {!!therapistProfile.yearsOfExperience && (
+                <View style={styles.experienceBadge}>
+                  <Text style={styles.experienceText}>
+                    {therapistProfile.yearsOfExperience}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* About Section */}
+            {!!therapistProfile.bio && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>About</Text>
+                <Text style={styles.bioText}>{therapistProfile.bio}</Text>
+              </View>
+            )}
+
+            {/* Approach */}
+            {!!therapistProfile.approach && renderInfoCard('lightbulb', 'Therapeutic Approach', therapistProfile.approach)}
+
+            {/* Languages */}
+            {therapistProfile.languages?.length > 0 && renderInfoCard('language', 'Languages', therapistProfile.languages.join(', '))}
+
+            {/* Availability */}
+            {!!therapistProfile.availability && renderInfoCard('schedule', 'Availability', therapistProfile.availability)}
+
+            {/* Response Time */}
+            {!!therapistProfile.responseTime && renderInfoCard('access-time', 'Response Time', therapistProfile.responseTime)}
+
+            {/* Session Types */}
+            {therapistProfile.sessionTypes?.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Session Types</Text>
+                <View style={styles.sessionTypesContainer}>
+                  {therapistProfile.sessionTypes.map((type: string, index: number) => (
+                    <View key={index} style={styles.sessionTypeBadge}>
+                      <Icon name="check-circle" type="material" size={moderateScale(16)} color={appColors.AppGreen} />
+                      <Text style={styles.sessionTypeText}>{type}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Contact Info */}
+            {!!therapistProfile.email && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Contact</Text>
+                <View style={styles.contactCard}>
+                  <Icon name="email" type="material" size={moderateScale(20)} color={appColors.grey3} />
+                  <Text style={styles.contactText}>{therapistProfile.email}</Text>
+                </View>
+                <View style={styles.contactNote}>
+                  <Icon name="info" type="material" size={moderateScale(16)} color={appColors.grey3} />
+                  <Text style={styles.contactNoteText}>
+                    For session-related questions, please use the chat or schedule an appointment
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Action Button */}
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Icon name="chat" type="material" size={moderateScale(20)} color={appColors.CardBackground} />
+                <Text style={styles.primaryButtonText}>Back to Chat</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
         <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
@@ -184,6 +205,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: appColors.AppLightGray,
+  },
+  loadingContainer: {
+    flex: 1,
+    minHeight: scale(300),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

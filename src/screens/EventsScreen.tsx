@@ -28,6 +28,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { getEvents, getMyEvents } from '../api/client/events';
 import { UPLOADS_BASE_URL } from '../config/env';
 import { setRegisteredEventIds } from '../features/events/eventsSlice';
+import { getImageSource, FALLBACK_IMAGES } from '../utils/imageHelpers';
 
 interface Event {
   id: number;
@@ -69,6 +70,8 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [showFilters, setShowFilters] = useState<boolean>(true);
+  const [viewMode, setViewMode] = useState<'list' | 'gallery'>('gallery');
   const [events, setEvents] = useState<Event[]>([]);
   const eventsListRef = useRef<FlatList>(null);
 
@@ -98,16 +101,26 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
       console.log('👤 User ID:', userId);
 
       let apiResponse;
+      let myEventIds = new Set<number>();
 
       if (activeTab === 'my-events') {
         console.log('📞 Calling getMyEvents API...');
         apiResponse = await getMyEvents(userId);
       } else {
-        console.log('📞 Calling getEvents API...');
-        apiResponse = await getEvents(1, 20);
+        console.log('📞 Calling getEvents API... (and myEvents background sync)');
+        // Fetch public events and user's registrations concurrently to merge state accurately
+        const [publicRes, myRes] = await Promise.all([
+          getEvents(1, 20),
+          getMyEvents(userId).catch(() => ({ data: { events: [] } }))
+        ]);
+        apiResponse = publicRes;
+
+        // Extract IDs of events user is registered for
+        const myEventsList = myRes?.data?.events || [];
+        myEventsList.forEach((e: any) => myEventIds.add(e.id));
       }
 
-      console.log('✅ API Response:', JSON.stringify(apiResponse, null, 2));
+      console.log('✅ API Response received');
 
       // Extract events from API response
       const apiEvents = apiResponse?.data?.events || [];
@@ -128,12 +141,8 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
           shortDescription: event.shortDescription || event.description || '',
           date: event.date,
           time: event.time,
-          // Handle cover image - prepend uploads base URL if it's a relative path, fallback to default
-          coverImage: event.coverImage && !event.coverImage.startsWith('http')
-            ? { uri: `${UPLOADS_BASE_URL}/${event.coverImage}` }
-            : event.coverImage
-              ? { uri: event.coverImage }
-              : require('../assets/images/is-default.png'),
+          // Handle cover image - use robust parsing util
+          coverImage: getImageSource(event.coverImage, FALLBACK_IMAGES.event),
           location: event.location || 'Location TBD',
           isOnline: event.isOnline || false,
           totalSeats: event.totalSeats || 0,
@@ -142,15 +151,10 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
           currency: event.currency || 'UGX',
           category: event.category || 'General',
           organizer: event.organizer || 'InnerSpark',
-          // Handle organizer image - prepend uploads base URL if it's a relative path, fallback to avatar placeholder
-          organizerImage: event.organizerImage && !event.organizerImage.startsWith('http')
-            ? { uri: `${UPLOADS_BASE_URL}/${event.organizerImage}` }
-            : event.organizerImage
-              ? { uri: event.organizerImage }
-              : require('../assets/images/avatar-placeholder.png'),
-          // For my-events, all returned events are registered by definition
-          // The API doesn't return isRegistered field, so we set it based on the tab
-          isRegistered: activeTab === 'my-events' ? true : (event.isRegistered || false),
+          // Handle organizer image - use robust parsing util
+          organizerImage: getImageSource(event.organizerImage, FALLBACK_IMAGES.avatar),
+          // Check mapping against myEventIds set if the backend missed the boolean toggle
+          isRegistered: activeTab === 'my-events' ? true : (myEventIds.has(event.id) || event.isRegistered || false),
           // Include registration data for my-events
           ...(activeTab === 'my-events' && {
             registrationId: event.registrationId,
@@ -174,10 +178,15 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
         dispatch(setRegisteredEventIds(registeredIds));
         console.log('✅ Updated registered event IDs in store:', registeredIds);
       } else {
-        // If viewing all events, extract registered ones
+        // If viewing all events, ensure Redux state is hydrated with true registered IDs
+        // because the 'events' tab now has background synced 'myEventIds'
         const registeredIds = mappedEvents.filter(e => e.isRegistered).map(e => e.id);
-        dispatch(setRegisteredEventIds(registeredIds));
-        console.log('✅ Updated registered event IDs in store:', registeredIds);
+
+        // Ensure any myEventIds are also included even if they aren't on page 1 of public events
+        const allKnownRegisteredIds = Array.from(new Set([...registeredIds, ...Array.from(myEventIds)]));
+
+        dispatch(setRegisteredEventIds(allKnownRegisteredIds));
+        console.log('✅ Updated registered event IDs in store:', allKnownRegisteredIds);
       }
 
       // toast.show({
@@ -317,55 +326,73 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
           )}
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Mental Health Events</Text>
-            <Text style={styles.headerSubtitle}>Workshops, seminars & community gatherings</Text>
+            <Text style={styles.headerSubtitle}>Workshops, seminars & more.</Text>
           </View>
           <View style={styles.headerRightPlaceholder} />
         </View>
       </View>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'events' && styles.activeTab]}
-          onPress={() => setActiveTab('events')}
-        >
-          <Icon
-            name="event"
-            type="material"
-            color={activeTab === 'events' ? appColors.AppBlue : appColors.grey3}
-            size={moderateScale(20)}
-          />
-          <Text style={[
-            styles.tabText,
-            activeTab === 'events' && styles.activeTabText
-          ]}>
-            Events
-          </Text>
-        </TouchableOpacity>
+      {/* Tab Navigation & View Mode Toggles */}
+      <View style={styles.tabBarWrapper}>
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'events' && styles.activeTab]}
+            onPress={() => setActiveTab('events')}
+          >
+            <Icon
+              name="event"
+              type="material"
+              color={activeTab === 'events' ? appColors.AppBlue : appColors.grey3}
+              size={moderateScale(20)}
+            />
+            <Text style={[
+              styles.tabText,
+              activeTab === 'events' && styles.activeTabText
+            ]}>
+              Events
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'my-events' && styles.activeTab]}
-          onPress={() => setActiveTab('my-events')}
-        >
-          <Icon
-            name="event-available"
-            type="material"
-            color={activeTab === 'my-events' ? appColors.AppBlue : appColors.grey3}
-            size={moderateScale(20)}
-          />
-          <Text style={[
-            styles.tabText,
-            activeTab === 'my-events' && styles.activeTabText
-          ]}>
-            My Events
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'my-events' && styles.activeTab]}
+            onPress={() => setActiveTab('my-events')}
+          >
+            <Icon
+              name="event-available"
+              type="material"
+              color={activeTab === 'my-events' ? appColors.AppBlue : appColors.grey3}
+              size={moderateScale(20)}
+            />
+            <Text style={[
+              styles.tabText,
+              activeTab === 'my-events' && styles.activeTabText
+            ]}>
+              My Events
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.viewToggles}>
+          <TouchableOpacity
+            onPress={() => setViewMode('list')}
+            style={[styles.viewToggleBtn, viewMode === 'list' && styles.viewToggleBtnActive]}
+          >
+            <Icon name="view-list" type="material" color={viewMode === 'list' ? appColors.AppBlue : appColors.grey3} size={moderateScale(22)} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setViewMode('gallery')}
+            style={[styles.viewToggleBtn, viewMode === 'gallery' && styles.viewToggleBtnActive]}
+          >
+            <Icon name="grid-view" type="material" color={viewMode === 'gallery' ? appColors.AppBlue : appColors.grey3} size={moderateScale(19)} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.content}>
         {/* Events List with header to own entire scroll area */}
         <FlatList
           ref={eventsListRef}
+          key={`flatlist-${viewMode}`}
           data={isLoading ? Array(3).fill({}) : filteredEvents}
           keyExtractor={(item, index) => (isLoading ? index.toString() : item.id?.toString())}
           renderItem={({ item }) => (
@@ -375,6 +402,7 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
               <EventCard
                 event={item}
                 variant={activeTab === 'my-events' ? 'my' : 'public'}
+                viewMode={viewMode}
                 onPress={() => handleEventPress(item)}
                 onViewTicket={activeTab === 'my-events' ? () => navigation.navigate('MyEventDetailScreen', { event: item, registrationId: `R-${item.id}` }) : undefined}
                 onAddToCalendar={activeTab === 'my-events' ? () => toast.show({ description: 'Upcoming Calendar Feature', duration: 2000 }) : undefined}
@@ -390,7 +418,8 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
                 categories={categories}
                 selectedCategory={selectedCategory}
                 onSelectCategory={setSelectedCategory}
-                showCategories={activeTab === 'events'}
+                showCategories={activeTab === 'events' && showFilters}
+                onToggleFilters={() => setShowFilters(!showFilters)}
               />
               {(searchQuery.trim() !== '' || selectedCategory !== 'All') && (
                 <View style={styles.searchResultsHeader}>
@@ -472,16 +501,41 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: scale(20),
   },
-  tabContainer: {
+  tabBarWrapper: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: appColors.CardBackground,
-    paddingHorizontal: scale(20),
-    paddingVertical: scale(10),
+    paddingHorizontal: scale(15),
     elevation: scale(2),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: scale(1) },
     shadowOpacity: 0.1,
     shadowRadius: scale(2),
+    zIndex: 10,
+  },
+  tabContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: scale(10),
+  },
+  viewToggles: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: appColors.AppLightGray + '80',
+    borderRadius: scale(20),
+    padding: scale(4),
+  },
+  viewToggleBtn: {
+    padding: scale(6),
+    borderRadius: scale(16),
+  },
+  viewToggleBtnActive: {
+    backgroundColor: appColors.CardBackground,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
   tab: {
     flex: 1,
@@ -553,6 +607,10 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: scale(20),
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(4),
   },
   eventCard: {
     backgroundColor: appColors.CardBackground,

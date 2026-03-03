@@ -34,7 +34,7 @@ export const getTherapistById = async (therapistId) => {
  * @returns {Promise} Available time slots
  */
 export const getTherapistAvailability = async (therapistId, params = {}) => {
-    const response = await APIInstance.get(`/client/therapists/${therapistId}/availability`, {
+    const response = await APIInstance.get(`/client/therapists/${therapistId}/slots`, {
         params
     });
     return response.data;

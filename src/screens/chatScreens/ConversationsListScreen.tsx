@@ -15,9 +15,9 @@ import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
-import { loadConversations, refreshConversations } from '../../utils/chatManager';
-import { selectConversations, selectChatLoading, selectChatRefreshing } from '../../features/chat/chatSlice';
+import { getChats } from '../../api/client/messages';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
+import { humanizeLastSeen } from '../../utils/dateHelpers';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface Conversation {
@@ -42,30 +42,71 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   const alert = useISAlert();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
-  const conversations = useSelector(selectConversations);
-  const isLoading = useSelector(selectChatLoading);
-  const isRefreshing = useSelector(selectChatRefreshing);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     loadConversationsData();
+
+    // Silent background polling (optimized to 10s for Inbox view)
+    const interval = setInterval(() => {
+      loadConversationsData(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const loadConversationsData = async () => {
-    const result = await (dispatch as any)(loadConversations(userId));
-    if (!result.success) {
-      toast.show({
-        description: 'Failed to load conversations',
-        duration: 3000,
-      });
+  const loadConversationsData = async (isSilent = false) => {
+    if (!isSilent && conversations.length === 0) {
+      setIsLoading(true);
+    }
+
+    try {
+      const response = await getChats(userId);
+      const apiConversations = response.data?.conversations || response.conversations || [];
+
+      const mappedConversations = apiConversations.map((chat: any) => ({
+        id: chat.id,
+        partnerId: String(chat.therapistId || chat.partnerId),
+        partnerName: chat.therapistName || chat.partnerName || 'Unknown Therapist',
+        partnerEmail: chat.therapistEmail || chat.partnerEmail || '',
+        partnerAvatar: chat.therapistAvatar || chat.partnerAvatar,
+        lastMessage: chat.lastMessage || 'Start a conversation...',
+        lastMessageTime: chat.lastMessageTime || '',
+        unreadCount: chat.unreadCount || 0,
+        isOnline: chat.isOnline || false,
+        lastSeen: humanizeLastSeen(chat.lastSeen || chat.lastMessageTime),
+      }));
+
+      setConversations(mappedConversations);
+    } catch (error: any) {
+      console.error('❌ Error fetching chats:', error);
+      if (!isSilent) {
+        toast.show({
+          description: error.response?.data?.error || 'Failed to load conversations',
+          duration: 3000,
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleRefresh = async () => {
-    await (dispatch as any)(refreshConversations(userId));
+    setIsRefreshing(true);
+    await loadConversationsData();
+    setIsRefreshing(false);
   };
 
   const handleOpenConversation = (conversation: Conversation) => {
+    // Optimistically clear the unread badge natively upon open
+    setConversations(prev => prev.map(c =>
+      c.id === conversation.id ? { ...c, unreadCount: 0 } : c
+    ));
+
     navigation.navigate('DMThreadScreen', {
+      chatId: conversation.id,
       partnerId: conversation.partnerId,
       partnerName: conversation.partnerName,
       partnerAvatar: conversation.partnerAvatar,

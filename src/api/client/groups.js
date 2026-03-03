@@ -52,8 +52,11 @@ export const getGroupById = async (groupId, userId) => {
  * @returns {Promise} Join confirmation or membership limit error
  */
 export const joinGroup = async (groupId, userId, reason = '', agreeToGuidelines = true) => {
+    // Dynamically cast numeric strings to Number to satisfy backend validation
+    const parsedUserId = !isNaN(Number(userId)) ? Number(userId) : userId;
+
     const response = await APIInstance.post(`/client/groups/${groupId}/join`, {
-        user_id: userId,
+        user_id: parsedUserId,
         reason,
         agreeToGuidelines
     });
@@ -69,8 +72,11 @@ export const joinGroup = async (groupId, userId, reason = '', agreeToGuidelines 
  * @returns {Promise} Leave confirmation
  */
 export const leaveGroup = async (groupId, userId, reason = '', feedback = '') => {
+    // Dynamically cast numeric strings to Number to satisfy backend validation
+    const parsedUserId = !isNaN(Number(userId)) ? Number(userId) : userId;
+
     const response = await APIInstance.post(`/client/groups/${groupId}/leave`, {
-        user_id: userId,
+        user_id: parsedUserId,
         reason,
         feedback
     });
@@ -101,8 +107,11 @@ export const getGroupMessages = async (groupId, userId, page = 1, limit = 20) =>
  * @returns {Promise} Sent message
  */
 export const sendGroupMessage = async (groupId, userId, content, replyTo = null) => {
+    // Dynamically cast numeric strings to Number to satisfy backend validation
+    const parsedUserId = !isNaN(Number(userId)) ? Number(userId) : userId;
+
     const response = await APIInstance.post(`/client/groups/${groupId}/messages`, {
-        user_id: userId,
+        user_id: parsedUserId,
         content,
         replyTo
     });

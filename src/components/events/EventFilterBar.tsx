@@ -11,6 +11,7 @@ export type EventFilterBarProps = {
   selectedCategory: string;
   onSelectCategory: (c: string) => void;
   showCategories?: boolean;
+  onToggleFilters?: () => void;
 };
 
 const EventFilterBar: React.FC<EventFilterBarProps> = ({
@@ -20,6 +21,7 @@ const EventFilterBar: React.FC<EventFilterBarProps> = ({
   selectedCategory,
   onSelectCategory,
   showCategories = true,
+  onToggleFilters,
 }) => {
   return (
     <View>
@@ -33,8 +35,13 @@ const EventFilterBar: React.FC<EventFilterBarProps> = ({
           placeholderTextColor={appColors.AppGray}
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => onChangeSearch('')}>
+          <TouchableOpacity onPress={() => onChangeSearch('')} style={styles.iconButton}>
             <Icon name="close" type="material" color={appColors.AppGray} size={scale(20)} />
+          </TouchableOpacity>
+        )}
+        {onToggleFilters && (
+          <TouchableOpacity onPress={onToggleFilters} style={[styles.iconButton, { marginLeft: scale(4) }]}>
+            <Icon name="tune" type="material" color={showCategories ? appColors.AppBlue : appColors.AppGray} size={scale(22)} />
           </TouchableOpacity>
         )}
       </View>
@@ -75,6 +82,9 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(16),
     color: appColors.grey1,
     fontFamily: appFonts.headerTextRegular,
+  },
+  iconButton: {
+    padding: scale(4),
   },
   categoryContainer: { marginBottom: scale(20) },
   categoryChip: {

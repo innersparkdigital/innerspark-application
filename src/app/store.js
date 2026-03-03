@@ -25,6 +25,9 @@ import userSettingsReducer from '../features/settings/userSettingsSlice';
 // Events slice
 import eventsReducer from '../features/events/eventsSlice';
 
+// Groups slice
+import groupsReducer from '../features/groups/groupsSlice';
+
 // Emergency slice
 import emergencyReducer from '../features/emergency/emergencySlice';
 
@@ -63,25 +66,25 @@ export default configureStore({
         //recycleFlow: recycleFlowReducer,
         appSession: appSessionReducer,
         appStart: appStartReducer,
-        
+
         // Mood tracking reducer
         mood: moodReducer,
-        
+
         // Subscription reducer
         subscription: subscriptionReducer,
-        
+
         // Emergency reducer (contacts, crisis lines, safety plan)
         emergency: emergencyReducer,
-        
+
         // User settings reducer (appearance, accessibility, etc.)
         userSettings: userSettingsReducer,
-        
+
         // Notifications reducer
         notifications: notificationsReducer,
-        
+
         // Dashboard reducer (home screen data)
         dashboard: dashboardReducer,
-        
+
         // Therapist-specific reducers
         therapistDashboard: therapistDashboardReducer,
         therapistAppointments: therapistAppointmentsReducer,
@@ -89,25 +92,28 @@ export default configureStore({
         therapistRequests: therapistRequestsReducer,
         therapistGroups: therapistGroupsReducer,
         therapistAnalytics: therapistAnalyticsReducer,
-        
+
         // Events reducer
         events: eventsReducer,
-        
+
+        // Groups reducer
+        groups: groupsReducer,
+
         // Therapists reducer (client-side therapist directory)
         therapists: therapistsReducer,
-        
+
         // Appointments reducer (client appointments management)
         appointments: appointmentsReducer,
-        
+
         // Goals reducer (client goals management)
         goals: goalsReducer,
-        
+
         // Reports reducer (wellness reports and analytics)
         reports: reportsReducer,
-        
+
         // Wallet reducer (wellness vault and transactions)
         wallet: walletReducer,
-        
+
         // Support Tickets reducer
         supportTickets: supportTicketsReducer,
         chat: chatReducer,

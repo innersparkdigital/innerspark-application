@@ -41,7 +41,7 @@ export const getChatMessages = async (chatId, userId, page = 1, limit = 20) => {
  */
 export const sendChatMessage = async (chatId, userId, content, type = 'text') => {
     const response = await APIInstance.post(`/client/chats/${chatId}/messages`, {
-        user_id: userId,
+        user_id: Number(userId),
         content,
         type
     });
@@ -56,7 +56,7 @@ export const sendChatMessage = async (chatId, userId, content, type = 'text') =>
  */
 export const markChatAsRead = async (chatId, userId) => {
     const response = await APIInstance.put(`/client/chats/${chatId}/read`, {
-        user_id: userId
+        user_id: Number(userId)
     });
     return response.data;
 };

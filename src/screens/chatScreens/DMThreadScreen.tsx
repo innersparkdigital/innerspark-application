@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
@@ -18,8 +19,8 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useSelector, useDispatch } from 'react-redux';
-import { loadMessages, sendChatMessage, markConversationRead } from '../../utils/chatManager';
-import { selectMessages, selectChatLoading, selectChatSending } from '../../features/chat/chatSlice';
+import { getChatMessages, sendChatMessage, markChatAsRead } from '../../api/client/messages';
+import { displayNotification } from '../../api/LHNotifications';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface Message {
@@ -42,36 +43,106 @@ interface DMThreadScreenProps {
 const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const alert = useISAlert();
-  const dispatch = useDispatch();
   const flatListRef = useRef<FlatList>(null);
-  const { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail } = route.params;
-  const userId = useSelector((state: any) => state.userData.userDetails.userId);
-  const chatId = `${userId}_${partnerId}`;
 
-  const messages = useSelector(selectMessages);
-  const isLoading = useSelector(selectChatLoading);
-  const isSending = useSelector(selectChatSending);
+  // Accept `chatId` safely routed dynamically from the listing configuration
+  const { chatId: routeChatId, partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail } = route.params;
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  const chatId = routeChatId || `chat_${userId}_${partnerId}`;
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [messageText, setMessageText] = useState('');
+
+  // Track the previously loaded messages safely across re-renders to filter Live Array diffs dynamically generating Notifications
+  const prevMessagesRef = useRef<Message[]>([]);
 
   useEffect(() => {
     loadMessagesData();
     markMessagesAsRead();
+
+    const interval = setInterval(() => {
+      loadMessagesData(true);
+      markMessagesAsRead();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const loadMessagesData = async () => {
-    const result = await dispatch(loadMessages(userId, chatId));
-    if (!result.success) {
-      toast.show({
-        description: 'Failed to load messages',
-        duration: 3000,
-      });
-    } else {
-      scrollToBottom();
+  const loadMessagesData = async (isSilent = false) => {
+    if (!isSilent && messages.length === 0) {
+      setIsLoading(true);
+    }
+    try {
+      const response = await getChatMessages(chatId, userId);
+      const apiMessages = response.data?.messages || response.messages || [];
+
+      const mappedMessages = apiMessages.map((msg: any) => ({
+        id: msg.id,
+        senderId: String(msg.senderId || msg.sender_id),
+        senderName: msg.senderName || msg.sender_name || 'User',
+        content: msg.content || msg.message || '',
+        createdAt: msg.createdAt || msg.created_at || msg.timestamp || new Date().toISOString(),
+        isRead: msg.isRead || msg.is_read || false,
+        isSent: msg.isSent !== false,
+        isOwn: String(msg.senderId || msg.sender_id || '') === String(userId),
+        type: msg.type || 'text',
+      }));
+
+      const formattedMessages = mappedMessages.reverse();
+
+      if (isSilent && prevMessagesRef.current.length > 0) {
+        const oldIds = new Set(prevMessagesRef.current.map(m => m.id));
+        const newMessages = formattedMessages.filter((m: any) => !oldIds.has(m.id) && !m.isOwn);
+
+        if (newMessages.length > 0) {
+          newMessages.forEach((msg: any) => {
+            displayNotification({
+              title: partnerName,
+              body: msg.type === 'image' ? 'Sent an image' : msg.content,
+              data: { type: 'chat_message', chatId, partnerId }
+            });
+          });
+        }
+      }
+
+      setMessages(formattedMessages);
+      prevMessagesRef.current = formattedMessages;
+
+      if (!isSilent) {
+        scrollToBottom();
+      }
+    } catch (error) {
+      console.error('❌ Error loading direct messages:', error);
+      if (!isSilent) {
+        toast.show({
+          description: 'Failed to load messages',
+          duration: 3000,
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const markMessagesAsRead = async () => {
-    await dispatch(markConversationRead(userId, chatId));
+    if (!chatId || !userId) return;
+
+    try {
+      console.log(`📡 Marking Thread Read -> Chat:${chatId} | User:${userId}`);
+      const response = await markChatAsRead(chatId, String(userId));
+      console.log('✅ Read confirmation synchronized:', JSON.stringify(response));
+    } catch (error: any) {
+      console.error('❌ Error synchronizing thread read status:', error.response?.data || error.message);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadMessagesData(false);
+    setIsRefreshing(false);
   };
 
   const scrollToBottom = () => {
@@ -85,14 +156,38 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
 
     const content = messageText.trim();
     setMessageText('');
-    scrollToBottom();
 
-    const result = await dispatch(sendChatMessage(userId, chatId, content));
-    if (!result.success) {
+    // Optimistic UI Append matching Live Chat structural speeds 
+    const tempId = `temp_${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      senderId: String(userId),
+      senderName: 'You',
+      content,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      isSent: false,
+      isOwn: true,
+      type: 'text'
+    };
+
+    setMessages(prev => [...prev, optimisticMsg]);
+    scrollToBottom();
+    setIsSending(true);
+
+    try {
+      await sendChatMessage(chatId, String(userId), content);
+      await loadMessagesData(true);
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
       toast.show({
         description: 'Failed to send message',
         duration: 3000,
       });
+      // Rollback optimism payload if failure resolves
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -271,6 +366,13 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[appColors.AppBlue]}
+            />
+          }
         />
 
         {/* Message Composer */}

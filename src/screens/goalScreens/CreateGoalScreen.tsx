@@ -9,31 +9,54 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
+import DatePicker from 'react-native-date-picker';
+import { z } from 'zod';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
-import { createNewGoal } from '../../utils/goalsManager';
+import { createNewGoal, updateExistingGoal } from '../../utils/goalsManager';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface CreateGoalScreenProps {
   navigation: NavigationProp<any>;
+  route?: any; // To accept params if modifying an existing goal
 }
 
-const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
+// Zod Schema for World-Class Validation Definition
+const goalSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title cannot exceed 100 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters").max(500, "Description cannot exceed 500 characters"),
+  dueDate: z.string().min(1, "Please select a due date"),
+  category: z.string().min(1, "Please select a category"),
+  priority: z.enum(['low', 'medium', 'high']),
+});
+
+const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation, route }) => {
   const toast = useToast();
   const alert = useISAlert();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [category, setCategory] = useState('');
-  const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
+
+  // Conditionally prepopulate state if editing
+  const existingGoal = route?.params?.goal;
+  const isEditing = route?.params?.isEditing || false;
+
+  const [title, setTitle] = useState(existingGoal?.title || '');
+  const [description, setDescription] = useState(existingGoal?.description || '');
+  const [dueDate, setDueDate] = useState(existingGoal?.dueDate || '');
+  const [category, setCategory] = useState(existingGoal?.category || '');
+  const [priority, setPriority] = useState<'high' | 'medium' | 'low'>(existingGoal?.priority || 'medium');
+
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // DatePicker State
+  const [date, setDate] = useState(existingGoal?.dueDate ? new Date(existingGoal.dueDate) : new Date());
+  const [openDatePicker, setOpenDatePicker] = useState(false);
 
   const categories = [
     'Mindfulness', 'Physical Health', 'Professional Help',
@@ -47,44 +70,35 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
   ];
 
   const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
+    try {
+      goalSchema.parse({ title, description, dueDate, category, priority });
 
-    if (!title.trim()) {
-      newErrors.title = 'Title is required';
-    } else if (title.length < 3) {
-      newErrors.title = 'Title must be at least 3 characters';
-    }
-
-    if (!description.trim()) {
-      newErrors.description = 'Description is required';
-    } else if (description.length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    }
-
-    if (!dueDate.trim()) {
-      newErrors.dueDate = 'Due date is required';
-    } else {
-      // Simple date validation (YYYY-MM-DD format)
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(dueDate)) {
-        newErrors.dueDate = 'Please use YYYY-MM-DD format';
-      } else {
+      // Zod doesn't natively check past dates purely by string format unless customized heavily, we keep the chronological check:
+      if (dueDate) {
         const selectedDate = new Date(dueDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        if (selectedDate < today) {
-          newErrors.dueDate = 'Due date cannot be in the past';
+        if (selectedDate < today && !isEditing) {
+          setErrors({ dueDate: 'Due date cannot be in the past' });
+          return false;
         }
       }
-    }
 
-    if (!category) {
-      newErrors.category = 'Please select a category';
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: { [key: string]: string } = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            newErrors[err.path[0].toString()] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
@@ -107,21 +121,22 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
         priority,
       };
 
-      // Create goal via API
-      const result = await createNewGoal(goalData);
-
-      if (result.success) {
-        toast.show({
-          description: 'Goal created successfully! 🎯',
-          duration: 3000,
-        });
-
-        navigation.goBack();
+      if (isEditing) {
+        const result = await updateExistingGoal(existingGoal.id, goalData);
+        if (result.success) {
+          toast.show({ description: 'Goal updated successfully! ✨', duration: 3000 });
+          navigation.goBack();
+        } else {
+          toast.show({ description: result.error || 'Failed to update goal.', duration: 3000 });
+        }
       } else {
-        toast.show({
-          description: result.error || 'Failed to create goal. Please try again.',
-          duration: 3000,
-        });
+        const result = await createNewGoal(goalData);
+        if (result.success) {
+          toast.show({ description: 'Goal created successfully! 🎯', duration: 3000 });
+          navigation.goBack();
+        } else {
+          toast.show({ description: result.error || 'Failed to create goal.', duration: 3000 });
+        }
       }
     } catch (error) {
       console.error('Error creating goal:', error);
@@ -135,7 +150,7 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
   };
 
   const handleCancel = () => {
-    if (title || description || dueDate || category !== '') {
+    if (title !== (existingGoal?.title || '') || description !== (existingGoal?.description || '') || dueDate !== (existingGoal?.dueDate || '') || category !== (existingGoal?.category || '')) {
       alert.show({
         type: 'destructive',
         title: 'Discard Changes',
@@ -158,7 +173,7 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
         <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
           <Icon name="close" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Goal</Text>
+        <Text style={styles.headerTitle}>{isEditing ? 'Edit Goal' : 'Create Goal'}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -196,16 +211,36 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
             <Text style={styles.characterCount}>{description.length}/500</Text>
           </View>
 
-          {/* Due Date Field */}
+          {/* Due Date Field via DatePicker */}
           <View style={styles.fieldContainer}>
             <Text style={styles.fieldLabel}>Due Date *</Text>
-            <TextInput
-              style={[styles.textInput, errors.dueDate && styles.errorInput]}
-              placeholder="YYYY-MM-DD (e.g., 2024-02-15)"
-              value={dueDate}
-              onChangeText={setDueDate}
-              placeholderTextColor={appColors.AppGray}
+            <TouchableOpacity
+              style={[styles.textInput, errors.dueDate && styles.errorInput, { justifyContent: 'center' }]}
+              onPress={() => setOpenDatePicker(true)}
+            >
+              <Text style={{ color: dueDate ? appColors.grey1 : appColors.AppGray, fontFamily: appFonts.headerTextRegular }}>
+                {dueDate ? dueDate : 'Select a due date'}
+              </Text>
+            </TouchableOpacity>
+
+            <DatePicker
+              modal
+              open={openDatePicker}
+              date={date}
+              mode="date"
+              minimumDate={isEditing ? undefined : new Date()}
+              onConfirm={(selectedDate) => {
+                setOpenDatePicker(false);
+                setDate(selectedDate);
+                // Format directly into YYYY-MM-DD ensuring DB compatibility globally
+                const formattedDate = selectedDate.toISOString().split('T')[0];
+                setDueDate(formattedDate);
+              }}
+              onCancel={() => {
+                setOpenDatePicker(false);
+              }}
             />
+
             {errors.dueDate && <Text style={styles.errorText}>{errors.dueDate}</Text>}
             <Text style={styles.helpText}>When do you want to achieve this goal?</Text>
           </View>
@@ -274,7 +309,7 @@ const CreateGoalScreen: React.FC<CreateGoalScreenProps> = ({ navigation }) => {
       {/* Bottom Action Button */}
       <View style={styles.bottomContainer}>
         <Button
-          title="Create Goal"
+          title={isEditing ? 'Save Changes' : 'Create Goal'}
           onPress={handleSave}
           loading={isLoading}
           disabled={isLoading}
