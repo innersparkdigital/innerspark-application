@@ -17,18 +17,36 @@ import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { selectBalance, selectCurrency } from '../../features/wallet/walletSlice';
+import { createAppointment } from '../../utils/appointmentsManager';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import LHLoaderModal from '../../components/forms/LHLoaderModal';
+import { z } from 'zod';
 
-const BookingCheckoutScreen = ({ navigation, route }) => {
+const checkoutSchema = z.object({
+  reason: z.string()
+    .min(10, 'Please provide a more detailed reason (at least 10 characters) so the therapist can prepare.')
+    .max(500, 'Reason must not exceed 500 characters.')
+});
+
+const BookingCheckoutScreen = ({ navigation, route }: any) => {
   const {
     therapist,
     selectedSlot,
     isExistingAppointment = false,
     appointmentId = null,
     sessionType = 'Individual Therapy',
+    sessionPrice = null,
+    sessionDuration = '60 minutes',
     location = '2 Avenue Street, Nakawa - Kampala Uganda, 3 km',
   } = route.params;
   const toast = useToast();
 
+  const balance = useSelector(selectBalance);
+  const currency = useSelector(selectCurrency);
+
+  const alert = useISAlert();
   const [message, setMessage] = useState('');
   const [reason, setReason] = useState(isExistingAppointment ? 'Payment for scheduled appointment' : '');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wellness_vault');
@@ -38,9 +56,9 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
   const appointmentDetails = {
     date: selectedSlot?.date || 'Thu, 09 Apr',
     time: selectedSlot?.time || '08:00 AM',
-    duration: '50 minutes',
+    duration: sessionDuration || '60 minutes',
     sessionType: sessionType,
-    price: therapist.price?.replace?.('$', '') || therapist.price,
+    price: sessionPrice || (therapist.price?.replace?.('$', '') || therapist.price),
     currency: 'UGX',
     location: location,
   };
@@ -49,57 +67,98 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
     {
       id: 'wellness_vault',
       name: 'WellnessVault',
-      balance: 'UGX 350,000',
+      balance: `${currency} ${balance.toLocaleString()}`,
       icon: 'account-balance-wallet',
       selected: true,
     },
   ];
 
-  const handlePaymentMethodSelect = (methodId) => {
+  const handlePaymentMethodSelect = (methodId: string) => {
     setSelectedPaymentMethod(methodId);
   };
 
   const handlePayNow = async () => {
-    if (!isExistingAppointment && !reason.trim()) {
-      toast.show({
-        description: 'Please provide a reason for the visit',
-        duration: 2000,
-      });
-      return;
+    if (!isExistingAppointment) {
+      try {
+        checkoutSchema.parse({ reason: reason.trim() });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          toast.show({
+            description: error.errors[0].message,
+            duration: 3000,
+          });
+          return;
+        }
+      }
     }
 
-    setIsProcessing(true);
+    alert.show({
+      type: 'info',
+      title: 'Confirm Payment',
+      message: `You are about to pay ${formatPrice(appointmentDetails.price)} from your WellnessVault for a ${appointmentDetails.duration} session with ${therapist?.name || 'your therapist'}.\n\nProceed?`,
+      confirmText: 'Yes, Pay Now',
+      cancelText: 'Cancel',
+      dismissible: false,
+      onConfirm: async () => {
+        setIsProcessing(true);
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
+        try {
+          if (isExistingAppointment) {
+            toast.show({
+              description: 'Payment successful! Your appointment is now confirmed.',
+              duration: 3000,
+            });
+            setIsProcessing(false);
+            navigation.navigate('AppointmentsScreen');
+          } else {
+            // New booking flow
+            const durationValue = parseInt(appointmentDetails.duration.toString().replace(/[^0-9]/g, ''), 10) || 60;
+            const result = await createAppointment({
+              therapistId: therapist.id.toString(),
+              slotId: selectedSlot?.id?.toString() || '',
+              sessionType: sessionType?.toLowerCase() || 'individual',
+              date: selectedSlot?.date || '',
+              time: selectedSlot?.time || '',
+              duration: durationValue,
+              reason: reason.trim(),
+              paymentMethod: selectedPaymentMethod,
+            });
 
-      if (isExistingAppointment) {
-        // Payment for existing appointment
-        toast.show({
-          description: 'Payment successful! Your appointment is now confirmed.',
-          duration: 3000,
-        });
+            setIsProcessing(false);
 
-        // Navigate back to appointments screen
-        navigation.navigate('AppointmentsScreen');
-      } else {
-        // New booking flow
-        navigation.navigate('BookingConfirmationScreen', {
-          therapist,
-          appointmentDetails: {
-            ...appointmentDetails,
-            message,
-            reason,
-            paymentMethod: paymentMethods.find(method => method.id === selectedPaymentMethod),
-            bookingId: 'BK' + Date.now().toString().slice(-6),
-          },
-        });
+            if (result.success) {
+              navigation.navigate('BookingConfirmationScreen', {
+                therapist,
+                appointmentDetails: {
+                  ...appointmentDetails,
+                  message,
+                  reason,
+                  paymentMethod: paymentMethods.find(method => method.id === selectedPaymentMethod),
+                  bookingId: result.data?.id || 'BK' + Date.now().toString().slice(-6),
+                  meetingLink: result.data?.meetingLink,
+                },
+              });
+            } else {
+              alert.show({
+                type: 'error',
+                title: 'Booking Failed',
+                message: result.error || 'Failed to book appointment',
+              });
+            }
+          }
+        } catch (error: any) {
+          setIsProcessing(false);
+          alert.show({
+            type: 'error',
+            title: 'Error',
+            message: error?.message || 'An error occurred during booking',
+          });
+        }
       }
-    }, 2000);
+    });
   };
 
-  const formatPrice = (price) => {
+  const formatPrice = (price: any) => {
     // Price is already in UGX format like "UGX 50,000"
     return price;
   };
@@ -118,32 +177,40 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>
-            {isExistingAppointment ? 'Complete Payment' : `${therapist.name} Confirmation`}
+            {isExistingAppointment ? 'Complete Payment' : 'Confirm Booking'}
           </Text>
         </View>
-        <Avatar
-          source={therapist.image}
-          size={scale(40)}
-          rounded
-        />
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
         {/* Appointment Details */}
         <View style={styles.appointmentCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: scale(20), paddingBottom: scale(15), borderBottomWidth: 1, borderBottomColor: appColors.AppLightGray }}>
+            <Avatar
+              source={therapist?.image}
+              size={scale(60)}
+              rounded
+              containerStyle={{ borderWidth: 2, borderColor: appColors.AppLightGray }}
+              avatarStyle={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+            />
+            <View style={{ marginLeft: scale(15), flex: 1 }}>
+              <Text style={{ fontSize: moderateScale(18), fontWeight: 'bold', color: appColors.grey1, fontFamily: appFonts.headerTextBold }}>{therapist?.name || 'Therapist Name'}</Text>
+              <Text style={{ fontSize: moderateScale(14), color: appColors.grey2, fontFamily: appFonts.bodyTextRegular, marginTop: scale(2) }}>{appointmentDetails.sessionType}</Text>
+            </View>
+          </View>
+
           <View style={styles.dateTimeContainer}>
             <Text style={styles.appointmentDate}>{appointmentDetails.date}</Text>
             <Text style={styles.appointmentTime}>{appointmentDetails.time}</Text>
           </View>
 
           <View style={styles.locationContainer}>
-            <Icon name="location-with-marker" type="entypo" color={appColors.grey2} size={moderateScale(18)} />
+            <Icon name="location-on" type="material" color={appColors.grey2} size={moderateScale(18)} />
             <Text style={styles.locationText}>{appointmentDetails.location}</Text>
           </View>
 
           <View style={styles.sessionDetails}>
-            <Text style={styles.sessionType}>{appointmentDetails.sessionType}</Text>
             <Text style={styles.sessionDuration}>{appointmentDetails.duration}</Text>
           </View>
         </View>
@@ -193,7 +260,10 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
         <View style={styles.paymentMethodsCard}>
           <View style={styles.paymentHeader}>
             <Text style={styles.sectionTitle}>Pay via WellnessVault</Text>
-            <TouchableOpacity style={styles.manageVaultButton}>
+            <TouchableOpacity
+              style={styles.manageVaultButton}
+              onPress={() => navigation.navigate('WellnessVaultScreen', { fromCheckout: true })}
+            >
               <Text style={styles.manageVaultText}>Manage Vault</Text>
               <Icon name="chevron-right" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
             </TouchableOpacity>
@@ -249,6 +319,9 @@ const BookingCheckoutScreen = ({ navigation, route }) => {
           loading={isProcessing}
         />
       </View>
+
+      <ISAlert ref={alert.ref} />
+      <LHLoaderModal visible={isProcessing} message="Securing your appointment..." />
     </SafeAreaView>
   );
 };

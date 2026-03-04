@@ -36,10 +36,16 @@ import { APIInstance } from '../LHAPI';
  * // }
  */
 export const getReviews = async (therapistId, filters = {}) => {
-    const response = await APIInstance.get('/th/reviews', {
-        params: { therapist_id: therapistId, ...filters }
-    });
-    return response.data;
+    try {
+        console.log(`📡 GET /th/reviews?therapist_id=${therapistId}`);
+        const response = await APIInstance.get('/th/reviews', {
+            params: { therapist_id: therapistId, ...filters }
+        });
+        return response.data;
+    } catch (error) {
+        console.log(`❌ GET /th/reviews failed:`, error?.response?.data || error?.message);
+        throw error;
+    }
 };
 
 /**

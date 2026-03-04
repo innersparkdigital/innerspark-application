@@ -36,11 +36,25 @@ const TransactionDetailScreen = ({ navigation, route }) => {
     recipient: 'Dr. Sarah Johnson',
     sessionType: 'Individual Therapy',
     duration: '60 minutes',
-    breakdown: {
-      subtotal: 28000,
-      serviceFee: 2000,
-      total: 30000,
-    },
+    breakdown: null,
+  };
+
+  const getTransactionIcon = (category) => {
+    switch (category?.toLowerCase()) {
+      case 'topup': return 'add-circle';
+      case 'appointment':
+      case 'therapy': return 'psychology';
+      case 'event': return 'celebration';
+      case 'credits': return 'volunteer-activism';
+      case 'rewards': return 'stars';
+      case 'subscription': return 'card-membership';
+      default: return 'receipt-long';
+    }
+  };
+
+  const formatAmount = (amount, type) => {
+    const rawVal = Math.abs(amount || 0).toLocaleString();
+    return type === 'credit' ? `+${rawVal} UGX` : `-${rawVal} UGX`;
   };
 
 
@@ -54,6 +68,7 @@ const TransactionDetailScreen = ({ navigation, route }) => {
   const StatusBadge = ({ status }) => {
     const getStatusColor = () => {
       switch (status?.toLowerCase()) {
+        case 'success':
         case 'completed': return '#4CAF50';
         case 'pending': return '#FF9800';
         case 'failed': return '#F44336';
@@ -65,7 +80,7 @@ const TransactionDetailScreen = ({ navigation, route }) => {
     return (
       <View style={[styles.statusBadge, { backgroundColor: getStatusColor() + '20' }]}>
         <Icon
-          name={status?.toLowerCase() === 'completed' ? 'check-circle' : 'schedule'}
+          name={(status?.toLowerCase() === 'completed' || status?.toLowerCase() === 'success') ? 'check-circle' : 'schedule'}
           type="material"
           color={getStatusColor()}
           size={16}
@@ -99,7 +114,7 @@ const TransactionDetailScreen = ({ navigation, route }) => {
             { backgroundColor: transactionDetail.type === 'credit' ? '#4CAF50' + '15' : '#F44336' + '15' }
           ]}>
             <Icon
-              name={transactionDetail.icon}
+              name={transactionDetail.icon || getTransactionIcon(transactionDetail.category)}
               type="material"
               color={transactionDetail.type === 'credit' ? '#4CAF50' : '#F44336'}
               size={40}
@@ -110,9 +125,9 @@ const TransactionDetailScreen = ({ navigation, route }) => {
             styles.amountText,
             transactionDetail.type === 'credit' ? styles.creditAmount : styles.debitAmount
           ]}>
-            {transactionDetail.amount}
+            {typeof transactionDetail.amount === 'number' ? formatAmount(transactionDetail.amount, transactionDetail.type) : transactionDetail.amount}
           </Text>
-          <Text style={styles.amountDate}>{transactionDetail.fullDate}</Text>
+          <Text style={styles.amountDate}>{transactionDetail.fullDate || transactionDetail.date}</Text>
           <StatusBadge status={transactionDetail.status} />
         </View>
 

@@ -1,7 +1,7 @@
 /**
  * Therapists Screen - Find and connect with therapists
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -73,7 +73,7 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [recentSearches, setRecentSearches] = useState(['Anxiety therapy', 'Dr. Sarah', 'Couples counseling']);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
   const [showFilters, setShowFilters] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
@@ -83,237 +83,14 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
     loadTherapists();
   }, []);
 
-  // Removed inline mock data - now using API data from Redux
-  // Mock data moved to src/global/MockData.ts
-  const mockTherapists = [
-    {
-      id: 1,
-      name: 'Dr. Nakato Aisha',
-      specialty: 'Therapist - Specialist',
-      rating: 5,
-      location: 'Kampala Down Town - 2 km',
-      image: require('../assets/images/dummy-people/d-person1.png'),
-      reviews: 342,
-      experience: '12 years',
-      price: 'UGX 60,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Specialized in cognitive behavioral therapy and mindfulness techniques.',
-      nextAvailable: 'Today 2:00 PM',
-    },
-    {
-      id: 2,
-      name: 'Dr. Okello Samuel',
-      specialty: 'Therapist',
-      rating: 4,
-      location: 'Nakawa - 3 km',
-      image: require('../assets/images/dummy-people/d-person2.png'),
-      reviews: 187,
-      experience: '8 years',
-      price: 'UGX 50,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Expert in anxiety and depression treatment with holistic approach.',
-      nextAvailable: 'Tomorrow 10:00 AM',
-    },
-    {
-      id: 3,
-      name: 'Dr. Namukasa Grace',
-      specialty: 'Counselor',
-      rating: 5,
-      location: 'Mukono - 10 km',
-      image: require('../assets/images/dummy-people/d-person3.png'),
-      reviews: 456,
-      experience: '15 years',
-      price: 'UGX 65,000',
-      priceUnit: '/session',
-      available: false,
-      bio: 'Specializes in trauma therapy and PTSD treatment.',
-      nextAvailable: 'Next week',
-    },
-    {
-      id: 4,
-      name: 'Dr. Wasswa David',
-      specialty: 'Specialist',
-      rating: 4,
-      location: 'Kampala Central - 5 km',
-      image: require('../assets/images/dummy-people/d-person4.png'),
-      reviews: 289,
-      experience: '10 years',
-      price: 'UGX 55,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Focused on adolescent mental health and behavioral issues.',
-      nextAvailable: 'Today 4:30 PM',
-    },
-    {
-      id: 5,
-      name: 'Dr. Nabirye Faith',
-      specialty: 'Therapist',
-      rating: 5,
-      location: 'Ntinda - 4 km',
-      image: require('../assets/images/dummy-people/d-person1.png'),
-      reviews: 412,
-      experience: '11 years',
-      price: 'UGX 58,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Specializes in family therapy and relationship counseling.',
-      nextAvailable: 'Today 3:00 PM',
-    },
-    {
-      id: 6,
-      name: 'Dr. Mugisha Patrick',
-      specialty: 'Counselor',
-      rating: 4,
-      location: 'Entebbe - 12 km',
-      image: require('../assets/images/dummy-people/d-person2.png'),
-      reviews: 156,
-      experience: '7 years',
-      price: 'UGX 48,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Expert in stress management and workplace mental health.',
-      nextAvailable: 'Tomorrow 9:00 AM',
-    },
-    {
-      id: 7,
-      name: 'Dr. Nansubuga Rebecca',
-      specialty: 'Therapist - Specialist',
-      rating: 5,
-      location: 'Kololo - 3 km',
-      image: require('../assets/images/dummy-people/d-person3.png'),
-      reviews: 523,
-      experience: '14 years',
-      price: 'UGX 70,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Renowned for treating complex anxiety disorders and phobias.',
-      nextAvailable: 'Today 5:00 PM',
-    },
-    {
-      id: 8,
-      name: 'Dr. Kato Moses',
-      specialty: 'Therapist',
-      rating: 4,
-      location: 'Bugolobi - 6 km',
-      image: require('../assets/images/dummy-people/d-person4.png'),
-      reviews: 234,
-      experience: '9 years',
-      price: 'UGX 52,000',
-      priceUnit: '/session',
-      available: false,
-      bio: 'Specializes in addiction recovery and substance abuse counseling.',
-      nextAvailable: 'Monday 2:00 PM',
-    },
-    {
-      id: 9,
-      name: 'Dr. Namutebi Sarah',
-      specialty: 'Counselor',
-      rating: 5,
-      location: 'Muyenga - 7 km',
-      image: require('../assets/images/dummy-people/d-person1.png'),
-      reviews: 378,
-      experience: '13 years',
-      price: 'UGX 62,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Expert in grief counseling and bereavement support.',
-      nextAvailable: 'Tomorrow 11:00 AM',
-    },
-    {
-      id: 10,
-      name: 'Dr. Ssemakula John',
-      specialty: 'Specialist',
-      rating: 4,
-      location: 'Wandegeya - 4 km',
-      image: require('../assets/images/dummy-people/d-person2.png'),
-      reviews: 198,
-      experience: '8 years',
-      price: 'UGX 50,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Focuses on youth mental health and academic stress management.',
-      nextAvailable: 'Today 6:00 PM',
-    },
-    {
-      id: 11,
-      name: 'Dr. Nakimuli Esther',
-      specialty: 'Therapist',
-      rating: 5,
-      location: 'Naalya - 8 km',
-      image: require('../assets/images/dummy-people/d-person3.png'),
-      reviews: 445,
-      experience: '16 years',
-      price: 'UGX 68,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Specializes in post-partum depression and maternal mental health.',
-      nextAvailable: 'Tomorrow 2:00 PM',
-    },
-    {
-      id: 12,
-      name: 'Dr. Opio Daniel',
-      specialty: 'Counselor',
-      rating: 4,
-      location: 'Kireka - 9 km',
-      image: require('../assets/images/dummy-people/d-person4.png'),
-      reviews: 167,
-      experience: '6 years',
-      price: 'UGX 45,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Expert in anger management and emotional regulation techniques.',
-      nextAvailable: 'Today 1:00 PM',
-    },
-    {
-      id: 13,
-      name: 'Dr. Nambi Christine',
-      specialty: 'Therapist - Specialist',
-      rating: 5,
-      location: 'Lubowa - 11 km',
-      image: require('../assets/images/dummy-people/d-person1.png'),
-      reviews: 501,
-      experience: '17 years',
-      price: 'UGX 75,000',
-      priceUnit: '/session',
-      available: false,
-      bio: 'Leading expert in bipolar disorder and mood stabilization therapy.',
-      nextAvailable: 'Next Friday',
-    },
-    {
-      id: 14,
-      name: 'Dr. Babirye Juliet',
-      specialty: 'Therapist',
-      rating: 4,
-      location: 'Kansanga - 5 km',
-      image: require('../assets/images/dummy-people/d-person2.png'),
-      reviews: 312,
-      experience: '10 years',
-      price: 'UGX 56,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Specializes in eating disorders and body image issues.',
-      nextAvailable: 'Tomorrow 3:30 PM',
-    },
-    {
-      id: 15,
-      name: 'Dr. Mukasa Robert',
-      specialty: 'Specialist',
-      rating: 5,
-      location: 'Kabalagala - 6 km',
-      image: require('../assets/images/dummy-people/d-person3.png'),
-      reviews: 467,
-      experience: '14 years',
-      price: 'UGX 64,000',
-      priceUnit: '/session',
-      available: true,
-      bio: 'Expert in sleep disorders and insomnia treatment with CBT-I approach.',
-      nextAvailable: 'Today 7:00 PM',
-    },
-  ];
-
-  const specialties = ['All Specialities', 'Therapist', 'Specialist', 'Counselor'];
+  // Dynamically extract unique specialties from loaded therapists
+  const specialties = useMemo(() => {
+    const rawList = (therapists as Therapist[] || []).map(t => t.specialty);
+    // Split by comma if the API returned comma-separated lists, trim, and filter uniques
+    const splitSpecs = rawList.flatMap(s => s ? s.split(',').map(item => item.trim()) : []);
+    const uniqueSpecs = Array.from(new Set(splitSpecs)).filter(Boolean);
+    return ['All Specialities', ...uniqueSpecs];
+  }, [therapists]);
 
   const filteredTherapists = (therapists as Therapist[] || []).filter((therapist: Therapist) => {
     const matchesSearch = therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -345,11 +122,23 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
 
   // Search focus 
   const handleSearchFocus = () => {
+    // Seed suggestions from therapist data if recents are empty
+    if (recentSearches.length === 0 && (therapists as Therapist[]).length > 0) {
+      const suggestions = Array.from(new Set([
+        ...(therapists as Therapist[]).slice(0, 3).map(t => t.name),
+        ...(therapists as Therapist[]).slice(0, 2).map(t => t.specialty.split(',')[0]?.trim()).filter(Boolean),
+      ])).slice(0, 5);
+      setRecentSearches(suggestions);
+    }
     setIsSearchFocused(true);
   };
 
   // Search blur
   const handleSearchBlur = () => {
+    // Save actual search query to recents
+    if (searchQuery.trim() && !recentSearches.includes(searchQuery.trim())) {
+      setRecentSearches(prev => [searchQuery.trim(), ...prev].slice(0, 5));
+    }
     setIsSearchFocused(false);
   };
 
@@ -409,27 +198,44 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
       <View style={styles.cardContent}>
         <Avatar
           source={therapist.image}
-          size={scale(60)}
+          size={scale(65)}
           rounded
-          containerStyle={styles.avatar}
+          containerStyle={[styles.avatar, { borderWidth: 2, borderColor: appColors.AppLightGray }]}
+          avatarStyle={{ width: '100%', height: '100%', resizeMode: 'cover' }}
         />
 
-        <View style={styles.therapistInfo}>
-          <Text style={styles.therapistName}>{therapist.name}</Text>
-          <Text style={styles.therapistSpecialty}>{therapist.specialty}</Text>
-          <Text style={styles.therapistLocation}>{therapist.location}</Text>
-
-          <View style={styles.ratingContainer}>
-            <View style={styles.starsContainer}>
-              {renderStars(therapist.rating)}
+        <View style={[styles.therapistInfo, { justifyContent: 'center' }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1, paddingRight: scale(8) }}>
+              <Text style={styles.therapistName} numberOfLines={1}>{therapist.name}</Text>
+              <Text style={styles.therapistSpecialty} numberOfLines={1}>{therapist.specialty}</Text>
             </View>
-            <Text style={styles.reviewCount}>({therapist.reviews})</Text>
+            <View style={[
+              styles.availabilityBadge,
+              therapist.available ? styles.available : styles.unavailable
+            ]}>
+              <Text style={[
+                styles.availabilityText,
+                therapist.available ? styles.availableText : styles.unavailableText
+              ]}>
+                {therapist.available ? 'Available' : 'Busy'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: scale(4) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="star" type="material" color="#FFD700" size={moderateScale(14)} />
+              <Text style={{ fontSize: moderateScale(13), fontWeight: '600', color: appColors.grey1, marginLeft: scale(4) }}>{therapist.rating}</Text>
+              <Text style={styles.reviewCount} numberOfLines={1}>({therapist.reviews})</Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+              <Text style={{ fontSize: moderateScale(14), fontWeight: 'bold', color: appColors.AppBlue, fontFamily: appFonts.headerTextBold }}>{therapist.price}</Text>
+              <Text style={{ fontSize: moderateScale(10), color: appColors.grey3, marginLeft: scale(2), fontFamily: appFonts.bodyTextRegular }}>{therapist.priceUnit}</Text>
+            </View>
           </View>
         </View>
-
-        <TouchableOpacity style={styles.menuButton}>
-          <Icon name="more-vert" type="material" color={appColors.grey2} size={24} />
-        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -444,48 +250,56 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
       <View style={styles.therapistHeader}>
         <Avatar
           source={therapist.image}
-          size={scale(70)}
+          size={scale(75)}
           rounded
-          containerStyle={styles.avatar}
+          containerStyle={[styles.avatar, { borderWidth: 2, borderColor: appColors.AppLightGray }]}
+          avatarStyle={{ width: '100%', height: '100%', resizeMode: 'cover' }}
         />
-        <View style={styles.therapistInfo}>
-          <Text style={styles.therapistName}>{therapist.name}</Text>
-          <Text style={styles.therapistSpecialty}>{therapist.specialty}</Text>
-          <View style={styles.ratingContainer}>
-            <Icon name="star" type="material" color="#FFD700" size={moderateScale(16)} />
-            <Text style={styles.rating}>{therapist.rating}</Text>
-            <Text style={styles.reviewCount}>({therapist.reviews} reviews)</Text>
+        <View style={[styles.therapistInfo, { justifyContent: 'center' }]}>
+          <View style={{ flex: 1, paddingRight: scale(8) }}>
+            <Text style={styles.therapistName} numberOfLines={1}>{therapist.name}</Text>
+            <Text style={styles.therapistSpecialty} numberOfLines={1}>{therapist.specialty}</Text>
           </View>
-          <Text style={styles.experience}>{therapist.experience} experience</Text>
-        </View>
-        <View style={styles.priceContainer}>
-          <Text style={styles.price}>{therapist.price}</Text>
-          <Text style={styles.priceUnit}>{therapist.priceUnit}</Text>
-          <View style={[
-            styles.availabilityBadge,
-            therapist.available ? styles.available : styles.unavailable
-          ]}>
-            <Text style={[
-              styles.availabilityText,
-              therapist.available ? styles.availableText : styles.unavailableText
+
+          <View style={[styles.ratingContainer, { marginTop: scale(4), justifyContent: 'space-between', paddingRight: scale(8) }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="star" type="material" color="#FFD700" size={moderateScale(16)} />
+              <Text style={styles.rating}>{therapist.rating}</Text>
+              <Text style={styles.reviewCount}>({therapist.reviews} reviews)</Text>
+            </View>
+            <View style={[
+              styles.availabilityBadge,
+              therapist.available ? styles.available : styles.unavailable
             ]}>
-              {therapist.available ? 'Available' : 'Busy'}
-            </Text>
+              <Text style={[
+                styles.availabilityText,
+                therapist.available ? styles.availableText : styles.unavailableText
+              ]}>
+                {therapist.available ? 'Available' : 'Busy'}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
 
-      <Text style={styles.therapistBio} numberOfLines={2}>{therapist.bio}</Text>
+      <Text style={styles.therapistBio} numberOfLines={1}>{therapist.bio}</Text>
 
       <View style={styles.therapistFooter}>
-        <View style={styles.nextAvailableContainer}>
-          <Icon name="schedule" type="material" color={appColors.AppBlue} size={moderateScale(16)} />
-          <Text style={styles.nextAvailableText}>Next: {therapist.nextAvailable}</Text>
+        <View style={[styles.nextAvailableContainer, { flexDirection: 'column', alignItems: 'flex-start' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: scale(4) }}>
+            <Text style={styles.price}>{therapist.price}</Text>
+            <Text style={styles.priceUnit}>{therapist.priceUnit}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="schedule" type="material" color={appColors.AppBlue} size={moderateScale(14)} />
+            <Text style={[styles.nextAvailableText, { marginLeft: scale(4) }]}>Next: {therapist.nextAvailable}</Text>
+          </View>
         </View>
 
         <TouchableOpacity
           style={[
             styles.bookButton,
+            { alignSelf: 'flex-end', marginLeft: 'auto' },
             !therapist.available && styles.disabledButton
           ]}
           onPress={(e) => {
@@ -607,7 +421,7 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
             ))}
 
             <Text style={styles.searchSectionTitle}>Popular Specialties</Text>
-            {['Anxiety & Depression', 'Relationship Counseling', 'Trauma Therapy'].map((specialty, index) => (
+            {specialties.length > 1 && specialties.slice(1, 4).map((specialty, index) => (
               <TouchableOpacity
                 key={index}
                 style={styles.recentSearchItem}
@@ -723,7 +537,8 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
         description="The donation feature is coming soon! You'll be able to support mental health initiatives and help others access therapy services."
         buttonTitle="GOT IT"
         isModVisible={showDonateModal}
-        visibilitySetter={(val: boolean) => setShowDonateModal(val)}
+        // @ts-ignore
+        visibilitySetter={(val: any) => setShowDonateModal(val)}
         isDismissable={true}
         hasIcon={true}
         iconType="material"

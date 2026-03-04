@@ -12,6 +12,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
@@ -26,16 +27,19 @@ import {
   selectBreakdown,
   selectTransactions,
   selectWalletLoading,
+  selectWalletRefreshing,
 } from '../../features/wallet/walletSlice';
-import { loadWalletBalance, loadWalletTransactions } from '../../utils/walletManager';
+import { loadWalletBalance, loadWalletTransactions, refreshWalletBalance, refreshWalletTransactions } from '../../utils/walletManager';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const WellnessVaultScreen = ({ navigation }) => {
+const WellnessVaultScreen = ({ navigation, route }: any) => {
   const toast = useToast();
-  const userDetails = useSelector(state => state.userData.userDetails);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [showTopupModal, setShowTopupModal] = useState(false);
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+
+  const fromCheckout = route?.params?.fromCheckout;
 
   // Get wallet data from Redux
   const balance = useSelector(selectBalance);
@@ -43,14 +47,26 @@ const WellnessVaultScreen = ({ navigation }) => {
   const breakdown = useSelector(selectBreakdown);
   const transactions = useSelector(selectTransactions);
   const isLoading = useSelector(selectWalletLoading);
+  const isRefreshing = useSelector(selectWalletRefreshing);
 
   // Load wallet data on mount
   useEffect(() => {
-    // TODO: Get userId from auth context/Redux
-    const userId = userDetails?.userId || 'current_user_id';
-    loadWalletBalance(userId);
-    loadWalletTransactions(userId, 1, 5); // Load recent 5 transactions
-  }, [userDetails?.userId]);
+    const userId = userDetails?.userId || userDetails?.id;
+    if (userId) {
+      loadWalletBalance(userId);
+      loadWalletTransactions(userId, 1, 5); // Load recent 5 transactions
+    }
+  }, [userDetails?.userId, userDetails?.id]);
+
+  const handleRefresh = async () => {
+    const userId = userDetails?.userId || userDetails?.id;
+    if (userId) {
+      await Promise.all([
+        refreshWalletBalance(userId),
+        refreshWalletTransactions(userId, 1, 5)
+      ]);
+    }
+  };
 
   // Conversion rate: 100 points = 1000 UGX (10 UGX per point)
   const POINTS_TO_UGX_RATE = 10;
@@ -90,14 +106,33 @@ const WellnessVaultScreen = ({ navigation }) => {
     currency: currency
   };
 
+  const getTransactionIcon = (category: any) => {
+    switch (category?.toLowerCase()) {
+      case 'topup': return 'add-circle';
+      case 'appointment':
+      case 'therapy': return 'psychology';
+      case 'event': return 'celebration';
+      case 'credits': return 'volunteer-activism';
+      case 'rewards': return 'stars';
+      case 'subscription': return 'card-membership';
+      default: return 'receipt-long';
+    }
+  };
+
+  const formatAmount = (amount: any, type: any) => {
+    const rawVal = Math.abs(amount || 0).toLocaleString();
+    return type === 'credit' ? `+${rawVal} UGX` : `-${rawVal} UGX`;
+  };
+
   // Get recent activities from transactions (limit to 5)
-  const recentActivities = transactions.slice(0, 5).map(txn => ({
+  const recentActivities = transactions.slice(0, 5).map((txn: any) => ({
     id: txn.id,
     description: txn.description,
-    amount: `${txn.amount >= 0 ? '+' : ''}${txn.amount.toLocaleString()} ${txn.currency}`,
+    amount: formatAmount(txn.amount, txn.type),
     time: txn.date,
     type: txn.type,
-    icon: txn.icon || (txn.type === 'credit' ? 'add-circle' : 'remove-circle'),
+    icon: txn.icon || getTransactionIcon(txn.category),
+    status: txn.status,
   }));
 
   const handleTopUp = () => {
@@ -118,7 +153,7 @@ const WellnessVaultScreen = ({ navigation }) => {
     return amount.toLocaleString();
   };
 
-  const FundingChannelCard = ({ channel }) => (
+  const FundingChannelCard = ({ channel }: any) => (
     <View style={styles.fundingCard}>
       <View style={[styles.fundingIconContainer, { backgroundColor: channel.color + '20' }]}>
         <Icon
@@ -141,46 +176,81 @@ const WellnessVaultScreen = ({ navigation }) => {
     </View>
   );
 
-  const ActivityItem = ({ activity }) => (
-    <View style={styles.activityItem}>
-      <Icon
-        name={activity.icon}
-        type="material"
-        color={activity.type === 'credit' ? '#4CAF50' : '#F44336'}
-        size={20}
-      />
-      <View style={styles.activityContent}>
-        <Text style={styles.activityDescription}>{activity.description}</Text>
-        <Text style={styles.activityTime}>{activity.time}</Text>
+  const ActivityItem = ({ activity }: any) => (
+    <>
+      <View style={styles.activityItem}>
+        <Icon
+          name={activity.icon}
+          type="material"
+          color={activity.type === 'credit' ? '#4CAF50' : '#F44336'}
+          size={20}
+        />
+        <View style={styles.activityContent}>
+          <Text style={styles.activityDescription}>{activity.description}</Text>
+          <View style={styles.activityTimeRow}>
+            <Text style={styles.activityTime}>{activity.time}</Text>
+            {activity.status && (
+              <View style={[
+                styles.statusDot,
+                { backgroundColor: (activity.status.toLowerCase() === 'completed' || activity.status.toLowerCase() === 'success') ? '#4CAF50' : activity.status.toLowerCase() === 'failed' ? '#F44336' : '#FF9800' }
+              ]} />
+            )}
+          </View>
+        </View>
+        <Text style={[
+          styles.activityAmount,
+          activity.type === 'credit' ? styles.creditAmount : styles.debitAmount
+        ]}>
+          {activity.amount}
+        </Text>
       </View>
-      <Text style={[
-        styles.activityAmount,
-        activity.type === 'credit' ? styles.creditAmount : styles.debitAmount
-      ]}>
-        {activity.amount}
-      </Text>
-    </View>
+      {/* Separator between items except last */}
+      <View style={{ height: scale(4) }} />
+    </>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={appColors.AppBlue} barStyle="light-content" />
+      <StatusBar backgroundColor={appColors.AppLightGray} barStyle="dark-content" />
 
-      {/* Header */}
-      {/* <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Wellness Vault</Text>
-          <Text style={styles.headerSubtitle}>Your wellness funding hub</Text>
+      {/* Dynamic Header: Only visibly renders when pushed explicitly from deeply nested flows (via fromCheckout prop) */}
+      {fromCheckout && (
+        <View style={styles.dynamicHeader}>
+          <TouchableOpacity
+            style={styles.headerBackButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Icon name="arrow-back-ios" type="material" color={appColors.grey1} size={scale(20)} />
+          </TouchableOpacity>
+          <Text style={styles.dynamicHeaderTitle}>Wellness Vault</Text>
+          <View style={{ width: scale(40) }} />
         </View>
-      </View> */}
+      )}
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[appColors.AppBlue]}
+          />
+        }
+      >
+        {/* Header Section (Centered) */}
+        {/* <View style={[styles.header, { justifyContent: 'center' }]}>
+          <Text style={styles.headerTitle}>Wellness Vault</Text>
+        </View> */}
+
         {/* Branded Balance Card */}
         <View style={styles.balanceSection}>
           <View style={styles.brandedCard}>
             {/* Top Row: Label and Logo */}
             <View style={styles.cardTopRow}>
-              <Text style={styles.cardVaultTitle}>Wellness Vault</Text>
+              {/* <Text style={styles.cardVaultTitle}>Wellness Vault</Text> */}
+              <Text style={styles.cardVaultTitle} numberOfLines={1} ellipsizeMode="tail">{userDetails?.firstName} {userDetails?.lastName}</Text>
               <Image source={appImages.appIconWhite} style={styles.cardLogo} resizeMode="contain" />
             </View>
 
@@ -270,7 +340,7 @@ const WellnessVaultScreen = ({ navigation }) => {
 
           {recentActivities.length > 0 ? (
             <View style={styles.activitiesContainer}>
-              {recentActivities.map((activity) => (
+              {recentActivities.map((activity: any) => (
                 <ActivityItem key={activity.id} activity={activity} />
               ))}
             </View>
@@ -290,20 +360,10 @@ const WellnessVaultScreen = ({ navigation }) => {
             </View>
           )}
         </View>
-      </ScrollView>
 
-      {/* Wallet Topup Coming Soon Modal */}
-      <LHGenericFeatureModal
-        title="Wallet Top-Up"
-        description="Wellness Vault top-up is currently unavailable. We're working on integrating mobile money payments. You'll be notified once this feature is ready!"
-        buttonTitle="GOT IT"
-        isModVisible={showTopupModal}
-        visibilitySetter={setShowTopupModal}
-        isDismissable={true}
-        hasIcon={true}
-        iconType="material"
-        iconName="account-balance-wallet"
-      />
+        {/* Footer Padding */}
+        <View style={{ height: moderateScale(40) }} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -336,6 +396,34 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
+  },
+  dynamicHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(15),
+    paddingVertical: scale(10),
+    backgroundColor: appColors.AppLightGray,
+  },
+  headerBackButton: {
+    padding: scale(8),
+    backgroundColor: appColors.CardBackground,
+    borderRadius: scale(12),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: scale(40),
+    height: scale(40),
+  },
+  dynamicHeaderTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
   },
   scrollView: {
     flex: 1,
@@ -554,9 +642,13 @@ const styles = StyleSheet.create({
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: scale(12),
-    borderBottomWidth: 0.5,
-    borderBottomColor: appColors.grey6,
+    paddingVertical: scale(10),
+    borderBottomWidth: 0,
+    borderBottomColor: 'transparent',
+    marginBottom: scale(8),
+    backgroundColor: '#FAFAFA',
+    borderRadius: scale(8),
+    paddingHorizontal: scale(10),
   },
   activityContent: {
     flex: 1,
@@ -568,10 +660,20 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextMedium,
     marginBottom: scale(2),
   },
+  activityTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   activityTime: {
     fontSize: moderateScale(11),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
+  },
+  statusDot: {
+    width: scale(6),
+    height: scale(6),
+    borderRadius: scale(3),
+    marginLeft: scale(6),
   },
   activityAmount: {
     fontSize: moderateScale(13),

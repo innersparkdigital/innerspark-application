@@ -26,12 +26,12 @@ import {
  */
 export const loadWalletBalance = async (userId: string) => {
   store.dispatch(setLoading(true));
-  
+
   try {
     console.log('💰 Loading wallet balance from API');
     const response = await getWalletBalance(userId);
     console.log('✅ API Response:', JSON.stringify(response, null, 2));
-    
+
     if (response.success && response.data) {
       console.log('💵 Balance loaded successfully');
       store.dispatch(setBalance(response.data));
@@ -45,7 +45,7 @@ export const loadWalletBalance = async (userId: string) => {
       status: error?.response?.status,
       data: error?.response?.data,
     });
-    
+
     // Handle 404 - endpoint not implemented yet, return empty state
     if (error?.response?.status === 404) {
       console.log('📦 GET /client/wallet/balance endpoint returns 404, showing empty state');
@@ -66,11 +66,11 @@ export const loadWalletBalance = async (userId: string) => {
  */
 export const refreshWalletBalance = async (userId: string) => {
   store.dispatch(setRefreshing(true));
-  
+
   try {
     console.log('🔄 Refreshing wallet balance');
     const response = await getWalletBalance(userId);
-    
+
     if (response.success && response.data) {
       store.dispatch(setBalance(response.data));
     } else {
@@ -78,7 +78,7 @@ export const refreshWalletBalance = async (userId: string) => {
     }
   } catch (error: any) {
     console.log('Error refreshing balance:', error);
-    
+
     // Handle 404 gracefully - show empty state
     if (error?.response?.status === 404) {
       store.dispatch(setBalance({ balance: 0, currency: 'UGX', breakdown: {} }));
@@ -96,11 +96,11 @@ export const refreshWalletBalance = async (userId: string) => {
  */
 export const loadWalletTransactions = async (userId: string, page: number = 1, limit: number = 20) => {
   store.dispatch(setLoading(true));
-  
+
   try {
     console.log('💳 Loading wallet transactions from API');
     const response = await getWalletTransactions(userId, page, limit);
-    
+
     if (response.success && response.data) {
       const transactions = response.data.transactions || [];
       store.dispatch(setTransactions(transactions));
@@ -109,7 +109,7 @@ export const loadWalletTransactions = async (userId: string, page: number = 1, l
     }
   } catch (error: any) {
     console.log('❌ Error loading transactions:', error?.message);
-    
+
     if (error?.response?.status === 404) {
       console.log('📦 GET /client/wallet/transactions endpoint returns 404');
       store.dispatch(setTransactions([]));
@@ -127,11 +127,11 @@ export const loadWalletTransactions = async (userId: string, page: number = 1, l
  */
 export const refreshWalletTransactions = async (userId: string, page: number = 1, limit: number = 20) => {
   store.dispatch(setRefreshing(true));
-  
+
   try {
     console.log('🔄 Refreshing wallet transactions');
     const response = await getWalletTransactions(userId, page, limit);
-    
+
     if (response.success && response.data) {
       const transactions = response.data.transactions || [];
       store.dispatch(setTransactions(transactions));
@@ -140,7 +140,7 @@ export const refreshWalletTransactions = async (userId: string, page: number = 1
     }
   } catch (error: any) {
     console.log('Error refreshing transactions:', error);
-    
+
     if (error?.response?.status === 404) {
       store.dispatch(setTransactions([]));
     } else {
@@ -159,7 +159,7 @@ export const getTransactionDetails = async (transactionId: string, userId: strin
   try {
     console.log('💳 Loading transaction details');
     const response = await getWalletTransaction(transactionId, userId);
-    
+
     if (response.success && response.data) {
       return { success: true, data: response.data };
     } else {
@@ -167,11 +167,11 @@ export const getTransactionDetails = async (transactionId: string, userId: strin
     }
   } catch (error: any) {
     console.log('❌ Error loading transaction details:', error?.message);
-    
+
     if (error?.response?.status === 404) {
       return { success: false, error: 'Transaction not found' };
     }
-    
+
     return { success: false, error: error?.message || 'Failed to load transaction details' };
   }
 };
@@ -183,24 +183,25 @@ export const topupWalletBalance = async (userId: string, amount: number, phoneNu
   try {
     console.log('💰 Initiating wallet topup');
     const response = await topupWallet(userId, amount, phoneNumber, provider);
-    
+
     if (response.success) {
       console.log('✅ Topup initiated successfully');
-      
-      // Refresh balance after topup
+
+      // Refresh balance and transactions after topup
       await refreshWalletBalance(userId);
-      
+      await refreshWalletTransactions(userId);
+
       return { success: true, data: response.data };
     } else {
       return { success: false, error: response.message || 'Failed to initiate topup' };
     }
   } catch (error: any) {
     console.log('❌ Error initiating topup:', error?.message);
-    
+
     if (error?.response?.status === 404) {
       return { success: false, error: 'Topup endpoint not implemented yet' };
     }
-    
+
     return { success: false, error: error?.message || 'Failed to initiate topup' };
   }
 };
@@ -212,24 +213,24 @@ export const payoutWalletBalance = async (userId: string, amount: number, phoneN
   try {
     console.log('💸 Initiating wallet payout');
     const response = await payoutWallet(userId, amount, phoneNumber, provider);
-    
+
     if (response.success) {
       console.log('✅ Payout initiated successfully');
-      
+
       // Refresh balance after payout
       await refreshWalletBalance(userId);
-      
+
       return { success: true, data: response.data };
     } else {
       return { success: false, error: response.message || 'Failed to initiate payout' };
     }
   } catch (error: any) {
     console.log('❌ Error initiating payout:', error?.message);
-    
+
     if (error?.response?.status === 404) {
       return { success: false, error: 'Payout endpoint not implemented yet' };
     }
-    
+
     return { success: false, error: error?.message || 'Failed to initiate payout' };
   }
 };

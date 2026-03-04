@@ -4,10 +4,10 @@
  */
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
+import {
+    View,
+    Text,
+    StyleSheet,
     Image,
     TextInput,
     Pressable,
@@ -20,17 +20,19 @@ import { appImages } from '../../global/Data';
 import CountryPicker from 'react-native-country-picker-modal';
 
 
-export default LHPhoneInput = ({ 
-    placeholder="078xxxxxxx",
-    inputValue="",
+export default LHPhoneInput = ({
+    placeholder = "078xxxxxxx",
+    inputValue = "",
     inputValueSetter,
     countrySupportSetter,
     formattedValueSetter,
-    onPickerPress,
-    hasContactPicker=false,
-    isInputEditable=true,
-    autoFocus=false,
- }) =>{
+    onPickerPress = () => { },
+    hasContactPicker = false,
+    isInputEditable = true,
+    autoFocus = false,
+    defaultCountryCode = 'UG',
+    defaultCallingCode = '256',
+}) => {
 
     const dispatch = useDispatch(); // dispatch actions
     const toast = useToast();
@@ -43,9 +45,9 @@ export default LHPhoneInput = ({
 
     // Country Picker related contants
     // const [isCountrySupported, setIsCountrySupported] = useState(true);
-    const countryCodes = { 'ug' : '+256', 'rw' : '+250' };
-    const [countryCode, setCountryCode] = useState('UG'); // default country code
-    const [callingCode, setCallingCode] = useState('256'); // This depends on the default country code
+    const countryCodes = { 'ug': '+256', 'rw': '+250' };
+    const [countryCode, setCountryCode] = useState(defaultCountryCode); // default country code
+    const [callingCode, setCallingCode] = useState(defaultCallingCode); // This depends on the default country code
     const [country, setCountry] = useState(null)
     const [withCountryNameButton, setWithCountryNameButton] = useState(false)
     const [withFlag, setWithFlag] = useState(true)
@@ -84,7 +86,7 @@ export default LHPhoneInput = ({
     /* Get country code */
     const getCallingCode = () => {
         let realCallingCode = '';
-        if(country) {
+        if (country) {
             realCallingCode = "+" + country.callingCode[0];
         } else {
             realCallingCode = countryCodes.ug; // the default calling code
@@ -105,11 +107,11 @@ export default LHPhoneInput = ({
 
 
     /* Phone Handler */
-    const onChangePhoneHandler = (phone) => { 
+    const onChangePhoneHandler = (phone) => {
         inputValueSetter(phone); // update phone value
         if (formattedValueSetter) {
             // format phone number
-            if ( phone[0] == "0" ) {
+            if (phone[0] == "0") {
                 slicedPhone = phone.slice(1, phone.length);
                 let formattedPhone = getCallingCode() + slicedPhone;
                 formattedValueSetter(formattedPhone);  // update formatted Phone
@@ -124,8 +126,8 @@ export default LHPhoneInput = ({
 
 
 
-    return(
-        <View style={ styles.inputContainerRow }>
+    return (
+        <View style={styles.inputContainerRow}>
             <CountryPicker
                 {...{
                     countryCode,
@@ -136,39 +138,41 @@ export default LHPhoneInput = ({
                     withCallingCode,
                     withCallingCodeButton,
                     withEmoji,
-                    onSelect:onCountrySelect,
+                    onSelect: onCountrySelect,
                     //onChange:onCountrySelect,
                     // limit the country picker to only Uganda and Rwanda, and Kenya, and Tanzan
                     countryCodes: ['UG', 'RW', 'KE', 'TZ'],
 
                 }}
-                visible={visible}
-                containerButtonStyle={{ width:30, }}
+                visible={isInputEditable ? visible : false}
+                containerButtonStyle={{ width: 30, opacity: isInputEditable ? 1 : 0.7 }}
             />
 
-            <Icon 
-                type="material-icons"
-                name="arrow-drop-down"
-                color={appColors.AppBlue}
-                size={25} 
-                style={{ marginLeft:-5, padding:0 }}
-            />
+            {isInputEditable && (
+                <Icon
+                    type="material-icons"
+                    name="arrow-drop-down"
+                    color={appColors.AppBlue}
+                    size={25}
+                    style={{ marginLeft: -5, padding: 0 }}
+                />
+            )}
 
-            { 
-                (inputValue.trim()) && 
-                    <TextInput 
-                        style={{ fontSize:16, fontWeight:'700', color:appColors.AppBlue, paddingVertical:0  }}
-                        keyboardType='phone-pad'
-                        maxLength={18}
-                        editable={false}
-                        onChangeText={onChangeCallingCodeHandler}
-                        value={ getCallingCode() } 
-                    /> || null
+            {
+                (inputValue.trim()) &&
+                <TextInput
+                    style={{ fontSize: 16, fontWeight: '700', color: appColors.AppBlue, paddingVertical: 0 }}
+                    keyboardType='phone-pad'
+                    maxLength={18}
+                    editable={false}
+                    onChangeText={onChangeCallingCodeHandler}
+                    value={getCallingCode()}
+                /> || null
             }
 
-            <TextInput 
-                placeholderTextColor={ appColors.grey4 } 
-                style={{ flex:3, fontSize:16, color:appColors.AppBlue, paddingVertical:0 }}
+            <TextInput
+                placeholderTextColor={appColors.grey4}
+                style={{ flex: 3, fontSize: 16, color: appColors.AppBlue, paddingVertical: 0 }}
                 keyboardType='phone-pad'
                 maxLength={14}
                 placeholder={placeholder}
@@ -178,11 +182,11 @@ export default LHPhoneInput = ({
                 autoFocus={autoFocus}
             />
 
-            { hasContactPicker &&
-            <Pressable style={{ justifyContent:"center", alignItems:"center", }} onPress={onPickerPress}>
-                <Icon type="material-icons" name="contacts" color={appColors.AppBlue} size={25} />
-            </Pressable>
- } 
+            {hasContactPicker &&
+                <Pressable style={{ justifyContent: "center", alignItems: "center", }} onPress={onPickerPress}>
+                    <Icon type="material-icons" name="contacts" color={appColors.AppBlue} size={25} />
+                </Pressable>
+            }
         </View>
     )
 }
@@ -191,31 +195,31 @@ export default LHPhoneInput = ({
 // LHPhoneInput Local Styles
 const styles = StyleSheet.create({
 
-    inputContainerRow : {
-        flexDirection:'row', 
-        alignItems:'center', 
-        paddingHorizontal:12, 
-        paddingVertical:8, 
-        borderWidth:1,
+    inputContainerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
         borderColor: appColors.grey4,
-        borderRadius:25, 
-        marginVertical:8
+        borderRadius: 25,
+        marginVertical: 8
 
     },
 
-    inputContainerRowCard : {
-        flexDirection:'row', 
-        alignItems:'center', 
-        paddingHorizontal:15, 
-        paddingVertical:15, 
-        borderRadius:10, 
-        marginVertical:8,
-        backgroundColor:appColors.CardBackground,
-    
+    inputContainerRowCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        paddingVertical: 15,
+        borderRadius: 10,
+        marginVertical: 8,
+        backgroundColor: appColors.CardBackground,
+
         // adding some box shadow effect to home features icon containers
         shadowColor: 'black',
         shadowOpacity: 0.16,
-        shadowOffset: { width: 0, height: 3},
+        shadowOffset: { width: 0, height: 3 },
         shadowRadius: 10,
         elevation: 3,
     },

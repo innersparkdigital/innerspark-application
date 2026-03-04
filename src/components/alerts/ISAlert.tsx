@@ -75,6 +75,8 @@ export interface ISAlertOptions {
     actions?: ISAlertAction[];
     /** Override the auto-selected icon name (material icon) */
     icon?: string;
+    /** Whether the alert can be dismissed by tapping backdrop or back button (default: true) */
+    dismissible?: boolean;
 }
 
 export interface ISAlertHandle {
@@ -131,6 +133,7 @@ const ISAlert = forwardRef<ISAlertHandle>((_, ref) => {
     };
 
     const handleCancel = () => {
+        if (opts.dismissible === false) return;
         hide();
         opts.onCancel?.();
     };

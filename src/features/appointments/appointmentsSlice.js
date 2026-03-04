@@ -84,13 +84,13 @@ export const selectAppointmentsError = (state) => state.appointments.error;
 export const selectAppointmentsLastUpdated = (state) => state.appointments.lastUpdated;
 
 // Filtered selectors
-export const selectUpcomingAppointments = (state) => 
+export const selectUpcomingAppointments = (state) =>
   state.appointments.appointments.filter(apt => apt.status === 'upcoming');
 
-export const selectPastAppointments = (state) => 
+export const selectPastAppointments = (state) =>
   state.appointments.appointments.filter(apt => apt.status === 'completed' || apt.status === 'cancelled');
 
-export const selectPendingAppointments = (state) => 
-  state.appointments.appointments.filter(apt => apt.paymentStatus === 'pending');
+export const selectPendingAppointments = (state) =>
+  state.appointments.appointments.filter(apt => !apt.isPaid);
 
 export default appointmentsSlice.reducer;

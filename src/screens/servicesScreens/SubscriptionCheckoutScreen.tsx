@@ -178,7 +178,7 @@ const SubscriptionCheckoutScreen: React.FC<SubscriptionCheckoutScreenProps> = ({
               endDate: response.data?.subscription?.endDate || response.subscription?.end_date,
               nextBillingDate: response.data?.subscription?.nextBillingDate || response.subscription?.next_billing_date,
               billingCycle: selectedDuration,
-              amount: selectedDuration === 'weekly' ? plan.weeklyPrice : plan.monthlyPrice,
+              amount: plan.billingCycle === 'weekly' ? plan.weeklyPrice : plan.monthlyPrice,
               currency: plan.currency,
               autoRenew: true,
             };
@@ -250,7 +250,7 @@ const SubscriptionCheckoutScreen: React.FC<SubscriptionCheckoutScreenProps> = ({
             endDate: response.data?.subscription?.endDate || response.subscription?.end_date,
             nextBillingDate: response.data?.subscription?.nextBillingDate || response.subscription?.next_billing_date,
             billingCycle: selectedDuration,
-            amount: selectedDuration === 'weekly' ? plan.weeklyPrice : plan.monthlyPrice,
+            amount: plan.billingCycle === 'weekly' ? plan.weeklyPrice : plan.monthlyPrice,
             currency: plan.currency,
             autoRenew: true,
           };
@@ -419,6 +419,7 @@ const SubscriptionCheckoutScreen: React.FC<SubscriptionCheckoutScreenProps> = ({
         visible={showPaymentModal}
         summaryTitle={plan.name}
         summarySubtitle={`${getDurationLabel(selectedDuration)} subscription`}
+        availableMethods={['wellnessvault']}
         currency={plan.currency}
         amount={totalAmount}
         selectedPaymentMethod={selectedPaymentMethod}

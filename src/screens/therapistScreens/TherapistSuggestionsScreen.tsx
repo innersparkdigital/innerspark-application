@@ -22,17 +22,16 @@ import {
 import { loadTherapists } from '../../utils/therapistsManager';
 
 interface QuizAnswers {
-  genderPreference: 'Any' | 'Male' | 'Female';
+  genderPreference: string;
   issues: string[];
-  language: 'Any' | 'English' | 'Luganda' | 'French';
-  budget: 'Any' | 'UGX 40k - 50k' | 'UGX 50k - 60k' | 'UGX 60k+';
-  availability: 'Anytime' | 'Weekdays' | 'Weekends' | 'Evenings';
+  language: string;
+  budget: string;
+  availability: string;
 }
 
 interface Therapist {
   id: number;
   name: string;
-  gender: 'Male' | 'Female';
   specialty: string;
   rating: number;
   location: string;
@@ -72,45 +71,73 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
   // Use the same therapist data from API/Redux
   const baseTherapists: Therapist[] = therapistsFromRedux as Therapist[];
 
-  const scoreTherapist = (t: Therapist): { score: number; reasons: string[] } => {
+  const scoreTherapist = (t: Therapist): { score: number; maxScore: number; reasons: string[] } => {
     const reasons: string[] = [];
     let score = 0;
-    if (!answers) return { score: t.rating, reasons: ['Default ranking by rating'] };
+    let maxScore = 0;
+    if (!answers) return { score: t.rating, maxScore: 10, reasons: ['Default ranking by rating'] };
 
-    // Gender
-    if (answers.genderPreference === 'Any' || answers.genderPreference === t.gender) {
-      score += 2; if (answers.genderPreference !== 'Any') reasons.push(`${t.gender} as preferred`);
-    }
-    // Issues overlap
-    const issueMatches = answers.issues.filter(i => t.tags?.includes(i));
+    // Issues overlap (fuzzy substring matching)
+    maxScore += answers.issues.length * 3;
+    const therapistTags = (t.tags || []).map((tag: string) => tag.toLowerCase());
+    const therapistSpecialty = (t.specialty || '').toLowerCase();
+    const issueMatches = answers.issues.filter(i => {
+      const needle = i.toLowerCase();
+      return therapistTags.some((tag: string) => tag.includes(needle) || needle.includes(tag))
+        || therapistSpecialty.includes(needle);
+    });
     if (issueMatches.length) { score += issueMatches.length * 3; reasons.push(`Focus: ${issueMatches.join(', ')}`); }
+
     // Language
-    if (answers.language === 'Any' || t.languages?.includes(answers.language)) {
+    maxScore += 2;
+    const therapistLangs = Array.isArray(t.languages) ? t.languages : (typeof t.languages === 'string' ? t.languages.split(',').map((s: string) => s.trim()) : []);
+    if (answers.language === 'Any' || therapistLangs.some((l: string) => l.toLowerCase().includes(answers.language.toLowerCase()))) {
       score += 2; if (answers.language !== 'Any') reasons.push(`Speaks ${answers.language}`);
     }
-    // Budget
-    const priceNum = parseInt(t.price.replace(/[^0-9]/g, ''), 10);
-    const inBudget = (
-      answers.budget === 'Any' ||
-      (answers.budget === 'UGX 40k - 50k' && priceNum >= 40000 && priceNum <= 50000) ||
-      (answers.budget === 'UGX 50k - 60k' && priceNum >= 50000 && priceNum <= 60000) ||
-      (answers.budget === 'UGX 60k+' && priceNum >= 60000)
-    );
-    if (inBudget) { score += 2; if (answers.budget !== 'Any') reasons.push(`Within budget (${answers.budget})`); }
-    // Availability preference (simple boost if available now or evenings)
+
+    // Budget (parse dynamic range from quiz answer string)
+    maxScore += 2;
+    const priceNum = parseInt(String(t.price).replace(/[^0-9]/g, ''), 10);
+    let inBudget = answers.budget === 'Any';
+    if (!inBudget && !isNaN(priceNum)) {
+      const nums = answers.budget.match(/\d+/g);
+      if (nums && nums.length >= 2) {
+        const lo = parseInt(nums[0], 10) * 1000;
+        const hi = parseInt(nums[1], 10) * 1000;
+        inBudget = priceNum >= lo && priceNum <= hi;
+      } else if (nums && nums.length === 1 && answers.budget.includes('+')) {
+        inBudget = priceNum >= parseInt(nums[0], 10) * 1000;
+      }
+    }
+    if (inBudget) { score += 2; if (answers.budget !== 'Any') reasons.push('Within budget'); }
+
+    // Availability
+    maxScore += 1;
     if (t.available) { score += 1; reasons.push('Available now'); }
 
-    // Base by rating
-    score += t.rating;
+    // Experience bonus
+    maxScore += 2;
+    const expYears = parseInt(String(t.experience).replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(expYears) && expYears >= 3) { score += 2; reasons.push(`${expYears}+ years exp`); }
+    else if (!isNaN(expYears) && expYears >= 1) { score += 1; }
 
-    return { score, reasons: reasons.length ? reasons : ['Good overall match'] };
+    // Rating bonus
+    maxScore += 5;
+    score += Math.min(t.rating, 5);
+    if (t.rating >= 4.5) reasons.push(`${t.rating}★ rated`);
+
+    return { score, maxScore: Math.max(maxScore, 1), reasons: reasons.length ? reasons : ['Good overall match'] };
   };
 
   const rankedTherapists = useMemo(() => {
-    const withScores = baseTherapists.map(t => ({ t, ...scoreTherapist(t) }));
+    const withScores = baseTherapists.map(t => {
+      const { score, maxScore, reasons } = scoreTherapist(t);
+      const matchPercent = Math.min(Math.round((score / maxScore) * 100), 100);
+      return { t, score, matchPercent, reasons };
+    });
     withScores.sort((a, b) => b.score - a.score);
     return withScores;
-  }, [answers]);
+  }, [answers, baseTherapists]);
 
   const renderReasonChips = (reasons: string[]) => (
     <View style={styles.reasonsRow}>
@@ -122,12 +149,19 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
     </View>
   );
 
-  const renderItem = ({ item }: { item: { t: Therapist; score: number; reasons: string[] } }) => {
+  const renderItem = ({ item, index }: { item: { t: Therapist; score: number; matchPercent: number; reasons: string[] }; index: number }) => {
     const th = item.t;
+    const isTopMatch = index === 0 && item.matchPercent >= 50;
     return (
-      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('TherapistDetailScreen', { therapist: th })}>
+      <TouchableOpacity style={[styles.card, isTopMatch && styles.topMatchCard]} onPress={() => navigation.navigate('TherapistDetailScreen', { therapist: th })}>
+        {isTopMatch && (
+          <View style={styles.topMatchBadge}>
+            <Icon name="emoji-events" type="material" color="#FFD700" size={moderateScale(14)} />
+            <Text style={styles.topMatchText}>Top Match</Text>
+          </View>
+        )}
         <View style={styles.cardHeader}>
-          <Avatar source={th.image} size={scale(60)} rounded containerStyle={{ marginRight: scale(12) }} />
+          <Avatar source={th.image} size={scale(60)} rounded containerStyle={{ marginRight: scale(12) }} avatarStyle={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{th.name}</Text>
             <Text style={styles.specialty}>{th.specialty}</Text>
@@ -139,22 +173,20 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
             </View>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
+            <View style={styles.matchBadge}>
+              <Text style={styles.matchPercent}>{item.matchPercent}%</Text>
+              <Text style={styles.matchLabel}>match</Text>
+            </View>
             <Text style={styles.price}>{th.price}</Text>
             <Text style={styles.priceUnit}>{th.priceUnit}</Text>
-            <View style={[styles.availabilityBadge, th.available ? styles.available : styles.unavailable]}>
-              <Text style={[styles.availabilityText, th.available ? styles.availableText : styles.unavailableText]}>
-                {th.available ? 'Available' : 'Busy'}
-              </Text>
-            </View>
           </View>
         </View>
+        {th.bio ? <Text style={styles.bioPreview} numberOfLines={2}>{th.bio}</Text> : null}
         {renderReasonChips(item.reasons)}
         <View style={styles.actionsRow}>
           <Button
             title={th.available ? 'Book Now' : 'View Profile'}
-            onPress={() => th.available
-              ? navigation.navigate('TherapistDetailScreen', { therapist: th })
-              : navigation.navigate('TherapistDetailScreen', { therapist: th })}
+            onPress={() => navigation.navigate('TherapistDetailScreen', { therapist: th })}
             buttonStyle={styles.primaryBtn}
             titleStyle={styles.primaryBtnText}
           />
@@ -233,13 +265,26 @@ const TherapistSuggestionsScreen: React.FC<TherapistSuggestionsScreenProps> = ({
           />
         </View>
       ) : (
-        <FlatList
-          data={rankedTherapists}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.t.id.toString()}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+        <>
+          {answers && (
+            <View style={styles.summaryBanner}>
+              <Text style={styles.summaryTitle}>Based on your preferences</Text>
+              <View style={styles.summaryChips}>
+                {answers.issues.length > 0 && <View style={styles.summaryChip}><Text style={styles.summaryChipText}>{answers.issues.join(', ')}</Text></View>}
+                {answers.language !== 'Any' && <View style={styles.summaryChip}><Text style={styles.summaryChipText}>{answers.language}</Text></View>}
+                {answers.budget !== 'Any' && <View style={styles.summaryChip}><Text style={styles.summaryChipText}>{answers.budget}</Text></View>}
+              </View>
+              <Text style={styles.summaryCount}>Found {rankedTherapists.length} therapist{rankedTherapists.length !== 1 ? 's' : ''}</Text>
+            </View>
+          )}
+          <FlatList
+            data={rankedTherapists}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.t.id.toString()}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        </>
       )}
     </SafeAreaView>
   );
@@ -288,6 +333,19 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: scale(24) },
   emptyTitle: { fontSize: moderateScale(20), fontWeight: 'bold', color: appColors.grey1, marginTop: scale(12), fontFamily: appFonts.headerTextBold },
   emptyText: { fontSize: moderateScale(14), color: appColors.grey3, marginTop: scale(4), marginBottom: scale(16), fontFamily: appFonts.bodyTextRegular, textAlign: 'center' },
+  topMatchCard: { borderWidth: 2, borderColor: '#FFD700' },
+  topMatchBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF8E1', paddingHorizontal: scale(10), paddingVertical: scale(4), borderRadius: scale(12), alignSelf: 'flex-start', marginBottom: scale(8) },
+  topMatchText: { fontSize: moderateScale(12), fontWeight: '700', color: '#F57F17', marginLeft: scale(4), fontFamily: appFonts.bodyTextMedium },
+  matchBadge: { backgroundColor: appColors.AppBlue + '15', borderRadius: scale(10), paddingHorizontal: scale(8), paddingVertical: scale(4), alignItems: 'center', marginBottom: scale(4) },
+  matchPercent: { fontSize: moderateScale(16), fontWeight: 'bold', color: appColors.AppBlue, fontFamily: appFonts.headerTextBold },
+  matchLabel: { fontSize: moderateScale(10), color: appColors.AppBlue, fontFamily: appFonts.bodyTextRegular },
+  bioPreview: { fontSize: moderateScale(13), color: appColors.grey2, marginTop: scale(4), marginBottom: scale(4), fontFamily: appFonts.bodyTextRegular, lineHeight: moderateScale(18) },
+  summaryBanner: { backgroundColor: appColors.CardBackground, marginHorizontal: scale(16), marginTop: scale(12), padding: scale(14), borderRadius: scale(12), elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+  summaryTitle: { fontSize: moderateScale(15), fontWeight: '600', color: appColors.grey1, fontFamily: appFonts.headerTextBold, marginBottom: scale(6) },
+  summaryChips: { flexDirection: 'row', flexWrap: 'wrap' },
+  summaryChip: { backgroundColor: appColors.AppBlue + '15', paddingHorizontal: scale(10), paddingVertical: scale(4), borderRadius: scale(12), marginRight: scale(6), marginBottom: scale(4) },
+  summaryChipText: { fontSize: moderateScale(12), color: appColors.AppBlue, fontFamily: appFonts.bodyTextRegular },
+  summaryCount: { fontSize: moderateScale(13), color: appColors.grey3, marginTop: scale(6), fontFamily: appFonts.bodyTextRegular },
 });
 
 export default TherapistSuggestionsScreen;

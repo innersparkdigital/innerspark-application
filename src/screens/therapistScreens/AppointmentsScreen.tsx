@@ -35,14 +35,15 @@ interface Appointment {
   date: string;
   time: string;
   therapistName: string;
-  therapistType: string;
   status: 'upcoming' | 'completed' | 'cancelled';
-  image: any;
-  location?: string;
+  isPaid: boolean;
+  price: number;
+  currency: string;
+  therapistAvatar?: string;
   sessionType?: string;
   meetingLink?: string;
-  paymentStatus?: 'paid' | 'pending' | 'failed';
-  amount?: string;
+  duration?: number;
+  location?: string;
   timezone?: string;
 }
 
@@ -57,131 +58,38 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
 
-  // Get appointments from Redux
+  // Get appointments and user details from Redux
   const appointments = useSelector(selectAppointments);
   const isLoading = useSelector(selectAppointmentsLoading);
   const isRefreshing = useSelector(selectAppointmentsRefreshing);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const userId = userDetails?.userId || userDetails?.id;
 
-  // Load appointments on mount
+  // Load appointments when tab changes or on mount
   useEffect(() => {
-    loadAppointments({ status: selectedTab });
-  }, []);
-
-  // Reload when tab changes
-  useEffect(() => {
-    if (appointments.length > 0) {
-      // Only reload if we already have data (avoid double load on mount)
-      loadAppointments({ status: selectedTab });
+    if (userId) {
+      loadAppointments({ status: selectedTab === 'past' ? 'past' : selectedTab === 'pending' ? 'pending' : 'upcoming' });
     }
-  }, [selectedTab]);
-
-  // Mock appointments data (keeping structure for reference)
-  const mockAppointmentsData = [
-    {
-      id: '1',
-      date: '09/04/2025',
-      time: '2:00 PM',
-      therapistName: 'Clara Odding',
-      therapistType: 'Therapist',
-      status: 'upcoming',
-      image: require('../../assets/images/dummy-people/d-person2.png'),
-      location: 'Nakawa - Kampala Uganda',
-      sessionType: 'Individual Therapy',
-      meetingLink: 'https://meet.innerspark.com/room/clara-123',
-      paymentStatus: 'paid',
-      amount: 'UGX 45,000',
-      timezone: 'EAT (UTC+3)',
-    },
-    {
-      id: '2',
-      date: '21/04/2025',
-      time: '10:00 AM',
-      therapistName: 'Steven Pauliner',
-      therapistType: 'Cardiologist',
-      status: 'upcoming',
-      image: require('../../assets/images/dummy-people/d-person1.png'),
-      location: 'Kampala Medical Center',
-      sessionType: 'Consultation',
-      paymentStatus: 'pending',
-      amount: 'UGX 60,000',
-      timezone: 'EAT (UTC+3)',
-    },
-    {
-      id: '3',
-      date: '18/06/2025',
-      time: '3:30 PM',
-      therapistName: 'Noemi Shinte',
-      therapistType: 'Dermatologist',
-      status: 'upcoming',
-      image: require('../../assets/images/dummy-people/d-person3.png'),
-      location: 'Skin Care Clinic',
-      sessionType: 'Follow-up',
-      meetingLink: 'https://meet.innerspark.com/room/noemi-456',
-      paymentStatus: 'paid',
-      amount: 'UGX 35,000',
-      timezone: 'EAT (UTC+3)',
-    },
-    {
-      id: '4',
-      date: '15/03/2025',
-      time: '11:00 AM',
-      therapistName: 'Sarah Johnson',
-      therapistType: 'Therapist',
-      status: 'completed',
-      image: require('../../assets/images/dummy-people/d-person1.png'),
-      location: 'Mental Health Center',
-      sessionType: 'Individual Therapy',
-      meetingLink: 'https://meet.innerspark.com/room/sarah-789',
-      paymentStatus: 'paid',
-      amount: 'UGX 50,000',
-      timezone: 'EAT (UTC+3)',
-    },
-    {
-      id: '5',
-      date: '08/03/2025',
-      time: '4:00 PM',
-      therapistName: 'Michael Chen',
-      therapistType: 'Therapist',
-      status: 'completed',
-      image: require('../../assets/images/dummy-people/d-person2.png'),
-      location: 'Wellness Center',
-      sessionType: 'Couples Therapy',
-      paymentStatus: 'paid',
-      amount: 'UGX 75,000',
-      timezone: 'EAT (UTC+3)',
-    },
-    {
-      id: '6',
-      date: '28/02/2025',
-      time: '1:00 PM',
-      therapistName: 'Dr. Martin Pilier',
-      therapistType: 'Therapist',
-      status: 'cancelled',
-      image: require('../../assets/images/dummy-people/d-person1.png'),
-      location: 'Downtown Clinic',
-      sessionType: 'Group Therapy',
-      paymentStatus: 'failed',
-      amount: 'UGX 30,000',
-      timezone: 'EAT (UTC+3)',
-    },
-  ];
+  }, [selectedTab, userId]);
 
   const filteredAppointments = appointments.filter((appointment: Appointment) => {
     let matchesTab = false;
 
     if (selectedTab === 'upcoming') {
-      matchesTab = appointment.status === 'upcoming' && appointment.paymentStatus === 'paid';
+      matchesTab = appointment.status === 'upcoming';
     } else if (selectedTab === 'past') {
       matchesTab = appointment.status === 'completed' || appointment.status === 'cancelled';
     } else if (selectedTab === 'pending') {
-      matchesTab = appointment.paymentStatus === 'pending';
+      matchesTab = !appointment.isPaid;
     }
 
     const matchesSearch = appointment.therapistName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appointment.therapistType.toLowerCase().includes(searchQuery.toLowerCase());
+      (appointment.sessionType && appointment.sessionType.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchesTab && matchesSearch;
   });
+
+  console.log('🎯 AppointmentsScreen: Filtered count for tab', selectedTab, ':', filteredAppointments.length, 'out of', appointments.length);
 
   const handleRefresh = async () => {
     await refreshAppointments({ status: selectedTab });
@@ -203,13 +111,35 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   };
 
   const formatDate = (dateString: string) => {
-    const [day, month, year] = dateString.split('/');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    if (!dateString) return 'TBD';
+
+    // Check if format is YYYY-MM-DD
+    if (dateString.includes('-')) {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+    }
+
+    // Check if format is DD/MM/YYYY
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+    }
+
+    // Fallback to raw string
+    return dateString;
   };
 
   const getStatusColor = (status: string) => {
@@ -225,17 +155,8 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
     }
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return '#4CAF50';
-      case 'pending':
-        return '#FF9800';
-      case 'failed':
-        return '#F44336';
-      default:
-        return appColors.grey2;
-    }
+  const getPaymentStatusColor = (isPaid: boolean) => {
+    return isPaid ? '#4CAF50' : '#FF9800';
   };
 
   const handleRequestCancellation = (appointment: Appointment) => {
@@ -278,9 +199,9 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       therapist: {
         id: appointment.id,
         name: appointment.therapistName,
-        price: appointment.amount || 'UGX 45,000',
-        image: appointment.image,
-        specialty: appointment.therapistType,
+        price: `${appointment.currency} ${Number(appointment.price).toLocaleString()}`,
+        image: appointment.therapistAvatar ? { uri: appointment.therapistAvatar } : require('../../assets/images/avatar-placeholder.png'),
+        specialty: appointment.sessionType || 'Individual Therapy',
         rating: 4.8,
         reviews: 120,
       },
@@ -331,6 +252,12 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
         </View>
 
         <View style={styles.statusContainer}>
+          {!appointment.isPaid && appointment.status === 'upcoming' && (
+            <View style={[styles.paymentWarningBadge]}>
+              <Icon name="warning" type="material" color="#FF9800" size={moderateScale(12)} />
+              <Text style={styles.paymentWarningText}>PAYMENT PENDING</Text>
+            </View>
+          )}
           <View style={[
             styles.statusBadge,
             { backgroundColor: getStatusColor(appointment.status) + '20' }
@@ -353,18 +280,19 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
 
       <View style={styles.appointmentBody}>
         <Avatar
-          source={appointment.image}
+          source={appointment.therapistAvatar ? { uri: appointment.therapistAvatar } : require('../../assets/images/avatar-placeholder.png')}
           size={scale(60)}
           rounded
           containerStyle={styles.therapistAvatar}
+          avatarStyle={{ width: '100%', height: '100%', resizeMode: 'cover' }}
         />
 
         <View style={styles.appointmentInfo}>
           <Text style={styles.therapistName}>{appointment.therapistName}</Text>
-          <Text style={styles.therapistType}>{appointment.therapistType}</Text>
-
           {appointment.sessionType && (
-            <Text style={styles.sessionType}>{appointment.sessionType}</Text>
+            <Text style={styles.therapistType}>
+              {appointment.sessionType.charAt(0).toUpperCase() + appointment.sessionType.slice(1)}
+            </Text>
           )}
 
           {appointment.location && (
@@ -377,24 +305,22 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
       </View>
 
       {/* Payment Status and Amount */}
-      {appointment.paymentStatus && appointment.amount && (
-        <View style={styles.paymentSection}>
-          <View style={styles.paymentInfo}>
-            <Text style={styles.amountText}>{appointment.amount}</Text>
-            <View style={[
-              styles.paymentStatusChip,
-              { backgroundColor: getPaymentStatusColor(appointment.paymentStatus) + '20' }
+      <View style={styles.paymentSection}>
+        <View style={styles.paymentInfo}>
+          <Text style={styles.amountText}>{appointment.currency} {Number(appointment.price).toLocaleString()}</Text>
+          <View style={[
+            styles.paymentStatusChip,
+            { backgroundColor: getPaymentStatusColor(appointment.isPaid) + '20' }
+          ]}>
+            <Text style={[
+              styles.paymentStatusText,
+              { color: getPaymentStatusColor(appointment.isPaid) }
             ]}>
-              <Text style={[
-                styles.paymentStatusText,
-                { color: getPaymentStatusColor(appointment.paymentStatus) }
-              ]}>
-                {appointment.paymentStatus.charAt(0).toUpperCase() + appointment.paymentStatus.slice(1)}
-              </Text>
-            </View>
+              {appointment.isPaid ? 'Paid' : 'Pending'}
+            </Text>
           </View>
         </View>
-      )}
+      </View>
 
       {/* Meeting Link */}
       {appointment.meetingLink && appointment.status === 'upcoming' && (
@@ -439,7 +365,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
           </TouchableOpacity>
         )}
 
-        {appointment.paymentStatus === 'pending' && (
+        {!appointment.isPaid && appointment.status === 'upcoming' && (
           <TouchableOpacity
             style={styles.payButton}
             onPress={() => handlePayNow(appointment)}
@@ -999,12 +925,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: scale(8),
-    paddingHorizontal: scale(12),
-    borderRadius: scale(6),
-    backgroundColor: '#4CAF5010',
+    paddingHorizontal: scale(16),
+    borderRadius: scale(8),
+    backgroundColor: '#4CAF50',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
   },
   payButtonText: {
-    color: '#4CAF50',
+    color: appColors.CardBackground,
     fontSize: moderateScale(13),
     fontWeight: 'bold',
     marginLeft: scale(6),
@@ -1098,6 +1029,24 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+  },
+  paymentWarningBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF980015',
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(4),
+    borderRadius: scale(8),
+    marginBottom: scale(6),
+    borderWidth: 1,
+    borderColor: '#FF980030',
+  },
+  paymentWarningText: {
+    fontSize: moderateScale(10),
+    fontWeight: 'bold',
+    color: '#FF9800',
+    marginLeft: scale(4),
     fontFamily: appFonts.headerTextBold,
   },
 });

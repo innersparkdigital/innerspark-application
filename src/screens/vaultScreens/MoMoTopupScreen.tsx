@@ -19,34 +19,75 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import LHPhoneInput from '../../components/forms/LHPhoneInput';
+import LHLoaderModal from '../../components/forms/LHLoaderModal';
+import { topupWalletBalance } from '../../utils/walletManager';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const MoMoTopupScreen = ({ navigation }) => {
+const MoMoTopupScreen = ({ navigation }: any) => {
   const toast = useToast();
-  const userDetails = useSelector(state => state.userData.userDetails);
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
+
+  const alert = useISAlert();
+
+  // Helper to detect country info and strip prefix from prefilled number
+  const getPhoneDetails = (fullPhone: string) => {
+    if (!fullPhone) return { phone: '', countryCode: 'UG', callingCode: '256' };
+
+    let clean = fullPhone.trim().replace(/[\s\(\)\-]/g, '');
+    const mapping = [
+      { prefix: '+256', code: 'UG', calling: '256' },
+      { prefix: '+254', code: 'KE', calling: '254' },
+      { prefix: '+250', code: 'RW', calling: '250' },
+      { prefix: '+255', code: 'TZ', calling: '255' },
+      { prefix: '256', code: 'UG', calling: '256' },
+      { prefix: '254', code: 'KE', calling: '254' },
+      { prefix: '250', code: 'RW', calling: '250' },
+      { prefix: '255', code: 'TZ', calling: '255' },
+    ];
+
+    for (const item of mapping) {
+      if (clean.startsWith(item.prefix)) {
+        return {
+          phone: clean.slice(item.prefix.length),
+          countryCode: item.code,
+          callingCode: item.calling
+        };
+      }
+    }
+
+    // Handle leading zero
+    if (clean.startsWith('0')) {
+      return { phone: clean.slice(1), countryCode: 'UG', callingCode: '256' };
+    }
+
+    return { phone: clean, countryCode: 'UG', callingCode: '256' };
+  };
+
+  const phoneDetails = getPhoneDetails(userDetails?.phone || '');
 
   // Form state
   const [topupAmount, setTopupAmount] = useState('');
-  const [phone, setPhone] = useState('');
-  const [formattedPhone, setFormattedPhone] = useState('');
+  const [phone, setPhone] = useState(phoneDetails.phone);
+  const [formattedPhone, setFormattedPhone] = useState(userDetails?.phone || '');
   const [isCountrySupported, setIsCountrySupported] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   // Handle topup amount change
-  const onChangeTopupAmountHandler = (amount) => {
+  const onChangeTopupAmountHandler = (amount: any) => {
     // Remove any non-numeric characters except decimal point
     const numericAmount = amount.replace(/[^0-9]/g, '');
     setTopupAmount(numericAmount);
   };
 
   // Handle phone change
-  const onChangePhoneHandler = (phone) => {
+  const onChangePhoneHandler = (phone: any) => {
     setPhone(phone);
   };
 
   // Handle topup submission
-  const handleTopUpSubmit = () => {
+  const handleTopUpSubmit = async () => {
     if (!topupAmount || topupAmount === '0') {
       toast.show({
         description: 'Please enter a valid amount',
@@ -71,25 +112,55 @@ const MoMoTopupScreen = ({ navigation }) => {
       return;
     }
 
-    // Process topup
-    setIsLoading(true);
+    // Process topup Confirmation
+    const amount = parseInt(topupAmount, 10);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.show({
-        description: `Successfully topped up UGX ${parseInt(topupAmount).toLocaleString()}`,
-        duration: 3000,
-      });
+    alert.show({
+      type: 'info',
+      title: 'Confirm Top-up',
+      message: `You are about to top-up ${amount.toLocaleString()} UGX from mobile number ${formattedPhone}.\n\nProceed?`,
+      confirmText: 'Yes, Top-up',
+      cancelText: 'Cancel',
+      dismissible: false,
+      onConfirm: async () => {
+        setIsLoading(true);
 
-      // Clear form
-      setTopupAmount('');
-      setPhone('');
-      setFormattedPhone('');
+        try {
+          const userId = userDetails?.userId || userDetails?.id;
+          const response = await topupWalletBalance(userId, amount, formattedPhone, 'MOBILE_MONEY');
 
-      // Navigate back
-      navigation.goBack();
-    }, 2000);
+          if (response && response.success) {
+            alert.show({
+              type: 'success',
+              title: 'Top-up Initiated',
+              message: `${response.data?.message || 'Transaction processing.'}\n\nPlease finalize the transaction by entering your PIN when prompted by your Mobile Money service provider.`,
+              confirmText: 'Back to Wallet',
+              dismissible: false,
+              onConfirm: () => navigation.goBack()
+            });
+
+            // Clear form
+            setTopupAmount('');
+            setPhone('');
+            setFormattedPhone('');
+          } else {
+            alert.show({
+              type: 'error',
+              title: 'Top-up Failed',
+              message: response?.error || 'Failed to initiate topup. Please try again.',
+            });
+          }
+        } catch (error) {
+          alert.show({
+            type: 'error',
+            title: 'Error',
+            message: 'An unexpected error occurred. Please try again.',
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      } // End onConfirm
+    });
   };
 
 
@@ -141,11 +212,13 @@ const MoMoTopupScreen = ({ navigation }) => {
               placeholder="0750000000"
               inputValue={phone}
               inputValueSetter={setPhone}
-              countrySupportSetter={setIsCountrySupported}
               formattedValueSetter={setFormattedPhone}
-              onPickerPress={() => { }}
-              isInputEditable={!isLoading}
+              countrySupportSetter={() => { }} // Not strictly used here since read-only
+              isInputEditable={false}
+              defaultCountryCode={phoneDetails.countryCode}
+              defaultCallingCode={phoneDetails.callingCode}
             />
+            <Text style={styles.inputHint}>This is your primary number registered with your account</Text>
           </View>
 
           {/* Topup Button */}
@@ -161,6 +234,13 @@ const MoMoTopupScreen = ({ navigation }) => {
 
         </View>
       </ScrollView>
+
+      {/* Global Actions mapped directly above modals securely */}
+      <ISAlert ref={alert.ref} />
+
+      {/* Central LHLoaderModal securely blocks screen during API request explicitly safely natively */}
+      <LHLoaderModal visible={isLoading} message="Processing Top-up..." />
+
     </SafeAreaView>
   );
 };
@@ -172,9 +252,11 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: appColors.AppBlue,
-    paddingTop: parameters.headerHeightS,
-    paddingBottom: scale(30),
+    paddingTop: parameters.headerHeightS + scale(10),
+    paddingBottom: scale(40),
     paddingHorizontal: scale(20),
+    borderBottomLeftRadius: scale(30),
+    borderBottomRightRadius: scale(30),
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -226,6 +308,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: scale(15),
     fontFamily: appFonts.bodyTextMedium,
+  },
+  inputHint: {
+    fontSize: moderateScale(11),
+    color: appColors.grey3,
+    marginTop: scale(5),
+    marginLeft: scale(15),
+    fontFamily: appFonts.bodyTextRegular,
+    fontStyle: 'italic',
   },
   inputBlockRow: {
     flexDirection: 'row',

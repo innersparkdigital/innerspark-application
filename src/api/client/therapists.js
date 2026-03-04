@@ -53,3 +53,13 @@ export const getTherapistReviews = async (therapistId, params = {}) => {
     });
     return response.data;
 };
+
+/**
+ * Get sessions pricing/rates
+ * NOTE: Latest Postman (v2.3.1) includes this endpoint at /v1/th/pricing
+ * @returns {Promise} Sessions pricing details
+ */
+export const getSessionsPricing = async () => {
+    const response = await APIInstance.get('/th/pricing');
+    return response.data;
+};

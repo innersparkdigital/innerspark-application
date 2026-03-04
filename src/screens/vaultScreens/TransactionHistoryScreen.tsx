@@ -25,6 +25,8 @@ import { loadWalletTransactions, refreshWalletTransactions } from '../../utils/w
 const TransactionHistoryScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all'); // all, credit, debit
 
+  const userDetails = useSelector(state => state.userData.userDetails);
+
   // Get transactions from Redux
   const allTransactions = useSelector(selectTransactions);
   const isLoading = useSelector(selectWalletLoading);
@@ -32,119 +34,38 @@ const TransactionHistoryScreen = ({ navigation }) => {
 
   // Load transactions on mount
   useEffect(() => {
-    // TODO: Get userId from auth context/Redux
-    const userId = 'current_user_id';
-    loadWalletTransactions(userId, 1, 50); // Load more transactions for history
-  }, []);
+    const userId = userDetails?.userId || userDetails?.id;
+    if (userId) {
+      loadWalletTransactions(userId, 1, 50); // Load more transactions for history
+    }
+  }, [userDetails?.userId, userDetails?.id]);
 
   const handleRefresh = async () => {
-    const userId = 'current_user_id';
-    await refreshWalletTransactions(userId, 1, 50);
+    const userId = userDetails?.userId || userDetails?.id;
+    if (userId) {
+      await refreshWalletTransactions(userId, 1, 50);
+    }
   };
 
-  // Original mock data structure for reference (now from Redux)
-  const mockTransactions = [
-    {
-      id: 1,
-      description: 'MoMo Top-up',
-      amount: '+50,000 UGX',
-      time: '2 hours ago',
-      date: 'Oct 25, 2025',
-      type: 'credit',
-      icon: 'add-circle',
-      category: 'Top-up',
-    },
-    {
-      id: 2,
-      description: 'Therapy Session Payment',
-      amount: '-30,000 UGX',
-      time: 'Yesterday',
-      date: 'Oct 24, 2025',
-      type: 'debit',
-      icon: 'remove-circle',
-      category: 'Therapy',
-    },
-    {
-      id: 3,
-      description: 'Wellness Credits Received',
-      amount: '+20,000 UGX',
-      time: '2 days ago',
-      date: 'Oct 23, 2025',
-      type: 'credit',
-      icon: 'volunteer-activism',
-      category: 'Credits',
-    },
-    {
-      id: 4,
-      description: 'Event Registration',
-      amount: '-15,000 UGX',
-      time: '3 days ago',
-      date: 'Oct 22, 2025',
-      type: 'debit',
-      icon: 'remove-circle',
-      category: 'Events',
-    },
-    {
-      id: 5,
-      description: 'Reward Points Redeemed',
-      amount: '+5,000 UGX',
-      time: '5 days ago',
-      date: 'Oct 20, 2025',
-      type: 'credit',
-      icon: 'stars',
-      category: 'Rewards',
-    },
-    {
-      id: 6,
-      description: 'Support Group Subscription',
-      amount: '-25,000 UGX',
-      time: '1 week ago',
-      date: 'Oct 18, 2025',
-      type: 'debit',
-      icon: 'remove-circle',
-      category: 'Subscription',
-    },
-    {
-      id: 7,
-      description: 'MoMo Top-up',
-      amount: '+100,000 UGX',
-      time: '1 week ago',
-      date: 'Oct 17, 2025',
-      type: 'credit',
-      icon: 'add-circle',
-      category: 'Top-up',
-    },
-    {
-      id: 8,
-      description: 'Appointment Booking',
-      amount: '-40,000 UGX',
-      time: '2 weeks ago',
-      date: 'Oct 11, 2025',
-      type: 'debit',
-      icon: 'remove-circle',
-      category: 'Appointment',
-    },
-    {
-      id: 9,
-      description: 'Wellness Credits Received',
-      amount: '+15,000 UGX',
-      time: '2 weeks ago',
-      date: 'Oct 10, 2025',
-      type: 'credit',
-      icon: 'volunteer-activism',
-      category: 'Credits',
-    },
-    {
-      id: 10,
-      description: 'Reward Points Redeemed',
-      amount: '+8,000 UGX',
-      time: '3 weeks ago',
-      date: 'Oct 4, 2025',
-      type: 'credit',
-      icon: 'stars',
-      category: 'Rewards',
-    },
-  ]; // End mock reference
+  const getTransactionIcon = (category) => {
+    switch (category?.toLowerCase()) {
+      case 'topup': return 'add-circle';
+      case 'appointment':
+      case 'therapy': return 'psychology';
+      case 'event': return 'celebration';
+      case 'credits': return 'volunteer-activism';
+      case 'rewards': return 'stars';
+      case 'subscription': return 'card-membership';
+      default: return 'receipt-long';
+    }
+  };
+
+  const formatAmount = (amount, type) => {
+    const rawVal = Math.abs(amount || 0).toLocaleString();
+    return type === 'credit' ? `+${rawVal} UGX` : `-${rawVal} UGX`;
+  };
+
+
 
   // Calculate stats from actual transactions
   const calculateStats = () => {
@@ -177,7 +98,7 @@ const TransactionHistoryScreen = ({ navigation }) => {
         { backgroundColor: transaction.type === 'credit' ? '#4CAF50' + '15' : '#F44336' + '15' }
       ]}>
         <Icon
-          name={transaction.icon}
+          name={transaction.icon || getTransactionIcon(transaction.category)}
           type="material"
           color={transaction.type === 'credit' ? '#4CAF50' : '#F44336'}
           size={24}
@@ -194,7 +115,7 @@ const TransactionHistoryScreen = ({ navigation }) => {
           styles.transactionAmount,
           transaction.type === 'credit' ? styles.creditAmount : styles.debitAmount
         ]}>
-          {transaction.amount}
+          {typeof transaction.amount === 'number' ? formatAmount(transaction.amount, transaction.type) : transaction.amount}
         </Text>
         <Text style={styles.transactionCategory}>{transaction.category}</Text>
       </View>

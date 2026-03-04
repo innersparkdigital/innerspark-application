@@ -31,19 +31,18 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
   // Get appointment data from route params
   const appointment = route?.params?.appointment || {
     id: '1',
-    date: '09/04/2025',
+    date: '09/04/2026',
     time: '2:00 PM',
-    therapistName: 'Clara Odding',
-    therapistType: 'Therapist',
-    specialty: 'Anxiety & Depression',
+    therapistName: 'Unknown',
     status: 'upcoming',
-    image: require('../../assets/images/dummy-people/d-person2.png'),
-    location: 'Nakawa - Kampala Uganda',
+    isPaid: false,
+    price: 0,
+    currency: 'UGX',
+    therapistAvatar: null,
+    location: 'Virtual Session',
     sessionType: 'Individual Therapy',
     duration: '60 minutes',
-    meetingLink: 'https://meet.innerspark.com/room/clara-123',
-    paymentStatus: 'paid',
-    amount: 'UGX 45,000',
+    meetingLink: '',
     timezone: 'EAT (UTC+3)',
     cancellationPolicy: 'Free cancellation up to 24 hours before the appointment',
   };
@@ -72,17 +71,8 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
     }
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return '#4CAF50';
-      case 'pending':
-        return '#FF9800';
-      case 'failed':
-        return '#F44336';
-      default:
-        return appColors.grey2;
-    }
+  const getPaymentStatusColor = (isPaid: boolean) => {
+    return isPaid ? '#4CAF50' : '#FF9800';
   };
 
   const handleJoinMeeting = async () => {
@@ -179,18 +169,17 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
           <Text style={styles.cardTitle}>Therapist</Text>
           <View style={styles.therapistInfo}>
             <Avatar
-              source={appointment.image}
+              source={appointment.therapistAvatar ? { uri: appointment.therapistAvatar } : require('../../assets/images/avatar-placeholder.png')}
               size={scale(70)}
               rounded
               containerStyle={styles.therapistAvatar}
             />
             <View style={styles.therapistDetails}>
               <Text style={styles.therapistName}>{appointment.therapistName}</Text>
-              <Text style={styles.therapistType}>{appointment.therapistType}</Text>
-              {appointment.specialty && (
-                <View style={styles.specialtyBadge}>
-                  <Text style={styles.specialtyText}>{appointment.specialty}</Text>
-                </View>
+              {appointment.sessionType && (
+                <Text style={styles.therapistType}>
+                  {appointment.sessionType.charAt(0).toUpperCase() + appointment.sessionType.slice(1)}
+                </Text>
               )}
             </View>
           </View>
@@ -259,25 +248,25 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
 
           <View style={styles.paymentRow}>
             <Text style={styles.amountLabel}>Amount</Text>
-            <Text style={styles.amountValue}>{appointment.amount}</Text>
+            <Text style={styles.amountValue}>{appointment.currency} {Number(appointment.price).toLocaleString()}</Text>
           </View>
 
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>Status</Text>
             <View style={[
               styles.paymentStatusBadge,
-              { backgroundColor: getPaymentStatusColor(appointment.paymentStatus) + '20' }
+              { backgroundColor: getPaymentStatusColor(appointment.isPaid) + '20' }
             ]}>
               <Text style={[
                 styles.paymentStatusText,
-                { color: getPaymentStatusColor(appointment.paymentStatus) }
+                { color: getPaymentStatusColor(appointment.isPaid) }
               ]}>
-                {appointment.paymentStatus.charAt(0).toUpperCase() + appointment.paymentStatus.slice(1)}
+                {appointment.isPaid ? 'Paid' : 'Pending'}
               </Text>
             </View>
           </View>
 
-          {appointment.paymentStatus === 'pending' && (
+          {!appointment.isPaid && (
             <Button
               title="Pay Now"
               buttonStyle={styles.payNowButton}

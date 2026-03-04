@@ -1,7 +1,8 @@
 /**
  * Therapist Matching Quiz Screen - Multi-step preferences for smart matching
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import {
   View,
   Text,
@@ -15,13 +16,15 @@ import { Icon, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
+import { selectTherapists } from '../../features/therapists/therapistsSlice';
+import { loadTherapists } from '../../utils/therapistsManager';
 
 interface QuizAnswers {
-  genderPreference: 'Any' | 'Male' | 'Female';
+  genderPreference: string;
   issues: string[];
-  language: 'Any' | 'English' | 'Luganda' | 'French';
-  budget: 'Any' | 'UGX 40k - 50k' | 'UGX 50k - 60k' | 'UGX 60k+';
-  availability: 'Anytime' | 'Weekdays' | 'Weekends' | 'Evenings';
+  language: string;
+  budget: string;
+  availability: string;
 }
 
 interface TherapistMatchingQuizScreenProps {
@@ -47,9 +50,59 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
     };
   });
 
-  const issueOptions = [
-    'Anxiety', 'Depression', 'Relationship', 'Trauma/PTSD', 'Stress', 'Addiction', 'Adolescent', 'Grief'
-  ];
+  // Pull therapist data from Redux for dynamic quiz options
+  const therapists = useSelector(selectTherapists) as any[];
+
+  // Ensure therapists are loaded
+  React.useEffect(() => {
+    if (therapists.length === 0) {
+      loadTherapists();
+    }
+  }, []);
+
+  // Dynamic issue options: extract unique specialties/tags from all therapists
+  const issueOptions = useMemo(() => {
+    const allTags = therapists.flatMap((t: any) =>
+      t.tags && Array.isArray(t.tags) ? t.tags : (
+        t.specialty ? t.specialty.split(',').map((s: string) => s.trim()) : []
+      )
+    );
+    const unique = Array.from(new Set(allTags)).filter(Boolean);
+    return unique.length > 0 ? unique : ['Anxiety', 'Depression', 'Relationship', 'Trauma/PTSD', 'Stress', 'Grief'];
+  }, [therapists]);
+
+  // Dynamic language options: extract unique languages from all therapists
+  const languageOptions = useMemo(() => {
+    const allLangs = therapists.flatMap((t: any) =>
+      Array.isArray(t.languages) ? t.languages : (
+        typeof t.languages === 'string' ? t.languages.split(',').map((s: string) => s.trim()) : []
+      )
+    );
+    const unique = Array.from(new Set(allLangs)).filter(Boolean);
+    return ['Any', ...(unique.length > 0 ? unique : ['English', 'Luganda', 'French'])];
+  }, [therapists]);
+
+  // Dynamic budget options: compute from actual therapist prices
+  const budgetOptions = useMemo(() => {
+    const prices = therapists
+      .map((t: any) => parseInt(String(t.price).replace(/[^0-9]/g, ''), 10))
+      .filter((p: number) => !isNaN(p) && p > 0);
+    if (prices.length === 0) return ['Any', 'UGX 20k - 40k', 'UGX 40k - 60k', 'UGX 60k - 80k', 'UGX 80k+'];
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const formatK = (v: number) => v >= 1000 ? `UGX ${Math.round(v / 1000)}k` : `UGX ${v}`;
+    // If all prices are identical, just show "Any" and the single price
+    if (min === max) return ['Any', `${formatK(min)}`];
+    const mid = Math.round((min + max) / 2 / 1000) * 1000;
+    // Build options and deduplicate (avoids keys like "UGX 50k - UGX 50k")
+    const raw = [
+      'Any',
+      `${formatK(min)} - ${formatK(mid)}`,
+      `${formatK(mid)} - ${formatK(max)}`,
+      `${formatK(max)}+`,
+    ];
+    return Array.from(new Set(raw));
+  }, [therapists]);
 
   const nextStep = () => setStep(prev => Math.min(prev + 1, 5));
   const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
@@ -162,7 +215,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
         {step === 3 && (
           <Section title="Preferred Language">
             <View style={styles.chipRow}>
-              {(['Any', 'English', 'Luganda', 'French'] as const).map(opt => (
+              {languageOptions.map(opt => (
                 <TouchableOpacity
                   key={opt}
                   style={[styles.chip, answers.language === opt && styles.chipSelected]}
@@ -180,7 +233,7 @@ const TherapistMatchingQuizScreen: React.FC<TherapistMatchingQuizScreenProps> = 
         {step === 4 && (
           <Section title="Budget per Session">
             <View style={styles.chipWrap}>
-              {(['Any', 'UGX 40k - 50k', 'UGX 50k - 60k', 'UGX 60k+'] as const).map(opt => (
+              {budgetOptions.map(opt => (
                 <TouchableOpacity
                   key={opt}
                   style={[styles.chip, answers.budget === opt && styles.chipSelected]}

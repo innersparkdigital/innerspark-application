@@ -138,18 +138,6 @@ const PostSessionFeedbackScreen: React.FC<PostSessionFeedbackScreenProps> = ({
       const result = await submitReview(sessionDetails.id, reviewData);
 
       if (result.success) {
-        // Log session data for wellness report
-        const sessionLog = {
-          sessionId: sessionDetails.id,
-          therapistId: sessionDetails.therapistId,
-          sessionDate: sessionDetails.sessionDate,
-          sessionDuration: sessionDetails.sessionDuration,
-          feedback: feedback,
-          submittedAt: new Date().toISOString(),
-        };
-
-        console.log('Session logged for wellness report:', sessionLog);
-
         toast.show({
           description: 'Thank you! Your feedback has been submitted successfully.',
           duration: 4000,

@@ -731,6 +731,7 @@ const EventDetailScreen: React.FC<EventDetailScreenProps> = ({ navigation, route
         summarySubtitle={`${formatDate(event.date)} at ${event.time}`}
         currency={event.currency}
         amount={event.price}
+        availableMethods={['wellnessvault']}
         selectedPaymentMethod={selectedPaymentMethod as any}
         onSelectPaymentMethod={(m) => {
           if (isProcessingPayment || (selectedPaymentMethod === 'mobile_money' && mmStep !== 'phone')) return;

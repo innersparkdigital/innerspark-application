@@ -10,8 +10,10 @@ import {
   View,
   TouchableOpacity,
   Animated,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CommonActions } from '@react-navigation/native';
 import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
@@ -49,13 +51,61 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
     });
   };
 
+  const handleShareReceipt = async () => {
+    try {
+      const shareMessage = `Booking Confirmation:\n\nTherapist: ${therapist.name}\nDate: ${appointmentDetails.date}\nTime: ${appointmentDetails.time}\nType: ${appointmentDetails.sessionType || 'Individual Therapy'}\nLocation: ${appointmentDetails.location}\n\nVia InnerSpark App`;
+      await Share.share({
+        message: shareMessage,
+        title: 'Your InnerSpark Appointment',
+      });
+    } catch (error) {
+      toast.show({
+        description: 'Failed to share receipt.',
+        duration: 2000,
+      });
+    }
+  };
+
   const handleGoToAppointments = () => {
-    navigation.navigate('AppointmentsScreen');
+    // World-class UX: Clear the stack so user cannot swipe back into a completed checkout
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'LHBottomTabs',
+            state: {
+              routes: [
+                {
+                  name: 'AppointmentsScreen',
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+  };
+
+  const handleGoHome = () => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'LHBottomTabs',
+            state: {
+              routes: [{ name: 'TherapistsScreen' }],
+            },
+          },
+        ],
+      })
+    );
   };
 
   const calculateReminderTime = () => {
-    // Mock calculation - in real app, this would calculate actual time difference
-    return '2 days 3 hours before the appointment';
+    // Standard platform reminder window
+    return '24 hours before your session starts';
   };
 
   const formatDateTime = () => {
@@ -70,15 +120,21 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.navigate('LHBottomTabs', { screen: 'TherapistsScreen' })}
+          onPress={handleGoHome}
         >
-          <Icon name="arrow-back" type="material" color={appColors.grey1} size={moderateScale(24)} />
+          <Icon name="close" type="material" color={appColors.grey1} size={moderateScale(28)} />
         </TouchableOpacity>
         <View style={styles.headerSpacer} />
+        <TouchableOpacity onPress={handleShareReceipt} style={styles.shareButton}>
+          <Icon name="share" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
+        </TouchableOpacity>
+        <View style={{ width: scale(15) }} />
         <Avatar
           source={therapist.image}
           size={scale(40)}
           rounded
+          containerStyle={{ borderWidth: 1, borderColor: appColors.AppLightGray }}
+          avatarStyle={{ resizeMode: 'cover' }}
         />
       </View>
 
