@@ -1,7 +1,8 @@
 /**
  * Notification Screen - Displays user notifications with professional UI
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import {
   StyleSheet,
@@ -58,6 +59,15 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   const unreadCount = useSelector(selectUnreadCount);
   const isLoading = useSelector(selectNotificationsLoading);
   const isRefreshing = useSelector(selectNotificationsRefreshing);
+
+  // Load notifications when coming into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userDetails?.userId) {
+        refreshNotifications(userDetails.userId);
+      }
+    }, [userDetails?.userId])
+  );
 
   useEffect(() => {
     if (userDetails?.userId) {

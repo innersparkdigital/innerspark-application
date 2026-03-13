@@ -1,7 +1,8 @@
 /**
  * Appointments Screen - List of all upcoming/past appointments
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ScrollView,
   StatusBar,
@@ -65,12 +66,14 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const userId = userDetails?.userId || userDetails?.id;
 
-  // Load appointments when tab changes or on mount
-  useEffect(() => {
-    if (userId) {
-      loadAppointments({ status: selectedTab === 'past' ? 'past' : selectedTab === 'pending' ? 'pending' : 'upcoming' });
-    }
-  }, [selectedTab, userId]);
+  // Load appointments when tab changes or on mount or when coming into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        refreshAppointments({ status: selectedTab === 'past' ? 'past' : selectedTab === 'pending' ? 'pending' : 'upcoming' });
+      }
+    }, [selectedTab, userId])
+  );
 
   const filteredAppointments = appointments.filter((appointment: Appointment) => {
     let matchesTab = false;

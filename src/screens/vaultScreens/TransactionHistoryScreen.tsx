@@ -1,7 +1,7 @@
 /**
  * Transaction History Screen - Full history of all wallet transactions
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -21,6 +21,7 @@ import {
   selectWalletRefreshing,
 } from '../../features/wallet/walletSlice';
 import { loadWalletTransactions, refreshWalletTransactions } from '../../utils/walletManager';
+import { useFocusEffect } from '@react-navigation/native';
 
 const TransactionHistoryScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all'); // all, credit, debit
@@ -32,13 +33,15 @@ const TransactionHistoryScreen = ({ navigation }) => {
   const isLoading = useSelector(selectWalletLoading);
   const isRefreshing = useSelector(selectWalletRefreshing);
 
-  // Load transactions on mount
-  useEffect(() => {
-    const userId = userDetails?.userId || userDetails?.id;
-    if (userId) {
-      loadWalletTransactions(userId, 1, 50); // Load more transactions for history
-    }
-  }, [userDetails?.userId, userDetails?.id]);
+  // Load transactions on mount and when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const userId = userDetails?.userId || userDetails?.id;
+      if (userId) {
+        refreshWalletTransactions(userId, 1, 50); // Refresh transactions when screen is focused
+      }
+    }, [userDetails?.userId, userDetails?.id])
+  );
 
   const handleRefresh = async () => {
     const userId = userDetails?.userId || userDetails?.id;

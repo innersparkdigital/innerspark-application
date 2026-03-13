@@ -1,8 +1,9 @@
 /**
  * Wellness Vault Screen - Points, rewards, and wellness credits management
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ScrollView,
   StatusBar,
@@ -49,14 +50,16 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
   const isLoading = useSelector(selectWalletLoading);
   const isRefreshing = useSelector(selectWalletRefreshing);
 
-  // Load wallet data on mount
-  useEffect(() => {
-    const userId = userDetails?.userId || userDetails?.id;
-    if (userId) {
-      loadWalletBalance(userId);
-      loadWalletTransactions(userId, 1, 5); // Load recent 5 transactions
-    }
-  }, [userDetails?.userId, userDetails?.id]);
+  // Refresh wallet data whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const userId = userDetails?.userId || userDetails?.id;
+      if (userId) {
+        refreshWalletBalance(userId);
+        refreshWalletTransactions(userId, 1, 5);
+      }
+    }, [userDetails?.userId, userDetails?.id])
+  );
 
   const handleRefresh = async () => {
     const userId = userDetails?.userId || userDetails?.id;
