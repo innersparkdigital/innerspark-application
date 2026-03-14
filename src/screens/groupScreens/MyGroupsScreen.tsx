@@ -40,9 +40,10 @@ interface MyGroup {
 
 interface MyGroupsScreenProps {
   navigation: any;
+  onTabChange?: (tab: 'directory' | 'mygroups') => void;
 }
 
-const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
+const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange }) => {
   const toast = useToast();
   const alert = useISAlert();
   const dispatch = useDispatch();
@@ -395,7 +396,13 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation }) => {
       </Text>
       <TouchableOpacity
         style={styles.browseButton}
-        onPress={() => navigation.navigate('GroupsListScreen')}
+        onPress={() => {
+          if (onTabChange) {
+            onTabChange('directory');
+          } else {
+            navigation.navigate('GroupsListScreen');
+          }
+        }}
       >
         <Text style={styles.browseButtonText}>Browse Groups</Text>
       </TouchableOpacity>

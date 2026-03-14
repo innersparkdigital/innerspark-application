@@ -13,6 +13,7 @@ import {
   Vibration,
   Modal,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
@@ -39,7 +40,7 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
   const navigation = useNavigation();
   const toast = useToast();
   const crisisLines = useSelector((state: any) => state.emergency.crisisLines || []);
-  const emergencyContacts = useSelector((state: any) => state.emergency.contacts || []);
+  const emergencyContacts = useSelector((state: any) => state.emergency.emergencyContacts || []); // ✅ Fixed selector
   const [isPressed, setIsPressed] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -207,15 +208,7 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
       color: emergencyActionsData[3]?.color || '#4CAF50',
       action: () => {
         hideModalAnimation();
-        setTimeout(() => {
-          const contactCount = emergencyActionsData[3]?.contacts?.length || 0;
-          toast.show({
-            description: contactCount > 0 
-              ? `Notifying ${contactCount} emergency contact${contactCount !== 1 ? 's' : ''}...`
-              : 'No emergency contacts configured',
-            duration: 2000,
-          });
-        }, 300);
+        setTimeout(() => handleNotifyContacts(), 300);
       },
     },
   ];
@@ -244,7 +237,7 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
 
   const handleCall = async (phone: string, name: string) => {
     try {
-      const phoneUrl = `tel:${phone}`;
+      const phoneUrl = `tel:${phone.replace(/[^0-9+]/g, '')}`;
       const canOpen = await Linking.canOpenURL(phoneUrl);
       
       if (canOpen) {
@@ -262,6 +255,59 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
     } catch (error) {
       toast.show({
         description: 'Failed to initiate call',
+        duration: 2000,
+      });
+    }
+  };
+
+  const handleNotifyContacts = async () => {
+    if (emergencyContacts.length === 0) {
+      toast.show({
+        description: 'No emergency contacts configured',
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      // Get all phone numbers
+      const phoneNumbers = emergencyContacts
+        .map((c: any) => c.phone.replace(/[^0-9+]/g, ''))
+        .filter((p: string) => p.length > 0);
+
+      if (phoneNumbers.length === 0) {
+        toast.show({
+          description: 'No valid phone numbers found for contacts',
+          duration: 3000,
+        });
+        return;
+      }
+
+      // Preparation for SMS URL
+      // iOS uses comma, Android usually uses comma or semicolon
+      // Multi-recipient SMS via URL is platform dependent
+      const separator = Platform.OS === 'ios' ? ',' : ','; // Most modern Android use comma too
+      const recipients = phoneNumbers.join(separator);
+      const message = encodeURIComponent("I need help. This is an emergency message from my InnerSpark app. Please contact me immediately.");
+      
+      const smsUrl = `sms:${recipients}${Platform.OS === 'ios' ? '&' : '?'}body=${message}`;
+      
+      const canOpen = await Linking.canOpenURL(smsUrl);
+      if (canOpen) {
+        toast.show({
+          description: `Opening SMS for ${phoneNumbers.length} contact(s)...`,
+          duration: 2000,
+        });
+        await Linking.openURL(smsUrl);
+      } else {
+        // Fallback for Android if the complex URL fails
+        const fallbackUrl = `sms:${phoneNumbers[0]}?body=${message}`;
+        await Linking.openURL(fallbackUrl);
+      }
+    } catch (error) {
+      console.error('Error notifying contacts:', error);
+      toast.show({
+        description: 'Failed to prepare emergency SMS',
         duration: 2000,
       });
     }

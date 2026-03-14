@@ -22,6 +22,7 @@ import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { deleteAccount } from '../../api/client/account';
+import { clearStorage } from '../../global/StorageActions';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DeleteAccountScreenProps {
@@ -40,6 +41,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [additionalFeedback, setAdditionalFeedback] = useState('');
   const [hasReadWarning, setHasReadWarning] = useState(false);
@@ -47,7 +49,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
 
   const CONFIRMATION_TEXT = 'DELETE MY ACCOUNT';
   const isConfirmationValid = confirmationText === CONFIRMATION_TEXT;
-  const canProceed = isConfirmationValid && hasReadWarning && hasBackedUpData && selectedReasons.length > 0;
+  const canProceed = isConfirmationValid && hasReadWarning && hasBackedUpData && selectedReasons.length > 0 && password.length >= 6;
 
   const deletionReasons: DeletionReason[] = [
     {
@@ -119,7 +121,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
 
           const finalReason = additionalFeedback ? `${reasonText}. ${additionalFeedback}` : reasonText;
 
-          const response = await deleteAccount(userId, finalReason);
+          const response = await deleteAccount(userId, password, finalReason);
 
           if (response.success) {
             toast.show({
@@ -127,6 +129,8 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
               duration: 5000,
             });
 
+            await clearStorage();
+            
             navigation.reset({
               index: 0,
               routes: [{ name: 'SigninScreen' }],
@@ -259,6 +263,22 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+              />
+            </View>
+          </View>
+
+          {/* Password Authentication */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Verify your password</Text>
+            <View style={styles.sectionContent}>
+              <TextInput
+                style={[styles.feedbackInput, { height: scale(50), margin: scale(16) }]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter current password"
+                placeholderTextColor={appColors.grey4}
+                secureTextEntry
+                textAlignVertical="center"
               />
             </View>
           </View>

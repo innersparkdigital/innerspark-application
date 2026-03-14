@@ -16,6 +16,7 @@ import {
   setLoadingMilestones,
   setLoadingHistory,
   setSubmitting,
+  clearTodayCheckIn,
 } from '../features/mood/moodSlice';
 import { 
   getTodayMood, 
@@ -24,6 +25,8 @@ import {
   getMoodInsights, 
   getMoodMilestones 
 } from '../api/client/mood';
+import { storeItemLS } from '../global/StorageActions';
+import { cancelTodayMoodReminders } from '../api/LHNotifications';
 
 /**
  * Get color for mood value
@@ -96,17 +99,23 @@ export const loadTodayCheckInStatus = async (userId: string) => {
           date: todayMood.date || new Date().toISOString(),
         };
         dispatch(setTodayCheckIn(moodData));
+      } else if (hasCheckedIn === false) {
+        // Explicitly clear if the API says we haven't checked in
+        dispatch(clearTodayCheckIn());
       }
       
-      // Update stats from today's response
+      // Update stats from today's response - Definitive source for current streak
       if (stats) {
-        dispatch(setMoodStats({
-          currentStreak: stats.currentStreak || 0,
-          totalPoints: stats.totalPoints || 0,
-          totalCheckIns: stats.totalCheckIns || 0,
-          milestonesReached: stats.milestonesReached || 0,
-          nextMilestone: stats.nextMilestone || 7,
-        }));
+        const statsToUpdate: any = {};
+        if (stats.currentStreak !== undefined && stats.currentStreak !== null) statsToUpdate.currentStreak = stats.currentStreak;
+        if (stats.totalPoints !== undefined && stats.totalPoints !== null) statsToUpdate.totalPoints = stats.totalPoints;
+        if (stats.totalCheckIns !== undefined && stats.totalCheckIns !== null) statsToUpdate.totalCheckIns = stats.totalCheckIns;
+        if (stats.milestonesReached !== undefined && stats.milestonesReached !== null) statsToUpdate.milestonesReached = stats.milestonesReached;
+        if (stats.nextMilestone !== undefined && stats.nextMilestone !== null) statsToUpdate.nextMilestone = stats.nextMilestone;
+        
+        if (Object.keys(statsToUpdate).length > 0) {
+          dispatch(setMoodStats(statsToUpdate));
+        }
       }
     }
     
@@ -142,17 +151,20 @@ export const loadMoodHistory = async (userId: string, period: string = 'week', p
       // Update mood history
       dispatch(setMoodHistory({ entries: mappedEntries, pagination }));
       
-      // Update stats from history response
+      // Update stats from history response - Secondary source
       if (stats) {
-        dispatch(setMoodStats({
-          currentStreak: stats.currentStreak || 0,
-          totalPoints: stats.totalPoints || 0,
-          totalCheckIns: stats.totalCheckIns || 0,
-          milestonesReached: stats.milestonesReached || 0,
-          nextMilestone: stats.nextMilestone || 7,
-          averageMood: stats.averageMood,
-          mostCommonMood: stats.mostCommonMood,
-        }));
+        const statsToUpdate: any = {};
+        // History is authoritative for average and most common mood
+        if (stats.averageMood !== undefined && stats.averageMood !== null) statsToUpdate.averageMood = stats.averageMood;
+        if (stats.mostCommonMood !== undefined && stats.mostCommonMood !== null) statsToUpdate.mostCommonMood = stats.mostCommonMood;
+        
+        // Use history for these ONLY if they are missing from state, otherwise Today API is better
+        const currentState = store.getState().mood;
+        if (!currentState.totalCheckIns && stats.totalCheckIns) statsToUpdate.totalCheckIns = stats.totalCheckIns;
+        
+        if (Object.keys(statsToUpdate).length > 0) {
+          dispatch(setMoodStats(statsToUpdate));
+        }
       }
     }
     
@@ -175,13 +187,18 @@ export const loadMoodInsights = async (userId: string) => {
     const response = await getMoodInsights(userId);
     
     if (response.success && response.data) {
-      dispatch(setInsightsData({
-        insights: response.data.insights || [],
-        patterns: response.data.patterns || [],
-        recommendations: response.data.recommendations || [],
-        bestTimeOfDay: response.data.bestTimeOfDay,
-        weeklyImprovement: response.data.weeklyImprovement,
-      }));
+      const insightsData: any = {};
+      
+      // Mandatory arrays
+      insightsData.insights = response.data.insights || [];
+      insightsData.patterns = response.data.patterns || [];
+      insightsData.recommendations = response.data.recommendations || [];
+      
+      // Optional fields - only update if present
+      if (response.data.bestTimeOfDay !== undefined) insightsData.bestTimeOfDay = response.data.bestTimeOfDay;
+      if (response.data.weeklyImprovement !== undefined) insightsData.weeklyImprovement = response.data.weeklyImprovement;
+      
+      dispatch(setInsightsData(insightsData));
     }
     
     dispatch(setLoadingInsights(false));
@@ -203,17 +220,28 @@ export const loadMoodMilestones = async (userId: string) => {
     const response = await getMoodMilestones(userId);
     
     if (response.success && response.data) {
-      dispatch(setMilestonesData({
-        milestones: response.data.milestones || [],
-        nextMilestone: response.data.nextMilestone,
-        currentStreak: response.data.currentStreak,
-        longestStreak: response.data.longestStreak,
-        availablePoints: response.data.availablePoints || 0,
-        usedPoints: response.data.usedPoints || 0,
-        totalPoints: response.data.totalPoints || 0,
-        milestonesReached: response.data.milestonesReached || 0,
-        redeemOptions: response.data.redeemOptions || [],
-      }));
+      const milestoneUpdate: any = {};
+      
+      // Required arrays
+      // milestoneUpdate.milestones = response.data.milestones || []; // Keep current
+      milestoneUpdate.redeemOptions = response.data.redeemOptions || []; // Keep current
+      
+      const currentState = store.getState().mood;
+      
+      // Optional fields - Milestones is authoritative for milestonesReached and nextMilestone
+      if (response.data.milestonesReached !== undefined && response.data.milestonesReached !== null) milestoneUpdate.milestonesReached = response.data.milestonesReached;
+      if (response.data.nextMilestone !== undefined && response.data.nextMilestone !== null) milestoneUpdate.nextMilestone = response.data.nextMilestone;
+      
+      // Use these ONLY as fallbacks if not already set by Today API
+      if (!currentState.currentStreak && response.data.currentStreak) milestoneUpdate.currentStreak = response.data.currentStreak;
+      if (!currentState.longestStreak && response.data.longestStreak) milestoneUpdate.longestStreak = response.data.longestStreak;
+      if (!currentState.totalPoints && response.data.totalPoints) milestoneUpdate.totalPoints = response.data.totalPoints;
+      
+      // Points info is usually unique to milestones
+      if (response.data.availablePoints !== undefined) milestoneUpdate.availablePoints = response.data.availablePoints;
+      if (response.data.usedPoints !== undefined) milestoneUpdate.usedPoints = response.data.usedPoints;
+      
+      dispatch(setMilestonesData(milestoneUpdate));
     }
     
     dispatch(setLoadingMilestones(false));
@@ -277,12 +305,20 @@ export const saveMoodCheckIn = async (
       dispatch(addMoodEntry(moodData));
       
       // Update stats from log mood response
-      dispatch(setMoodStats({
-        currentStreak: response.data.currentStreak,
-        totalPoints: response.data.totalPoints,
-        milestonesReached: response.data.milestonesReached,
-        nextMilestone: response.data.nextMilestone,
-      }));
+      const statsToUpdate: any = {};
+      if (response.data.currentStreak !== undefined) statsToUpdate.currentStreak = response.data.currentStreak;
+      if (response.data.totalPoints !== undefined) statsToUpdate.totalPoints = response.data.totalPoints;
+      if (response.data.milestonesReached !== undefined) statsToUpdate.milestonesReached = response.data.milestonesReached;
+      if (response.data.nextMilestone !== undefined) statsToUpdate.nextMilestone = response.data.nextMilestone;
+      
+      if (Object.keys(statsToUpdate).length > 0) {
+        dispatch(setMoodStats(statsToUpdate));
+      }
+      
+      // Local Guard: Mark as checked in today and cancel future reminders for today
+      const todayStr = new Date().toISOString().split('T')[0];
+      await storeItemLS('lastMoodCheckInDateLS', todayStr);
+      await cancelTodayMoodReminders();
       
       dispatch(setSubmitting(false));
       return { success: true, data: response.data };

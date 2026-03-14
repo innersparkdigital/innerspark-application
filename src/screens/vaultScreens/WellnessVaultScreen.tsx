@@ -38,7 +38,7 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
   const toast = useToast();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [showTopupModal, setShowTopupModal] = useState(false);
-  const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+  const [isBalanceHidden, setIsBalanceHidden] = useState(true);
 
   const fromCheckout = route?.params?.fromCheckout;
 
@@ -136,6 +136,8 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
     type: txn.type,
     icon: txn.icon || getTransactionIcon(txn.category),
     status: txn.status,
+    // Keep original txn data for detail screen
+    raw: txn,
   }));
 
   const handleTopUp = () => {
@@ -149,7 +151,7 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
     navigation.navigate('TransactionHistoryScreen');
   };
 
-  const formatCurrency = (amount, currency) => {
+  const formatCurrency = (amount: number, currency: string) => {
     if (currency === 'Points') {
       return amount.toLocaleString();
     }
@@ -181,7 +183,11 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
 
   const ActivityItem = ({ activity }: any) => (
     <>
-      <View style={styles.activityItem}>
+      <TouchableOpacity
+        style={styles.activityItem}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('TransactionDetailScreen', { transaction: activity.raw || activity })}
+      >
         <Icon
           name={activity.icon}
           type="material"
@@ -200,13 +206,16 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
             )}
           </View>
         </View>
-        <Text style={[
-          styles.activityAmount,
-          activity.type === 'credit' ? styles.creditAmount : styles.debitAmount
-        ]}>
-          {activity.amount}
-        </Text>
-      </View>
+        <View style={styles.activityAmountRow}>
+          <Text style={[
+            styles.activityAmount,
+            activity.type === 'credit' ? styles.creditAmount : styles.debitAmount
+          ]}>
+            {activity.amount}
+          </Text>
+          <Icon name="chevron-right" type="material" color={appColors.grey4} size={16} />
+        </View>
+      </TouchableOpacity>
       {/* Separator between items except last */}
       <View style={{ height: scale(4) }} />
     </>
@@ -677,6 +686,11 @@ const styles = StyleSheet.create({
     height: scale(6),
     borderRadius: scale(3),
     marginLeft: scale(6),
+  },
+  activityAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(2),
   },
   activityAmount: {
     fontSize: moderateScale(13),

@@ -50,7 +50,7 @@ export const appLinks = {
   appLinkedIn: "https://www.linkedin.com/in/inner-spark-581014326/",
   appWebsite: "https://www.innersparkafrica.com/",
   appSupportEmail: "mailto:info@innersparkafrica.com",
-  appGooglePlayURL: "https://www.innersparkafrica.com/",
+  appGooglePlayURL: "https://play.google.com/store/apps/details?id=com.innersparkafrica.app",
   appUserGuide: "https://www.innersparkafrica.com/",
 
 };
@@ -61,7 +61,7 @@ export const appContents = {
   aboutAppText: "Innerspark helps you care for your mental well-being with ease. Book therapy sessions, track your moods, join support groups, and access wellness resources—all in one simple, supportive app.",
   supportPhone: "+256 (0) 780-570-987", // support phone number 
   supportEmail: "support@innersparkafrica.com", // support email address
-  supportHours: "Monday - Friday, 9 AM - 6 PM", // support working hours
+  supportHours: "Monday-Friday, 9AM - 6PM", // support working hours
 
 }
 

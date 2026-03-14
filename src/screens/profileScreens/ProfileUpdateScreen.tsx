@@ -1,7 +1,5 @@
-/**
- * Profile Update Screen - Edit and update user profile information
- */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -67,43 +65,44 @@ const EditModal = ({
   const [editValue, setEditValue] = useState(value);
   const [isLoading, setIsLoading] = useState(false);
 
-  const getFieldConfig = (fieldName: string) => {
+  const getFieldConfig = (fieldName: string, currentValue: string) => {
+    const isAdding = !currentValue;
     switch (fieldName) {
       case 'firstName':
         return {
-          title: 'Edit First Name',
-          placeholder: 'Enter your first name',
+          title: isAdding ? 'Add First Name' : 'Edit First Name',
+          placeholder: 'Add your first name',
           keyboardType: 'default' as const,
           maxLength: 50,
           multiline: false
         };
       case 'lastName':
         return {
-          title: 'Edit Last Name',
-          placeholder: 'Enter your last name',
+          title: isAdding ? 'Add Last Name' : 'Edit Last Name',
+          placeholder: 'Add your last name',
           keyboardType: 'default' as const,
           maxLength: 50,
           multiline: false
         };
       case 'email':
         return {
-          title: 'Edit Email Address',
-          placeholder: 'Enter your email address',
+          title: isAdding ? 'Add Email' : 'Edit Email Address',
+          placeholder: 'Add your email address',
           keyboardType: 'email-address' as const,
           maxLength: 100,
           multiline: false
         };
       case 'phone':
         return {
-          title: 'Edit Phone Number',
-          placeholder: 'Enter your phone number',
+          title: isAdding ? 'Add Phone' : 'Edit Phone Number',
+          placeholder: 'Add your phone number',
           keyboardType: 'phone-pad' as const,
           maxLength: 20,
           multiline: false
         };
       case 'bio':
         return {
-          title: 'Edit Bio',
+          title: isAdding ? 'Add Bio' : 'Edit Bio',
           placeholder: 'Tell us about yourself...',
           keyboardType: 'default' as const,
           maxLength: 500,
@@ -111,7 +110,7 @@ const EditModal = ({
         };
       case 'gender':
         return {
-          title: 'Select Gender',
+          title: isAdding ? 'Add Gender' : 'Select Gender',
           placeholder: 'Select your gender',
           keyboardType: 'default' as const,
           maxLength: 20,
@@ -119,7 +118,7 @@ const EditModal = ({
         };
       default:
         return {
-          title: 'Edit Field',
+          title: isAdding ? 'Add Field' : 'Edit Field',
           placeholder: 'Enter value',
           keyboardType: 'default' as const,
           maxLength: 100,
@@ -128,7 +127,7 @@ const EditModal = ({
     }
   };
 
-  const config = getFieldConfig(field);
+  const config = getFieldConfig(field, value);
 
   const validateInput = (input: string): string | null => {
     if (!input.trim()) {
@@ -152,7 +151,7 @@ const EditModal = ({
     return null;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const error = validateInput(editValue);
     if (error) {
       alertRef?.current?.show({
@@ -164,12 +163,6 @@ const EditModal = ({
       return;
     }
 
-    setIsLoading(true);
-
-    // Simulate API call
-    await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
-
-    setIsLoading(false);
     onSave(editValue);
   };
 
@@ -283,17 +276,52 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [currentEditField, setCurrentEditField] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Get initial data from route params or Redux (fallback to userDetails)
-  const initialData = route?.params?.currentData || {
-    firstName: userProfile?.firstName ?? userDetails?.firstName ?? '',
-    lastName: userProfile?.lastName ?? userDetails?.lastName ?? '',
-    email: userProfile?.email ?? userDetails?.email ?? '',
-    phone: userProfile?.phoneNumber ?? userDetails?.phone ?? '',
-    role: userDetails?.role || 'Premium Member',
-    bio: userProfile?.bio ?? userDetails?.bio ?? '',
-    gender: userProfile?.gender ?? '',
+  // Capture initial state for dirty-check on mount
+  const [initialReference, setInitialReference] = useState<UserProfile>({});
+
+  // Helper to load profile data from API and update Redux
+  const loadProfileData = async () => {
+    setIsRefreshing(true);
+    try {
+      const userId = userDetails?.userId;
+      if (userId) {
+        const refreshed = await getClientProfile(userId);
+        if (refreshed?.data) {
+          dispatch(setUserProfile(refreshed.data));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to refresh user profile:", e);
+      notifyWithToast('Failed to load latest profile data.');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
+
+  // Sync local state from Redux userProfile whenever screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userProfile) {
+        setProfileData({
+          firstName: userProfile.firstName,
+          lastName: userProfile.lastName,
+          email: userProfile.email,
+          phone: userProfile.phoneNumber,
+          bio: userProfile.bio,
+          gender: userProfile.gender,
+          dateJoined: userProfile.joinedDate,
+          role: userDetails?.role,
+        });
+        setIsLoading(false);
+      } else {
+        // If userProfile is not immediately available (e.g., first load or refresh needed)
+        loadProfileData();
+      }
+    }, [userProfile, userDetails?.userId])
+  );
 
   // Toast notifications
   const notifyWithToast = (description: string) => {
@@ -311,9 +339,9 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
 
   // Handle save field
   const handleSaveField = async (value: string) => {
-    const requiresVerification = currentEditField === 'email' || currentEditField === 'phone';
+    const isVerificationField = currentEditField === 'email' || currentEditField === 'phone';
 
-    if (requiresVerification) {
+    if (isVerificationField) {
       // Close modal first
       setIsEditModalVisible(false);
 
@@ -330,14 +358,16 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
         });
       }
     } else {
-      // Update profile data immediately for non-verification fields
+      // For non-verification fields, update local state
+      // We still use handleSaveProfile for the final commit, 
+      // but we can also trigger a partial save here to make it "real"
       setProfileData(prev => ({
         ...prev,
         [currentEditField]: value
       }));
 
       setIsEditModalVisible(false);
-      notifyWithToast(`${currentEditField} updated successfully`);
+      // Removed the misleading "updated successfully" toast here as it hasn't hit the server yet
     }
   };
 
@@ -354,20 +384,38 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
 
       // Only send fields that changed (partial update)
       const payload: any = {};
-      if ((profileData.firstName || '') !== (initialData.firstName || '')) payload.firstName = profileData.firstName;
-      if ((profileData.lastName || '') !== (initialData.lastName || '')) payload.lastName = profileData.lastName;
-      if ((profileData.bio || '') !== (initialData.bio || '')) payload.bio = profileData.bio;
-      if ((profileData.gender || '') !== (initialData.gender || '')) payload.gender = profileData.gender;
+      
+      const compareAndAdd = (field: keyof UserProfile, profileDataField: any, initialField: any) => {
+        const current = (profileDataField || '').toString().trim();
+        const initial = (initialField || '').toString().trim();
+        if (current !== initial) {
+          payload[field] = profileDataField;
+        }
+      };
+
+      compareAndAdd('firstName', profileData.firstName, initialReference.firstName);
+      compareAndAdd('lastName', profileData.lastName, initialReference.lastName);
+      compareAndAdd('bio', profileData.bio, initialReference.bio);
+      compareAndAdd('gender', profileData.gender, initialReference.gender);
+
+      console.log('--- PROFILE UPDATE DEBUG ---');
+      console.log('UserId:', userId);
+      console.log('Initial Reference:', initialReference);
+      console.log('Current profileData:', profileData);
+      console.log('Constructed Payload:', payload);
 
       // phone/email are handled via OTP verification screens (do not update here)
 
       if (Object.keys(payload).length === 0) {
+        console.log('Result: No changes detected');
         notifyWithToast('No changes to save');
         navigation.goBack();
         return;
       }
 
-      await (updateClientProfile as any)(userId, payload);
+      console.log('Sending update to API...');
+      const response = await (updateClientProfile as any)(userId, payload);
+      console.log('API Response:', response);
 
       // Refresh Redux profile
       try {
@@ -430,13 +478,25 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
             size={moderateScale(18)}
           />
         </View>
-        <Text style={styles.fieldValue}>{value || 'Not provided'}</Text>
+        <Text style={[styles.fieldValue, !value && { color: appColors.AppGray }]}>
+          {value || `Add ${label}`}
+        </Text>
       </View>
     </TouchableOpacity>
   );
 
   useEffect(() => {
-    setProfileData(initialData);
+    const data = route?.params?.currentData || {
+      firstName: userProfile?.firstName ?? userDetails?.firstName ?? '',
+      lastName: userProfile?.lastName ?? userDetails?.lastName ?? '',
+      email: userProfile?.email ?? userDetails?.email ?? '',
+      phone: userProfile?.phoneNumber ?? userDetails?.phone ?? '',
+      role: userDetails?.role || 'Premium Member',
+      bio: userProfile?.bio ?? userDetails?.bio ?? '',
+      gender: userProfile?.gender ?? '',
+    };
+    setProfileData(data);
+    setInitialReference(data);
   }, []);
 
   return (
@@ -461,13 +521,15 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
             <Avatar
               rounded
               size={scale(100)}
-              source={userDetails?.image || appImages.avatarDefault}
-              containerStyle={styles.avatarStyle}
+              source={(userProfile?.profileImage || userDetails?.image) ? { uri: userProfile?.profileImage || userDetails?.image } : undefined}
+              icon={!(userProfile?.profileImage || userDetails?.image) ? { name: 'person', type: 'material', size: scale(64), color: appColors.CardBackground } : undefined}
+              containerStyle={[styles.avatarStyle, { backgroundColor: appColors.grey5 }]}
+              avatarStyle={{ resizeMode: 'cover' }}
             />
             <Text style={styles.userName}>
               {getFullname(profileData.firstName || '', profileData.lastName || '')}
             </Text>
-            <Text style={styles.userRole}>{profileData.role}</Text>
+            {/* <Text style={styles.userRole}>{profileData.role}</Text> */}
           </View>
 
           {/* Editable Fields */}

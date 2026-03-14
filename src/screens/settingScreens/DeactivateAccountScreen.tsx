@@ -22,6 +22,7 @@ import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { deactivateAccount } from '../../api/client/account';
+import { clearStorage } from '../../global/StorageActions';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DeactivateAccountScreenProps {
@@ -103,13 +104,20 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
       onConfirm: async () => {
         setIsLoading(true);
         try {
-          const response = await deactivateAccount(userId);
+          const reasonText = selectedReasons.map(id => {
+            const reason = deactivationReasons.find(r => r.id === id);
+            return reason?.title || id;
+          }).join(', ');
+
+          const response = await deactivateAccount(userId, reasonText, additionalFeedback);
 
           if (response.success) {
             toast.show({
               description: response.message || 'Account deactivated successfully. You can reactivate anytime.',
               duration: 5000,
             });
+
+            await clearStorage();
 
             navigation.reset({
               index: 0,

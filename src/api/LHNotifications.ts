@@ -28,6 +28,7 @@ export const CHANNELS = {
   EVENTS: 'events',
   MESSAGES: 'messages',
   EMERGENCY: 'emergency',
+  SUPPORT_GROUPS: 'support_groups',
 };
 
 // ### NOTIFICATION TYPES ###
@@ -41,6 +42,7 @@ export const NOTIFICATION_TYPES = {
   EVENT_AVAILABLE: 'event_available',
   EVENT_REMINDER: 'event_reminder',
   MESSAGE_RECEIVED: 'message_received',
+  SUPPORT_GROUP_MESSAGE: 'support_group_message',
   EMERGENCY_CONTACT: 'emergency_contact',
   WELLNESS_TIP: 'wellness_tip',
   PROGRESS_UPDATE: 'progress_update',
@@ -95,7 +97,7 @@ export const initializeNotificationChannels = async () => {
       id: CHANNELS.REMINDERS,
       name: 'Wellness Reminders',
       description: 'Mood check-ins and wellness tips',
-      importance: AndroidImportance.DEFAULT,
+      importance: AndroidImportance.HIGH,
       badge: true,
     });
 
@@ -138,6 +140,17 @@ export const initializeNotificationChannels = async () => {
       vibration: true,
     });
 
+    // Support Groups Channel
+    await notifee.createChannel({
+      id: CHANNELS.SUPPORT_GROUPS,
+      name: 'Support Groups',
+      description: 'Messages and updates from your support groups',
+      importance: AndroidImportance.HIGH,
+      badge: true,
+      sound: 'default',
+      vibration: true,
+    });
+
     console.log('✅ Notification channels initialized successfully');
   } catch (error) {
     console.error('❌ Failed to initialize notification channels:', error);
@@ -159,6 +172,7 @@ const getNotificationColor = (type: string): string => {
     [NOTIFICATION_TYPES.EMERGENCY_CONTACT]: '#F44336', // Red for emergency
     [NOTIFICATION_TYPES.SYSTEM_UPDATE]: '#607D8B', // Blue grey for system
     [NOTIFICATION_TYPES.MESSAGE_RECEIVED]: '#87CEEB', // Sky blue for messages
+    [NOTIFICATION_TYPES.SUPPORT_GROUP_MESSAGE]: '#00BFA5', // Teal for support groups
     // Backend/Admin Dashboard Colors
     [NOTIFICATION_TYPES.ADMIN_ANNOUNCEMENT]: '#3F51B5', // Indigo for announcements
     [NOTIFICATION_TYPES.ADMIN_UPDATE]: '#009688', // Teal for updates
@@ -172,60 +186,91 @@ const getNotificationColor = (type: string): string => {
   return colorMap[type] || '#87CEEB'; // Default to sky blue
 };
 
+// ### NOTIFICATION BUILDER HELPER ###
+// Ensures consistent formatting and sanitization across all Notifee calls
+const buildNotification = (notificationData: any): any => {
+  const {
+    id,
+    title,
+    body,
+    type,
+    channelId = CHANNELS.SYSTEM,
+    data = {},
+    actions = [],
+    largeIcon,
+    bigPicture,
+    deepLink,
+    sound = 'default',
+    vibration = true,
+  } = notificationData;
+
+  // Helper to ensure all values in the data object are strings (required by Notifee)
+  const sanitizeData = (rawParams: any = {}) => {
+    const sanitized: Record<string, string> = {};
+    Object.keys(rawParams).forEach(key => {
+      const val = rawParams[key];
+      if (val === null || val === undefined) {
+        sanitized[key] = '';
+      } else if (typeof val === 'string') {
+        sanitized[key] = val;
+      } else if (typeof val === 'object') {
+        sanitized[key] = JSON.stringify(val);
+      } else {
+        sanitized[key] = String(val);
+      }
+    });
+    return sanitized;
+  };
+
+  return {
+    id: String(id || Date.now().toString()),
+    title,
+    body,
+    data: sanitizeData({
+      type: String(type || ''),
+      deepLink: String(deepLink || ''),
+      ...data,
+    }),
+    android: {
+      channelId,
+      importance: AndroidImportance.HIGH,
+      sound,
+      vibrationPattern: vibration ? [300, 500] : undefined,
+      largeIcon: largeIcon || 'ic_launcher',
+      badgeIconType: AndroidBadgeIconType.SMALL,
+      category: AndroidCategory.MESSAGE,
+      visibility: AndroidVisibility.PUBLIC,
+      color: getNotificationColor(type),
+      colorized: true,
+      actions: actions.map((action: any) => ({
+        title: action.title,
+        pressAction: {
+          id: action.id,
+          launchActivity: 'default',
+        },
+      })),
+      style: bigPicture ? {
+        type: AndroidStyle.BIGPICTURE,
+        picture: bigPicture,
+      } : undefined,
+    },
+    ios: {
+      foregroundPresentationOptions: {
+        badge: true,
+        sound: true,
+        banner: true,
+        list: true,
+      },
+    },
+  };
+};
+
 // ### BASIC NOTIFICATION FUNCTION ###
-export const displayNotification = async (notificationData) => {
+export const displayNotification = async (notificationData: any) => {
   try {
-    const {
-      id,
-      title,
-      body,
-      type,
-      channelId = CHANNELS.SYSTEM,
-      data = {},
-      actions = [],
-      largeIcon,
-      bigPicture,
-      deepLink,
-      sound = 'default',
-      vibration = true,
-    } = notificationData;
-
-    const notification = {
-      id: id || Date.now().toString(),
-      title,
-      body,
-      data: {
-        type,
-        deepLink: deepLink || '', // Ensure deepLink is always a string
-        ...data,
-      },
-      android: {
-        channelId,
-        importance: AndroidImportance.HIGH,
-        sound,
-        vibrationPattern: vibration ? [300, 500] : undefined,
-        largeIcon: largeIcon || 'ic_launcher',
-        badgeIconType: AndroidBadgeIconType.SMALL,
-        category: AndroidCategory.MESSAGE,
-        visibility: AndroidVisibility.PUBLIC,
-        color: getNotificationColor(type), // Dynamic color based on notification type
-        colorized: true, // Enable colorized notifications for better theming
-        actions: actions.map(action => ({
-          title: action.title,
-          pressAction: {
-            id: action.id,
-            launchActivity: 'default',
-          },
-        })),
-        style: bigPicture ? {
-          type: AndroidStyle.BIGPICTURE,
-          picture: bigPicture,
-        } : undefined,
-      },
-    };
-
+    const notification = buildNotification(notificationData);
     await notifee.displayNotification(notification);
-    console.log(`✅ Notification displayed: ${title}`);
+    console.log(`✅ Notification displayed: ${notification.title}`);
     return notification.id;
   } catch (error) {
     console.error('❌ Failed to display notification:', error);
@@ -234,22 +279,22 @@ export const displayNotification = async (notificationData) => {
 };
 
 // ### SCHEDULED NOTIFICATION FUNCTION ###
-export const scheduleNotification = async (notificationData, triggerTime) => {
+export const scheduleNotification = async (notificationData: any, triggerTime: number) => {
   try {
-    const notificationId = await displayNotification(notificationData);
+    const notification = buildNotification(notificationData);
 
-    const trigger = {
+    const trigger: any = {
       type: TriggerType.TIMESTAMP,
       timestamp: triggerTime,
     };
 
     await notifee.createTriggerNotification(
-      { ...notificationData, id: notificationId },
+      notification,
       trigger
     );
 
     console.log(`✅ Notification scheduled for: ${new Date(triggerTime)}`);
-    return notificationId;
+    return notification.id;
   } catch (error) {
     console.error('❌ Failed to schedule notification:', error);
     throw error;
@@ -589,6 +634,31 @@ export const cancelAllNotifications = async () => {
   }
 };
 
+/**
+ * Cancel today's mood reminders
+ * Used as a "Local Guard" to avoid reminding the user after they've checked in
+ */
+export const cancelTodayMoodReminders = async () => {
+  try {
+    const dayMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = dayMap[new Date().getDay()];
+    const prefix = `mood_reminder_${today}_`;
+
+    const triggerIds = await notifee.getTriggerNotificationIds();
+    const todayReminders = triggerIds.filter(id => id.startsWith(prefix));
+
+    if (todayReminders.length > 0) {
+      console.log(`🧹 Cancelling ${todayReminders.length} mood reminders for today (${today})`);
+      await Promise.all(todayReminders.map(id => notifee.cancelTriggerNotification(id)));
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('❌ Failed to cancel today mood reminders:', error);
+    return false;
+  }
+};
+
 // ### BADGE MANAGEMENT ###
 export const setBadgeCount = async (count) => {
   try {
@@ -627,23 +697,39 @@ interface BackendNotification {
 }
 
 // Fetch notifications from backend
-export const fetchNotificationsFromBackend = async (userId?: string, lastFetchTime?: string) => {
+export const fetchNotificationsFromBackend = async (userId?: string, lastFetchTime?: string, role: 'therapist' | 'user' = 'user') => {
   try {
-    const params: any = {};
-    if (userId) params.user_id = userId;
-    if (lastFetchTime) params.since = lastFetchTime;
+    const params: any = { page: 1 };
+    
+    // Different params structure for therapist and client
+    if (role === 'therapist') {
+      if (userId) params.therapist_id = userId;
+    } else {
+      if (userId) params.user_id = userId;
+      // Note: backend uses pagination instead of 'since', but keeping logic compatible
+      if (lastFetchTime) params.since = lastFetchTime;
+    }
 
-    const response = await APIInstance.get('/notifications', { params });
-    const data = response.data;
-    console.log(`✅ Fetched ${data.notifications?.length || 0} notifications from backend`);
+    const endpoint = role === 'therapist' ? '/th/notifications' : '/client/notifications';
+    console.log(`📡 Calling GET ${endpoint}...`);
+    
+    const response = await APIInstance.get(endpoint, { params });
+    const result = response.data;
+    
+    // The backend returns: { success: true, data: { notifications: [], pagination: {} } }
+    const notifications = result.data?.notifications || [];
+    const pagination = result.data?.pagination || {};
+
+    console.log(`✅ Fetched ${notifications.length} ${role} notifications from backend`);
 
     return {
-      notifications: data.notifications || [],
-      hasMore: data.has_more || false,
-      nextCursor: data.next_cursor || null,
+      notifications: notifications,
+      hasMore: pagination.currentPage < pagination.totalPages,
+      nextCursor: pagination.currentPage + 1,
+      unreadCount: result.data?.unreadCount || 0
     };
   } catch (error) {
-    console.error('❌ Failed to fetch notifications from backend:', error);
+    console.error(`❌ Failed to fetch ${role} notifications from backend:`, error);
     throw error;
   }
 };
@@ -675,9 +761,6 @@ export const processBackendNotifications = async (notifications: BackendNotifica
 
       // Display the notification
       await displayNotification(notificationData);
-
-      // Mark as delivered on backend
-      await markNotificationAsDelivered(notification.id);
     }
 
     console.log(`✅ Processed ${notifications.length} backend notifications`);
@@ -697,59 +780,71 @@ const getChannelForType = (type: string): string => {
     [NOTIFICATION_TYPES.ADMIN_ALERT]: CHANNELS.EMERGENCY,
     [NOTIFICATION_TYPES.THERAPIST_MESSAGE]: CHANNELS.MESSAGES,
     [NOTIFICATION_TYPES.COMMUNITY_UPDATE]: CHANNELS.EVENTS,
+    [NOTIFICATION_TYPES.APPOINTMENT_REMINDER]: CHANNELS.APPOINTMENTS,
+    [NOTIFICATION_TYPES.APPOINTMENT_CONFIRMED]: CHANNELS.APPOINTMENTS,
+    [NOTIFICATION_TYPES.GOAL_ACHIEVEMENT]: CHANNELS.GOALS,
+    [NOTIFICATION_TYPES.GOAL_REMINDER]: CHANNELS.GOALS,
+    [NOTIFICATION_TYPES.MOOD_CHECK_IN]: CHANNELS.REMINDERS,
+    [NOTIFICATION_TYPES.WELLNESS_TIP]: CHANNELS.REMINDERS,
+    [NOTIFICATION_TYPES.EVENT_AVAILABLE]: CHANNELS.EVENTS,
+    [NOTIFICATION_TYPES.EVENT_REMINDER]: CHANNELS.EVENTS,
+    [NOTIFICATION_TYPES.MESSAGE_RECEIVED]: CHANNELS.MESSAGES,
+    [NOTIFICATION_TYPES.SUPPORT_GROUP_MESSAGE]: CHANNELS.SUPPORT_GROUPS,
+    [NOTIFICATION_TYPES.EMERGENCY_CONTACT]: CHANNELS.EMERGENCY,
   };
 
   return channelMap[type] || CHANNELS.SYSTEM;
 };
 
-// Mark notification as delivered
+// Mark notification as delivered - Skip if backend doesn't support
 export const markNotificationAsDelivered = async (notificationId: string) => {
-  try {
-    await APIInstance.post(`/notifications/${notificationId}/delivered`);
-
-    console.log(`✅ Marked notification ${notificationId} as delivered`);
-  } catch (error) {
-    console.error(`❌ Failed to mark notification ${notificationId} as delivered:`, error);
-  }
+  console.log('ℹ️ markNotificationAsDelivered skipped (not supported by backend)');
+  return Promise.resolve();
 };
 
 // Mark notification as read
-export const markNotificationAsRead = async (notificationId: string) => {
+export const markNotificationAsRead = async (notificationId: string, userId: string, role: 'therapist' | 'user' = 'user') => {
   try {
-    await APIInstance.post(`/notifications/${notificationId}/read`);
+    const endpoint = role === 'therapist' 
+      ? `/th/notifications/${notificationId}/read` 
+      : `/client/notifications/${notificationId}/read`;
+      
+    const params = role === 'therapist' ? { therapist_id: userId } : { user_id: userId };
 
-    console.log(`✅ Marked notification ${notificationId} as read`);
+    await APIInstance.put(endpoint, params);
+
+    console.log(`✅ Marked ${role} notification ${notificationId} as read`);
   } catch (error) {
-    console.error(`❌ Failed to mark notification ${notificationId} as read:`, error);
+    console.error(`❌ Failed to mark ${role} notification ${notificationId} as read:`, error);
   }
 };
 
 // Sync notifications with backend (call this periodically)
-export const syncNotificationsWithBackend = async (userId?: string) => {
+export const syncNotificationsWithBackend = async (userId?: string, role: 'therapist' | 'user' = 'user') => {
   try {
-    console.log('🔄 Syncing notifications with backend...');
+    console.log(`🔄 Syncing ${role} notifications with backend...`);
 
     // Get last sync time from storage (you might want to use AsyncStorage)
     const lastSyncTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // Last 24 hours
 
     // Fetch new notifications
-    const result = await fetchNotificationsFromBackend(userId, lastSyncTime);
+    const result = await fetchNotificationsFromBackend(userId, lastSyncTime, role);
 
     if (result.notifications.length > 0) {
       // Process and display notifications
       await processBackendNotifications(result.notifications);
 
-      // Update badge count
-      const unreadCount = result.notifications.filter(n => !n.data?.read).length;
-      if (unreadCount > 0) {
-        await setBadgeCount(unreadCount);
+      // Update badge count using unreadCount from API if available
+      const unreadTotal = result.unreadCount || result.notifications.filter(n => !n.data?.read).length;
+      if (unreadTotal > 0) {
+        await setBadgeCount(unreadTotal);
       }
     }
 
-    console.log('✅ Notification sync completed');
+    console.log(`✅ ${role} notification sync completed`);
     return result;
   } catch (error) {
-    console.error('❌ Failed to sync notifications with backend:', error);
+    console.error(`❌ Failed to sync ${role} notifications with backend:`, error);
     throw error;
   }
 };

@@ -11,10 +11,12 @@ import {
   Switch,
   Alert,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { appLinks } from '../../global/Data';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
@@ -228,10 +230,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           iconColor: '#FFC107',
           hasChevron: true,
           onPress: () => {
-            toast.show({
-              description: 'Opening app store...',
-              duration: 2000,
-            });
+            // open the playstore URL
+            try {
+              Linking.openURL(appLinks.appGooglePlayURL);
+            } catch (error) {
+              console.log(error);
+            }
           },
         },
       ],

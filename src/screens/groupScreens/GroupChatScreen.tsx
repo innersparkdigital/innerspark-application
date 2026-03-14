@@ -150,8 +150,8 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               displayNotification({
                 title: `New message in ${groupName || 'Group'}`,
                 body: `${senderDisplayName}: ${msg.content || 'Sent an attachment'}`,
-                type: NOTIFICATION_TYPES.MESSAGE_RECEIVED,
-                channelId: CHANNELS.MESSAGES,
+                type: NOTIFICATION_TYPES.SUPPORT_GROUP_MESSAGE,
+                channelId: CHANNELS.SUPPORT_GROUPS,
               });
             });
           }

@@ -17,6 +17,7 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Icon, Badge } from '@rneui/base';
 import { appColors as staticAppColors, parameters, appFonts } from '../global/Styles';
 import { scale, moderateScale } from '../global/Scaling';
@@ -60,7 +61,7 @@ import {
 // get the screen Width
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const HomeScreen: React.FC<any> = ({ navigation }) => {
+export default function HomeScreen({ navigation }: any) {
   const dispatch = useDispatch();
   const toast = useToast();
   const appColors = useThemedColors(); // ✅ Themed colors
@@ -84,8 +85,9 @@ const HomeScreen: React.FC<any> = ({ navigation }) => {
   const quickStats = useSelector(selectQuickStats);
   const isDashboardLoading = useSelector(selectDashboardLoading);
 
-  // Get unread notification count from Redux
+  // Get unread notification and chat counts from Redux
   const unreadNotifications = useSelector(selectUnreadCount);
+  const unreadMessages = useSelector((state: any) => state.chat?.unreadCount || 0);
   // Commented out for future use
   // const [recentActivities] = useState([
   //   { id: 1, type: 'mood', title: 'Mood Check-in', time: '2 hours ago' },
@@ -230,6 +232,8 @@ const HomeScreen: React.FC<any> = ({ navigation }) => {
 
   // Initialize notification system on component mount
   useEffect(() => {
+    let unsubscribe: any;
+
     const initializeNotifications = async () => {
       try {
         console.log('🔔 Initializing notification system...');
@@ -244,18 +248,9 @@ const HomeScreen: React.FC<any> = ({ navigation }) => {
         // Initialize notification channels
         await initializeNotificationChannels();
 
-        // Setup notification event listeners (THIS WAS MISSING!)
-        const unsubscribe = setupNotificationEventListeners();
-
+        // Setup notification event listeners
+        unsubscribe = setupNotificationEventListeners();
         console.log('✅ Notification system initialized successfully');
-
-        // Return cleanup function
-        return () => {
-          if (unsubscribe) {
-            unsubscribe();
-          }
-        };
-
       } catch (error) {
         console.error('❌ Failed to initialize notification system:', error);
       }
@@ -263,13 +258,26 @@ const HomeScreen: React.FC<any> = ({ navigation }) => {
 
     initializeNotifications();
 
-    // Load all data if user is logged in
-    if (userDetails?.userId) {
-      loadAllMoodData(userDetails.userId);
-      getUnreadCount(userDetails.userId);
-      loadDashboardData(userDetails.userId);
-    }
+    // Return cleanup function directly from useEffect
+    return () => {
+      if (unsubscribe) {
+        console.log('🔕 Unsubscribing from notification events');
+        unsubscribe();
+      }
+    };
   }, [userDetails?.userId]);
+
+  // Refresh all data every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userDetails?.userId) {
+        console.log('🔄 [HomeScreen] Refreshing dashboard data on focus...');
+        loadAllMoodData(userDetails.userId);
+        refreshDashboardData(userDetails.userId);
+        getUnreadCount(userDetails.userId);
+      }
+    }, [userDetails?.userId])
+  );
 
   // Handle pull-to-refresh
   const handleRefresh = async () => {
@@ -406,7 +414,17 @@ const HomeScreen: React.FC<any> = ({ navigation }) => {
               style={styles.iconButton}
               onPress={() => navigation.navigate('ChatScreen')}
             >
-              <Icon name="chat" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
+              <View style={styles.notificationIconContainer}>
+                <Icon name="chat" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
+                {unreadMessages > 0 && (
+                  <Badge
+                    value={unreadMessages > 99 ? '99+' : unreadMessages}
+                    status="error"
+                    containerStyle={styles.badgeContainer}
+                    textStyle={styles.badgeText}
+                  />
+                )}
+              </View>
             </TouchableOpacity>
             {hasCheckedInToday && todayMoodData?.emoji && (
               <TouchableOpacity
@@ -440,7 +458,7 @@ const HomeScreen: React.FC<any> = ({ navigation }) => {
         {/* Header Greeting Section */}
         <View style={styles.headerBottomRow}>
           <Text style={styles.greeting}>
-            {getGreeting()} {getLastName(getFullname(userDetails?.firstName, userDetails?.lastName)) || 'User'},
+            {getGreeting()} {getFirstName(userDetails?.name) || 'User'},
           </Text>
           <Text style={styles.subtitle}>{currentSubtitle}</Text>
         </View>
@@ -1141,4 +1159,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;

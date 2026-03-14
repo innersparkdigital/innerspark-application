@@ -28,6 +28,7 @@
     "react": "19.1.0",
     "react-native": "0.81.4",
     "react-native-app-intro-slider": "^4.0.4",
+    "react-native-background-fetch": "^4.3.0",
     "react-native-base64": "^0.2.1",
     "react-native-camera": "^4.2.1",
     "react-native-check-version": "^1.1.1",

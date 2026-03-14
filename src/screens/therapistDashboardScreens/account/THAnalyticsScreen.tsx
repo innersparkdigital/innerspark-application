@@ -17,7 +17,7 @@ import { appColors, appFonts } from '../../../global/Styles';
 import { scale, moderateScale } from '../../../global/Scaling';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
-import { getAnalyticsOverview, getSessionAnalytics, getRevenueAnalytics } from '../../../api/therapist';
+import { getAnalyticsOverview, getSessionAnalytics, getRevenueAnalytics, getPricingRates } from '../../../api/therapist';
 import { useSelector, useDispatch } from 'react-redux';
 import { ActivityIndicator } from 'react-native';
 import { updateAnalyticsOverview as updateAnalyticsAction, updateSessionAnalytics, updateRevenueAnalytics } from '../../../features/therapist/analyticsSlice';
@@ -31,6 +31,7 @@ const THAnalyticsScreen = ({ navigation }: any) => {
   const [stats, setStats] = useState<any>(null);
   const [sessionData, setSessionData] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any>(null);
+  const [pricingRates, setPricingRates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -43,10 +44,11 @@ const THAnalyticsScreen = ({ navigation }: any) => {
       setLoading(true);
       const therapistId = userDetails?.userId;
 
-      const [overviewRes, sessionRes, revenueRes] = await Promise.all([
+      const [overviewRes, sessionRes, revenueRes, pricingRes] = await Promise.all([
         getAnalyticsOverview(therapistId, selectedPeriod).catch(e => ({ error: e })),
         getSessionAnalytics(therapistId, selectedPeriod).catch(e => ({ error: e })),
-        getRevenueAnalytics(therapistId, selectedPeriod).catch(e => ({ error: e }))
+        getRevenueAnalytics(therapistId, selectedPeriod).catch(e => ({ error: e })),
+        getPricingRates(therapistId).catch(e => ({ error: e }))
       ]);
 
       if (overviewRes && !(overviewRes as any).error) {
@@ -60,6 +62,9 @@ const THAnalyticsScreen = ({ navigation }: any) => {
       if (revenueRes && !(revenueRes as any).error) {
         setRevenueData((revenueRes as any).data);
         dispatch(updateRevenueAnalytics((revenueRes as any).data));
+      }
+      if (pricingRes && !(pricingRes as any).error) {
+        setPricingRates((pricingRes as any).data?.sessionTypes || []);
       }
 
     } catch (error: any) {
@@ -136,27 +141,40 @@ const THAnalyticsScreen = ({ navigation }: any) => {
 
   const popularTimes: any[] = []; // Hide for now as backend doesn't provide this yet
 
-  const totalTypeSessions = sessionData?.totalSessions || 1; // Prevent div by zero
-  const sessionTypes = [
-    {
-      type: 'Individual',
-      count: sessionData?.sessionsByType?.individual || 0,
-      percentage: Math.round(((sessionData?.sessionsByType?.individual || 0) / totalTypeSessions) * 100) || 0,
-      color: appColors.AppBlue
-    },
-    {
-      type: 'Couples',
-      count: sessionData?.sessionsByType?.couple || 0,
-      percentage: Math.round(((sessionData?.sessionsByType?.couple || 0) / totalTypeSessions) * 100) || 0,
-      color: '#9C27B0'
-    },
-    {
-      type: 'Group',
-      count: sessionData?.sessionsByType?.group || 0,
-      percentage: Math.round(((sessionData?.sessionsByType?.group || 0) / totalTypeSessions) * 100) || 0,
-      color: appColors.AppGreen
-    },
-  ];
+  const totalTypeSessions = sessionData?.totalSessions || 0;
+  
+  // Dynamically map session types based on pricing rates or analytics data
+  const getSessionTypes = () => {
+    const rawTypes = sessionData?.sessionsByType || {};
+    const typeKeys = Object.keys(rawTypes);
+    
+    if (typeKeys.length === 0) return [];
+
+    return typeKeys.map((key) => {
+      // Try to find a descriptive name from pricing rates
+      // Backend might return keys like "Video Session" or generic slugs like "individual"
+      const pricingMatch = pricingRates.find(p => 
+        p.name?.toLowerCase().includes(key.toLowerCase()) || 
+        p.type?.toLowerCase().includes(key.toLowerCase()) ||
+        key.toLowerCase().includes(p.name?.toLowerCase())
+      );
+      
+      const label = pricingMatch?.name || pricingMatch?.type || (key.charAt(0).toUpperCase() + key.slice(1));
+      const count = rawTypes[key] || 0;
+      const percentage = totalTypeSessions > 0 ? Math.round((count / totalTypeSessions) * 100) : 0;
+      
+      // Consistent color coding
+      let color: string = appColors.AppGreen;
+      if (label.toLowerCase().includes('video')) color = appColors.AppBlue;
+      else if (label.toLowerCase().includes('chat')) color = '#9C27B0';
+      else if (label.toLowerCase().includes('individual')) color = appColors.AppBlue;
+      else if (label.toLowerCase().includes('couple')) color = '#FF9800';
+
+      return { type: label, count, percentage, color };
+    });
+  };
+
+  const sessionTypes = getSessionTypes();
 
   return (
     <SafeAreaView style={styles.container}>

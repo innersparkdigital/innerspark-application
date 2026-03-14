@@ -49,6 +49,18 @@ export const userDataSlice = createSlice({
 
         setUserProfile: (state, action) => {
             state.userProfile = action.payload;
+            
+            // Link change to userDetails for app-wide sync
+            if (action.payload) {
+                const { firstName, lastName, image, email, phoneNumber } = action.payload;
+                state.userDetails = {
+                    ...state.userDetails,
+                    name: `${firstName || ''} ${lastName || ''}`.trim() || state.userDetails.name,
+                    image: image || state.userDetails.image,
+                    email: email || state.userDetails.email,
+                    phone: phoneNumber || state.userDetails.phone,
+                };
+            }
         },
 
         mergeUserProfile: (state, action) => {

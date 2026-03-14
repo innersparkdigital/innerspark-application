@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Animated, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Icon } from '@rneui/themed';
@@ -9,6 +9,7 @@ import { scale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../api/therapist';
+import { moderateScale } from '../../global/Scaling';
 
 
 
@@ -81,6 +82,73 @@ const THNotificationsScreen = ({ navigation }: any) => {
     setNotifications(notifications.filter(notif => notif.id !== id));
   };
 
+  const getNotificationIcon = (type: string, title?: string) => {
+    const lowerType = type?.toLowerCase() || '';
+    const lowerTitle = title?.toLowerCase() || '';
+    
+    if (lowerType.includes('appointment') || lowerTitle.includes('session')) 
+      return { name: 'event', color: appColors.AppBlue };
+    if (lowerType.includes('message') || lowerTitle.includes('chat')) 
+      return { name: 'chat', color: '#FF9800' };
+    if (lowerType.includes('group')) 
+      return { name: 'groups', color: appColors.AppGreen };
+    if (lowerType.includes('alert') || lowerType.includes('system')) 
+      return { name: 'info', color: appColors.grey2 };
+    if (lowerType.includes('event')) 
+      return { name: 'campaign', color: '#9C27B0' };
+      
+    // Default Fallback
+    return { name: 'notifications', color: appColors.AppBlue };
+  };
+
+  const renderNotificationItem = ({ item }: { item: any }) => {
+    const iconConfig = getNotificationIcon(item.type, item.title);
+    
+    return (
+      <Swipeable
+        key={item.id}
+        renderRightActions={() => renderRightActions(item.id)}
+        overshootRight={false}
+        containerStyle={styles.swipeableContainer}
+      >
+        <TouchableOpacity
+          style={[
+            styles.notificationCard,
+            !item.read && styles.notificationCardUnread
+          ]}
+          onPress={() => markAsRead(item.id)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: (item.iconColor || iconConfig.color) + '15' }]}>
+            <Icon
+              type="material"
+              name={item.icon || iconConfig.name}
+              size={moderateScale(24)}
+              color={item.iconColor || iconConfig.color}
+            />
+          </View>
+
+          <View style={styles.notificationContent}>
+            <View style={styles.notificationHeader}>
+              <Text style={[styles.notificationTitle, !item.read && styles.notificationTitleUnread]}>{item.title}</Text>
+              {!item.read && <View style={styles.unreadDot} />}
+            </View>
+            <Text
+              style={[
+                styles.notificationMessage,
+                !item.read && styles.notificationMessageUnread
+              ]}
+              numberOfLines={2}
+            >
+              {item.message}
+            </Text>
+            <Text style={styles.notificationTime}>{item.time || 'Today'}</Text>
+          </View>
+        </TouchableOpacity>
+      </Swipeable>
+    );
+  };
+
   const renderRightActions = (id: string) => {
     return (
       <TouchableOpacity
@@ -118,62 +186,36 @@ const THNotificationsScreen = ({ navigation }: any) => {
         )}
 
         {/* Notifications List */}
-        <ScrollView style={styles.notificationsList} showsVerticalScrollIndicator={false}>
-          {notifications.map((notification) => (
-            <Swipeable
-              key={notification.id}
-              renderRightActions={() => renderRightActions(notification.id)}
-              overshootRight={false}
-              containerStyle={styles.swipeableContainer}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.notificationCard,
-                  !notification.read && styles.notificationCardUnread
-                ]}
-                onPress={() => markAsRead(notification.id)}
-                activeOpacity={1}
-              >
-                <View style={[styles.iconContainer, { backgroundColor: notification.iconColor + '20' }]}>
-                  <Icon
-                    type="material"
-                    name={notification.icon}
-                    size={24}
-                    color={notification.iconColor}
-                  />
+        {loading && !refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={appColors.AppBlue} />
+          </View>
+        ) : (
+          <FlatList
+            data={notifications}
+            renderItem={renderNotificationItem}
+            keyExtractor={(item: any) => item.id.toString()}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconCircle}>
+                  <Icon type="material" name="notifications-none" size={moderateScale(50)} color={appColors.AppBlue} />
                 </View>
-
-                <View style={styles.notificationContent}>
-                  <View style={styles.notificationHeader}>
-                    <Text style={styles.notificationTitle}>{notification.title}</Text>
-                    {!notification.read && <View style={styles.unreadDot} />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.notificationMessage,
-                      !notification.read && styles.notificationMessageUnread
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {notification.message}
-                  </Text>
-                  <Text style={styles.notificationTime}>{notification.time}</Text>
-                </View>
-              </TouchableOpacity>
-            </Swipeable>
-          ))}
-
-          {/* Empty State */}
-          {notifications.length === 0 && (
-            <View style={styles.emptyState}>
-              <Icon type="material" name="notifications-none" size={64} color={appColors.grey4} />
-              <Text style={styles.emptyStateText}>No notifications yet</Text>
-              <Text style={styles.emptyStateSubtext}>
-                You'll see updates about appointments, messages, and more here
-              </Text>
-            </View>
-          )}
-        </ScrollView>
+                <Text style={styles.emptyStateText}>In the Loop</Text>
+                <Text style={styles.emptyStateSubtext}>
+                  You're all caught up! Updates about appointments and messages will appear here.
+                </Text>
+                <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
+                  <Text style={styles.refreshButtonText}>Check for Updates</Text>
+                </TouchableOpacity>
+              </View>
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -211,23 +253,32 @@ const styles = StyleSheet.create({
   },
   notificationsList: {
     flex: 1,
+  },
+  listContent: {
     padding: 16,
+    flexGrow: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   notificationCard: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 12,
-    elevation: 2,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   notificationCardUnread: {
     borderLeftWidth: 4,
     borderLeftColor: appColors.AppBlue,
+    backgroundColor: appColors.AppBlue + '05',
   },
   iconContainer: {
     width: 48,
@@ -246,11 +297,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   notificationTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     color: appColors.grey1,
-    fontFamily: appFonts.headerTextBold,
+    fontFamily: appFonts.headerTextMedium,
     flex: 1,
+  },
+  notificationTitleUnread: {
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
   unreadDot: {
     width: 8,
@@ -274,22 +329,48 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: appColors.AppBlue + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   emptyStateText: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: appColors.grey2,
+    color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   emptyStateSubtext: {
-    fontSize: 14,
-    color: appColors.grey3,
+    fontSize: 15,
+    color: appColors.grey2,
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
-    paddingHorizontal: scale(40),
+    lineHeight: 22,
+    marginBottom: 32,
+  },
+  refreshButton: {
+    backgroundColor: appColors.AppBlue,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 30,
+    elevation: 4,
+    shadowColor: appColors.AppBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  refreshButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
   swipeableContainer: {
     marginBottom: 12,

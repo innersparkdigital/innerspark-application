@@ -1,8 +1,9 @@
 /**
  * Therapists Screen - Find and connect with therapists
  */
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ScrollView,
   StatusBar,
@@ -72,8 +73,6 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
   const [showFilters, setShowFilters] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
@@ -82,6 +81,13 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
   useEffect(() => {
     loadTherapists();
   }, []);
+
+  // Refresh therapists whenever the screen/tab gains focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshTherapists();
+    }, [])
+  );
 
   // Dynamically extract unique specialties from loaded therapists
   const specialties = useMemo(() => {
@@ -118,34 +124,6 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
   // Profile view
   const handleViewProfile = (therapist: Therapist) => {
     navigation.navigate('TherapistDetailScreen', { therapist });
-  };
-
-  // Search focus 
-  const handleSearchFocus = () => {
-    // Seed suggestions from therapist data if recents are empty
-    if (recentSearches.length === 0 && (therapists as Therapist[]).length > 0) {
-      const suggestions = Array.from(new Set([
-        ...(therapists as Therapist[]).slice(0, 3).map(t => t.name),
-        ...(therapists as Therapist[]).slice(0, 2).map(t => t.specialty.split(',')[0]?.trim()).filter(Boolean),
-      ])).slice(0, 5);
-      setRecentSearches(suggestions);
-    }
-    setIsSearchFocused(true);
-  };
-
-  // Search blur
-  const handleSearchBlur = () => {
-    // Save actual search query to recents
-    if (searchQuery.trim() && !recentSearches.includes(searchQuery.trim())) {
-      setRecentSearches(prev => [searchQuery.trim(), ...prev].slice(0, 5));
-    }
-    setIsSearchFocused(false);
-  };
-
-  // Recent search press
-  const handleRecentSearchPress = (searchTerm: string) => {
-    setSearchQuery(searchTerm);
-    setIsSearchFocused(false);
   };
 
   // Clear search
@@ -371,11 +349,11 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
 
       <View style={styles.content}>
         {/* Search Bar */}
-        <View style={[styles.searchContainer, isSearchFocused && styles.searchContainerFocused]}>
+        <View style={[styles.searchContainer, searchQuery.length > 0 && styles.searchContainerFocused]}>
           <Icon
             name="search"
             type="material"
-            color={isSearchFocused ? appColors.AppBlue : appColors.AppGray}
+            color={searchQuery.length > 0 ? appColors.AppBlue : appColors.AppGray}
             size={moderateScale(20)}
             style={styles.searchIcon}
           />
@@ -384,8 +362,6 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
             placeholder="Search therapists or specialties..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            onFocus={handleSearchFocus}
-            onBlur={handleSearchBlur}
             placeholderTextColor={appColors.AppGray}
           />
           {searchQuery.length > 0 && (
@@ -400,48 +376,8 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
           )}
         </View>
 
-        {/* Search Expanded State */}
-        {isSearchFocused && (
-          <View style={styles.searchExpandedContainer}>
-            <Text style={styles.searchSectionTitle}>Recent Searches</Text>
-            {recentSearches.map((search, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.recentSearchItem}
-                onPress={() => handleRecentSearchPress(search)}
-              >
-                <Icon
-                  name="history"
-                  type="material"
-                  color={appColors.AppGray}
-                  size={moderateScale(18)}
-                />
-                <Text style={styles.recentSearchText}>{search}</Text>
-              </TouchableOpacity>
-            ))}
-
-            <Text style={styles.searchSectionTitle}>Popular Specialties</Text>
-            {specialties.length > 1 && specialties.slice(1, 4).map((specialty, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.recentSearchItem}
-                onPress={() => handleRecentSearchPress(specialty)}
-              >
-                <Icon
-                  name="trending-up"
-                  type="material"
-                  color={appColors.AppBlue}
-                  size={moderateScale(18)}
-                />
-                <Text style={styles.recentSearchText}>{specialty}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Therapists List - Hidden when search is focused */}
-        {!isSearchFocused && (
-          <FlatList
+        {/* Therapists List */}
+        <FlatList
             ref={therapistsListRef}
             data={filteredTherapists}
             keyExtractor={(item) => item.id.toString()}
@@ -516,7 +452,6 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
               </View>
             }
           />
-        )}
       </View>
       {/* Floating Matching Quiz Button */}
       <TouchableOpacity style={styles.fab} onPress={handleStartMatchingQuiz} activeOpacity={0.85}>

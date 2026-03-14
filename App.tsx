@@ -26,6 +26,9 @@ import { enableScreenSecurity, getSecurityStatus } from './src/utils/ScreenSecur
 // Import Theme Provider
 import { ThemeProvider } from './src/context/ThemeContext';
 
+// Import Notification Utilities
+import { initializeNotificationChannels, setupNotificationEventListeners } from './src/api/LHNotifications';
+import { initBackgroundFetch } from './src/utils/backgroundSyncManager';
 
 const App = () => {
 
@@ -54,6 +57,19 @@ const App = () => {
     initializeSecurity();
   }, []);
 
+  // Initialize notification channels, set up foreground listeners, and background sync
+  useEffect(() => {
+    initializeNotificationChannels();
+    const unsubscribeForeground = setupNotificationEventListeners();
+    initBackgroundFetch();
+    
+    return () => {
+      // Unsubscribe foreground listener on unmount
+      if (typeof unsubscribeForeground === 'function') {
+        unsubscribeForeground();
+      }
+    };
+  }, []);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>

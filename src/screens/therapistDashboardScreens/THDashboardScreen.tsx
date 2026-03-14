@@ -13,6 +13,7 @@ import { updateDashboardStats, updateAvailability, updateTherapistProfile, updat
 import { updateRevenueAnalytics } from '../../features/therapist/analyticsSlice';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNotificationsSync } from '../../hooks/useNotificationsSync';
+import { useTherapistDashboardSync } from '../../hooks/useTherapistDashboardSync';
 import { selectUnreadCount } from '../../features/notifications/notificationSlice';
 
 const THDashboardScreen = ({ navigation }: any) => {
@@ -27,6 +28,9 @@ const THDashboardScreen = ({ navigation }: any) => {
 
   // Initialize Global Notifications Sync
   useNotificationsSync(userDetails?.userId, 60000);
+  
+  // Initialize Therapist Dashboard Data Sync (Real-time polling)
+  useTherapistDashboardSync(userDetails?.userId, 60000);
 
   // Responsive scaling factor (based on standard 375 width)
   const scale = width / 375;

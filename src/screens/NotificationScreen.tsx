@@ -249,9 +249,19 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="notifications-none" type="material" color={appColors.AppGray} size={moderateScale(80)} />
-      <Text style={styles.emptyTitle}>No Notifications</Text>
-      <Text style={styles.emptySubtitle}>You're all caught up! Check back later for updates.</Text>
+      <View style={styles.emptyIconCircle}>
+        <Icon name="notifications-paused" type="material" color={appColors.AppBlue} size={moderateScale(50)} />
+      </View>
+      <Text style={styles.emptyTitle}>In the Loop</Text>
+      <Text style={styles.emptySubtitle}>You're all caught up! We'll notify you when something important happens.</Text>
+      <TouchableOpacity 
+        style={styles.refreshButton}
+        onPress={handleRefresh}
+        activeOpacity={0.8}
+      >
+        <Icon name="refresh" type="material" color={appColors.CardBackground} size={moderateScale(20)} style={{ marginRight: scale(8) }} />
+        <Text style={styles.refreshButtonText}>Check for Updates</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -265,21 +275,24 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       />
 
       <View style={styles.content}>
-        <FlatList
-          data={notifications}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <NotificationCard notification={item} />}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={[appColors.AppBlue]}
-            />
-          }
-          ListEmptyComponent={!isLoading ? <EmptyState /> : null}
-        />
+        {notifications.length === 0 && !isLoading ? (
+          <EmptyState />
+        ) : (
+          <FlatList
+            data={notifications}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => <NotificationCard notification={item} />}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[appColors.AppBlue]}
+              />
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -296,20 +309,22 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingVertical: scale(10),
+    flexGrow: 1,
   },
   notificationCard: {
     backgroundColor: appColors.CardBackground,
-    borderRadius: scale(15),
+    borderRadius: scale(16),
     marginBottom: scale(12),
-    elevation: 2,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
   unreadCard: {
     borderLeftWidth: scale(4),
     borderLeftColor: appColors.AppBlue,
+    backgroundColor: appColors.AppBlue + '05',
   },
   cardContent: {
     flexDirection: 'row',
@@ -363,24 +378,54 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextRegular,
   },
   emptyContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: scale(80),
+    paddingHorizontal: scale(40),
+  },
+  emptyIconCircle: {
+    width: scale(100),
+    height: scale(100),
+    borderRadius: scale(50),
+    backgroundColor: appColors.AppBlue + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: scale(24),
   },
   emptyTitle: {
-    fontSize: moderateScale(20),
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginTop: scale(16),
     fontFamily: appFonts.headerTextBold,
+    marginBottom: scale(12),
   },
   emptySubtitle: {
-    fontSize: moderateScale(14),
+    fontSize: moderateScale(15),
     color: appColors.grey2,
     textAlign: 'center',
-    marginTop: scale(8),
-    marginHorizontal: scale(40),
+    lineHeight: moderateScale(22),
     fontFamily: appFonts.headerTextRegular,
+    marginBottom: scale(32),
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    backgroundColor: appColors.AppBlue,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(24),
+    borderRadius: scale(30),
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: appColors.AppBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  refreshButtonText: {
+    color: appColors.CardBackground,
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
   // Swipe Actions Styles
   rightActions: {

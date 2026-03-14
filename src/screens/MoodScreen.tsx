@@ -1,7 +1,7 @@
 /**
  * Mood Screen - Track and manage your mood
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -16,7 +16,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon, Button } from '@rneui/base';
+import { useFocusEffect } from '@react-navigation/native';
+import { Icon, Button, Badge } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../global/Styles';
 import { scale, moderateScale } from '../global/Scaling';
 import { useToast } from 'native-base';
@@ -25,7 +26,8 @@ import LHGenericHeader from '../components/LHGenericHeader';
 import PanicButtonComponent from '../components/PanicButtonComponent';
 import MoodCheckInCard from '../components/MoodCheckInCard';
 import TodayMoodSummaryCard from '../components/TodayMoodSummaryCard';
-import { loadAllMoodData, formatRelativeTime } from '../utils/moodCheckInManager';
+import { loadAllMoodData, formatRelativeTime, saveMoodCheckIn } from '../utils/moodCheckInManager';
+import { cancelTodayMoodReminders } from '../api/LHNotifications';
 import {
   selectHasCheckedInToday,
   selectTodayMoodData,
@@ -38,6 +40,7 @@ import {
   selectInsightsLoading,
   selectHistoryLoading,
 } from '../features/mood/moodSlice';
+import { selectUnreadCount } from '../features/notifications/notificationSlice';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -61,6 +64,7 @@ const MoodScreen = ({ navigation }) => {
   const isLoadingMain = useSelector(selectMoodLoading);
   const isLoadingInsights = useSelector(selectInsightsLoading);
   const isLoadingHistory = useSelector(selectHistoryLoading);
+  const unreadNotifications = useSelector(selectUnreadCount);
 
   // Dynamic subtitle messages
   const subtitlesBeforeCheckIn = [
@@ -95,11 +99,20 @@ const MoodScreen = ({ navigation }) => {
   const moodHistory = moodHistoryData;
   const insights = insightsData;
 
-  useEffect(() => {
-    if (userDetails?.userId) {
-      loadAllMoodData(userDetails.userId); // Load all mood data from API
-    }
-  }, [userDetails?.userId]);
+  // Refresh mood data every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userDetails?.userId) {
+        console.log('🔄 [MoodScreen] Refreshing mood data on focus...');
+        loadAllMoodData(userDetails.userId);
+
+        // If we know they've checked in, proactively clean up notifications
+        if (hasCheckedInToday) {
+          cancelTodayMoodReminders();
+        }
+      }
+    }, [userDetails?.userId, hasCheckedInToday])
+  );
 
   const handleMoodSelect = (mood) => {
     // Navigate to TodayMoodScreen with pre-selected mood
@@ -157,7 +170,17 @@ const MoodScreen = ({ navigation }) => {
             style={styles.headerIconButton}
             onPress={() => navigation.navigate('NotificationScreen')}
           >
-            <Icon name="notifications" type="material" color={appColors.CardBackground} size={moderateScale(28)} />
+            <View style={styles.notificationIconContainer}>
+              <Icon name="notifications" type="material" color={appColors.CardBackground} size={moderateScale(28)} />
+              {unreadNotifications > 0 && (
+                <Badge
+                  value={unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  status="error"
+                  containerStyle={styles.badgeContainer}
+                  textStyle={styles.badgeText}
+                />
+              )}
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -308,7 +331,7 @@ const MoodScreen = ({ navigation }) => {
             </View>
 
             {/* Key Metrics Grid */}
-            {isLoadingInsights ? (
+            {isLoadingInsights && !weeklyImprovement && !bestTimeOfDay ? (
               <View style={styles.metricsGrid}>
                 <View style={styles.metricCard}>
                   <ActivityIndicator size="small" color={appColors.AppBlue} />
@@ -335,7 +358,7 @@ const MoodScreen = ({ navigation }) => {
             {/* Insights Cards - Vertical Layout */}
             <View style={styles.insightsListSection}>
               <Text style={styles.sectionTitle}>Detailed Insights</Text>
-              {isLoadingInsights ? (
+              {isLoadingInsights && insights.length === 0 ? (
                 <View style={styles.insightCardFull}>
                   <ActivityIndicator size="small" color={appColors.AppBlue} />
                   <Text style={[styles.insightDescription, { textAlign: 'center', marginTop: 10 }]}>Loading insights...</Text>
@@ -381,7 +404,7 @@ const MoodScreen = ({ navigation }) => {
             </View>
 
             {/* This Week Summary */}
-            {isLoadingHistory ? (
+            {isLoadingHistory && weekSummary.moods.length === 0 ? (
               <View style={styles.weekSummary}>
                 <ActivityIndicator size="small" color={appColors.AppBlue} />
                 <Text style={styles.weekCount}>Loading week summary...</Text>
@@ -415,7 +438,7 @@ const MoodScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.historyContainer}>
-                {isLoadingHistory ? (
+                {isLoadingHistory && moodHistory.length === 0 ? (
                   <View style={{ padding: scale(20), alignItems: 'center' }}>
                     <ActivityIndicator size="small" color={appColors.AppBlue} />
                     <Text style={styles.historyDateSmall}>Loading history...</Text>
@@ -874,6 +897,21 @@ const styles = StyleSheet.create({
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
     marginTop: 2,
+  },
+  bottomSpacing: {
+    height: scale(80),
+  },
+  notificationIconContainer: {
+    position: 'relative',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -scale(4),
+    right: -scale(4),
+  },
+  badgeText: {
+    fontSize: moderateScale(10),
+    fontWeight: 'bold',
   },
 });
 

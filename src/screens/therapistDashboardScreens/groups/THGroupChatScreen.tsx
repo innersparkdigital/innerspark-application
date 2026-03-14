@@ -68,7 +68,12 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
       const therapistId = userDetails?.userId;
       const res: any = await getGroupMessages(group.id, therapistId);
       if (res?.data?.messages) {
-        setMessages(res.data.messages);
+        const userId = userDetails?.userId;
+        const mappedMessages = res.data.messages.map((msg: any) => ({
+          ...msg,
+          isOwn: String(msg.senderId || msg.sender_id) === String(userId)
+        }));
+        setMessages(mappedMessages);
       }
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to load messages';
@@ -227,30 +232,14 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
       );
     }
 
+    const isOwn = item.isOwn;
+
     return (
-      <TouchableOpacity
-        style={[
-          styles.messageContainer,
-          item.isOwn ? styles.ownMessage : styles.otherMessage,
-        ]}
-        onLongPress={() => {
-          if (item.isOwn) {
-            handleDeleteMessage(item.id);
-          } else {
-            alert.show({
-              type: 'info',
-              title: 'Moderation',
-              message: `What would you like to do?`,
-              actions: [
-                { text: 'Delete Message', style: 'destructive', onPress: () => handleDeleteMessage(item.id) },
-                { text: 'Mute User', onPress: () => handleMuteUser(item.senderId, item.senderName) },
-                { text: 'Cancel', style: 'cancel' }
-              ]
-            });
-          }
-        }}
-      >
-        {!item.isOwn && (
+      <View style={[
+        styles.messageWrapper,
+        isOwn ? styles.ownWrapper : styles.otherWrapper
+      ]}>
+        {!isOwn && (
           <View style={styles.senderInfo}>
             <Text style={styles.senderName}>{item.senderName}</Text>
             {isTherapist && (
@@ -260,30 +249,59 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
             )}
           </View>
         )}
-        <View
+        
+        <TouchableOpacity
           style={[
             styles.messageBubble,
-            item.isOwn ? styles.ownBubble : styles.otherBubble,
+            isOwn ? styles.ownBubble : styles.otherBubble,
           ]}
+          onLongPress={() => {
+            if (isOwn) {
+              handleDeleteMessage(item.id);
+            } else {
+              alert.show({
+                type: 'info',
+                title: 'Moderation',
+                message: `What would you like to do?`,
+                actions: [
+                  { text: 'Delete Message', style: 'destructive', onPress: () => handleDeleteMessage(item.id) },
+                  { text: 'Mute User', onPress: () => handleMuteUser(item.senderId, item.senderName) },
+                  { text: 'Cancel', style: 'cancel' }
+                ]
+              });
+            }
+          }}
+          activeOpacity={0.9}
         >
           <Text
             style={[
               styles.messageText,
-              item.isOwn ? styles.ownText : styles.otherText,
+              isOwn ? styles.ownText : styles.otherText,
             ]}
           >
             {item.content}
           </Text>
-          <Text
-            style={[
-              styles.timestamp,
-              item.isOwn ? styles.ownTimestamp : styles.otherTimestamp,
-            ]}
-          >
-            {item.timestamp}
-          </Text>
-        </View>
-      </TouchableOpacity>
+          <View style={styles.bubbleFooter}>
+            <Text
+              style={[
+                styles.timestamp,
+                isOwn ? styles.ownTimestamp : styles.otherTimestamp,
+              ]}
+            >
+              {item.timestamp}
+            </Text>
+            {isOwn && (
+              <Icon 
+                type="material" 
+                name="done-all" 
+                size={14} 
+                color="rgba(255, 255, 255, 0.7)" 
+                style={{ marginLeft: 4 }} 
+              />
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -464,18 +482,20 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextMedium,
   },
   messagesList: {
-    padding: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  messageContainer: {
+  messageWrapper: {
     marginBottom: 12,
-    maxWidth: '80%',
+    maxWidth: '85%',
   },
-  ownMessage: {
+  ownWrapper: {
     alignSelf: 'flex-end',
+    alignItems: 'flex-end',
   },
-  otherMessage: {
+  otherWrapper: {
     alignSelf: 'flex-start',
+    alignItems: 'flex-start',
   },
   senderInfo: {
     flexDirection: 'row',
@@ -502,21 +522,22 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextBold,
   },
   messageBubble: {
-    borderRadius: 16,
-    padding: 12,
-    elevation: 1,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 3,
   },
   otherBubble: {
     backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 4,
+    borderTopLeftRadius: 4,
   },
   ownBubble: {
     backgroundColor: appColors.AppBlue,
-    borderBottomRightRadius: 4,
+    borderTopRightRadius: 4,
   },
   messageText: {
     fontSize: 15,
@@ -530,15 +551,21 @@ const styles = StyleSheet.create({
   ownText: {
     color: '#FFFFFF',
   },
+  bubbleFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+  },
   timestamp: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: appFonts.bodyTextRegular,
   },
   otherTimestamp: {
     color: appColors.grey3,
   },
   ownTimestamp: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   announcementContainer: {
     backgroundColor: appColors.AppBlue + '10',

@@ -32,11 +32,17 @@ export const loadWalletBalance = async (userId: string) => {
     const response = await getWalletBalance(userId);
     console.log('✅ API Response:', JSON.stringify(response, null, 2));
 
-    if (response.success && response.data) {
-      console.log('💵 Balance loaded successfully');
-      store.dispatch(setBalance(response.data));
+    if (response.success && response.balance !== undefined) {
+      console.log('💵 Balance loaded successfully:', response.balance);
+      store.dispatch(setBalance({
+        balance: response.balance,
+        currency: 'UGX',
+        breakdown: {
+          rewardPoints: response.points || 0,
+        },
+      }));
     } else {
-      console.log('⚠️ API response missing success or data:', response);
+      console.log('⚠️ API response missing success or balance:', response);
       store.dispatch(setBalance({ balance: 0, currency: 'UGX', breakdown: {} }));
     }
   } catch (error: any) {
@@ -71,8 +77,14 @@ export const refreshWalletBalance = async (userId: string) => {
     console.log('🔄 Refreshing wallet balance');
     const response = await getWalletBalance(userId);
 
-    if (response.success && response.data) {
-      store.dispatch(setBalance(response.data));
+    if (response.success && response.balance !== undefined) {
+      store.dispatch(setBalance({
+        balance: response.balance,
+        currency: 'UGX',
+        breakdown: {
+          rewardPoints: response.points || 0,
+        },
+      }));
     } else {
       store.dispatch(setBalance({ balance: 0, currency: 'UGX', breakdown: {} }));
     }

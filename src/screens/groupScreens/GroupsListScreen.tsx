@@ -42,6 +42,7 @@ interface SupportGroup {
 
 interface GroupsListScreenProps {
   navigation: any;
+  onTabChange?: (tab: 'directory' | 'mygroups') => void;
 }
 
 const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {

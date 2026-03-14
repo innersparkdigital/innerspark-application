@@ -16,6 +16,8 @@ import {
   setError,
 } from '../features/notifications/notificationSlice';
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../api/client/notifications';
+import { getNotifications as getTherapistNotifications, markNotificationAsRead as markTherapistNotificationRead, markAllNotificationsAsRead as markAllTherapistNotificationsRead } from '../api/therapist/notifications';
+import { syncBadges } from './BadgeManager';
 
 /**
  * Load notifications from API
@@ -24,12 +26,23 @@ import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } 
 export const loadNotifications = async (userId: string, page: number = 1) => {
   store.dispatch(setLoading(true));
   
+  const role = (store.getState().userData?.userDetails as any)?.role || 'user';
+  
   try {
-    console.log('🔔 Loading notifications from API for userId:', userId, 'page:', page);
-    const response = await getNotifications(page);
+    console.log(`🔔 Loading ${role} notifications from API for userId:`, userId, 'page:', page);
+    
+    let response;
+    if (role === 'therapist') {
+      response = await getTherapistNotifications(userId, false);
+    } else {
+      response = await getNotifications(page);
+    }
+
     console.log('✅ API Response:', JSON.stringify(response, null, 2));
     
     if (response.success && response.data) {
+      // Backend client response: { success, data: { notifications, unreadCount, pagination } }
+      // Backend therapist response: { success, data: { notifications, unreadCount } }
       const { notifications, unreadCount, pagination } = response.data;
       console.log('📋 Notifications count:', notifications?.length, 'Unread:', unreadCount);
       
@@ -39,6 +52,7 @@ export const loadNotifications = async (userId: string, page: number = 1) => {
       }));
       
       store.dispatch(setUnreadCount(unreadCount || 0));
+      syncBadges();
     } else {
       console.log('⚠️ API response missing success or data:', response);
     }
@@ -83,8 +97,15 @@ export const loadNotifications = async (userId: string, page: number = 1) => {
 export const refreshNotifications = async (userId: string) => {
   store.dispatch(setRefreshing(true));
   
+  const role = (store.getState().userData?.userDetails as any)?.role || 'user';
+  
   try {
-    const response = await getNotifications(1);
+    let response;
+    if (role === 'therapist') {
+      response = await getTherapistNotifications(userId, false);
+    } else {
+      response = await getNotifications(1);
+    }
     
     if (response.success && response.data) {
       const { notifications, unreadCount, pagination } = response.data;
@@ -95,6 +116,7 @@ export const refreshNotifications = async (userId: string) => {
       }));
       
       store.dispatch(setUnreadCount(unreadCount || 0));
+      syncBadges();
     }
   } catch (error: any) {
     console.log('Error refreshing notifications:', error);
@@ -117,9 +139,18 @@ export const refreshNotifications = async (userId: string) => {
  * Mark notification as read
  */
 export const markNotificationRead = async (notificationId: string, userId: string) => {
+  const role = (store.getState().userData?.userDetails as any)?.role || 'user';
+
   try {
-    await markNotificationAsRead(notificationId, userId);
     store.dispatch(markAsRead(notificationId));
+    
+    if (role === 'therapist') {
+      await markTherapistNotificationRead(notificationId, userId);
+    } else {
+      await markNotificationAsRead(notificationId, userId);
+    }
+    
+    syncBadges();
     return { success: true };
   } catch (error: any) {
     console.log('Error marking notification as read:', error);
@@ -138,9 +169,18 @@ export const markNotificationRead = async (notificationId: string, userId: strin
  * Mark all notifications as read
  */
 export const markAllNotificationsRead = async (userId: string) => {
+  const role = (store.getState().userData?.userDetails as any)?.role || 'user';
+
   try {
-    await markAllNotificationsAsRead(userId);
     store.dispatch(markAllAsReadAction());
+    
+    if (role === 'therapist') {
+      await markAllTherapistNotificationsRead(userId);
+    } else {
+      await markAllNotificationsAsRead(userId);
+    }
+    
+    syncBadges();
     return { success: true };
   } catch (error: any) {
     console.log('Error marking all notifications as read:', error);
@@ -160,8 +200,8 @@ export const markAllNotificationsRead = async (userId: string) => {
  */
 export const deleteNotification = async (notificationId: string) => {
   try {
-    // Note: Delete endpoint not yet in client API, but handle gracefully
     store.dispatch(deleteNotificationAction(notificationId));
+    syncBadges();
     return { success: true };
   } catch (error: any) {
     console.log('Error deleting notification:', error);
@@ -177,11 +217,19 @@ export const deleteNotification = async (notificationId: string) => {
  * Useful for badge updates without loading full list
  */
 export const getUnreadCount = async (userId: string) => {
+  const role = (store.getState().userData?.userDetails as any)?.role || 'user';
+
   try {
-    const response = await getNotifications(1);
+    let response;
+    if (role === 'therapist') {
+      response = await getTherapistNotifications(userId, true);
+    } else {
+      response = await getNotifications(1);
+    }
     
     if (response.success && response.data?.unreadCount !== undefined) {
       store.dispatch(setUnreadCount(response.data.unreadCount));
+      syncBadges();
       return response.data.unreadCount;
     }
   } catch (error: any) {

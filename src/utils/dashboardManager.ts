@@ -40,7 +40,21 @@ export const loadDashboardData = async (userId: string) => {
         moodStreak: dashboardData.moodStreak,
       });
       
-      store.dispatch(setDashboardData(dashboardData));
+      // Merge with existing state to prevent flickering
+      const currentDashboard = store.getState().dashboard;
+      const mergedData = {
+        ...currentDashboard,
+        ...dashboardData,
+        // Ensure arrays are handled correctly
+        upcomingSessions: dashboardData.upcomingSessions || currentDashboard.upcomingSessions || [],
+        todayEvents: dashboardData.todayEvents || currentDashboard.todayEvents || [],
+        // Selective streak update
+        moodStreak: (dashboardData.moodStreak !== undefined && dashboardData.moodStreak !== null) 
+          ? dashboardData.moodStreak 
+          : currentDashboard.moodStreak,
+      };
+      
+      store.dispatch(setDashboardData(mergedData));
     } else {
       console.log('⚠️ Dashboard API response missing success or data:', response);
       store.dispatch(setError('Failed to load dashboard data'));
@@ -56,12 +70,14 @@ export const loadDashboardData = async (userId: string) => {
     if (error?.response?.status === 404) {
       console.log('📦 GET /client/dashboard endpoint returns 404, showing empty state with wellness tip');
       
+      const currentDashboard = store.getState().dashboard;
       store.dispatch(setDashboardData({
-        user: { firstName: '', lastName: '', profileImage: null },
+        ...currentDashboard,
         upcomingSessions: [],
         todayEvents: [],
         wellnessTip: getRandomWellnessTip(), // Always provide wellness tip for better UX
-        moodStreak: 0,
+        // Only reset streak if it was already 0 or null
+        moodStreak: currentDashboard.moodStreak || 0,
         quickStats: { sessionsCompleted: 0, goalsAchieved: 0 },
       }));
     } else {

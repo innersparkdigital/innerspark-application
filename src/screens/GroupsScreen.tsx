@@ -26,11 +26,11 @@ const GroupsScreen: React.FC<GroupsScreenProps> = ({ navigation }) => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'directory':
-        return <GroupsListScreen key="directory" navigation={navigation} />;
+        return <GroupsListScreen key="directory" navigation={navigation} onTabChange={setActiveTab} />;
       case 'mygroups':
-        return <MyGroupsScreen key="mygroups" navigation={navigation} />;
+        return <MyGroupsScreen key="mygroups" navigation={navigation} onTabChange={setActiveTab} />;
       default:
-        return <GroupsListScreen key="directory" navigation={navigation} />;
+        return <GroupsListScreen key="directory" navigation={navigation} onTabChange={setActiveTab} />;
     }
   };
 

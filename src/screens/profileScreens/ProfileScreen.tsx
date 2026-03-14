@@ -70,13 +70,15 @@ const ProfileField = ({
   value,
   icon,
   iconType = "material",
-  isLast = false
+  isLast = false,
+  onAdd
 }: {
   label: string;
   value: string;
   icon: string;
   iconType?: string;
   isLast?: boolean;
+  onAdd?: () => void;
 }) => (
   <View style={[styles.profileField, isLast && styles.profileFieldLast]}>
     <View style={styles.fieldHeader}>
@@ -90,7 +92,21 @@ const ProfileField = ({
         <Text style={styles.fieldLabel}>{label}</Text>
       </View>
     </View>
-    <Text style={styles.fieldValue}>{value || 'Not set'}</Text>
+    {value ? (
+      <Text style={styles.fieldValue}>{value}</Text>
+    ) : onAdd ? (
+      <TouchableOpacity 
+        style={{ flexDirection: 'row', alignItems: 'center', marginTop: scale(4) }} 
+        onPress={onAdd}
+      >
+        <Icon name="add-circle-outline" type="material" color={appColors.AppBlue} size={moderateScale(18)} />
+        <Text style={{ marginLeft: scale(4), color: appColors.AppBlue, fontFamily: appFonts.bodyTextMedium, fontSize: moderateScale(14) }}>
+          Add {label}
+        </Text>
+      </TouchableOpacity>
+    ) : (
+      <Text style={[styles.fieldValue, { color: appColors.AppGray }]}>Not set</Text>
+    )}
   </View>
 );
 
@@ -248,8 +264,10 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             <Avatar
               rounded
               size={scale(120)}
-              source={userDetails?.image || appImages.avatarDefault}
-              containerStyle={styles.avatarStyle}
+              source={(userProfile?.profileImage || userDetails?.image) ? { uri: userProfile?.profileImage || userDetails?.image } : undefined}
+              icon={!(userProfile?.profileImage || userDetails?.image) ? { name: 'person', type: 'material', size: scale(80), color: appColors.CardBackground } : undefined}
+              containerStyle={[styles.avatarStyle, { backgroundColor: appColors.grey5 }]}
+              avatarStyle={{ resizeMode: 'cover' }}
             />
             <View style={styles.avatarEditOverlay}>
               <Icon
@@ -306,12 +324,14 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             label="Email Address"
             value={profileData.email || ''}
             icon="email"
+            onAdd={() => handleEditField('email')}
           />
 
           <ProfileField
             label="Phone Number"
             value={profileData.phone || ''}
             icon="phone"
+            onAdd={() => handleEditField('phone')}
           />
 
           <ProfileField

@@ -2,7 +2,12 @@ import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { getDashboardData } from '../api/client/dashboard';
+import { getProfile } from '../api/client/profile';
 import { setDashboardData } from '../features/dashboard/dashboardSlice';
+import { setUserProfile } from '../features/user/userDataSlice';
+import { loadEmergencyData } from '../utils/emergencyManager';
+import { loadNotifications } from '../utils/notificationManager';
+import { refreshConversations } from '../utils/chatManager';
 
 /**
  * Smart Polling Hook for Dashboard Synchronization
@@ -25,10 +30,23 @@ export const useDashboardSync = (userId: string | null | undefined, syncInterval
         try {
             // In a production app, you might want to log this at a verbose/debug level 
             // console.log(`[SyncManager] Silent dashboard fetch running for ${userId}...`);
-            const data = await getDashboardData(userId);
-            if (data && data.success) {
-                dispatch(setDashboardData(data.data));
-            }
+            await Promise.all([
+                (async () => {
+                    const response = await getDashboardData(userId);
+                    if (response && response.success) dispatch(setDashboardData(response.data));
+                })(),
+                (async () => {
+                    const response = await getProfile(userId);
+                    if (response && response.success) dispatch(setUserProfile(response.data));
+                })(),
+                loadEmergencyData(userId),
+                loadNotifications(userId),
+                (async () => {
+                    // ChatManager functions are thunks that return promises
+                    // @ts-ignore
+                    await dispatch(refreshConversations(userId));
+                })()
+            ]);
         } catch (error) {
             console.log('[SyncManager] Silent fetch failed:', error);
             // We explicitly DO NOT dispatch an error to Redux here, 

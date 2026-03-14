@@ -208,16 +208,28 @@ const MoMoTopupScreen = ({ navigation }: any) => {
           {/* MoMo Number Section */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>MoMo Number</Text>
-            <LHPhoneInput
-              placeholder="0750000000"
-              inputValue={phone}
-              inputValueSetter={setPhone}
-              formattedValueSetter={setFormattedPhone}
-              countrySupportSetter={() => { }} // Not strictly used here since read-only
-              isInputEditable={false}
-              defaultCountryCode={phoneDetails.countryCode}
-              defaultCallingCode={phoneDetails.callingCode}
-            />
+            {formattedPhone ? (
+              <LHPhoneInput
+                placeholder="0750000000"
+                inputValue={phone}
+                inputValueSetter={setPhone}
+                formattedValueSetter={setFormattedPhone}
+                countrySupportSetter={() => { }} // Not strictly used here since read-only
+                isInputEditable={false}
+                defaultCountryCode={phoneDetails.countryCode}
+                defaultCallingCode={phoneDetails.callingCode}
+              />
+            ) : (
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: scale(12), paddingHorizontal: scale(16), borderWidth: 1, borderColor: appColors.AppBlue, borderRadius: scale(12), backgroundColor: appColors.AppBlue + '10' }}
+                onPress={() => navigation.navigate('ProfileUpdateScreen')}
+              >
+                <Icon name="add-circle-outline" type="material" color={appColors.AppBlue} size={moderateScale(24)} />
+                <Text style={{ marginLeft: scale(10), color: appColors.AppBlue, fontFamily: appFonts.headerTextBold, fontSize: moderateScale(16) }}>
+                  Add Phone Number
+                </Text>
+              </TouchableOpacity>
+            )}
             <Text style={styles.inputHint}>This is your primary number registered with your account</Text>
           </View>
 
@@ -225,9 +237,9 @@ const MoMoTopupScreen = ({ navigation }: any) => {
           <View style={styles.buttonContainer}>
             <Button
               title={isLoading ? "PROCESSING..." : "TOPUP"}
-              buttonStyle={styles.topupButton}
+              buttonStyle={[styles.topupButton, !formattedPhone && { backgroundColor: appColors.grey4 }]}
               titleStyle={styles.topupButtonText}
-              disabled={isLoading}
+              disabled={isLoading || !formattedPhone}
               onPress={handleTopUpSubmit}
             />
           </View>

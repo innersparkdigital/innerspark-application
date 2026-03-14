@@ -25,11 +25,18 @@ export const requestDataExport = async (userId, format, categories) => {
  * @param {string} userId - User ID
  * @returns {Promise} Deactivation confirmation
  */
-export const deactivateAccount = async (userId) => {
-    const response = await APIInstance.post('/client/account/deactivate', {
-        user_id: userId
-    });
-    return response.data;
+export const deactivateAccount = async (userId, reason, feedback) => {
+    try {
+        const payload = {
+            user_id: userId,
+            reason: reason,
+            feedback: feedback
+        };
+        const response = await APIInstance.post('/client/account/deactivate', payload);
+        return response.data;
+    } catch (error) {
+        throw error; // Re-throw the error after logging or handling as needed
+    }
 };
 
 /**
@@ -38,12 +45,18 @@ export const deactivateAccount = async (userId) => {
  * @param {string} reason - Deletion reason
  * @returns {Promise} Deletion confirmation
  */
-export const deleteAccount = async (userId, reason) => {
-    const response = await APIInstance.post('/client/account/delete', {
-        user_id: userId,
-        reason
-    });
-    return response.data;
+export const deleteAccount = async (userId, password, reason) => {
+    try {
+        const payload = {
+            user_id: userId,
+            password: password,
+            reason: reason,
+        };
+        const response = await APIInstance.post('/client/account/delete', payload);
+        return response.data;
+    } catch (error) {
+        throw error; // Re-throw the error after logging or handling as needed
+    }
 };
 
 /**

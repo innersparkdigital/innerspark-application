@@ -55,8 +55,13 @@ const THPricingScreen = ({ navigation }: any) => {
         pendingPayout: therapistRevenueRedux.pendingPayments || therapistRevenueRedux.pendingPayout
       });
     }
-    loadPricingData();
-  }, []);
+  }, [therapistRevenueRedux]);
+
+  useEffect(() => {
+    if (userDetails?.userId) {
+      loadPricingData();
+    }
+  }, [userDetails?.userId]);
 
   const loadPricingData = async () => {
     try {
@@ -73,17 +78,22 @@ const THPricingScreen = ({ navigation }: any) => {
       if (pricingRes && !(pricingRes as any).error) {
         const pData = (pricingRes as any).data;
         if (pData?.sessionTypes?.length > 0) {
-          setRates(pData.sessionTypes.map((t: any) => ({
-            type: t.type,
-            duration: `${t.duration} min`,
-            price: t.price.toLocaleString(),
-            icon: t.type.toLowerCase().includes('couple') ? 'people'
-              : t.type.toLowerCase().includes('group') ? 'groups'
-                : t.type.toLowerCase().includes('consult') ? 'chat' : 'person',
-            color: t.type.toLowerCase().includes('couple') ? '#9C27B0'
-              : t.type.toLowerCase().includes('group') ? appColors.AppGreen
-                : t.type.toLowerCase().includes('consult') ? '#FF9800' : appColors.AppBlue
-          })));
+          setRates(pData.sessionTypes.map((t: any) => {
+            const name = t.name || t.type || 'Session';
+            const lowerName = name.toLowerCase();
+            
+            return {
+              type: name,
+              duration: `${t.duration} min`,
+              price: t.price.toLocaleString(),
+              icon: lowerName.includes('couple') ? 'people'
+                : lowerName.includes('group') ? 'groups'
+                  : lowerName.includes('consult') || lowerName.includes('chat') ? 'chat' : 'person',
+              color: lowerName.includes('couple') ? '#9C27B0'
+                : lowerName.includes('group') ? appColors.AppGreen
+                  : lowerName.includes('consult') || lowerName.includes('chat') ? '#FF9800' : appColors.AppBlue
+            };
+          }));
         }
       }
 

@@ -20,7 +20,10 @@ import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectMoodReminderSettings, updateMoodReminderSetting } from '../../features/settings/userSettingsSlice';
+import { selectMoodReminderSettings, setMoodReminderSettings, updateMoodReminderSetting } from '../../features/settings/userSettingsSlice';
+import { storeItemLS, retrieveItemLS } from '../../global/StorageActions';
+import notifee, { TriggerType, RepeatFrequency, TimestampTrigger, AndroidImportance } from '@notifee/react-native';
+import { NOTIFICATION_TYPES, CHANNELS, DEEP_LINK_ACTIONS } from '../../api/LHNotifications';
 
 interface MoodReminderSettingsScreenProps {
   navigation: NavigationProp<any>;
@@ -44,6 +47,29 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
   // Sound & Vibration
   const [soundEnabled, setSoundEnabled] = useState(moodSettings.moodReminderSound);
   const [vibrationEnabled, setVibrationEnabled] = useState(moodSettings.moodReminderVibration);
+
+  // Load settings from local storage on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const localSettingsString = await retrieveItemLS('moodReminderSettingsLS');
+        if (localSettingsString) {
+          const localSettings = JSON.parse(localSettingsString);
+          dispatch(setMoodReminderSettings({
+            enabled: localSettings.moodReminderEnabled,
+            time: localSettings.moodReminderTime,
+            days: localSettings.moodReminderDays,
+            frequency: localSettings.moodReminderFrequency,
+            sound: localSettings.moodReminderSound,
+            vibration: localSettings.moodReminderVibration,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load local mood settings:', error);
+      }
+    };
+    loadSettings();
+  }, [dispatch]);
 
   // Sync with Redux when settings change
   useEffect(() => {
@@ -102,8 +128,119 @@ const MoodReminderSettingsScreen: React.FC<MoodReminderSettingsScreenProps> = ({
     setShowTimePicker(false);
   };
 
-  const handleSaveSettings = () => {
-    // All settings are already saved to Redux on change
+  const scheduleMoodNotifications = async (settings: any) => {
+    try {
+      // 1. Cancel only mood_reminder_* notifications to preserve other app alerts
+      const allTriggerIds = await notifee.getTriggerNotificationIds();
+      const moodIds = allTriggerIds.filter((id: string) => id.startsWith('mood_reminder_'));
+      await Promise.all(moodIds.map((id: string) => notifee.cancelTriggerNotification(id)));
+
+      if (!settings.moodReminderEnabled) return;
+
+      const hasPermission = await notifee.requestPermission();
+      if (hasPermission.authorizationStatus < 1) return;
+
+      // 2. Map frequency to array of { hours, minutes }
+      const frequencyTimesMap: Record<string, Array<{ hours: number; minutes: number; label: string }>> = {
+        once:   [{ hours: 20, minutes: 0, label: '20_00' }],
+        twice:  [{ hours: 14, minutes: 0, label: '14_00' }, { hours: 20, minutes: 0, label: '20_00' }],
+        thrice: [{ hours: 10, minutes: 0, label: '10_00' }, { hours: 14, minutes: 0, label: '14_00' }, { hours: 20, minutes: 0, label: '20_00' }],
+      };
+
+      // For 'once', use the user-selected time from settings
+      if (settings.moodReminderFrequency === 'once' && settings.moodReminderTime) {
+        let [timeStr, period] = settings.moodReminderTime.split(' ');
+        let [h, m] = timeStr.split(':').map(Number);
+        if (period === 'PM' && h < 12) h += 12;
+        if (period === 'AM' && h === 12) h = 0;
+        frequencyTimesMap['once'] = [{ hours: h, minutes: m, label: `${h}_${m}` }];
+      }
+
+      const frequencyTimes = frequencyTimesMap[settings.moodReminderFrequency] || frequencyTimesMap['once'];
+
+      // 3. Map short day names to JS weekday index (0=Sun, 6=Sat)
+      const dayIndexMap: Record<string, number> = {
+        Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+      };
+
+      const selectedDays: string[] = settings.moodReminderDays || [];
+
+      // 4. Schedule WEEKLY trigger for each selected day + time combination
+      for (const day of selectedDays) {
+        const dayIndex = dayIndexMap[day];
+        if (dayIndex === undefined) continue;
+
+        for (const timeSlot of frequencyTimes) {
+          const notifId = `mood_reminder_${day}_${timeSlot.label}`;
+
+          // Find the next occurrence of this day + time
+          const now = new Date();
+          const triggerDate = new Date();
+          triggerDate.setHours(timeSlot.hours, timeSlot.minutes, 0, 0);
+
+          // Advance to correct day of week
+          let daysAhead = dayIndex - now.getDay();
+          if (daysAhead < 0 || (daysAhead === 0 && triggerDate <= now)) {
+            daysAhead += 7;
+          }
+          triggerDate.setDate(triggerDate.getDate() + daysAhead);
+
+          const trigger: TimestampTrigger = {
+            type: TriggerType.TIMESTAMP,
+            timestamp: triggerDate.getTime(),
+            repeatFrequency: RepeatFrequency.WEEKLY,
+            alarmManager: {
+              allowWhileIdle: true,
+            },
+          };
+
+          await notifee.createTriggerNotification({
+            id: notifId,
+            title: '💬 How are you feeling?',
+            body: 'Take a moment to check in with yourself and log your mood.',
+            android: {
+              channelId: CHANNELS.REMINDERS,
+              importance: AndroidImportance.HIGH,
+              smallIcon: 'ic_launcher', // Ensure icon is present
+              pressAction: { id: 'default', launchActivity: 'default' },
+              actions: [
+                { title: 'Log Mood', pressAction: { id: 'log_mood', launchActivity: 'default' } },
+                { title: 'Dismiss', pressAction: { id: 'dismiss' } },
+              ],
+            },
+            data: {
+              type: NOTIFICATION_TYPES.MOOD_CHECK_IN,
+              deepLink: DEEP_LINK_ACTIONS.OPEN_MOOD,
+            },
+          }, trigger);
+        }
+      }
+
+      console.log(`✅ Mood reminders scheduled: ${selectedDays.length} day(s) × ${frequencyTimes.length} time(s) = ${selectedDays.length * frequencyTimes.length} triggers`);
+
+    } catch (error) {
+      console.error('Failed to schedule mood notifications', error);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    // Save to local storage for persistence across app restarts
+    const currentSettings = {
+      moodReminderEnabled: reminderEnabled,
+      moodReminderTime: reminderTime,
+      moodReminderDays: selectedDays,
+      moodReminderFrequency: reminderFrequency,
+      moodReminderSound: soundEnabled,
+      moodReminderVibration: vibrationEnabled,
+    };
+    
+    try {
+      await storeItemLS('moodReminderSettingsLS', currentSettings);
+      await scheduleMoodNotifications(currentSettings);
+    } catch (error) {
+      console.error('Failed to save mood settings locally:', error);
+    }
+
     toast.show({
       description: 'Reminder settings saved successfully!',
       duration: 2000,
@@ -559,6 +696,9 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     color: appColors.grey3,
     fontFamily: appFonts.headerTextRegular,
+    flexShrink: 1,
+    textAlign: 'right',
+    marginLeft: scale(8),
   },
   preferenceItem: {
     flexDirection: 'row',

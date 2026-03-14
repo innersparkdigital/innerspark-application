@@ -16,6 +16,7 @@ import {
   sendChatMessage as sendMessageAPI,
   markChatAsRead,
 } from '../api/client/messages';
+import { syncBadges } from './BadgeManager';
 
 export const loadConversations = (userId) => async (dispatch) => {
   dispatch(setLoading(true));
@@ -108,6 +109,7 @@ export const sendChatMessage = (userId, chatId, content, type = 'text') => async
         type,
       };
       dispatch(addMessage(newMessage));
+      syncBadges();
       return { success: true, message: newMessage };
     } else {
       dispatch(setError('Failed to send message'));
@@ -128,6 +130,7 @@ export const markConversationRead = (userId, chatId) => async (dispatch) => {
     
     if (response.success) {
       dispatch(markConversationAsRead(chatId));
+      syncBadges();
       return { success: true };
     } else {
       return { success: false };
