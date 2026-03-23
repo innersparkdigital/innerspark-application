@@ -165,6 +165,7 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
     navigation.navigate('BookingCheckoutScreen', {
       therapist,
       selectedSlot: selectedSlot,
+      sessionId: selectedSession?.id || 1,
       sessionType: selectedSession?.name || 'Individual Therapy',
       sessionPrice: selectedSession?.price || therapist.price,
       sessionDuration: selectedSession?.duration || '60 min',
@@ -193,9 +194,14 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
   const handleSlotSelect = (slot: any) => {
     const isAvailable = slot.available || slot.status === 'available';
     if (isAvailable) {
-      setSelectedSlot(slot);
+      const normalizedSlot = {
+        ...slot,
+        date: slot.date || slot.av_date,
+        time: slot.time || slot.av_time,
+      };
+      setSelectedSlot(normalizedSlot);
       toast.show({
-        description: `Selected: ${slot.date} at ${slot.time}`,
+        description: `Selected: ${normalizedSlot.date} at ${normalizedSlot.time}`,
         duration: 2000,
       });
     }

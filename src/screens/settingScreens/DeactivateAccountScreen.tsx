@@ -22,7 +22,7 @@ import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { deactivateAccount } from '../../api/client/account';
-import { clearStorage } from '../../global/StorageActions';
+import { performLogout } from '../../utils/authManager';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DeactivateAccountScreenProps {
@@ -94,6 +94,13 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
     });
   };
 
+  const extractErrorMessage = (error: any, fallback: string) => {
+    if (error?.response?.data?.message) return error.response.data.message;
+    if (error?.response?.data?.error) return error.response.data.error;
+    if (error?.message) return error.message;
+    return fallback;
+  };
+
   const handleDeactivateAccount = async () => {
     alert.show({
       type: 'warning',
@@ -117,12 +124,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
               duration: 5000,
             });
 
-            await clearStorage();
-
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'SigninScreen' }],
-            });
+            performLogout();
           } else {
             toast.show({
               description: response.message || 'Failed to deactivate account',
@@ -132,7 +134,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
         } catch (error: any) {
           console.error('Error deactivating account:', error);
           toast.show({
-            description: error.response?.data?.message || 'Failed to deactivate account. Please try again.',
+            description: extractErrorMessage(error, 'Failed to deactivate account. Please try again.'),
             duration: 3000,
           });
         } finally {
@@ -262,11 +264,11 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
         <View style={styles.deactivateButtonContainer}>
           <Button
             title={isLoading ? 'Deactivating...' : 'Deactivate My Account'}
-            buttonStyle={[
-              styles.deactivateButton,
-              !canProceed && styles.disabledButton
-            ]}
+            color="#FF9800"
+            buttonStyle={styles.deactivateButton}
+            disabledStyle={styles.disabledButton}
             titleStyle={styles.deactivateButtonText}
+            disabledTitleStyle={styles.disabledButtonText}
             onPress={handleDeactivateAccount}
             loading={isLoading}
             disabled={!canProceed || isLoading}
@@ -529,6 +531,10 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
+    color: '#ffffff',
+  },
+  disabledButtonText: {
+    color: appColors.grey3,
   },
   deactivateButtonSubtext: {
     fontSize: moderateScale(12),

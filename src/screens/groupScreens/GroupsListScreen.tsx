@@ -22,6 +22,7 @@ import MembershipLimitModal from '../../components/MembershipLimitModal';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { useDispatch, useSelector } from 'react-redux';
 import { setJoinedGroupIds, addJoinedGroupId, selectJoinedGroupIds } from '../../features/groups/groupsSlice';
+import { decodeHTMLEntities } from '../../utils/textHelpers';
 
 interface SupportGroup {
   id: string;
@@ -130,9 +131,9 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
 
         return {
           id,
-          name: group.name || group.groupName || group.group_name || 'Unnamed Group',
-          description: group.description || '',
-          therapistName: group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown',
+          name: decodeHTMLEntities(group.name || group.groupName || group.group_name || 'Unnamed Group'),
+          description: decodeHTMLEntities(group.description || ''),
+          therapistName: decodeHTMLEntities(group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown'),
           therapistEmail: group.therapistEmail || group.therapist_email || group.facilitatorEmail || group.facilitator_email || '',
           therapistAvatar: getImageSource(group.therapistAvatar || group.therapist_avatar || group.facilitatorAvatar || group.facilitator_avatar, FALLBACK_IMAGES.avatar),
           memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
@@ -245,9 +246,10 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
 
           // Handle private groups (request sent)
           if (group.isPrivate) {
-            toast.show({
-              description: response.message || 'Join request sent to group therapist',
-              duration: 3000,
+            alert.show({
+              type: 'success',
+              title: 'Request Sent',
+              message: response.message || 'Join request sent to group therapist',
             });
             return;
           }
@@ -262,9 +264,10 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
             )
           );
 
-          toast.show({
-            description: response.message || `Successfully joined ${group.name}`,
-            duration: 3000,
+          alert.show({
+            type: 'success',
+            title: 'Welcome!',
+            message: response.message || `Successfully joined ${group.name}`,
           });
 
           // Reload groups to get fresh data
@@ -274,37 +277,44 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
 
           // Handle specific error cases
           if (error.response?.data?.error) {
-            const errorMsg = error.response.data.error;
+            const backendError = error.response.data.error;
+            const errorMsg = typeof backendError === 'object' ? backendError.message : backendError;
 
-            if (errorMsg.includes('membership limit')) {
-              setShowLimitModal(true);
-              return;
+            if (typeof errorMsg === 'string') {
+              if (errorMsg.includes('membership limit')) {
+                setShowLimitModal(true);
+                return;
+              }
+
+              if (errorMsg.includes('already a member')) {
+                alert.show({
+                  type: 'error',
+                  title: 'Already joined',
+                  message: 'You are already a member of this group',
+                });
+                return;
+              }
+
+              if (errorMsg.includes('full')) {
+                alert.show({
+                  type: 'info',
+                  title: 'Group Full',
+                  message: 'Group is full. You\'ve been added to the waiting list.',
+                });
+                return;
+              }
             }
 
-            if (errorMsg.includes('already a member')) {
-              toast.show({
-                description: 'You are already a member of this group',
-                duration: 3000,
-              });
-              return;
-            }
-
-            if (errorMsg.includes('full')) {
-              toast.show({
-                description: 'Group is full. You\'ve been added to the waiting list.',
-                duration: 3000,
-              });
-              return;
-            }
-
-            toast.show({
-              description: errorMsg,
-              duration: 3000,
+            alert.show({
+              type: 'error',
+              title: 'Action Required',
+              message: errorMsg || 'Failed to join group.',
             });
           } else {
-            toast.show({
-              description: 'Failed to join group. Please try again.',
-              duration: 3000,
+            alert.show({
+              type: 'error',
+              title: 'Error',
+              message: 'Failed to join group. Please try again.',
             });
           }
         }
@@ -546,14 +556,8 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       {/* Membership Limit Modal */}
       <MembershipLimitModal
         visible={showLimitModal}
-        currentPlan={membershipInfo.plan}
         currentGroupCount={membershipInfo.joinedGroupsCount}
         maxAllowed={membershipInfo.groupLimit}
-        onUpgrade={() => {
-          setShowLimitModal(false);
-          // Navigate to services screen (subscription plans)
-          navigation.navigate('ServicesScreen');
-        }}
         onClose={() => setShowLimitModal(false)}
       />
 

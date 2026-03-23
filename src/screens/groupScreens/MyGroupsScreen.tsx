@@ -21,6 +21,7 @@ import { getMyGroups, leaveGroup } from '../../api/client/groups';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { removeJoinedGroupId, setJoinedGroupIds } from '../../features/groups/groupsSlice';
+import { decodeHTMLEntities } from '../../utils/textHelpers';
 
 interface MyGroup {
   id: string;
@@ -116,9 +117,9 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
       const apiGroups = response.data?.groups || [];
       const mappedGroups: MyGroup[] = apiGroups.map((group: any) => ({
         id: group.id?.toString() || group._id?.toString(),
-        name: group.name || group.groupName || group.group_name || 'Unnamed Group',
-        description: group.description || '',
-        therapistName: group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown',
+        name: decodeHTMLEntities(group.name || group.groupName || group.group_name || 'Unnamed Group'),
+        description: decodeHTMLEntities(group.description || ''),
+        therapistName: decodeHTMLEntities(group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown'),
         therapistAvatar: getImageSource(group.therapistAvatar || group.therapist_avatar || group.facilitatorAvatar || group.facilitator_avatar, FALLBACK_IMAGES.avatar),
         memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
         icon: group.icon || 'group',

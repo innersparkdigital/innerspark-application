@@ -45,10 +45,12 @@ import {
 import { loadDashboardData, refreshDashboardData } from '../utils/dashboardManager';
 import { useDashboardSync } from '../hooks/useDashboardSync';
 import { useNotificationsSync } from '../hooks/useNotificationsSync';
+import { useDailyWellnessTips } from '../hooks/useDailyWellnessTips';
 import EmptySessionsCard from '../components/EmptySessionsCard';
 import SessionCard from '../components/SessionCard';
 import TimelineEvent from '../components/TimelineEvent';
 import WellnessTipCard from '../components/WellnessTipCard';
+import BannersCard from '../components/BannersCard';
 
 // test notification trigger
 import {
@@ -139,12 +141,26 @@ export default function HomeScreen({ navigation }: any) {
     "Take a moment to appreciate something beautiful around you"
   ];
 
+  // Generate combined list so the API tip becomes part of the rotation instead of rigidly overriding it
+  const activePrompts = wellnessTip?.tip
+    ? [wellnessTip.tip, ...wellnessPrompts]
+    : wellnessPrompts;
+
   // State for rotating content
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(() =>
     Math.floor(Math.random() * wellnessPrompts.length)
   );
-  const [completedTips, setCompletedTips] = useState(new Set());
+
+  // Persisted Daily Wellness state
+  const { completedTips, markAsCompleted, allCompleted, isLoaded } = useDailyWellnessTips(activePrompts.length);
+
+  // Fast-forward initial prompt if it's already completed natively
+  useEffect(() => {
+    if (isLoaded && completedTips.has(currentPromptIndex) && !allCompleted) {
+      handleNextTip();
+    }
+  }, [isLoaded, currentPromptIndex, completedTips, allCompleted]);
 
   // Helper: Get session urgency level
   const getSessionUrgency = (session: any) => {
@@ -171,16 +187,33 @@ export default function HomeScreen({ navigation }: any) {
 
   // Helper: Mark wellness tip as completed
   const markTipAsCompleted = (tipIndex: number) => {
-    setCompletedTips(prev => new Set([...prev, tipIndex]));
+    if (completedTips.has(tipIndex)) return; // Prevent fast double clicking
+
+    markAsCompleted(tipIndex);
     toast.show({
       description: '✓ Great job! Tip marked as completed',
       duration: 2000,
     });
+
+    // Give user 1.5s to see the green "Completed!" text before instantly jumping
+    setTimeout(() => {
+      handleNextTip(new Set([...Array.from(completedTips), tipIndex]));
+    }, 1500);
   };
 
   // Helper: Get next wellness tip
-  const handleNextTip = () => {
-    setCurrentPromptIndex(prevIndex => (prevIndex + 1) % wellnessPrompts.length);
+  const handleNextTip = (latestCompletedTips = completedTips) => {
+    if (latestCompletedTips.size >= activePrompts.length) return;
+    setCurrentPromptIndex(prevIndex => {
+      let next = (prevIndex + 1) % activePrompts.length;
+      let loops = 0;
+      // Skip completed tips gracefully to avoid showing checked ones
+      while (latestCompletedTips.has(next) && loops < activePrompts.length) {
+        next = (next + 1) % activePrompts.length;
+        loops++;
+      }
+      return next;
+    });
   };
 
   // Rotate through events and prompts every 4 minutes
@@ -633,15 +666,17 @@ export default function HomeScreen({ navigation }: any) {
         )}
 
         {/* Wellness Tip of the Day - Uses API data with fallback */}
-        <View style={styles.section}>
-          <WellnessTipCard
-            tip={wellnessTip?.tip || wellnessPrompts[currentPromptIndex]}
-            category={wellnessTip?.category || "Mindfulness"}
-            isCompleted={completedTips.has(currentPromptIndex)}
-            onComplete={() => markTipAsCompleted(currentPromptIndex)}
-            onRefresh={handleNextTip}
-          />
-        </View>
+        {!allCompleted && (
+          <View style={styles.section}>
+            <WellnessTipCard
+              tip={activePrompts[currentPromptIndex] || activePrompts[0]}
+              category={currentPromptIndex === 0 && wellnessTip?.category ? wellnessTip.category : "Mindfulness"}
+              isCompleted={completedTips.has(currentPromptIndex)}
+              onComplete={() => markTipAsCompleted(currentPromptIndex)}
+              onRefresh={() => handleNextTip()}
+            />
+          </View>
+        )}
 
         {/* Commented out Recent Activities Section for future use */}
         {/* 
@@ -671,7 +706,9 @@ export default function HomeScreen({ navigation }: any) {
         </View>
         */}
 
-
+        {/* Dynamic Banners Section */}
+        {/* <BannersCard isVisible={allCompleted} /> */}
+        {/* <BannersCard /> */}
 
         {/* Test Notification Button */}
         {/* <TestNotificationButton /> */}

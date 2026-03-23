@@ -32,11 +32,13 @@ import { isValidEmailAddress, isValidPhoneNumber, isValidEmailOrPhone } from '..
 import { normalizePhone } from '../../global/LHShortcuts';
 import LHGenericFeatureModal from '../../components/LHGenericFeatureModal';
 import { isEmailVerified, isPhoneVerified } from '../../global/LHValidators';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 export default function SigninScreen({ navigation }) {
 
     const dispatch = useDispatch();
     const toast = useToast();
+    const alert = useISAlert();
     const [isLoading, setIsLoading] = useState(false);
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -294,7 +296,13 @@ export default function SigninScreen({ navigation }) {
             } else if (error.response?.status === 524) {
                 notifyWithToast("Server timeout. Please try again.");
             } else if (error.response?.status === 401 || error.response?.status === 403) {
-                notifyWithToast("Authentication failed. Please check your credentials.");
+                const errorMessage = error.response?.data?.message || "Authentication failed. Please check your credentials.";
+                alert.show({
+                    type: 'error',
+                    title: 'Access Denied',
+                    message: errorMessage,
+                    duration: 6000
+                });
             } else if (!error.response) {
                 notifyWithToast("Network error. Please check your internet connection.");
             } else {
@@ -464,7 +472,13 @@ export default function SigninScreen({ navigation }) {
             } else if (error.response?.status === 524) {
                 notifyWithToast("Server timeout. Please try again.");
             } else if (error.response?.status === 401 || error.response?.status === 403) {
-                notifyWithToast("Authentication failed. Please check your credentials.");
+                const errorMessage = error.response?.data?.message || "Authentication failed. Please check your credentials.";
+                alert.show({
+                    type: 'error',
+                    title: 'Access Denied',
+                    message: errorMessage,
+                    duration: 6000
+                });
             } else if (!error.response) {
                 notifyWithToast("Network error. Please check your internet connection.");
             } else {
@@ -725,6 +739,9 @@ export default function SigninScreen({ navigation }) {
 
                 {/* Loader Modal */}
                 <LHLoaderModal visible={isLoading} message="Please wait, signing in..." transparent={false} />
+
+                {/* Unified Alert Component */}
+                <ISAlert ref={alert.ref} />
 
             </ImageBackground>
         </SafeAreaView>

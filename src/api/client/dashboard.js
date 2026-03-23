@@ -3,9 +3,9 @@
  */
 import { APIInstance } from '../LHAPI';
 import {
-     updateUserNotifications, 
-     updateUserDetails,
-     updateUserNotificationCount,
+    updateUserNotifications,
+    updateUserDetails,
+    updateUserNotificationCount,
 } from '../../features/user/userDataSlice';
 import { storeItemLS } from '../../global/StorageActions';
 
@@ -15,7 +15,7 @@ import { storeItemLS } from '../../global/StorageActions';
  * @param {Object} params - { dispatch, userID, loadingSetter }
  * @returns {Promise} User data
  */
-export const getAppHomeData = async ({ dispatch, userID, loadingSetter=null }) => {
+export const getAppHomeData = async ({ dispatch, userID, loadingSetter = null }) => {
     try {
         loadingSetter?.(true);
         console.log("Loading App home data started...");
@@ -34,7 +34,7 @@ export const getAppHomeData = async ({ dispatch, userID, loadingSetter=null }) =
                 pin: response.data.user.pin,
                 email_verified: response.data.user.email_verified,
                 phone_verified: response.data.user.phone_verified,
-                active: response.data.user.active,         
+                active: response.data.user.active,
             };
 
             dispatch(updateUserNotificationCount(userNotificationCount));
@@ -67,4 +67,24 @@ export const getDashboardData = async (userId) => {
         params: { user_id: userId }
     });
     return response.data;
+}
+
+/**
+ * Get dynamic banners for home screen
+ * @returns {Promise} Banners data array
+ */
+export const getBanners = async () => {
+    try {
+        const response = await APIInstance.get('/client/dashboard/banners');
+        return response.data;
+    } catch (error) {
+        // Temporary mock data for testing UI when endpoint fails/missing
+        return [
+            { id: '1', image: 'https://cdn.pixabay.com/photo/2016/08/06/18/51/softball-1574962_1280.jpg' },
+            { id: '2', image: 'https://cdn.pixabay.com/photo/2016/01/07/16/47/ipad-1126136_1280.jpg' },
+            { id: '3', image: 'https://cdn.pixabay.com/photo/2013/04/02/19/53/students-99506_1280.jpg' },
+            { id: '4', image: 'https://cdn.pixabay.com/photo/2013/04/10/18/07/child-102577_1280.jpg' },
+            { id: '5', image: 'https://cdn.pixabay.com/photo/2023/06/28/18/00/children-8094952_1280.jpg' }
+        ];
+    }
 }

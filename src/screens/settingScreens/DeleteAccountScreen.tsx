@@ -22,7 +22,7 @@ import { NavigationProp } from '@react-navigation/native';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import { deleteAccount } from '../../api/client/account';
-import { clearStorage } from '../../global/StorageActions';
+import { performLogout } from '../../utils/authManager';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 interface DeleteAccountScreenProps {
@@ -42,6 +42,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
   const [isLoading, setIsLoading] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [additionalFeedback, setAdditionalFeedback] = useState('');
   const [hasReadWarning, setHasReadWarning] = useState(false);
@@ -104,6 +105,13 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
     });
   };
 
+  const extractErrorMessage = (error: any, fallback: string) => {
+    if (error?.response?.data?.message) return error.response.data.message;
+    if (error?.response?.data?.error) return error.response.data.error;
+    if (error?.message) return error.message;
+    return fallback;
+  };
+
   const handleDeleteAccount = async () => {
     alert.show({
       type: 'destructive',
@@ -129,12 +137,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
               duration: 5000,
             });
 
-            await clearStorage();
-            
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'SigninScreen' }],
-            });
+            performLogout();
           } else {
             toast.show({
               description: response.message || 'Failed to delete account',
@@ -144,7 +147,7 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
         } catch (error: any) {
           console.error('Error deleting account:', error);
           toast.show({
-            description: error.response?.data?.message || 'Failed to delete account. Please try again.',
+            description: extractErrorMessage(error, 'Failed to delete account. Please try again.'),
             duration: 3000,
           });
         } finally {
@@ -271,15 +274,21 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Verify your password</Text>
             <View style={styles.sectionContent}>
-              <TextInput
-                style={[styles.feedbackInput, { height: scale(50), margin: scale(16) }]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter current password"
-                placeholderTextColor={appColors.grey4}
-                secureTextEntry
-                textAlignVertical="center"
-              />
+              <View style={styles.passwordContainer}>
+                <Icon name="lock" type="material" color={appColors.grey3} size={20} style={styles.passwordIcon} />
+                <TextInput
+                  style={styles.passwordInput}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter current password"
+                  placeholderTextColor={appColors.grey4}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.passwordToggle}>
+                  <Icon name={showPassword ? "visibility" : "visibility-off"} type="material" color={appColors.grey3} size={20} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -342,11 +351,11 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ navigation })
         <View style={styles.deleteButtonContainer}>
           <Button
             title={isLoading ? 'Deleting Account...' : 'Delete My Account Forever'}
-            buttonStyle={[
-              styles.deleteButton,
-              !canProceed && styles.disabledDeleteButton
-            ]}
+            color="#F44336"
+            buttonStyle={styles.deleteButton}
+            disabledStyle={styles.disabledDeleteButton}
             titleStyle={styles.deleteButtonText}
+            disabledTitleStyle={styles.disabledButtonText}
             onPress={handleDeleteAccount}
             loading={isLoading}
             disabled={!canProceed || isLoading}
@@ -539,6 +548,31 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     margin: scale(16),
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: appColors.grey5,
+    borderRadius: 8,
+    marginHorizontal: scale(16),
+    marginVertical: scale(16),
+    paddingHorizontal: scale(12),
+    height: scale(50),
+    backgroundColor: '#fff',
+  },
+  passwordIcon: {
+    marginRight: 8,
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: moderateScale(16),
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextRegular,
+    height: '100%',
+  },
+  passwordToggle: {
+    padding: 8,
+  },
   confirmationCheckbox: {
     backgroundColor: 'transparent',
     borderWidth: 0,
@@ -606,6 +640,10 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(16),
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
+    color: '#ffffff',
+  },
+  disabledButtonText: {
+    color: appColors.grey3,
   },
   deleteButtonSubtext: {
     fontSize: moderateScale(12),

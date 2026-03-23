@@ -23,6 +23,7 @@ import { addJoinedGroupId, removeJoinedGroupId, selectIsGroupJoined, selectJoine
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import { validateGroupJoin, getMembershipInfo } from '../../services/MembershipService';
 import MembershipLimitModal from '../../components/MembershipLimitModal';
+import { decodeHTMLEntities } from '../../utils/textHelpers';
 
 interface GroupMember {
   id: string;
@@ -68,10 +69,12 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       const response = await getGroupById(group.id, userId);
       console.log('✅ Group details response:', response);
 
-      // Update group details from API safely handling nested 'data' objects
       const groupData = response.group || response.data || {};
 
       if (Object.keys(groupData).length > 0) {
+        if (groupData.name) groupData.name = decodeHTMLEntities(groupData.name);
+        if (groupData.description) groupData.description = decodeHTMLEntities(groupData.description);
+        if (groupData.therapistName) groupData.therapistName = decodeHTMLEntities(groupData.therapistName);
         setGroupDetails((prev: any) => ({ ...prev, ...groupData }));
       }
 
@@ -170,16 +173,18 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           console.log('✅ Join group response:', response);
 
           if (groupDetails.isPrivate) {
-            toast.show({
-              description: response.message || 'Join request sent to group therapist',
-              duration: 3000,
+            alert.show({
+              type: 'success',
+              title: 'Request Sent',
+              message: response.message || 'Join request sent to group therapist',
             });
             return;
           }
 
-          toast.show({
-            description: response.message || `Successfully joined ${groupDetails.name}`,
-            duration: 3000,
+          alert.show({
+            type: 'success',
+            title: 'Welcome!',
+            message: response.message || `Successfully joined ${groupDetails.name}`,
           });
 
           // Update local state and sync Redux globally
@@ -191,9 +196,15 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           await loadGroupDetails(true);
         } catch (error: any) {
           console.error('❌ Error joining group:', error);
-          toast.show({
-            description: error.response?.data?.error || 'Failed to join group. Please try again.',
-            duration: 3000,
+          const backendError = error.response?.data?.error;
+          const errorMessage = typeof backendError === 'object' 
+             ? backendError.message 
+             : (backendError || error.message || 'Failed to join group. Please try again.');
+
+          alert.show({
+            type: 'error',
+            title: 'Action Required',
+            message: errorMessage,
           });
         }
       }

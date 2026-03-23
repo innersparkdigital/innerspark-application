@@ -1,7 +1,8 @@
 /**
  * Booking Checkout Screen - Checkout screen for session booking
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ScrollView,
   StatusBar,
@@ -19,6 +20,7 @@ import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { selectBalance, selectCurrency } from '../../features/wallet/walletSlice';
+import { refreshWalletBalance } from '../../utils/walletManager';
 import { createAppointment } from '../../utils/appointmentsManager';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import LHLoaderModal from '../../components/forms/LHLoaderModal';
@@ -36,15 +38,25 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
     selectedSlot,
     isExistingAppointment = false,
     appointmentId = null,
+    sessionId = 1,
     sessionType = 'Individual Therapy',
     sessionPrice = null,
     sessionDuration = '60 minutes',
-    location = '2 Avenue Street, Nakawa - Kampala Uganda, 3 km',
+    location = 'Virtual Session',
   } = route.params;
   const toast = useToast();
 
   const balance = useSelector(selectBalance);
   const currency = useSelector(selectCurrency);
+  const userId = useSelector((state: any) => state.userData?.userDetails?.userId || state.user?.userToken?.userId);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        refreshWalletBalance(userId);
+      }
+    }, [userId])
+  );
 
   const alert = useISAlert();
   const [message, setMessage] = useState('');
@@ -83,12 +95,26 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
         checkoutSchema.parse({ reason: reason.trim() });
       } catch (error) {
         if (error instanceof z.ZodError) {
-          toast.show({
-            description: error.errors[0].message,
-            duration: 3000,
+          alert.show({
+            type: 'error',
+            title: 'Action Required',
+            message: error.errors[0].message,
           });
           return;
         }
+      }
+
+      // Pre-flight wellness vault balance check for new appointments
+      const rawPrice = appointmentDetails.price.toString().replace(/[^0-9.]/g, '');
+      const requiredAmount = parseFloat(rawPrice);
+
+      if (balance < requiredAmount) {
+        alert.show({
+          type: 'error',
+          title: 'Insufficient Balance',
+          message: `Your WellnessVault balance (UGX ${balance.toLocaleString()}) is lower than the required amount (UGX ${requiredAmount.toLocaleString()}). Please top up your vault to proceed.`
+        });
+        return;
       }
     }
 
@@ -104,21 +130,42 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
 
         try {
           if (isExistingAppointment) {
-            toast.show({
-              description: 'Payment successful! Your appointment is now confirmed.',
-              duration: 3000,
-            });
             setIsProcessing(false);
-            navigation.navigate('AppointmentsScreen');
+            navigation.navigate('BookingConfirmationScreen', {
+              therapist,
+              appointmentDetails: {
+                ...appointmentDetails,
+                message: '',
+                reason: reason || 'Paid existing appointment',
+                paymentMethod: paymentMethods.find(method => method.id === selectedPaymentMethod),
+                bookingId: appointmentId || 'BK' + Date.now().toString().slice(-6),
+              },
+            });
           } else {
             // New booking flow
             const durationValue = parseInt(appointmentDetails.duration.toString().replace(/[^0-9]/g, ''), 10) || 60;
+
+            // Format time accurately to remove AM/PM strings for backend strictly (e.g. 02:30 PM -> 14:30)
+            const get24hTime = (timeStr: string) => {
+              if (!timeStr) return '';
+              const match = timeStr.trim().match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+              if (match) {
+                let [, hours, minutes, modifier] = match;
+                let hrs = parseInt(hours, 10);
+                if (modifier.toUpperCase() === 'PM' && hrs < 12) hrs += 12;
+                if (modifier.toUpperCase() === 'AM' && hrs === 12) hrs = 0;
+                return `${hrs.toString().padStart(2, '0')}:${minutes}`;
+              }
+              // Fallback: strip string manually
+              return timeStr.replace(/\s*(AM|PM)/gi, '').trim();
+            };
+
             const result = await createAppointment({
               therapistId: therapist.id.toString(),
               slotId: selectedSlot?.id?.toString() || '',
-              sessionType: sessionType?.toLowerCase() || 'individual',
+              sessionType: sessionId,
               date: selectedSlot?.date || '',
-              time: selectedSlot?.time || '',
+              time: get24hTime(selectedSlot?.time || ''),
               duration: durationValue,
               reason: reason.trim(),
               paymentMethod: selectedPaymentMethod,
@@ -159,7 +206,10 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
   };
 
   const formatPrice = (price: any) => {
-    // Price is already in UGX format like "UGX 50,000"
+    // Determine if price already contains UGX or USD tag. If it's a raw number, append it.
+    if (typeof price === 'number' || (typeof price === 'string' && !isNaN(Number(price)))) {
+      return `UGX ${Number(price).toLocaleString()}`;
+    }
     return price;
   };
 
