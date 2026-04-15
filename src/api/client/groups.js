@@ -44,22 +44,45 @@ export const getGroupById = async (groupId, userId) => {
 };
 
 /**
- * Join support group
+ * Subscribe to a support group cohort
  * @param {string} groupId - Group ID
  * @param {string} userId - User ID
- * @param {string} reason - Reason for joining (optional)
  * @param {boolean} agreeToGuidelines - Agreement to group guidelines
- * @returns {Promise} Join confirmation or membership limit error
+ * @returns {Promise} Join confirmation or wallet error
  */
-export const joinGroup = async (groupId, userId, reason = '', agreeToGuidelines = true) => {
-    // Dynamically cast numeric strings to Number to satisfy backend validation
+export const subscribeGroup = async (groupId, userId, agreeToGuidelines = true) => {
     const parsedUserId = !isNaN(Number(userId)) ? Number(userId) : userId;
 
-    const response = await APIInstance.post(`/client/groups/${groupId}/join`, {
+    const response = await APIInstance.post(`/client/groups/${groupId}/subscribe`, {
         user_id: parsedUserId,
-        reason,
         agreeToGuidelines
     });
+    return response.data;
+};
+
+/**
+ * Renew group subscription
+ * @param {string} groupId - Group ID
+ * @param {string} userId - User ID
+ * @returns {Promise} Renewal confirmation
+ */
+export const renewGroupSubscription = async (groupId, userId) => {
+    const parsedUserId = !isNaN(Number(userId)) ? Number(userId) : userId;
+
+    const response = await APIInstance.post(`/client/groups/${groupId}/renew`, {
+        user_id: parsedUserId,
+        action: 'renew_subscription'
+    });
+    return response.data;
+};
+
+/**
+ * Check group cohort availability
+ * @param {string} groupId - Group ID
+ * @returns {Promise} Cohort availability status
+ */
+export const getGroupCohortAvailability = async (groupId) => {
+    const response = await APIInstance.get(`/client/groups/${groupId}/cohort-availability`);
     return response.data;
 };
 

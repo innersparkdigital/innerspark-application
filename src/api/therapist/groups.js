@@ -316,8 +316,8 @@ export const scheduleGroupSession = async (groupId, therapistId, sessionData) =>
  * @param {string} therapistId - Therapist ID
  * @returns {Promise<{success: boolean, data: Object}>}
  */
-export const startGroupSession = async (groupId, sessionId, therapistId) => {
-    const response = await APIInstance.post(`/th/groups/${groupId}/sessions/${sessionId}/start`, {
+export const startGroupSession = async (groupId, therapistId) => {
+    const response = await APIInstance.put(`/th/groups/${groupId}/session/start`, {
         therapist_id: therapistId
     });
     return response.data;

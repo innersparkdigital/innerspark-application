@@ -16,7 +16,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
-import { getGroupById, joinGroup, leaveGroup } from '../../api/client/groups';
+import { getGroupById, subscribeGroup, leaveGroup, getGroupCohortAvailability } from '../../api/client/groups';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { generateAnonymousName } from '../../utils/privacyHelpers';
 import { addJoinedGroupId, removeJoinedGroupId, selectIsGroupJoined, selectJoinedGroupIds } from '../../features/groups/groupsSlice';
@@ -52,6 +52,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
   const [_isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<'member' | 'moderator' | 'none'>('none');
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [cohortAvailability, setCohortAvailability] = useState<{ available_seats: number, is_open: boolean, subscription_price_ugx: number, next_cohort_start_date?: string } | null>(null);
 
   const joinedGroupIds = useSelector(selectJoinedGroupIds);
   const membershipInfo = getMembershipInfo(joinedGroupIds.length);
@@ -81,6 +82,16 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       // Set members from API natively without mock fallbacks
       const membersData = response.members || response.data?.members || [];
       setMembers(membersData);
+
+      // Fetch availability
+      try {
+        const availResponse = await getGroupCohortAvailability(group.id);
+        if (availResponse?.data) {
+          setCohortAvailability(availResponse.data);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch cohort availability', err);
+      }
 
       // Determine accurate resolved role based on strict global state logic
       let resolvedRole = response.userRole || response.data?.userRole;
@@ -158,16 +169,15 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
     alert.show({
       type: 'confirm',
       title: 'Join Group',
-      message: 'Are you sure you want to join this support group? You agree to follow the community guidelines.',
-      confirmText: 'Join Group',
+      message: `Are you sure you want to subscribe to this support group? This will deduct ${cohortAvailability?.subscription_price_ugx || 25000} UGX from your wallet.`,
+      confirmText: 'Subscribe',
       cancelText: 'Cancel',
       onConfirm: async () => {
         try {
           console.log('📞 Calling joinGroup API from GroupDetailScreen...');
-          const response = await joinGroup(
+          const response = await subscribeGroup(
             groupDetails.id,
             userId,
-            'I struggle with anxiety and need support',
             true
           );
           console.log('✅ Join group response:', response);
@@ -200,6 +210,17 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           const errorMessage = typeof backendError === 'object' 
              ? backendError.message 
              : (backendError || error.message || 'Failed to join group. Please try again.');
+
+          if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('insufficient balance')) {
+            alert.show({
+              type: 'error',
+              title: 'Insufficient Balance',
+              message: errorMessage,
+              confirmText: 'Top Up Wallet',
+              onConfirm: () => navigation.navigate('Wallet')
+            });
+            return;
+          }
 
           alert.show({
             type: 'error',
@@ -400,6 +421,26 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           <Text style={styles.groupName}>{groupDetails.name}</Text>
           <Text style={styles.groupDescription}>{groupDetails.description}</Text>
 
+          {/* New Cohort Status UI */}
+          {cohortAvailability && (
+            <View style={styles.cohortContainer}>
+              <Text style={styles.cohortTitle}>
+                {cohortAvailability.is_open ? 'Next Cohort Now Forming' : 'Cohort Full / Closed'}
+              </Text>
+              <View style={styles.capacityBarBackground}>
+                <View style={[styles.capacityBarFill, { width: `${((10 - cohortAvailability.available_seats) / 10) * 100}%`, backgroundColor: cohortAvailability.is_open ? appColors.AppBlue : appColors.grey3 }]} />
+              </View>
+              <Text style={styles.capacityText}>
+                {10 - cohortAvailability.available_seats} / 10 Seats Reserved
+              </Text>
+              {cohortAvailability.next_cohort_start_date && (
+                <Text style={styles.cohortDateText}>
+                  Starts: {new Date(cohortAvailability.next_cohort_start_date).toLocaleDateString()}
+                </Text>
+              )}
+            </View>
+          )}
+
           <View style={styles.groupStats}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{groupDetails.memberCount}</Text>
@@ -504,14 +545,20 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       <View style={styles.bottomActions}>
         {userRole === 'none' ? (
           <Button
-            title={group.isPrivate ? "Request to Join" : "Join Group"}
+            title={
+              !cohortAvailability 
+                ? "Loading..." 
+                : !cohortAvailability.is_open 
+                  ? "Cohort Full" 
+                  : `Subscribe - ${cohortAvailability.subscription_price_ugx.toLocaleString()} UGX / Week`
+            }
             buttonStyle={[
               styles.primaryButton,
-              { backgroundColor: getCategoryColor(group.category) }
+              { backgroundColor: !cohortAvailability?.is_open ? appColors.grey4 : getCategoryColor(group.category) }
             ]}
             titleStyle={styles.primaryButtonText}
             onPress={handleJoinGroup}
-            disabled={group.memberCount >= group.maxMembers && !group.isPrivate}
+            disabled={!cohortAvailability || !cohortAvailability.is_open}
           />
         ) : (
           <View style={styles.memberActions}>
@@ -623,6 +670,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: scale(24),
     marginBottom: scale(24),
+  },
+  cohortContainer: {
+    width: '100%',
+    paddingHorizontal: scale(16),
+    marginBottom: scale(20),
+    alignItems: 'center',
+  },
+  cohortTitle: {
+    fontSize: moderateScale(14),
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginBottom: scale(8),
+  },
+  capacityBarBackground: {
+    width: '100%',
+    height: scale(8),
+    backgroundColor: appColors.grey6,
+    borderRadius: scale(4),
+    overflow: 'hidden',
+    marginBottom: scale(8),
+  },
+  capacityBarFill: {
+    height: '100%',
+    borderRadius: scale(4),
+  },
+  capacityText: {
+    fontSize: moderateScale(12),
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: scale(4),
+  },
+  cohortDateText: {
+    fontSize: moderateScale(12),
+    color: appColors.AppBlue,
+    fontWeight: 'bold',
+    fontFamily: appFonts.bodyTextRegular,
   },
   groupStats: {
     flexDirection: 'row',

@@ -11,6 +11,7 @@ import { getGroups } from '../../api/therapist';
 import { useFocusEffect } from '@react-navigation/native';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { getGroupIcon } from '../../utils/GroupUtils';
+import { startGroupSession } from '../../api/therapist';
 
 
 
@@ -71,6 +72,29 @@ const THGroupsScreen = ({ navigation }: any) => {
     setRefreshing(true);
     await loadGroups();
     setRefreshing(false);
+  };
+
+  const handleStartSession = async (group: any) => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.userId;
+      const response: any = await startGroupSession(group.id, therapistId);
+      
+      if (response && response.success !== false) {
+        navigation.navigate('THGroupChatScreen', { group });
+      }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to start session';
+      console.error('Start Session Error:', errorMessage);
+      alert.show({
+        type: 'error',
+        title: 'Session Error',
+        message: errorMessage,
+        confirmText: 'OK'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getFilteredGroups = () => {
@@ -212,7 +236,7 @@ const THGroupsScreen = ({ navigation }: any) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.actionButtonPrimary]}
-                    onPress={() => navigation.navigate('THGroupDetailsScreen', { group })}
+                    onPress={() => handleStartSession(group)}
                     activeOpacity={0.7}
                   >
                     <Icon type="material" name="play-circle-filled" size={18} color="#FFFFFF" />

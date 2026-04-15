@@ -19,7 +19,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { useToast } from 'native-base';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useSelector, useDispatch } from 'react-redux';
-import { getChatMessages, sendChatMessage, markChatAsRead } from '../../api/client/messages';
+import { getChatMessages, sendChatMessage, markChatAsRead, sendChatHeartbeat } from '../../api/client/messages';
 import { displayNotification } from '../../api/LHNotifications';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
@@ -55,6 +55,10 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [messageText, setMessageText] = useState('');
+  const [isChatLocked, setIsChatLocked] = useState(false);
+  const [chatStatus, setChatStatus] = useState<string>('ACTIVE');
+  const [scheduledStartTime, setScheduledStartTime] = useState<string | null>(null);
+  const [countdownText, setCountdownText] = useState<string>('');
 
   // Track the previously loaded messages safely across re-renders to filter Live Array diffs dynamically generating Notifications
   const prevMessagesRef = useRef<Message[]>([]);
@@ -62,14 +66,66 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   useEffect(() => {
     loadMessagesData();
     markMessagesAsRead();
+    sendHeartbeat();
 
-    const interval = setInterval(() => {
+    const loadInterval = setInterval(() => {
       loadMessagesData(true);
       markMessagesAsRead();
     }, 5000);
 
-    return () => clearInterval(interval);
+    const hbInterval = setInterval(() => {
+      sendHeartbeat();
+    }, 10000);
+
+    return () => {
+      clearInterval(loadInterval);
+      clearInterval(hbInterval);
+    };
   }, []);
+
+  useEffect(() => {
+    if (chatStatus === 'LOCKED' && scheduledStartTime) {
+      const timer = setInterval(() => {
+        const now = new Date().getTime();
+        const start = new Date(scheduledStartTime).getTime();
+        const diff = start - now;
+        
+        if (diff <= 0) {
+          setCountdownText('Starting soon...');
+          setChatStatus('ACTIVE');
+          setIsChatLocked(false);
+          clearInterval(timer);
+        } else {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const secs = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          if (days > 0) {
+             setCountdownText(`Unlocks in ${days}d ${hours}h`);
+          } else {
+             setCountdownText(`Unlocks in ${hours}h ${mins}m ${secs}s`);
+          }
+        }
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [chatStatus, scheduledStartTime]);
+
+  const sendHeartbeat = async () => {
+    if (!chatId || !userId) return;
+    try {
+      const response = await sendChatHeartbeat(chatId, userId);
+      const status = response.data?.chat_status || response.chat_status || 'ACTIVE';
+      setChatStatus(status);
+      setIsChatLocked(status === 'LOCKED');
+      
+      const startTime = response.data?.scheduled_start_time || response.scheduled_start_time;
+      if (startTime) setScheduledStartTime(startTime);
+    } catch (e) {
+      console.warn('Heartbeat failed', e);
+    }
+  };
 
   const loadMessagesData = async (isSilent = false) => {
     if (!isSilent && messages.length === 0) {
@@ -376,34 +432,44 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
         />
 
         {/* Message Composer */}
-        <View style={styles.composer}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Type a message..."
-              placeholderTextColor={appColors.grey3}
-              value={messageText}
-              onChangeText={setMessageText}
-              multiline
-              maxLength={1000}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                messageText.trim() ? styles.sendButtonActive : styles.sendButtonInactive
-              ]}
-              onPress={handleSendMessage}
-              disabled={!messageText.trim() || isSending}
-            >
-              <Icon
-                name="send"
-                type="material"
-                color={messageText.trim() ? appColors.CardBackground : appColors.grey3}
-                size={moderateScale(20)}
-              />
-            </TouchableOpacity>
+        {isChatLocked ? (
+          <View style={styles.lockedFooter}>
+            <Icon name="lock" type="material" color={appColors.grey3} size={moderateScale(24)} />
+            <Text style={styles.lockedTitle}>Session Locked</Text>
+            <Text style={styles.lockedSubtitle}>
+              {countdownText || 'This session has not started yet or has expired.'}
+            </Text>
           </View>
-        </View>
+        ) : (
+          <View style={styles.composer}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Type a message..."
+                placeholderTextColor={appColors.grey3}
+                value={messageText}
+                onChangeText={setMessageText}
+                multiline
+                maxLength={1000}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  messageText.trim() ? styles.sendButtonActive : styles.sendButtonInactive
+                ]}
+                onPress={handleSendMessage}
+                disabled={!messageText.trim() || isSending}
+              >
+                <Icon
+                  name="send"
+                  type="material"
+                  color={messageText.trim() ? appColors.CardBackground : appColors.grey3}
+                  size={moderateScale(20)}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </KeyboardAvoidingView>
       <ISAlert ref={alert.ref} />
     </SafeAreaView>
@@ -583,6 +649,32 @@ const styles = StyleSheet.create({
   },
   sendButtonInactive: {
     backgroundColor: 'transparent',
+  },
+  lockedFooter: {
+    backgroundColor: appColors.CardBackground,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: scale(-2) },
+    shadowOpacity: 0.1,
+    shadowRadius: scale(4),
+  },
+  lockedTitle: {
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
+    color: appColors.grey2,
+    fontFamily: appFonts.headerTextBold,
+    marginTop: scale(8),
+  },
+  lockedSubtitle: {
+    fontSize: moderateScale(14),
+    color: appColors.AppBlue,
+    fontFamily: appFonts.bodyTextRegular,
+    marginTop: scale(4),
+    fontWeight: 'bold',
   },
 });
 

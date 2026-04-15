@@ -23,6 +23,9 @@ import { getFullname } from '../../global/LHShortcuts';
 import { getProfile as getClientProfile, updateProfile as updateClientProfile } from '../../api/client/profile';
 import { setUserProfile } from '../../features/user/userDataSlice';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import DatePicker from 'react-native-date-picker';
+import { getUploadUrl } from '../../utils/imageHelpers';
+import moment from 'moment';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -34,6 +37,7 @@ interface UserProfile {
   role?: string;
   bio?: string;
   gender?: string;
+  dateOfBirth?: string;
   dateJoined?: string;
   lastActive?: string;
 }
@@ -278,6 +282,8 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+  const [datePickerDate, setDatePickerDate] = useState(new Date());
 
   // Capture initial state for dirty-check on mount
   const [initialReference, setInitialReference] = useState<UserProfile>({});
@@ -312,6 +318,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
           phone: userProfile.phoneNumber,
           bio: userProfile.bio,
           gender: userProfile.gender,
+          dateOfBirth: userProfile.dateOfBirth,
           dateJoined: userProfile.joinedDate,
           role: userDetails?.role,
         });
@@ -333,6 +340,13 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
 
   // Handle field edit
   const handleEditField = (field: string) => {
+    if (field === 'dateOfBirth') {
+      const currentVal = profileData.dateOfBirth;
+      const parsedDate = currentVal ? moment(currentVal, 'YYYY-MM-DD').toDate() : new Date(2000, 0, 1);
+      setDatePickerDate(parsedDate);
+      setIsDatePickerVisible(true);
+      return;
+    }
     setCurrentEditField(field);
     setIsEditModalVisible(true);
   };
@@ -397,6 +411,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
       compareAndAdd('lastName', profileData.lastName, initialReference.lastName);
       compareAndAdd('bio', profileData.bio, initialReference.bio);
       compareAndAdd('gender', profileData.gender, initialReference.gender);
+      compareAndAdd('dateOfBirth', profileData.dateOfBirth, initialReference.dateOfBirth);
 
       console.log('--- PROFILE UPDATE DEBUG ---');
       console.log('UserId:', userId);
@@ -494,6 +509,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
       role: userDetails?.role || 'Premium Member',
       bio: userProfile?.bio ?? userDetails?.bio ?? '',
       gender: userProfile?.gender ?? '',
+      dateOfBirth: userProfile?.dateOfBirth ?? '',
     };
     setProfileData(data);
     setInitialReference(data);
@@ -521,8 +537,8 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
             <Avatar
               rounded
               size={scale(100)}
-              source={(userProfile?.profileImage || userDetails?.image) ? { uri: userProfile?.profileImage || userDetails?.image } : undefined}
-              icon={!(userProfile?.profileImage || userDetails?.image) ? { name: 'person', type: 'material', size: scale(64), color: appColors.CardBackground } : undefined}
+              source={(profileData?.profileImage || userProfile?.profileImage || userDetails?.image) ? { uri: getUploadUrl(profileData?.profileImage || userProfile?.profileImage || userDetails?.image) } : undefined}
+              icon={!(profileData?.profileImage || userProfile?.profileImage || userDetails?.image) ? { name: 'person', type: 'material', size: scale(64), color: appColors.CardBackground } : undefined}
               containerStyle={[styles.avatarStyle, { backgroundColor: appColors.grey5 }]}
               avatarStyle={{ resizeMode: 'cover' }}
             />
@@ -574,6 +590,13 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
             />
 
             <UpdateProfileField
+              label="Date of Birth"
+              value={profileData.dateOfBirth || ''}
+              icon="cake"
+              onEdit={() => handleEditField('dateOfBirth')}
+            />
+
+            <UpdateProfileField
               label="Bio"
               value={profileData.bio || ''}
               icon="info"
@@ -616,6 +639,25 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
         onSave={handleSaveField}
         requiresVerification={currentEditField === 'email' || currentEditField === 'phone'}
         alertRef={alert.ref}
+      />
+      
+      <DatePicker
+        modal
+        mode="date"
+        open={isDatePickerVisible}
+        date={datePickerDate}
+        maximumDate={new Date()}
+        onConfirm={(date) => {
+          setIsDatePickerVisible(false);
+          const formattedDate = moment(date).format('YYYY-MM-DD');
+          setProfileData(prev => ({
+            ...prev,
+            dateOfBirth: formattedDate
+          }));
+        }}
+        onCancel={() => {
+          setIsDatePickerVisible(false);
+        }}
       />
       <ISAlert ref={alert.ref} />
     </SafeAreaView>

@@ -33,7 +33,7 @@ import { APIInstance } from '../LHAPI';
  * // }
  */
 export const getAvailabilitySlots = async (therapistId, filters = {}) => {
-    const response = await APIInstance.get('th/availability', {
+    const response = await APIInstance.get('th/slots', {
         params: { therapist_id: therapistId, ...filters }
     });
     return response.data;
@@ -80,7 +80,7 @@ export const getAvailability = async (therapistId) => {
  * // }
  */
 export const createAvailabilitySlot = async (slotData) => {
-    const response = await APIInstance.post('th/availability', slotData);
+    const response = await APIInstance.post('th/slots', slotData);
     return response.data;
 };
 
@@ -91,7 +91,7 @@ export const createAvailabilitySlot = async (slotData) => {
  * @returns {Promise<{success: boolean, message: string, data: Object}>} Updated slot
  */
 export const updateAvailabilitySlot = async (slotId, updateData) => {
-    const response = await APIInstance.put(`th/availability/${slotId}`, updateData);
+    const response = await APIInstance.put(`th/slots/${slotId}`, updateData);
     return response.data;
 };
 
@@ -102,7 +102,7 @@ export const updateAvailabilitySlot = async (slotId, updateData) => {
  * @returns {Promise<{success: boolean, message: string}>} Deletion confirmation
  */
 export const deleteAvailabilitySlot = async (slotId, therapistId) => {
-    const response = await APIInstance.delete(`th/availability/${slotId}`, {
+    const response = await APIInstance.delete(`th/slots/${slotId}`, {
         params: { therapist_id: therapistId }
     });
     return response.data;

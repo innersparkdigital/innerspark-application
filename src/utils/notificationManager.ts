@@ -35,7 +35,7 @@ export const loadNotifications = async (userId: string, page: number = 1) => {
     if (role === 'therapist') {
       response = await getTherapistNotifications(userId, false);
     } else {
-      response = await getNotifications(page);
+      response = await getNotifications(userId, page);
     }
 
     console.log('✅ API Response:', JSON.stringify(response, null, 2));
@@ -104,7 +104,7 @@ export const refreshNotifications = async (userId: string) => {
     if (role === 'therapist') {
       response = await getTherapistNotifications(userId, false);
     } else {
-      response = await getNotifications(1);
+      response = await getNotifications(userId, 1);
     }
     
     if (response.success && response.data) {
@@ -224,7 +224,7 @@ export const getUnreadCount = async (userId: string) => {
     if (role === 'therapist') {
       response = await getTherapistNotifications(userId, true);
     } else {
-      response = await getNotifications(1);
+      response = await getNotifications(userId, 1);
     }
     
     if (response.success && response.data?.unreadCount !== undefined) {

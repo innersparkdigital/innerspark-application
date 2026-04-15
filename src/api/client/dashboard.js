@@ -1,7 +1,7 @@
 /**
  * Client Dashboard API Functions
  */
-import { APIInstance } from '../LHAPI';
+import { APIInstance, AuthInstance } from '../LHAPI';
 import {
     updateUserNotifications,
     updateUserDetails,
@@ -75,7 +75,7 @@ export const getDashboardData = async (userId) => {
  */
 export const getBanners = async () => {
     try {
-        const response = await APIInstance.get('/client/dashboard/banners');
+        const response = await AuthInstance.get('/banners');
         return response.data;
     } catch (error) {
         // Temporary mock data for testing UI when endpoint fails/missing

@@ -77,3 +77,19 @@ export const getWalletTransaction = async (transactionId, userId) => {
     });
     return response.data;
 };
+
+/**
+ * Make a donation directly from wallet
+ * @param {string} userId - User ID
+ * @param {number} amount - Amount in UGX
+ * @param {string} note - Optional note
+ * @returns {Promise} Donation confirmation
+ */
+export const makeDonation = async (userId, amount, note = '') => {
+    const response = await APIInstance.post('/client/donate', {
+        user_id: userId,
+        amount: Number(amount),
+        note
+    });
+    return response.data;
+};

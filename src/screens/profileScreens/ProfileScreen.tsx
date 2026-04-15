@@ -12,6 +12,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
@@ -22,9 +23,11 @@ import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getFullname } from '../../global/LHShortcuts';
-import { getProfile as getClientProfile } from '../../api/client/profile';
+import { getProfile as getClientProfile, uploadAvatar } from '../../api/client/profile';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { setUserProfile } from '../../features/user/userDataSlice';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { getUploadUrl } from '../../utils/imageHelpers';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -36,6 +39,7 @@ interface UserProfile {
   role?: string;
   bio?: string;
   gender?: string;
+  dateOfBirth?: string;
   dateJoined?: string;
   lastActive?: string;
 }
@@ -118,6 +122,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const userProfile = useSelector((state: any) => state.userData.userProfile);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileData, setProfileData] = useState<UserProfile>({});
 
@@ -158,6 +163,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           phone: data.phoneNumber,
           bio: data.bio,
           gender: data.gender,
+          dateOfBirth: data.dateOfBirth,
           dateJoined: data.joinedDate,
           role: userDetails?.role,
         });
@@ -194,13 +200,44 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   };
 
   // Handle avatar update
-  const handleAvatarUpdate = () => {
-    alert.show({
-      type: 'info',
-      title: 'Update Profile Photo',
-      message: 'Avatar upload feature coming soon!',
-      confirmText: 'OK',
-    });
+  const handleAvatarUpdate = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        selectionLimit: 1,
+      });
+
+      if (result.didCancel || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      const userId = userDetails?.userId;
+      
+      if (!userId || !asset.uri) {
+        return;
+      }
+
+      setIsUploadingAvatar(true);
+      const response = await uploadAvatar(userId, asset.uri, asset.type, asset.fileName);
+      
+      if (response && response.success) {
+        notifyWithToast('Profile photo updated successfully!');
+        await loadProfileData();
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error: any) {
+      alert.show({
+        type: 'error',
+        title: 'Upload Failed',
+        message: error.backendMessage || error.message || 'Could not upload profile photo.',
+        confirmText: 'OK',
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   // Sync local state from Redux userProfile whenever screen gains focus
@@ -214,6 +251,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           phone: userProfile.phoneNumber,
           bio: userProfile.bio,
           gender: userProfile.gender,
+          dateOfBirth: userProfile.dateOfBirth,
           dateJoined: userProfile.joinedDate,
           role: userDetails?.role,
         });
@@ -260,15 +298,20 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
       >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <TouchableOpacity onPress={handleAvatarUpdate} style={styles.avatarContainer}>
+          <TouchableOpacity onPress={handleAvatarUpdate} style={styles.avatarContainer} disabled={isUploadingAvatar}>
             <Avatar
               rounded
               size={scale(120)}
-              source={(userProfile?.profileImage || userDetails?.image) ? { uri: userProfile?.profileImage || userDetails?.image } : undefined}
+              source={(userProfile?.profileImage || userDetails?.image) ? { uri: getUploadUrl(userProfile?.profileImage || userDetails?.image) } : undefined}
               icon={!(userProfile?.profileImage || userDetails?.image) ? { name: 'person', type: 'material', size: scale(80), color: appColors.CardBackground } : undefined}
               containerStyle={[styles.avatarStyle, { backgroundColor: appColors.grey5 }]}
               avatarStyle={{ resizeMode: 'cover' }}
             />
+            {isUploadingAvatar && (
+              <View style={[styles.avatarStyle, { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: scale(60), justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={appColors.CardBackground} />
+              </View>
+            )}
             <View style={styles.avatarEditOverlay}>
               <Icon
                 type="material"
@@ -338,6 +381,12 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             label="Gender"
             value={profileData.gender || ''}
             icon="person-outline"
+          />
+
+          <ProfileField
+            label="Date of Birth"
+            value={profileData.dateOfBirth || ''}
+            icon="cake"
           />
 
           <ProfileField

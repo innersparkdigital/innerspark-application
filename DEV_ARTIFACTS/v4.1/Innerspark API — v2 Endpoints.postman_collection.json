@@ -1,0 +1,3052 @@
+{
+  "info": {
+    "_postman_id": "f839bf82-7edd-44c6-8444-4b712ea47ef6",
+    "name": "Innerspark API — v2 Endpoints",
+    "description": "Complete test collection for all endpoints added or modified.\n\nBase URL: http://localhost:8000 (development) | https://server.innersparkafrica.us (production)\n\nAuth: All requests require the `x-api-key` header.\n\nFolders:\n1. Support Groups — Directory & Availability\n2. Support Groups — Subscriptions\n3. Support Groups — Messaging\n4. 1-on-1 Chat Sessions — Booking\n5. 1-on-1 Chat Sessions — Messaging\n6. 1-on-1 Chat Sessions — Presence (Heartbeat)\n7. Donations\n8. Banners\n9. Therapist Slots\n10. Notifications\n11. Therapist Session Start\n12. Therapist List & Session Types",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "3615648",
+    "_collection_link": "https://go.postman.co/collection/3615648-f839bf82-7edd-44c6-8444-4b712ea47ef6?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "1 · Support Groups — Directory & Availability",
+      "item": [
+        {
+          "name": "GET /groups — Browse All Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Groups array is non-empty\", () => {",
+                  "    const groups = pm.response.json().data.groups;",
+                  "    pm.expect(groups).to.be.an('array').that.is.not.empty;",
+                  "});",
+                  "pm.test(\"Each group has cohort fields\", () => {",
+                  "    const g = pm.response.json().data.groups[0];",
+                  "    ['subscription_price_ugx','next_cohort_start_date','is_open_for_booking',",
+                  "     'member_count','max_capacity','therapistPhoto','therapistSpecialization']",
+                  "    .forEach(f => pm.expect(g, `missing field: ${f}`).to.have.property(f));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups?user_id={{userId}}&page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            },
+            "description": "Returns the full list of active support groups, including cohort scheduling info, capacity, subscription price, and the linked therapist's photo and specialisation.\n\nKey response fields:\n- `next_cohort_start_date` — ISO-8601 datetime of the next cohort window\n- `is_open_for_booking` — true when the cohort starts within 3 days\n- `subscription_price_ugx` — cost to join one cohort (default 25,000 UGX)\n- `therapistPhoto`, `therapistSpecialization` — therapist profile info"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /groups/:groupId/cohort-availability — Check Seat Availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Has availability fields\", () => {",
+                  "    const d = pm.response.json().data;",
+                  "    ['available_seats','is_open','max_capacity',",
+                  "     'next_cohort_start_date','subscription_price_ugx']",
+                  "    .forEach(f => pm.expect(d, `missing: ${f}`).to.have.property(f));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/cohort-availability",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "cohort-availability"
+              ]
+            },
+            "description": "Lightweight pre-payment check. Returns available seats and whether the next cohort is still accepting bookings. The client should call this before initiating the subscribe flow to surface a 'full' message early.\n\nKey response fields:\n- `available_seats` — seats remaining before the 10-member cap is hit\n- `is_open` — false when the cohort is full or not yet open\n- `subscription_price_ugx` — price the user will be charged"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /groups/my-groups — My Subscribed Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Groups array present\", () => {",
+                  "    pm.expect(pm.response.json().data.groups).to.be.an('array');",
+                  "});",
+                  "pm.test(\"Each group has membership fields\", () => {",
+                  "    const groups = pm.response.json().data.groups;",
+                  "    if (groups.length > 0) {",
+                  "        const g = groups[0];",
+                  "        ['membership_status','expiry_date','last_message',",
+                  "         'icon_url','therapistImage','therapistSpecialization']",
+                  "        .forEach(f => pm.expect(g, `missing: ${f}`).to.have.property(f));",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/my-groups?user_id={{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "my-groups"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}"
+                }
+              ]
+            },
+            "description": "Returns the groups the authenticated client has ever subscribed to, including their current membership status and expiry date. Clients use this screen to re-enter an active group chat or see when they can renew.\n\nKey response fields:\n- `membership_status` — ACTIVE | EXPIRED | PENDING\n- `expiry_date` — when the current subscription window ends\n- `last_message` — preview of the most recent group message\n- `icon_url`, `therapistImage`, `therapistSpecialization` — display metadata"
+          },
+          "response": []
+        }
+      ],
+      "description": "Read-only endpoints that allow clients to browse the group catalogue and check cohort availability before subscribing."
+    },
+    {
+      "name": "2 · Support Groups — Subscriptions",
+      "item": [
+        {
+          "name": "POST /groups/:groupId/subscribe — Subscribe to Cohort (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Returns PENDING membership status\", () => {",
+                  "    pm.expect(pm.response.json().data.membership_status).to.equal('PENDING');",
+                  "});",
+                  "pm.test(\"Returns cohort_start_date\", () => {",
+                  "    pm.expect(pm.response.json().data).to.have.property('cohort_start_date');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"agreeToGuidelines\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "subscribe"
+              ]
+            },
+            "description": "Pays for and reserves a seat in the next cohort window. Deducts `subscription_price_ugx` from the client's wallet and writes a `PENDING` row to `group_subscription_history`. The subscription becomes `ACTIVE` when the cohort start date is reached.\n\nValidations (in order):\n1. `agreeToGuidelines` must be true\n2. User must exist and have a verified email\n3. Group must be active and open for booking\n4. No existing active subscription for this user+group\n5. Capacity not yet full (10 members max, row-locked)\n6. Wallet balance >= subscription_price_ugx"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /groups/:groupId/subscribe — Reject: User Not Found (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"User not found message\", () => {",
+                  "    pm.expect(pm.response.json().message).to.include('User not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 99999999999,\n  \"agreeToGuidelines\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "subscribe"
+              ]
+            },
+            "description": "Passing a user_id that does not exist in the users table must return 401 with 'User not found'. This prevents the fallback 'insufficient balance' error that would otherwise surface when the wallet lookup returns nothing."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /groups/:groupId/subscribe — Reject: Insufficient Balance (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Ensure wallet is empty before this test (run manually via DB or seed script)"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"INSUFFICIENT_BALANCE error code\", () => {",
+                  "    pm.expect(pm.response.json().error.code).to.equal('INSUFFICIENT_BALANCE');",
+                  "});",
+                  "pm.test(\"Shortfall provided\", () => {",
+                  "    pm.expect(pm.response.json().error.data).to.have.property('shortfall');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"agreeToGuidelines\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "subscribe"
+              ]
+            },
+            "description": "When the user's wallet balance is below the group's subscription_price_ugx, the endpoint returns 400 with error code INSUFFICIENT_BALANCE and a breakdown showing the shortfall amount the user needs to top up."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /groups/:groupId/renew — Renew After Expiry (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"new_expiry_date returned\", () => {",
+                  "    pm.expect(pm.response.json().data).to.have.property('new_expiry_date');",
+                  "});",
+                  "pm.test(\"amount_deducted returned\", () => {",
+                  "    pm.expect(pm.response.json().data).to.have.property('amount_deducted');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"action\": \"renew_subscription\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/renew",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "renew"
+              ]
+            },
+            "description": "Extends a lapsed membership by booking the next cohort window (+7 days from next session_day). Deducts subscription_price_ugx from wallet, appends a new row to group_subscription_history (PENDING), and updates group_members.\n\nPrerequisite: user must already be a member (joined via /subscribe at some point) and their current subscription must be expired."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /groups/:groupId/renew — Reject: Already Active (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"Already active message\", () => {",
+                  "    pm.expect(pm.response.json().message).to.include('already have an active subscription');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"action\": \"renew_subscription\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/renew",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "renew"
+              ]
+            },
+            "description": "Renewal must be blocked when the user already has an ACTIVE subscription that has not yet expired. This prevents double-charging before the current window is over."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints that manage the cohort subscription lifecycle: joining a new cohort, blocking duplicate/active subscriptions, and renewing after expiry."
+    },
+    {
+      "name": "3 · Support Groups — Messaging",
+      "item": [
+        {
+          "name": "GET /groups/:groupId/messages — Fetch Messages (Subscription Filtered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Messages array present\", () => {",
+                  "    pm.expect(pm.response.json().data.messages).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/messages?user_id={{userId}}&page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            },
+            "description": "Returns paginated group messages filtered to only the time windows where the requesting user had an ACTIVE or EXPIRED subscription. This enforces the privacy rule: a user who was inactive for week 2 cannot read messages from that week even if they subscribe again in week 3.\n\nQuery params:\n- `user_id` (required)\n- `page`, `limit` (optional, default 1/20)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /groups/:groupId/messages — Send Message (Active Member)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Message ID returned\", () => {",
+                  "    pm.expect(pm.response.json().data).to.have.property('message_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"content\": \"Hello group!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "messages"
+              ]
+            },
+            "description": "Sends a message to the group chat. The sender must:\n1. Exist in the users table (401 if not)\n2. Be an active group_member (403 if not)\n3. Have a non-expired subscription_end_date (403 if expired)\n\nSupports optional `replyTo` field (message ID prefixed with `gmsg_`)."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /groups/:groupId/messages — Reject: User Not Found (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"User not found message\", () => {",
+                  "    pm.expect(pm.response.json().message).to.include('User not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 99999999999,\n  \"content\": \"This should be rejected.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "messages"
+              ]
+            },
+            "description": "A user_id that does not exist in the database must return 401 'User not found' before any group membership check is attempted."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /groups/:groupId/messages — Reject: Expired Subscription (403)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Prerequisite: set subscription_end_date to a past date for this user+group in the DB"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"Subscription expired message\", () => {",
+                  "    pm.expect(pm.response.json().message).to.include('subscription has expired');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"content\": \"Should be blocked — subscription expired.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/groups/{{groupId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "groups",
+                "{{groupId}}",
+                "messages"
+              ]
+            },
+            "description": "A user whose subscription_end_date has passed must receive 403. This enforces read-only mode for EXPIRED members — they can still fetch historical messages (GET) but cannot write new ones."
+          },
+          "response": []
+        }
+      ],
+      "description": "Read and write group chat messages. Messages are filtered to only show windows the user was actively subscribed for (discontinuous history support). Writing is blocked for expired or non-member users."
+    },
+    {
+      "name": "4 · 1-on-1 Chat Sessions — Booking",
+      "item": [
+        {
+          "name": "GET /therapists/:therapistId/slots — Available Chat Slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"available_slots array present\", () => {",
+                  "    pm.expect(pm.response.json().data.available_slots).to.be.an('array');",
+                  "});",
+                  "pm.test(\"Slots have required fields\", () => {",
+                  "    const slots = pm.response.json().data.available_slots;",
+                  "    if (slots.length > 0) {",
+                  "        ['slot_id','date','time','type','price_ugx','is_available']",
+                  "        .forEach(f => pm.expect(slots[0], `missing: ${f}`).to.have.property(f));",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/therapists/{{therapistId}}/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "therapists",
+                "{{therapistId}}",
+                "slots"
+              ]
+            },
+            "description": "Returns the therapist's available chat slots for the next 14 days. Only slots with `is_available=true` and `type='chat'` can be booked via POST /chats/book.\n\nKey response fields per slot:\n- `slot_id` — pass this to the book endpoint\n- `date`, `time` — scheduled window\n- `price_ugx` — cost deducted from wallet at booking\n- `is_available` — false if already booked or in the past"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /chats/book — Book a Chat Session (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Session status is LOCKED\", () => {",
+                  "    pm.expect(pm.response.json().data.status).to.equal('LOCKED');",
+                  "});",
+                  "pm.test(\"chat_id returned\", () => {",
+                  "    const chatId = pm.response.json().data.chat_id;",
+                  "    pm.expect(chatId).to.be.a('string').that.includes('chat_');",
+                  "    pm.collectionVariables.set('chatId', chatId);",
+                  "});",
+                  "pm.test(\"Scheduled times returned\", () => {",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d).to.have.property('scheduled_start_time');",
+                  "    pm.expect(d).to.have.property('scheduled_end_time');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": {{userId}},\n  \"therapist_id\": {{therapistId}},\n  \"date\": \"{{bookingDate}}\",\n  \"time\": \"{{bookingTime}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/chats/book",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "chats",
+                "book"
+              ]
+            },
+            "description": "Books a 1-on-1 chat session with a therapist. Deducts `price_ugx` from the client's wallet, creates a row in `chat_sessions` with status PENDING (displayed as LOCKED to clients), and marks the therapist slot as unavailable.\n\nThe response `status: 'LOCKED'` means the session is confirmed but not yet active — it transitions to ACTIVE at `scheduled_start_time`.\n\nDouble-booking prevention: if the therapist already has a chat_session overlapping the requested window, the endpoint returns 409 Conflict.\n\nThe test script auto-saves the returned `chat_id` to the `chatId` collection variable for downstream tests."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /chats/book — Reject: Double-booking (409)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Run the happy-path book request first so this slot is already taken"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"Already booked message\", () => {",
+                  "    pm.expect(pm.response.json().message).to.include('already booked');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": {{userId}},\n  \"therapist_id\": {{therapistId}},\n  \"date\": \"{{bookingDate}}\",\n  \"time\": \"{{bookingTime}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/chats/book",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "chats",
+                "book"
+              ]
+            },
+            "description": "Attempting to book the same therapist for an overlapping time window must return 409 Conflict. The overlap check queries chat_sessions for any existing row where `scheduled_start_time < requested_end AND scheduled_end_time > requested_start`."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for browsing a therapist's available chat slots and booking a paid 1-on-1 session. A booked session starts in LOCKED (PENDING in DB) state and transitions to ACTIVE at the scheduled start time."
+    },
+    {
+      "name": "5 · 1-on-1 Chat Sessions — Messaging",
+      "item": [
+        {
+          "name": "GET /chats/:chatId/messages — Fetch Messages with Session State",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Messages array present\", () => {",
+                  "    pm.expect(pm.response.json().data.messages).to.be.an('array');",
+                  "});",
+                  "pm.test(\"Session state fields present\", () => {",
+                  "    const d = pm.response.json().data;",
+                  "    ['chat_status','is_read_only','scheduled_start_time','scheduled_end_time']",
+                  "    .forEach(f => pm.expect(d, `missing: ${f}`).to.have.property(f));",
+                  "});",
+                  "pm.test(\"chat_status is valid enum\", () => {",
+                  "    pm.expect(['LOCKED','ACTIVE','CLOSED'])",
+                  "    .to.include(pm.response.json().data.chat_status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/chats/{{chatId}}/messages?user_id={{userId}}&page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "chats",
+                "{{chatId}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            },
+            "description": "Returns paginated messages for the chat plus the current session metadata. The `chat_status` field in the response reflects the client-facing state:\n- `LOCKED` — session booked but start time not yet reached\n- `ACTIVE` — session is live, both parties can send messages\n- `CLOSED` — session ended, read-only\n\nAlso returns `is_read_only`, `scheduled_start_time`, `scheduled_end_time`."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /chats/:chatId/messages — Send Message (ACTIVE Session)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Message ID returned\", () => {",
+                  "    pm.expect(pm.response.json().data).to.have.property('message_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"content\": \"Hello, I wanted to discuss my progress this week.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/chats/{{chatId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "chats",
+                "{{chatId}}",
+                "messages"
+              ]
+            },
+            "description": "Sends a message in a 1-on-1 chat. The session must be ACTIVE (i.e., current time is between scheduled_start_time and scheduled_end_time). The endpoint auto-checks the time window and will auto-close the session and return 403 if the end time has passed."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /chats/:chatId/messages — Reject: CLOSED Session (403)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Prerequisite: update chat_sessions SET status='CLOSED' for this chatId in the DB"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"Session closed message\", () => {",
+                  "    pm.expect(pm.response.json().message).to.include('closed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"content\": \"This message should be rejected.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/chats/{{chatId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "chats",
+                "{{chatId}}",
+                "messages"
+              ]
+            },
+            "description": "Sending a message to a CLOSED session must return 403. A session becomes CLOSED either when the scheduled_end_time passes (auto-closed on next heartbeat or send attempt) or when manually closed."
+          },
+          "response": []
+        }
+      ],
+      "description": "Send and receive messages within a booked chat session. Writing is gated on session status: LOCKED (PENDING) and CLOSED sessions reject new messages. An ACTIVE session auto-closes when the scheduled_end_time passes."
+    },
+    {
+      "name": "6 · 1-on-1 Chat Sessions — Presence (Heartbeat)",
+      "item": [
+        {
+          "name": "POST /chats/:chatId/heartbeat — Ping & Presence Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"is_peer_online is boolean\", () => {",
+                  "    pm.expect(pm.response.json().data.is_peer_online).to.be.a('boolean');",
+                  "});",
+                  "pm.test(\"chat_status is valid enum\", () => {",
+                  "    pm.expect(['LOCKED','ACTIVE','CLOSED'])",
+                  "    .to.include(pm.response.json().data.chat_status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/chats/{{chatId}}/heartbeat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "chats",
+                "{{chatId}}",
+                "heartbeat"
+              ]
+            },
+            "description": "Updates the caller's `last_seen_at` timestamp in chat_sessions and returns:\n- `is_peer_online` — true if the other party's last_seen_at is within 15 seconds\n- `chat_status` — current state (LOCKED | ACTIVE | CLOSED)\n\nState transitions handled automatically:\n- PENDING → ACTIVE when `scheduled_start_time` is reached\n- ACTIVE → CLOSED when `scheduled_end_time` is passed\n\nThe `user_id` in the body determines which party (client or therapist) is pinging."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /chats/:chatId/heartbeat — Reject: Invalid chatId (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/chats/invalid_chat_id/heartbeat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "chats",
+                "invalid_chat_id",
+                "heartbeat"
+              ]
+            },
+            "description": "A chatId that does not match any row in chat_sessions must return 400. This prevents silent failures when the app sends a heartbeat with a stale or malformed chat ID."
+          },
+          "response": []
+        }
+      ],
+      "description": "Short-poll heartbeat endpoint. Called every ~10 seconds by the client app to update last_seen_at and check if the peer is online. Also drives automatic session state transitions (PENDING→ACTIVE, ACTIVE→CLOSED)."
+    },
+    {
+      "name": "7 · Donations",
+      "item": [
+        {
+          "name": "POST /donate — Make a Donation (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Response has donation data\", () => {",
+                  "    const d = pm.response.json().data;",
+                  "    ['amount_donated','wallet_balance','reference']",
+                  "    .forEach(f => pm.expect(d, `missing: ${f}`).to.have.property(f));",
+                  "});",
+                  "pm.test(\"amount_donated matches request\", () => {",
+                  "    pm.expect(pm.response.json().data.amount_donated).to.equal(5000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"amount\": 5000,\n  \"note\": \"Keep up the good work!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/donate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "donate"
+              ]
+            },
+            "description": "Deducts `amount` UGX from the user's wallet and records a credit entry in business_ledger with `source='donations'`.\n\nBody params:\n- `user_id` (required) — must exist in the users table\n- `amount` (required) — must be > 0\n- `note` (optional) — short message, max 255 chars, stored for reference\n\nResponse includes the transaction `reference`, new `wallet_balance`, and the `note` if provided."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /donate — Reject: User Not Found (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"User not found message\", () => {",
+                  "    pm.expect(pm.response.json().message).to.include('User not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 99999999999,\n  \"amount\": 5000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/donate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "donate"
+              ]
+            },
+            "description": "A non-existent user_id must return 401 'User not found' before any balance check is performed."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /donate — Reject: Insufficient Balance (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"INSUFFICIENT_BALANCE error code\", () => {",
+                  "    pm.expect(pm.response.json().error.code).to.equal('INSUFFICIENT_BALANCE');",
+                  "});",
+                  "pm.test(\"Shortfall included in error data\", () => {",
+                  "    const d = pm.response.json().error.data;",
+                  "    ['currentBalance','required','shortfall']",
+                  "    .forEach(f => pm.expect(d, `missing: ${f}`).to.have.property(f));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"amount\": 999999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/donate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "donate"
+              ]
+            },
+            "description": "When the requested donation amount exceeds the user's current wallet balance, the endpoint returns 400 with error code INSUFFICIENT_BALANCE and a breakdown showing `currentBalance`, `required`, and `shortfall` so the client can prompt the user to top up the exact shortfall."
+          },
+          "response": []
+        }
+      ],
+      "description": "Allows a client to make a one-time donation directly from their wallet. The amount is deducted from users.balance and credited to business_ledger with source='donations'."
+    },
+    {
+      "name": "8 · Banners",
+      "item": [
+        {
+          "name": "GET /banners — All Active Banners",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test(\"Each banner has required fields\", () => {",
+                  "    const banners = pm.response.json().data;",
+                  "    if (banners.length > 0) {",
+                  "        ['id','title','type','sortOrder'].forEach(f =>",
+                  "            pm.expect(banners[0], `missing: ${f}`).to.have.property(f));",
+                  "    }",
+                  "});",
+                  "pm.test(\"imageUrl is null or full URL\", () => {",
+                  "    pm.response.json().data.forEach(b => {",
+                  "        if (b.imageUrl !== null) {",
+                  "            pm.expect(b.imageUrl).to.match(/^https?:\\/\\//);",
+                  "        }",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/banners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "banners"
+              ]
+            },
+            "description": "Returns all active banners ordered by sort_order. Optional ?type filter (home | promo | alert)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /banners?type=promo — Filter by Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All returned banners are promo type\", () => {",
+                  "    pm.response.json().data.forEach(b =>",
+                  "        pm.expect(b.type).to.equal('promo'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/banners?type=promo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "promo"
+                }
+              ]
+            },
+            "description": "Filters banners by type. Valid values: home, promo, alert."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /banners — Create Banner (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Banner ID returned\", () => {",
+                  "    const id = pm.response.json().data.id;",
+                  "    pm.expect(id).to.be.a('number');",
+                  "    pm.collectionVariables.set('bannerId', id);",
+                  "});",
+                  "pm.test(\"Title matches\", () => pm.expect(pm.response.json().data.title).to.equal('Test Banner'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Banner\",\n  \"subtitle\": \"Testing the API\",\n  \"linkUrl\": \"/therapists\",\n  \"type\": \"home\",\n  \"sortOrder\": 10,\n  \"isActive\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/banners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "banners"
+              ]
+            },
+            "description": "Creates a new banner via JSON body. Use the multipart request below when uploading an image file."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /banners — Create Banner (Multipart with Image)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"imageUrl is full URL when file provided\", () => {",
+                  "    const d = pm.response.json().data;",
+                  "    if (d.imageUrl) {",
+                  "        pm.expect(d.imageUrl).to.match(/^https?:\\/\\//);",
+                  "        pm.expect(d.imageUrl).to.include('/uploads/banners/');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Banner with Image",
+                  "type": "text"
+                },
+                {
+                  "key": "subtitle",
+                  "value": "Uploaded via multipart",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "promo",
+                  "type": "text"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "5",
+                  "type": "text"
+                },
+                {
+                  "key": "isActive",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "banner_image",
+                  "type": "file",
+                  "value": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/banners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "banners"
+              ]
+            },
+            "description": "Creates a banner with an image file upload. Uses multipart/form-data. The file field must be named banner_image or image."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /banners — Reject: Missing Title (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"title required message\", () => pm.expect(pm.response.json().message).to.include('title'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subtitle\": \"No title here\",\n  \"type\": \"home\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/banners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "banners"
+              ]
+            },
+            "description": "title is required. Omitting it must return 400."
+          },
+          "response": []
+        }
+      ],
+      "description": "Dashboard banner management. GET retrieves active banners; POST creates a new banner (supports multipart file upload). Requires the banners table from migration_banners.sql."
+    },
+    {
+      "name": "9 · Therapist Slots",
+      "item": [
+        {
+          "name": "GET /th/slots — List Therapist Slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test(\"Slots have required fields\", () => {",
+                  "    const slots = pm.response.json().data;",
+                  "    if (slots.length > 0) {",
+                  "        ['id','date','time','availability'].forEach(f =>",
+                  "            pm.expect(slots[0], `missing: ${f}`).to.have.property(f));",
+                  "        pm.collectionVariables.set('slotId', slots[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/slots?therapist_id={{therapistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapistId}}"
+                }
+              ]
+            },
+            "description": "Returns all slots for the given therapist. Filter by ?status=PENDING|ACTIVE|CLOSED is not applicable here — availability is 0 or 1."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /th/slots — Add New Slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Slot ID returned\", () => {",
+                  "    const id = pm.response.json().data.id;",
+                  "    if (id) pm.collectionVariables.set('slotId', id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapistId}},\n  \"date\": \"2026-05-01\",\n  \"time\": \"10:00 AM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "slots"
+              ]
+            },
+            "description": "Creates a new available slot for the therapist. Prevents duplicate date+time combinations."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /th/slots — Reject: Duplicate Slot (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapistId}},\n  \"date\": \"2026-05-01\",\n  \"time\": \"10:00 AM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "slots"
+              ]
+            },
+            "description": "Re-sending the same date + time for the same therapist must return 409."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /th/slots/:slotId — Edit Slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Updated message\", () => pm.expect(pm.response.json().message).to.include('updated'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapistId}},\n  \"date\": \"2026-05-02\",\n  \"time\": \"11:00 AM\",\n  \"availability\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/slots/{{slotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "slots",
+                "{{slotId}}"
+              ]
+            },
+            "description": "Updates date, time, and/or availability of an existing slot. Ownership check: therapist_id must match the slot's therapist_id."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /th/slots/:slotId — Reject: Wrong Therapist (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": 99999999999,\n  \"date\": \"2026-05-02\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/slots/{{slotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "slots",
+                "{{slotId}}"
+              ]
+            },
+            "description": "Attempting to edit a slot that belongs to a different therapist must return 404."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /th/slots/:slotId — Delete Slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Deleted message\", () => pm.expect(pm.response.json().message).to.include('deleted'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/slots/{{slotId}}?therapist_id={{therapistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "slots",
+                "{{slotId}}"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapistId}}"
+                }
+              ]
+            },
+            "description": "Permanently removes a slot. Ownership check applies."
+          },
+          "response": []
+        }
+      ],
+      "description": "Full CRUD for therapist time slots. Therapists manage their own availability — add, edit, or delete slots. Clients read slots via GET /api/v1/client/therapists/:id/slots."
+    },
+    {
+      "name": "10 · Notifications",
+      "item": [
+        {
+          "name": "GET /client/notifications — Fetch Unread Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Notifications array present\", () => {",
+                  "    pm.expect(pm.response.json().data.notifications).to.be.an('array');",
+                  "});",
+                  "pm.test(\"Each notification has body field\", () => {",
+                  "    const notifs = pm.response.json().data.notifications;",
+                  "    if (notifs.length > 0) {",
+                  "        ['id','title','body','message','createdAt'].forEach(f =>",
+                  "            pm.expect(notifs[0], `missing: ${f}`).to.have.property(f));",
+                  "        pm.collectionVariables.set('notificationId', notifs[0].id);",
+                  "    }",
+                  "});",
+                  "pm.test(\"Pagination present\", () => {",
+                  "    const p = pm.response.json().data.pagination;",
+                  "    ['currentPage','totalPages','totalItems'].forEach(f =>",
+                  "        pm.expect(p, `missing: ${f}`).to.have.property(f));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/notifications?user_id={{userId}}&page={{page}}&limit={{limit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "{{limit}}"
+                }
+              ]
+            },
+            "description": "Returns paginated unread notifications for the user. Each item includes both body and message fields (same value, both map to the message DB column)."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /client/notifications/:id/read — Mark Single Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "Marks a single notification as read. user_id is now required (was defaulting to 1 before, causing silent 404 failures)."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /client/notifications/:id/read — Reject: Missing user_id (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"user_id required message\", () => pm.expect(pm.response.json().message).to.include('user_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": "Omitting user_id must now return 400 (previously silently failed with a 404 for the wrong user)."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /client/notifications/read-all — Mark All Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "Marks all unread notifications as read for the given user."
+          },
+          "response": []
+        }
+      ],
+      "description": "Client notification endpoints. Fixed in this session: mark_read no longer silently fails when user_id is missing. Both GET endpoints now include a body field alongside message."
+    },
+    {
+      "name": "11 · Therapist Session Start",
+      "item": [
+        {
+          "name": "GET /th/sessions — List Therapist Sessions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Sessions array present\", () => {",
+                  "    pm.expect(pm.response.json().data.sessions).to.be.an('array');",
+                  "});",
+                  "pm.test(\"Each session has required fields\", () => {",
+                  "    const s = pm.response.json().data.sessions;",
+                  "    if (s.length > 0) {",
+                  "        ['id','chatId','clientId','status','displayStatus','scheduledStart','scheduledEnd']",
+                  "        .forEach(f => pm.expect(s[0], `missing: ${f}`).to.have.property(f));",
+                  "        pm.collectionVariables.set('sessionId', s[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/sessions?therapist_id={{therapistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapistId}}"
+                }
+              ]
+            },
+            "description": "Lists all 1-on-1 chat sessions for the therapist. Optional ?status=PENDING|ACTIVE|CLOSED filter."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /th/sessions?status=PENDING — Filter Locked Sessions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All sessions are PENDING\", () => {",
+                  "    pm.response.json().data.sessions.forEach(s =>",
+                  "        pm.expect(s.status).to.equal('PENDING'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/sessions?therapist_id={{therapistId}}&status=PENDING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "sessions"
+              ],
+              "query": [
+                {
+                  "key": "therapist_id",
+                  "value": "{{therapistId}}"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            },
+            "description": "Returns only sessions with PENDING (LOCKED) status — these are the sessions a therapist can start."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /th/sessions/:sessionId/start — Start 1-on-1 Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Status is ACTIVE\", () => pm.expect(pm.response.json().data.status).to.equal('ACTIVE'));",
+                  "pm.test(\"chatId returned\", () => pm.expect(pm.response.json().data).to.have.property('chatId'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapistId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/sessions/{{sessionId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "sessions",
+                "{{sessionId}}",
+                "start"
+              ]
+            },
+            "description": "Transitions a PENDING (LOCKED) 1-on-1 session to ACTIVE. Sends a push notification to the client. Returns 200 no-op if already ACTIVE; 400 if CLOSED."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /th/sessions/:sessionId/start — Reject: Already Closed (400)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Prerequisite: set chat_sessions.status='CLOSED' for this session in DB"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Closed message\", () => pm.expect(pm.response.json().message).to.include('closed'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapistId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/sessions/{{sessionId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "sessions",
+                "{{sessionId}}",
+                "start"
+              ]
+            },
+            "description": "Attempting to start a CLOSED session must return 400."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /th/groups/:groupId/session/start — Start Group Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"Status is ACTIVE\", () => pm.expect(pm.response.json().data.status).to.equal('ACTIVE'));",
+                  "pm.test(\"membersActivated returned\", () => {",
+                  "    pm.expect(pm.response.json().data).to.have.property('membersActivated');",
+                  "});",
+                  "pm.test(\"cohortId returned\", () => pm.expect(pm.response.json().data).to.have.property('cohortId'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"therapist_id\": {{therapistId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/th/groups/{{groupId}}/session/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "th",
+                "groups",
+                "{{groupId}}",
+                "session",
+                "start"
+              ]
+            },
+            "description": "Activates the group's current cohort (OPEN_FOR_BOOKING → ACTIVE) and promotes all PENDING member subscriptions to ACTIVE. Sends in-app notifications to all members. cohort_id is optional — defaults to the latest open cohort."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for a therapist to start a booked 1-on-1 session or a group session. Starting transitions PENDING → ACTIVE and sends an in-app notification to the client(s)."
+    },
+    {
+      "name": "12 · Therapist List & Session Types",
+      "item": [
+        {
+          "name": "GET /client/therapists — List with Session Types & Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"status = success\", () => pm.expect(pm.response.json().status).to.equal('success'));",
+                  "pm.test(\"data is array\", () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test(\"Each therapist has required fields\", () => {",
+                  "    const data = pm.response.json().data;",
+                  "    if (data.length > 0) {",
+                  "        ['user_id','firstName','lastName','image','sessionTypes']",
+                  "        .forEach(f => pm.expect(data[0], `missing: ${f}`).to.have.property(f));",
+                  "        pm.collectionVariables.set('therapistId', data[0].user_id);",
+                  "    }",
+                  "});",
+                  "pm.test(\"image is null or full URL\", () => {",
+                  "    const data = pm.response.json().data;",
+                  "    data.forEach(t => {",
+                  "        if (t.image !== null) {",
+                  "            pm.expect(t.image).to.match(/^https?:\\/\\//);",
+                  "        }",
+                  "    });",
+                  "});",
+                  "pm.test(\"sessionTypes is array\", () => {",
+                  "    pm.response.json().data.forEach(t =>",
+                  "        pm.expect(t.sessionTypes).to.be.an('array'));",
+                  "});",
+                  "pm.test(\"Session type has required fields\", () => {",
+                  "    const data = pm.response.json().data;",
+                  "    if (data.length > 0 && data[0].sessionTypes.length > 0) {",
+                  "        ['id','name','price','duration','deliveryMode','currency']",
+                  "        .forEach(f => pm.expect(data[0].sessionTypes[0], `missing: ${f}`).to.have.property(f));",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/therapists",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "therapists"
+              ]
+            },
+            "description": "Returns all available therapists. Each therapist includes:\n- image: full URL (BASE_URL + path) or null\n- sessionTypes: array from therapist_session_types → session_types\n\nSave the first therapist's user_id into {{therapistId}} for downstream slot tests."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /client/therapists/:id/slots — Slots with Session Types & Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"image is null or full URL\", () => {",
+                  "    const img = pm.response.json().data.image;",
+                  "    if (img !== null) pm.expect(img).to.match(/^https?:\\/\\//);",
+                  "});",
+                  "pm.test(\"sessionTypes array present\", () => {",
+                  "    pm.expect(pm.response.json().data.sessionTypes).to.be.an('array');",
+                  "});",
+                  "pm.test(\"available_slots array present\", () => {",
+                  "    pm.expect(pm.response.json().data.available_slots).to.be.an('array');",
+                  "});",
+                  "pm.test(\"Session type fields correct\", () => {",
+                  "    const types = pm.response.json().data.sessionTypes;",
+                  "    if (types.length > 0) {",
+                  "        ['id','name','price','duration','deliveryMode','currency']",
+                  "        .forEach(f => pm.expect(types[0], `missing: ${f}`).to.have.property(f));",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/therapists/{{therapistId}}/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "therapists",
+                "{{therapistId}}",
+                "slots"
+              ]
+            },
+            "description": "Returns a single therapist's profile (including image full URL), sessionTypes, and available_slots."
+          },
+          "response": []
+        }
+      ],
+      "description": "Therapist listing and slot endpoints now include sessionTypes pulled from therapist_session_types → session_types. Used by the client to show selectable session type options (e.g. Video Therapy, Chat Messaging Session)."
+    },
+    {
+      "name": "13 · Admin — Tester Credit",
+      "item": [
+        {
+          "name": "POST /admin/credit-testers — Credit All Tester Accounts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"users_credited > 0\", () => {",
+                  "    pm.expect(pm.response.json().data.users_credited).to.be.above(0);",
+                  "});",
+                  "pm.test(\"amount_credited matches request\", () => {",
+                  "    pm.expect(pm.response.json().data.amount_credited).to.equal(100000);",
+                  "});",
+                  "pm.test(\"accounts array returned\", () => {",
+                  "    const accounts = pm.response.json().data.accounts;",
+                  "    pm.expect(accounts).to.be.an('array').that.is.not.empty;",
+                  "    ['user_id','name','new_balance'].forEach(f =>",
+                  "        pm.expect(accounts[0], `missing: ${f}`).to.have.property(f));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/credit-testers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "credit-testers"
+              ]
+            },
+            "description": "Adds `amount` UGX to the balance of every user where interface = 'tester'. Returns a list of credited accounts with their new balance. Also writes a business_ledger entry per user with source='tester_credit'."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /admin/credit-testers — Reject: Invalid Amount (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/credit-testers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "credit-testers"
+              ]
+            },
+            "description": "Amount must be a positive number. Zero or negative values return 400."
+          },
+          "response": []
+        }
+      ],
+      "description": "Credits a specified amount to all users whose interface = 'tester'. Useful for seeding wallet balances before running tests."
+    },
+    {
+      "name": "14 · Profile Picture Upload",
+      "item": [
+        {
+          "name": "POST /client/profile/avatar — Upload Profile Picture",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"avatarUrl returned\", () => {",
+                  "    const url = pm.response.json().data.avatarUrl;",
+                  "    pm.expect(url).to.match(/^https?:\\/\\//);",
+                  "    pm.expect(url).to.include('/uploads/avatars/');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "value": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/profile/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "profile",
+                "avatar"
+              ]
+            },
+            "description": "Uploads a profile picture for the user. Accepts multipart/form-data with a file field named 'avatar' or 'file'. Saves the file to /uploads/avatars/ and updates users.image with the relative path.\n\nReturns avatarUrl as a full URL e.g. http://localhost:8000/uploads/avatars/user_123_abc.jpg"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /client/profile/avatar — Reject: No File (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"success = false\", () => pm.expect(pm.response.json().success).to.be.false);",
+                  "pm.test(\"No file message\", () => pm.expect(pm.response.json().message).to.include('No file'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/profile/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "profile",
+                "avatar"
+              ]
+            },
+            "description": "Sending the request without a file must return 400 'No file uploaded'."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /client/profile — Update Profile with Picture",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"success = true\", () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test(\"avatarUrl in data when file provided\", () => {",
+                  "    const d = pm.response.json().data;",
+                  "    if (d && d.avatarUrl) {",
+                  "        pm.expect(d.avatarUrl).to.match(/^https?:\\/\\//);",
+                  "        pm.expect(d.avatarUrl).to.include('/uploads/avatars/');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "user_id",
+                  "value": "{{userId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "firstName",
+                  "value": "Jane",
+                  "type": "text"
+                },
+                {
+                  "key": "lastName",
+                  "value": "Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "value": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/client/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "client",
+                "profile"
+              ]
+            },
+            "description": "Updates profile fields and optionally uploads a new profile picture in the same request. Send as multipart/form-data to include a file, or JSON for text fields only.\n\nSupported fields: firstName, lastName, phoneNumber, dateOfBirth, gender, bio, avatar (file)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for uploading and updating a client's profile picture. Two routes support this: the dedicated avatar endpoint and the general profile update endpoint (which also accepts a file)."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "description": "API base URL. Switch to https://server.innersparkafrica.us for production."
+    },
+    {
+      "key": "apiKey",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwdWJsaWNfaWQiOiIyNDgwNTAxOCIsImV4cCI6MTc1MzY4NjA0NH0.Fi6CV5CvMuYQo-N-PbhaUdLdWZGM_tbubnkruNVaZik",
+      "description": "Value for the x-api-key header. Loaded from RC_SECRET in .env."
+    },
+    {
+      "key": "userId",
+      "value": "15844831294",
+      "description": "Test client user ID. Must exist in the users table with a non-zero wallet balance."
+    },
+    {
+      "key": "therapistId",
+      "value": "52863268761",
+      "description": "Test therapist ID. Must have at least one available slot in the slots table."
+    },
+    {
+      "key": "groupId",
+      "value": "1001",
+      "description": "Test support group ID. Must exist in the groups table with group_status='active'."
+    },
+    {
+      "key": "chatId",
+      "value": "chat_15844831294_52863268761",
+      "description": "Composite chat ID derived from client and therapist IDs. Format: chat_<client_id>_<therapist_id>."
+    },
+    {
+      "key": "bookingDate",
+      "value": "2026-04-07",
+      "description": "Date used when booking a 1-on-1 chat session (YYYY-MM-DD)."
+    },
+    {
+      "key": "bookingTime",
+      "value": "14:00",
+      "description": "Time used when booking a 1-on-1 chat session (HH:MM, 24-hour format)."
+    },
+    {
+      "key": "page",
+      "value": "1",
+      "description": "Page number for paginated endpoints."
+    },
+    {
+      "key": "limit",
+      "value": "10",
+      "description": "Page size for paginated endpoints."
+    },
+    {
+      "key": "sessionId",
+      "value": "1",
+      "description": "ID of a chat_sessions row (1-on-1 session). Set by the book-session test script."
+    },
+    {
+      "key": "slotId",
+      "value": "4",
+      "description": "ID of a therapist slot row in the slots table."
+    },
+    {
+      "key": "cohortId",
+      "value": "1",
+      "description": "ID of a group_cohorts row. Optional — start-group-session defaults to latest open cohort."
+    },
+    {
+      "key": "notificationId",
+      "value": "1",
+      "description": "ID of a notifications row to mark as read."
+    },
+    {
+      "key": "bannerId",
+      "value": "1",
+      "description": "ID of a banners row."
+    }
+  ]
+}

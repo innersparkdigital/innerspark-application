@@ -18,6 +18,10 @@ import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getTherapistAvailability } from '../../api/client/therapists';
+import { useSelector } from 'react-redux';
+import { useToast } from 'native-base';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { bookChatSession } from '../../api/client/messages';
 
 interface TherapistProfileViewScreenProps {
   navigation: any;
@@ -28,6 +32,11 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
   const { therapist } = route.params || {};
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+
+  const userId = useSelector((state: any) => state.userData?.userDetails?.userId);
+  const toast = useToast();
+  const alert = useISAlert();
 
   useEffect(() => {
     if (therapist?.partnerId) {
@@ -46,6 +55,45 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBookSession = () => {
+    if (!selectedSlot) return;
+    alert.show({
+      type: 'confirm',
+      title: 'Book Session',
+      message: `Are you sure you want to book this chat session for ${selectedSlot.date || selectedSlot.start_date || selectedSlot.date_time} at ${selectedSlot.time || selectedSlot.start_time}?`,
+      confirmText: 'Book',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          const response = await bookChatSession(
+            userId, 
+            therapistProfile.id, 
+            selectedSlot.date || selectedSlot.start_date, 
+            selectedSlot.time || selectedSlot.start_time
+          );
+          toast.show({ description: 'Session booked successfully!', duration: 3000 });
+          const newChatId = response.data?.chat_id || response.chat_id || response.id;
+          if (newChatId) {
+            navigation.navigate('DMThreadScreen', { 
+              chatId: newChatId,
+              partnerName: therapistProfile.name,
+              partnerAvatar: therapistProfile.avatar,
+              partnerRole: 'therapist'
+            });
+          } else {
+             navigation.goBack();
+          }
+        } catch (error: any) {
+          alert.show({
+            type: 'error',
+            title: 'Booking Failed',
+            message: error.response?.data?.error || error.response?.data?.message || error.message || 'Could not book session',
+          });
+        }
+      }
+    });
   };
 
   const therapistProfile = {
@@ -148,6 +196,34 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
             {/* Availability */}
             {!!therapistProfile.availability && renderInfoCard('schedule', 'Availability', therapistProfile.availability)}
 
+            {/* Chat Slots */}
+            {profileData?.slots && profileData.slots.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Available 1-on-1 Sessions</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.slotsContainer}>
+                  {profileData.slots.map((slot: any, idx: number) => {
+                    const isSelected = selectedSlot === slot;
+                    return (
+                      <TouchableOpacity 
+                        key={idx} 
+                        style={[styles.slotBadge, isSelected && styles.slotBadgeSelected]}
+                        onPress={() => setSelectedSlot(slot)}
+                      >
+                        <Text style={[styles.slotDate, isSelected && styles.slotTextSelected]}>{slot.date || slot.start_date}</Text>
+                        <Text style={[styles.slotTime, isSelected && styles.slotTextSelected]}>{slot.time || slot.start_time}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+                {selectedSlot && (
+                  <TouchableOpacity style={[styles.primaryButton, { marginTop: scale(12) }]} onPress={handleBookSession}>
+                    <Icon name="event-available" type="material" size={scale(16)} color={appColors.CardBackground} />
+                    <Text style={styles.primaryButtonText}>Confirm Booking</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
             {/* Response Time */}
             {!!therapistProfile.responseTime && renderInfoCard('access-time', 'Response Time', therapistProfile.responseTime)}
 
@@ -197,6 +273,7 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
         )}
         <View style={styles.bottomPadding} />
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };
@@ -410,6 +487,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
+  },
+  slotsContainer: {
+    gap: scale(10),
+    paddingBottom: scale(8),
+  },
+  slotBadge: {
+    backgroundColor: appColors.AppBlue + '15',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(8),
+    borderRadius: scale(8),
+    borderWidth: 1,
+    borderColor: 'transparent',
+    alignItems: 'center',
+  },
+  slotBadgeSelected: {
+    backgroundColor: appColors.AppBlue,
+    borderColor: appColors.AppBlue,
+  },
+  slotDate: {
+    fontSize: moderateScale(12),
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginBottom: scale(4),
+  },
+  slotTime: {
+    fontSize: moderateScale(14),
+    fontWeight: 'bold',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextBold,
+  },
+  slotTextSelected: {
+    color: appColors.CardBackground,
   },
   bottomPadding: {
     height: scale(30),

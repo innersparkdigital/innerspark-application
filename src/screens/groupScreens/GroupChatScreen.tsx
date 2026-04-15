@@ -29,7 +29,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
-import { getGroupMessages, sendGroupMessage } from '../../api/client/groups';
+import { getGroupMessages, sendGroupMessage, renewGroupSubscription, getMyGroups } from '../../api/client/groups';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
@@ -90,10 +90,11 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   const [isOnline, setIsOnline] = useState(true);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-
+  const [membershipStatus, setMembershipStatus] = useState<string>(route.params?.membership_status || 'ACTIVE');
 
   useEffect(() => {
     loadMessages();
+    checkMembershipStatus();
 
     // Auto-poll for new messages every 5 seconds silently without loading spinners
     const intervalId = setInterval(() => {
@@ -105,6 +106,19 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       handleSocketLeave();
     };
   }, []);
+
+  const checkMembershipStatus = async () => {
+    try {
+      const response = await getMyGroups(userId);
+      const apiGroups = response.data?.groups || [];
+      const myGroup = apiGroups.find((g: any) => String(g.id) === String(groupId) || String(g._id) === String(groupId));
+      if (myGroup && myGroup.membership_status) {
+        setMembershipStatus(myGroup.membership_status);
+      }
+    } catch (error) {
+      console.warn('Failed to verify membership status', error);
+    }
+  };
 
   const loadMessages = async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
@@ -274,6 +288,43 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
       setMessageText(messageContent);
       setIsSending(false);
     }
+  };
+
+  const handleRenew = () => {
+    alert.show({
+      type: 'confirm',
+      title: 'Renew Subscription',
+      message: 'Renew your subscription for this group? This will deduct 25000 UGX from your wallet.',
+      confirmText: 'Renew',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          const response = await renewGroupSubscription(groupId, userId);
+          toast.show({
+            description: response.message || 'Subscription renewed successfully',
+            duration: 3000,
+          });
+          setMembershipStatus('ACTIVE');
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to renew subscription';
+          if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('balance')) {
+            alert.show({
+              type: 'error',
+              title: 'Insufficient Balance',
+              message: errorMessage,
+              confirmText: 'Top Up Wallet',
+              onConfirm: () => navigation.navigate('Wallet')
+            });
+          } else {
+            alert.show({
+              type: 'error',
+              title: 'Error',
+              message: typeof errorMessage === 'object' ? errorMessage.message : errorMessage,
+            });
+          }
+        }
+      }
+    });
   };
 
   const handleTyping = (text: string) => {
@@ -623,9 +674,22 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
 
         {renderTypingIndicator()}
 
-        {/* Message Composer */}
-        <View style={styles.composer}>
-          <View style={styles.inputContainer}>
+        {/* Message Composer or Expired Block */}
+        {membershipStatus === 'EXPIRED' ? (
+          <View style={styles.expiredFooter}>
+            <Icon name="error-outline" type="material" color="#F44336" size={scale(28)} />
+            <View style={styles.expiredFooterTextContainer}>
+              <Text style={styles.expiredFooterText}>Your subscription expired.</Text>
+              <Text style={styles.expiredFooterSubtext}>Renew to continue chatting.</Text>
+            </View>
+            <TouchableOpacity style={styles.renewButton} onPress={handleRenew}>
+              <Icon name="autorenew" type="material" color={appColors.CardBackground} size={scale(16)} />
+              <Text style={styles.renewButtonText}>Renew</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.composer}>
+            <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
               placeholder="Type a message..."
@@ -652,6 +716,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
             </TouchableOpacity>
           </View>
         </View>
+        )}
       </KeyboardAvoidingView>
       <ISAlert ref={alert.ref} />
     </SafeAreaView>
@@ -799,6 +864,46 @@ const styles = StyleSheet.create({
     borderRadius: scale(16),
     textAlign: 'center',
     fontFamily: appFonts.bodyTextRegular,
+  },
+  expiredFooter: {
+    backgroundColor: appColors.CardBackground,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(20),
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: appColors.grey6,
+  },
+  expiredFooterTextContainer: {
+    flex: 1,
+    paddingHorizontal: scale(12),
+  },
+  expiredFooterText: {
+    fontSize: moderateScale(14),
+    fontWeight: 'bold',
+    color: '#F44336',
+    fontFamily: appFonts.headerTextBold,
+  },
+  expiredFooterSubtext: {
+    fontSize: moderateScale(12),
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+    marginTop: scale(2),
+  },
+  renewButton: {
+    backgroundColor: '#F44336',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(10),
+    borderRadius: scale(20),
+    gap: scale(4),
+  },
+  renewButtonText: {
+    color: appColors.CardBackground,
+    fontSize: moderateScale(14),
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
   messageContainer: {
     flexDirection: 'row',

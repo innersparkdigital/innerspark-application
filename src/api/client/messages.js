@@ -60,3 +60,34 @@ export const markChatAsRead = async (chatId, userId) => {
     });
     return response.data;
 };
+
+/**
+ * Book a 1-on-1 chat session
+ * @param {string} clientId - Client User ID
+ * @param {string} therapistId - Therapist ID
+ * @param {string} date - Date in YYYY-MM-DD
+ * @param {string} time - Time in HH:mm
+ * @returns {Promise} Booking confirmation and locked chat_id
+ */
+export const bookChatSession = async (clientId, therapistId, date, time) => {
+    const response = await APIInstance.post('/client/chats/book', {
+        client_id: Number(clientId),
+        therapist_id: Number(therapistId),
+        date,
+        time
+    });
+    return response.data;
+};
+
+/**
+ * Send heartbeat ping & check peer presence
+ * @param {string} chatId - Chat ID
+ * @param {string} userId - User ID
+ * @returns {Promise} is_peer_online and chat_status flags
+ */
+export const sendChatHeartbeat = async (chatId, userId) => {
+    const response = await APIInstance.post(`/client/chats/${chatId}/heartbeat`, {
+        user_id: Number(userId)
+    });
+    return response.data;
+};

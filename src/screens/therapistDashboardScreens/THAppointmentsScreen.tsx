@@ -8,8 +8,9 @@ import { moderateScale } from '../../global/Scaling';
 import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
-import { getAppointments } from '../../api/therapist';
+import { getAppointments, startAppointmentSession } from '../../api/therapist';
 import { useFocusEffect } from '@react-navigation/native';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 
 
@@ -19,6 +20,7 @@ const THAppointmentsScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  const alert = useISAlert();
 
   useEffect(() => {
     loadAppointments();
@@ -42,6 +44,8 @@ const THAppointmentsScreen = ({ navigation }: any) => {
 
       if (resData?.appointments) {
         setAppointments(resData.appointments);
+      } else if (resData?.sessions) {
+        setAppointments(resData.sessions);
       } else {
         setAppointments([]);
       }
@@ -49,6 +53,29 @@ const THAppointmentsScreen = ({ navigation }: any) => {
       const errorMessage = error.backendMessage || error.message || 'Failed to load appointments';
       console.error('Appointments Error:', errorMessage);
       setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartSession = async (appointment: any) => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.userId;
+      const response: any = await startAppointmentSession(appointment.id || appointment.sessionId, therapistId);
+      
+      if (response && response.success !== false) {
+        navigation.navigate('THChatsScreen', { appointment });
+      }
+    } catch (error: any) {
+      const errorMessage = error.backendMessage || error.message || 'Failed to start session';
+      console.error('Start Session Error:', errorMessage);
+      alert.show({
+        type: 'error',
+        title: 'Session Error',
+        message: errorMessage,
+        confirmText: 'OK'
+      });
     } finally {
       setLoading(false);
     }
@@ -68,6 +95,7 @@ const THAppointmentsScreen = ({ navigation }: any) => {
     }
     if (selectedFilter === 'upcoming') {
       return appointments.filter((apt: any) =>
+        apt.status?.toUpperCase() === 'PENDING' ||
         apt.status?.toLowerCase() === 'upcoming' ||
         apt.status?.toLowerCase() === 'scheduled'
       );
@@ -125,8 +153,10 @@ const THAppointmentsScreen = ({ navigation }: any) => {
   const currentStats = getStats();
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const s = status?.toLowerCase();
+    switch (s) {
       case 'upcoming':
+      case 'pending':
         return appColors.AppGreen;
       case 'scheduled':
         return appColors.AppBlue;
@@ -256,13 +286,23 @@ const THAppointmentsScreen = ({ navigation }: any) => {
                       {appointment.status}
                     </Text>
                   </View>
-                  <Icon type="material" name="chevron-right" size={24} color={appColors.grey3} />
+                  {appointment.status?.toUpperCase() === 'PENDING' ? (
+                    <TouchableOpacity
+                      style={styles.startSessionButton}
+                      onPress={() => handleStartSession(appointment)}
+                    >
+                      <Text style={styles.startSessionButtonText}>Start</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Icon type="material" name="chevron-right" size={24} color={appColors.grey3} />
+                  )}
                 </View>
               </TouchableOpacity>
             ))
           )}
         </View>
       </ScrollView>
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };
@@ -449,6 +489,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     fontFamily: appFonts.bodyTextBold,
+  },
+  startSessionButton: {
+    backgroundColor: appColors.AppBlue,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  startSessionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: appFonts.bodyTextMedium,
+    fontWeight: 'bold',
   },
 });
 

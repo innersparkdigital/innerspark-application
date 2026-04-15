@@ -6,12 +6,13 @@ import { APIInstance } from '../LHAPI';
 
 /**
  * Get user notifications
+ * @param {string} userId - User ID
  * @param {number} page - Page number
  * @returns {Promise} Notifications list
  */
-export const getNotifications = async (page = 1) => {
+export const getNotifications = async (userId, page = 1) => {
     const response = await APIInstance.get('/client/notifications', {
-        params: { page }
+        params: { user_id: userId, page }
     });
     return response.data;
 };

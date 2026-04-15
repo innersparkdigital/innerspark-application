@@ -17,7 +17,7 @@ import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
-import { getMyGroups, leaveGroup } from '../../api/client/groups';
+import { getMyGroups, leaveGroup, renewGroupSubscription } from '../../api/client/groups';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { removeJoinedGroupId, setJoinedGroupIds } from '../../features/groups/groupsSlice';
@@ -37,6 +37,8 @@ interface MyGroup {
   nextMeeting: string;
   isActive: boolean;
   role: 'member' | 'moderator';
+  membership_status?: 'ACTIVE' | 'PENDING' | 'EXPIRED';
+  expiry_date?: string;
 }
 
 interface MyGroupsScreenProps {
@@ -52,55 +54,6 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
   const [myGroups, setMyGroups] = useState<MyGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Mock user's joined groups data moved to MockData.ts
-  const mockMyGroups: MyGroup[] = [
-    {
-      id: '1',
-      name: 'Anxiety Support Circle',
-      description: 'A safe space for individuals dealing with anxiety disorders to share experiences and coping strategies.',
-      therapistName: 'Dr. Sarah Johnson',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person1.png'),
-      memberCount: 24,
-      icon: 'psychology',
-      category: 'anxiety',
-      lastActivity: '2 hours ago',
-      unreadMessages: 5,
-      nextMeeting: 'Today, 7:00 PM',
-      isActive: true,
-      role: 'member',
-    },
-    {
-      id: '4',
-      name: 'Addiction Recovery Support',
-      description: 'Peer support group for individuals in recovery from various forms of addiction.',
-      therapistName: 'Dr. James Wilson',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person3.png'),
-      memberCount: 31,
-      icon: 'self_improvement',
-      category: 'addiction',
-      lastActivity: '1 day ago',
-      unreadMessages: 0,
-      nextMeeting: 'Tomorrow, 8:00 PM',
-      isActive: true,
-      role: 'moderator',
-    },
-    {
-      id: '7',
-      name: 'PTSD Support Network',
-      description: 'Specialized support for post-traumatic stress disorder recovery.',
-      therapistName: 'Dr. Lisa Rodriguez',
-      therapistAvatar: require('../../assets/images/dummy-people/d-person2.png'),
-      memberCount: 15,
-      icon: 'healing',
-      category: 'trauma',
-      lastActivity: '3 days ago',
-      unreadMessages: 2,
-      nextMeeting: 'Saturday, 10:00 AM',
-      isActive: false,
-      role: 'member',
-    },
-  ];
 
   useEffect(() => {
     loadMyGroups();
@@ -129,6 +82,8 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
         nextMeeting: group.nextMeeting || group.next_meeting || group.upcomingMeeting || group.upcoming_meeting || 'No upcoming meeting',
         isActive: group.isActive || group.is_active !== false,
         role: group.role || group.userRole || group.user_role || 'member',
+        membership_status: group.membership_status || 'ACTIVE',
+        expiry_date: group.expiry_date || null,
       }));
 
       setMyGroups(mappedGroups);
@@ -164,6 +119,44 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
       groupIcon: group.icon,
       memberCount: group.memberCount,
       userRole: group.role,
+    });
+  };
+
+  // Handle renew group
+  const handleRenewGroup = async (group: MyGroup) => {
+    alert.show({
+      type: 'confirm',
+      title: 'Renew Subscription',
+      message: `Renew your subscription for ${group.name}? This will deduct 25000 UGX from your wallet.`,
+      confirmText: 'Renew',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          const response = await renewGroupSubscription(group.id, userId);
+          toast.show({
+            description: response.message || 'Subscription renewed successfully',
+            duration: 3000,
+          });
+          await loadMyGroups();
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to renew subscription';
+          if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('balance')) {
+            alert.show({
+              type: 'error',
+              title: 'Insufficient Balance',
+              message: errorMessage,
+              confirmText: 'Top Up Wallet',
+              onConfirm: () => navigation.navigate('Wallet')
+            });
+          } else {
+            alert.show({
+              type: 'error',
+              title: 'Error',
+              message: typeof errorMessage === 'object' ? errorMessage.message : errorMessage,
+            });
+          }
+        }
+      }
     });
   };
 
@@ -283,110 +276,138 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
   };
 
   // Render group card
-  const renderGroupCard = ({ item }: { item: MyGroup }) => (
-    <TouchableOpacity
-      style={[
-        styles.groupCard,
-        !item.isActive && styles.inactiveGroupCard
-      ]}
-      onPress={() => handleOpenChat(item)}
-    >
-      <View style={styles.groupHeader}>
-        <View style={[
-          styles.groupIconContainer,
-          { backgroundColor: getCategoryColor(item.category) + '20' }
-        ]}>
-          <Icon
-            name={item.icon}
-            type="material"
-            color={getCategoryColor(item.category)}
-            size={28}
-          />
-          {item.role === 'moderator' && (
-            <View style={styles.moderatorBadge}>
-              <Icon name="admin-panel-settings" type="material" color={appColors.CardBackground} size={12} />
-            </View>
-          )}
-        </View>
+  const renderGroupCard = ({ item }: { item: MyGroup }) => {
+    const isExpired = item.membership_status === 'EXPIRED';
 
-        <View style={styles.groupInfo}>
-          <View style={styles.groupTitleRow}>
-            <Text style={styles.groupName} numberOfLines={1}>{item.name}</Text>
-            {item.unreadMessages > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadCount}>
-                  {item.unreadMessages > 99 ? '99+' : item.unreadMessages}
-                </Text>
+    return (
+      <TouchableOpacity
+        style={[
+          styles.groupCard,
+          !item.isActive && styles.inactiveGroupCard,
+          isExpired && { opacity: 0.8 }
+        ]}
+        onPress={() => isExpired ? handleRenewGroup(item) : handleOpenChat(item)}
+      >
+        <View style={styles.groupHeader}>
+          <View style={[
+            styles.groupIconContainer,
+            { backgroundColor: getCategoryColor(item.category) + '20' }
+          ]}>
+            <Icon
+              name={item.icon}
+              type="material"
+              color={getCategoryColor(item.category)}
+              size={28}
+            />
+            {item.role === 'moderator' && (
+              <View style={styles.moderatorBadge}>
+                <Icon name="admin-panel-settings" type="material" color={appColors.CardBackground} size={12} />
               </View>
             )}
           </View>
 
-          <Text style={styles.lastActivity}>
-            {formatLastActivity(item.lastActivity)}
-          </Text>
-        </View>
+          <View style={styles.groupInfo}>
+            <View style={styles.groupTitleRow}>
+              <Text style={styles.groupName} numberOfLines={1}>{item.name}</Text>
 
-        <TouchableOpacity
-          style={styles.moreButton}
-          onPress={() => handleGroupMenu(item)}
-        >
-          <Icon name="more-vert" type="material" color={appColors.grey3} size={20} />
-        </TouchableOpacity>
-      </View>
+              <View style={[styles.statusBadge,
+              {
+                backgroundColor: item.membership_status === 'ACTIVE' ? appColors.AppBlue :
+                  item.membership_status === 'PENDING' ? '#FF9800' :
+                    '#F44336'
+              }
+              ]}>
+                <Text style={styles.statusBadgeText}>{item.membership_status || 'ACTIVE'}</Text>
+              </View>
 
-      <Text style={styles.groupDescription} numberOfLines={2}>
-        {item.description}
-      </Text>
+              {item.unreadMessages > 0 && !isExpired && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadCount}>
+                    {item.unreadMessages > 99 ? '99+' : item.unreadMessages}
+                  </Text>
+                </View>
+              )}
+            </View>
 
-      <View style={styles.therapistSection}>
-        <Avatar
-          source={item.therapistAvatar}
-          size={scale(32)}
-          rounded
-          containerStyle={styles.therapistAvatar}
-        />
-        <View style={styles.therapistInfo}>
-          <Text style={styles.therapistName}>{item.therapistName}</Text>
-        </View>
-        <Icon name="group" type="material" color={appColors.grey3} size={14} />
-        <Text style={styles.memberCount}>{item.memberCount}</Text>
-      </View>
-
-      <View style={styles.groupFooter}>
-        <View style={styles.nextMeetingContainer}>
-          <Icon name="schedule" type="material" color={appColors.AppBlue} size={16} />
-          <Text style={styles.nextMeeting}>{item.nextMeeting}</Text>
-        </View>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() => handleGroupDetails(item)}
-          >
-            <Icon name="info" type="material" color={appColors.AppBlue} size={16} />
-            <Text style={styles.detailsButtonText}>Details</Text>
-          </TouchableOpacity>
+            <Text style={styles.lastActivity}>
+              {formatLastActivity(item.lastActivity)}
+            </Text>
+          </View>
 
           <TouchableOpacity
-            style={[
-              styles.chatButton,
-              { backgroundColor: getCategoryColor(item.category) }
-            ]}
-            onPress={() => handleOpenChat(item)}
+            style={styles.moreButton}
+            onPress={() => handleGroupMenu(item)}
           >
-            <Icon name="chat" type="material" color={appColors.CardBackground} size={16} />
-            <Text style={styles.chatButtonText}>Chat</Text>
+            <Icon name="more-vert" type="material" color={appColors.grey3} size={20} />
           </TouchableOpacity>
         </View>
-      </View>
 
-      {!item.isActive && (
-        <View style={styles.inactiveOverlay}>
-          <Text style={styles.inactiveText}>Group Inactive</Text>
+        <Text style={styles.groupDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
+
+        <View style={styles.therapistSection}>
+          <Avatar
+            source={item.therapistAvatar}
+            size={scale(32)}
+            rounded
+            containerStyle={styles.therapistAvatar}
+          />
+          <View style={styles.therapistInfo}>
+            <Text style={styles.therapistName}>{item.therapistName}</Text>
+          </View>
+          <Icon name="group" type="material" color={appColors.grey3} size={14} />
+          <Text style={styles.memberCount}>{item.memberCount}</Text>
         </View>
-      )}
-    </TouchableOpacity>
-  );
+
+        <View style={styles.groupFooter}>
+          <View style={styles.nextMeetingContainer}>
+            <Icon name="schedule" type="material" color={isExpired ? '#F44336' : appColors.AppBlue} size={16} />
+            <Text style={[styles.nextMeeting, isExpired && { color: '#F44336' }]}>
+              {isExpired && item.expiry_date ? `Expired: ${new Date(item.expiry_date).toLocaleDateString()}` : item.nextMeeting}
+            </Text>
+          </View>
+
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() => handleGroupDetails(item)}
+            >
+              <Icon name="info" type="material" color={appColors.AppBlue} size={16} />
+              <Text style={styles.detailsButtonText}>Details</Text>
+            </TouchableOpacity>
+
+            {isExpired ? (
+              <TouchableOpacity
+                style={[styles.chatButton, { backgroundColor: '#F44336' }]}
+                onPress={() => handleRenewGroup(item)}
+              >
+                <Icon name="autorenew" type="material" color={appColors.CardBackground} size={16} />
+                <Text style={styles.chatButtonText}>Renew</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.chatButton,
+                  { backgroundColor: getCategoryColor(item.category) }
+                ]}
+                onPress={() => handleOpenChat(item)}
+              >
+                <Icon name="chat" type="material" color={appColors.CardBackground} size={16} />
+                <Text style={styles.chatButtonText}>Chat</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {!item.isActive && (
+          <View style={styles.inactiveOverlay}>
+            <Text style={styles.inactiveText}>Group Inactive</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -611,6 +632,18 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.headerTextBold,
     flex: 1,
     marginBottom: scale(4),
+  },
+  statusBadge: {
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    borderRadius: scale(10),
+    marginLeft: scale(8),
+  },
+  statusBadgeText: {
+    color: appColors.CardBackground,
+    fontSize: moderateScale(10),
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
   },
   unreadBadge: {
     backgroundColor: appColors.AppBlue,

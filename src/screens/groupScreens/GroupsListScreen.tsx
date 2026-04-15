@@ -15,7 +15,7 @@ import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
-import { getGroups, joinGroup, getMyGroups } from '../../api/client/groups';
+import { getGroups, subscribeGroup, getMyGroups } from '../../api/client/groups';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import { getMembershipInfo, validateGroupJoin } from '../../services/MembershipService';
 import MembershipLimitModal from '../../components/MembershipLimitModal';
@@ -235,10 +235,9 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
           console.log('User ID:', userId);
 
           // Call API to join group with requested payload parameters
-          const response = await joinGroup(
+          const response = await subscribeGroup(
             groupId,
             userId,
-            'I struggle with anxiety and need support',
             true
           );
 
