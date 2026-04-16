@@ -75,7 +75,6 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
   const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
   const [showFilters, setShowFilters] = useState(false);
-  const [showDonateModal, setShowDonateModal] = useState(false);
 
   // Load therapists on mount
   useEffect(() => {
@@ -337,7 +336,7 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
 
             <TouchableOpacity
               style={styles.donateButton}
-              onPress={() => setShowDonateModal(true)}
+              onPress={() => { navigation.navigate('DonationFundScreen') }}
               activeOpacity={0.7}
             >
               <Icon name="favorite" type="material" color={appColors.CardBackground} size={moderateScale(20)} />
@@ -378,80 +377,80 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
 
         {/* Therapists List */}
         <FlatList
-            ref={therapistsListRef}
-            data={filteredTherapists}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => <TherapistCard therapist={item} />}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContainer}
-            ListHeaderComponent={
-              <View>
-                {/* Filter Section */}
-                <View style={styles.filterSection}>
-                  <Text style={styles.filterText}>All Specialities</Text>
-                  <View style={styles.filterActions}>
-                    <TouchableOpacity style={styles.viewToggleButton} onPress={toggleViewType}>
-                      <Icon
-                        name={viewType === 'compact' ? 'view-list' : 'view-module'}
-                        type="material"
-                        color={appColors.grey2}
-                        size={moderateScale(24)}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.filterButton} onPress={toggleFilters}>
-                      <Icon name="tune" type="material" color={appColors.grey2} size={moderateScale(24)} />
-                    </TouchableOpacity>
-                  </View>
+          ref={therapistsListRef}
+          data={filteredTherapists}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => <TherapistCard therapist={item} />}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={
+            <View>
+              {/* Filter Section */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterText}>All Specialities</Text>
+                <View style={styles.filterActions}>
+                  <TouchableOpacity style={styles.viewToggleButton} onPress={toggleViewType}>
+                    <Icon
+                      name={viewType === 'compact' ? 'view-list' : 'view-module'}
+                      type="material"
+                      color={appColors.grey2}
+                      size={moderateScale(24)}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.filterButton} onPress={toggleFilters}>
+                    <Icon name="tune" type="material" color={appColors.grey2} size={moderateScale(24)} />
+                  </TouchableOpacity>
                 </View>
-                {/* Specialty Filter Chips */}
-                {showFilters && (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.specialtyContainer}
-                  >
-                    {specialties.map((specialty) => (
-                      <TouchableOpacity
-                        key={specialty}
-                        style={[
-                          styles.specialtyChip,
-                          selectedSpecialty === specialty && styles.selectedSpecialtyChip
-                        ]}
-                        onPress={() => setSelectedSpecialty(specialty)}
-                      >
-                        <Text style={[
-                          styles.specialtyText,
-                          selectedSpecialty === specialty && styles.selectedSpecialtyText
-                        ]}>
-                          {specialty}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                )}
               </View>
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefreshing as boolean}
-                onRefresh={onRefresh}
-                colors={[appColors.AppBlue]}
-                tintColor={appColors.AppBlue}
+              {/* Specialty Filter Chips */}
+              {showFilters && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.specialtyContainer}
+                >
+                  {specialties.map((specialty) => (
+                    <TouchableOpacity
+                      key={specialty}
+                      style={[
+                        styles.specialtyChip,
+                        selectedSpecialty === specialty && styles.selectedSpecialtyChip
+                      ]}
+                      onPress={() => setSelectedSpecialty(specialty)}
+                    >
+                      <Text style={[
+                        styles.specialtyText,
+                        selectedSpecialty === specialty && styles.selectedSpecialtyText
+                      ]}>
+                        {specialty}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing as boolean}
+              onRefresh={onRefresh}
+              colors={[appColors.AppBlue]}
+              tintColor={appColors.AppBlue}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Icon
+                name="person-search"
+                type="material"
+                color={appColors.AppGray}
+                size={moderateScale(60)}
               />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Icon
-                  name="person-search"
-                  type="material"
-                  color={appColors.AppGray}
-                  size={moderateScale(60)}
-                />
-                <Text style={styles.emptyText}>No therapists found</Text>
-                <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
-              </View>
-            }
-          />
+              <Text style={styles.emptyText}>No therapists found</Text>
+              <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+            </View>
+          }
+        />
       </View>
       {/* Floating Matching Quiz Button */}
       <TouchableOpacity style={styles.fab} onPress={handleStartMatchingQuiz} activeOpacity={0.85}>
@@ -466,19 +465,6 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
         quickAction="modal"
       />
 
-      {/* @ts-ignore */}
-      <LHGenericFeatureModal
-        title="Donate Feature"
-        description="The donation feature is coming soon! You'll be able to support mental health initiatives and help others access therapy services."
-        buttonTitle="GOT IT"
-        isModVisible={showDonateModal}
-        // @ts-ignore
-        visibilitySetter={(val: any) => setShowDonateModal(val)}
-        isDismissable={true}
-        hasIcon={true}
-        iconType="material"
-        iconName="favorite"
-      />
     </SafeAreaView >
   );
 };

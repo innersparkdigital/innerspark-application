@@ -3,6 +3,7 @@ import {
   API_PRODUCTION_URL as PROD_URL,
   API_VERSION as VERSION,
   AUTH_TOKEN as TOKEN,
+  MEDIA_UPLOAD_URL as MEDIA_URL,
 } from '@env';
 
 // Development environment variables
@@ -16,6 +17,7 @@ export const API_VERSION = VERSION || '';
 
 // Auth token
 export const AUTH_TOKEN = TOKEN || '';
+export const MEDIA_UPLOAD_URL = MEDIA_URL || 'https://server.innersparkafrica.us/';
 
 // Warn if token is missing
 if (!AUTH_TOKEN || AUTH_TOKEN === '') {
@@ -42,6 +44,7 @@ console.log('🚀 === END ENVIRONMENT CONFIG ===');
 // Export the appropriate URL based on the environment
 export const API_BASE_URL = __DEV__ ? API_DEVELOPMENT_URL : API_PRODUCTION_URL;
 
-// Uploads base URL (different domain from API server)
-// Uploads are served from app.innersparkafrica.us, not server.innersparkafrica.us
-export const UPLOADS_BASE_URL = 'https://app.innersparkafrica.us';
+// Uploads base URL (different domain from API server or root domain)
+export const UPLOADS_BASE_URL = MEDIA_UPLOAD_URL.endsWith('/') 
+  ? MEDIA_UPLOAD_URL.slice(0, -1) 
+  : MEDIA_UPLOAD_URL;

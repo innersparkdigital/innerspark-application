@@ -44,7 +44,9 @@ export const getImageSource = (
   }
 
   // Otherwise, it's a relative path - prepend uploads base URL
-  return { uri: `${UPLOADS_BASE_URL}/${imagePath}` };
+  // Ensure we don't end up with double slashes if imagePath already starts with one
+  const sanitizedPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+  return { uri: `${UPLOADS_BASE_URL}/${sanitizedPath}` };
 };
 
 /**
@@ -63,7 +65,8 @@ export const getUploadUrl = (imagePath: any): string => {
     return imagePath;
   }
 
-  return `${UPLOADS_BASE_URL}/${imagePath}`;
+  const sanitizedPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+  return `${UPLOADS_BASE_URL}/${sanitizedPath}`;
 };
 
 /**

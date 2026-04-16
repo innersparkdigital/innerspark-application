@@ -51,12 +51,15 @@ export const userDataSlice = createSlice({
             state.userProfile = action.payload;
             
             // Link change to userDetails for app-wide sync
+            // This ensures ALL screens reading from userDetails stay in sync
             if (action.payload) {
-                const { firstName, lastName, image, email, phoneNumber } = action.payload;
+                const { firstName, lastName, image, profileImage, email, phoneNumber } = action.payload;
                 state.userDetails = {
                     ...state.userDetails,
+                    firstName: firstName || state.userDetails.firstName,
+                    lastName: lastName || state.userDetails.lastName,
                     name: `${firstName || ''} ${lastName || ''}`.trim() || state.userDetails.name,
-                    image: image || state.userDetails.image,
+                    image: profileImage || image || state.userDetails.image,
                     email: email || state.userDetails.email,
                     phone: phoneNumber || state.userDetails.phone,
                 };

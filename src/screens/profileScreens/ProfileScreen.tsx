@@ -28,6 +28,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { setUserProfile } from '../../features/user/userDataSlice';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { getUploadUrl } from '../../utils/imageHelpers';
+import { refreshProfile } from '../../utils/profileManager';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -151,11 +152,9 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         return;
       }
 
-      const response = await getClientProfile(userId);
-      const data = response?.data;
-
+      const data = await refreshProfile(userId);
+      
       if (data) {
-        dispatch(setUserProfile(data));
         setProfileData({
           firstName: data.firstName,
           lastName: data.lastName,

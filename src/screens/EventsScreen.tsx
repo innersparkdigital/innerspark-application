@@ -143,7 +143,7 @@ const EventsScreen: React.FC<EventsScreenProps> = ({ navigation, route }) => {
           time: event.time,
           // Handle cover image - use robust parsing util
           coverImage: getImageSource(event.coverImage, FALLBACK_IMAGES.event),
-          location: event.location || 'Location TBD',
+          location: event.location || 'Innerspark HQ',
           isOnline: event.isOnline || false,
           totalSeats: event.totalSeats || 0,
           availableSeats: event.availableSeats || 0,

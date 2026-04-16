@@ -2,7 +2,7 @@
  * Donation Fund Screen - Support Innerspark's Community Therapy Fund
  * Donations help subsidize therapy sessions for members in need
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ScrollView,
@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Button } from '@rneui/base';
@@ -24,6 +25,11 @@ import LHPhoneInput from '../../components/forms/LHPhoneInput';
 import { isValidPhoneNumber } from '../../global/LHValidators';
 import { getPhoneNumberOperator } from '../../global/LHShortcuts';
 import ImpactStatsCard from '../../components/donate/ImpactStatsCard';
+import WalletSelectionCard from '../../components/donate/WalletSelectionCard';
+import LHLoaderModal from '../../components/forms/LHLoaderModal';
+import { getWalletBalance, makeDonation } from '../../api/client/wallet';
+import { updateUserDetails } from '../../features/user/userDataSlice';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -33,16 +39,52 @@ interface DonationFundScreenProps {
 
 const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const alert = useISAlert();
 
   // Form state
   const [donationAmount, setDonationAmount] = useState('');
-  const [phone, setPhone] = useState('');
-  const [formattedPhone, setFormattedPhone] = useState('');
-  const [isCountrySupported, setIsCountrySupported] = useState(true);
+  const [note, setNote] = useState('');
+  const [walletBalance, setWalletBalance] = useState(userDetails?.balance || 0);
+  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'mobile_money'>('wallet');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [donationResponse, setDonationResponse] = useState<any>(null);
+
+  // Load balance on mount
+  useEffect(() => {
+    fetchBalance();
+  }, []);
+
+  const fetchBalance = async () => {
+    if (!userDetails?.userId) return;
+    setIsRefreshingBalance(true);
+    try {
+      const response = await getWalletBalance(userDetails.userId);
+      if (response && response.success) {
+        // Only update if we received actual balance data
+        const fetchedBalance = response.balance !== undefined ? response.balance : response.data?.total_balance;
+        
+        if (fetchedBalance !== undefined && fetchedBalance !== null && !isNaN(fetchedBalance)) {
+          setWalletBalance(fetchedBalance);
+          // Also sync to Redux if different
+          if (fetchedBalance !== userDetails.balance) {
+            dispatch(updateUserDetails({
+              ...userDetails,
+              balance: fetchedBalance
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Error fetching balance:', error);
+    } finally {
+      setIsRefreshingBalance(false);
+    }
+  };
 
   // Predefined amounts with impact descriptions
   const predefinedAmounts = [
@@ -63,7 +105,13 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
 
   // Handle donation amount change
   const onChangeDonationAmountHandler = (amount: string) => {
-    const numericAmount = amount.replace(/[^0-9]/g, '');
+    let numericAmount = amount.replace(/[^0-9]/g, '');
+    
+    // Strip leading zeros to prevent duplicate 0's at start
+    if (numericAmount.length > 0) {
+      numericAmount = numericAmount.replace(/^0+/, '');
+    }
+    
     setDonationAmount(numericAmount);
   };
 
@@ -76,32 +124,37 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
   const selectPredefinedAmount = (amount: string) => {
     setDonationAmount(amount);
   };
+  
+  const onChangeNoteHandler = (text: string) => {
+    setNote(text);
+  };
 
   // Handle donation submission
   const handleDonationSubmit = () => {
-    if (!donationAmount || donationAmount === '0') {
+    const amount = parseInt(donationAmount);
+    if (!donationAmount || isNaN(amount) || amount <= 0) {
       toast.show({
-        description: 'Please enter a donation amount',
+        description: 'Please enter a valid donation amount',
         duration: 3000,
       });
       return;
     }
 
-    // Validate phone number
-    if (!phone || !isValidPhoneNumber(formattedPhone)) {
-      toast.show({
-        description: 'Please enter a valid phone number',
-        duration: 3000,
+    if (amount < 1000) {
+      alert.show({
+        type: 'info',
+        title: 'Minimum Donation',
+        message: 'To make your support count, the minimum donation is 1,000 UGX 🙌',
+        confirmText: 'Okay',
       });
       return;
     }
 
-    // Check is phone is valid MTN or AIRTEL Number. if operator is OTHER, show error
-    const operator = getPhoneNumberOperator(formattedPhone);
-    if (operator === 'OTHER') {
+    if (paymentMethod === 'wallet' && amount > walletBalance) {
       toast.show({
-        description: 'Please enter a valid MTN or AIRTEL phone number',
-        duration: 3000,
+        description: `Insufficient balance. You need UGX ${amount.toLocaleString()}`,
+        status: 'error',
+        duration: 4000,
       });
       return;
     }
@@ -115,19 +168,40 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await makeDonation(
+        userDetails.userId,
+        parseInt(donationAmount),
+        note
+      );
 
+      if (response.success) {
+        setDonationResponse(response.data);
+        
+        // Update local and global balance
+        const newBalance = response.data.wallet_balance;
+        setWalletBalance(newBalance);
+        dispatch(updateUserDetails({
+          ...userDetails,
+          balance: newBalance
+        }));
+
+        setIsLoading(false);
+        setShowSuccessModal(true);
+      } else {
+        throw new Error(response.message || 'Donation failed');
+      }
+    } catch (error: any) {
       setIsLoading(false);
-      setShowSuccessModal(true);
-
-      // Form will be reset when modal closes
-
-    } catch (error) {
-      setIsLoading(false);
+      
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          'Donation failed. Please try again.';
+      
       toast.show({
-        description: 'Donation failed. Please try again.',
-        duration: 3000,
+        description: errorMessage,
+        duration: 4000,
+        status: 'error'
       });
     }
   };
@@ -135,9 +209,8 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
   // Handle success modal close
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
-    // Reset form after modal closes
     setDonationAmount('');
-    setPhone('');
+    setNote('');
     navigation.goBack();
   };
 
@@ -154,7 +227,18 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
         <View style={{ width: scale(24) }} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshingBalance}
+            onRefresh={fetchBalance}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      >
         {/* Hero Section */}
         <View style={styles.heroCard}>
           <Icon name="favorite" type="material" color={appColors.AppBlue} size={moderateScale(48)} />
@@ -239,19 +323,46 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
           </View>
         </View>
 
-        {/* Phone Number Section */}
+        {/* Payment Method Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mobile Money Number</Text>
+          <Text style={styles.sectionTitle}>Select Payment Method</Text>
           <Text style={styles.sectionSubtitle}>
-            Enter your mobile money number for payment
+            Your donation will be deducted from your chosen payment method
           </Text>
 
-          <LHPhoneInput
-            inputValue={phone}
-            inputValueSetter={setPhone}
-            formattedValueSetter={setFormattedPhone}
-            countrySupportSetter={setIsCountrySupported}
+          <WalletSelectionCard 
+            balance={walletBalance}
+            isSelected={paymentMethod === 'wallet'}
+            onPress={() => setPaymentMethod('wallet')}
           />
+          
+          {/* Mobile Money Section - Commented out for now as requested */}
+          {/* 
+          <View style={[styles.section, { padding: 0, marginTop: 10, opacity: 0.6 }]}>
+            <Text style={[styles.sectionTitle, { fontSize: moderateScale(16) }]}>Mobile Money</Text>
+            <LHPhoneInput
+              inputValue={phone}
+              inputValueSetter={setPhone}
+              formattedValueSetter={setFormattedPhone}
+              countrySupportSetter={setIsCountrySupported}
+            />
+          </View>
+          */}
+        </View>
+
+        {/* Note Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Add a Note (Optional)</Text>
+          <View style={styles.amountInputContainer}>
+            <Icon name="edit" type="material" color={appColors.grey3} size={moderateScale(20)} style={{ marginRight: 10 }} />
+            <TextInput
+              style={styles.amountInput}
+              placeholder="Keep up the good work!"
+              value={note}
+              onChangeText={onChangeNoteHandler}
+              maxLength={100}
+            />
+          </View>
         </View>
 
         {/* Donation Summary */}
@@ -268,7 +379,7 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Payment Method:</Text>
-              <Text style={styles.summaryValue}>Mobile Money</Text>
+              <Text style={styles.summaryValue}>{paymentMethod === 'wallet' ? 'Wellness Vault' : 'Mobile Money'}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tax Deductible:</Text>
@@ -283,15 +394,15 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
       {/* Donate Button */}
       <View style={styles.footer}>
         <Button
-          title={isLoading ? "Processing..." : "Donate to Fund"}
+          title="Donate to Fund"
           buttonStyle={[
             styles.donateButton,
-            (!donationAmount || !phone || isLoading) && styles.disabledButton
+            (!donationAmount || isNaN(parseInt(donationAmount, 10)) || parseInt(donationAmount, 10) <= 0) && styles.disabledButton
           ]}
           titleStyle={styles.donateButtonText}
+          disabledTitleStyle={{ color: appColors.grey3 }}
           onPress={handleDonationSubmit}
-          disabled={!donationAmount || !phone || isLoading}
-          loading={isLoading}
+          disabled={!donationAmount || isNaN(parseInt(donationAmount, 10)) || parseInt(donationAmount, 10) <= 0}
         />
       </View>
 
@@ -305,12 +416,11 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Icon name="favorite" type="material" color={appColors.AppBlue} size={moderateScale(48)} />
-            <Text style={styles.modalTitle}>Confirm Donation</Text>
             <Text style={styles.modalMessage}>
               You are about to donate UGX {parseInt(donationAmount).toLocaleString()} to Innerspark's Community Therapy Fund.
             </Text>
             <Text style={styles.modalSubMessage}>
-              A mobile money prompt will be sent to {formattedPhone}.
+              The amount will be deducted from your Wellness Vault.
             </Text>
 
             <View style={styles.modalButtons}>
@@ -345,6 +455,10 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
             <Text style={styles.modalMessage}>
               Your generous donation of UGX {parseInt(donationAmount || '0').toLocaleString()} has been received.
             </Text>
+            <View style={styles.receiptContainer}>
+                <Text style={styles.receiptLabel}>Transaction Reference:</Text>
+                <Text style={styles.receiptValue}>{donationResponse?.reference || 'N/A'}</Text>
+            </View>
             <Text style={styles.modalSubMessage}>
               You're helping make mental health care accessible to those who need it most. Together, we're building a healthier community.
             </Text>
@@ -358,6 +472,9 @@ const DonationFundScreen: React.FC<DonationFundScreenProps> = ({ navigation }) =
           </View>
         </View>
       </Modal>
+
+      <ISAlert ref={alert.ref} />
+      <LHLoaderModal visible={isLoading} message="Processing Donation..." />
     </SafeAreaView>
   );
 };
@@ -384,7 +501,8 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    padding: scale(20),
+    paddingHorizontal: scale(15),
+    paddingTop: scale(20),
   },
   heroCard: {
     backgroundColor: appColors.CardBackground,
@@ -707,6 +825,27 @@ const styles = StyleSheet.create({
     paddingVertical: scale(12),
     paddingHorizontal: scale(40),
     minWidth: scale(120),
+  },
+  receiptContainer: {
+    backgroundColor: appColors.AppLightGray,
+    padding: scale(10),
+    borderRadius: scale(8),
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: scale(15),
+  },
+  receiptLabel: {
+    fontSize: moderateScale(11),
+    color: appColors.grey3,
+    fontFamily: appFonts.headerTextRegular,
+    textTransform: 'uppercase',
+  },
+  receiptValue: {
+    fontSize: moderateScale(14),
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+    marginTop: scale(2),
   },
 });
 

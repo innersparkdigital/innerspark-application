@@ -25,7 +25,7 @@ import { setUserProfile } from '../../features/user/userDataSlice';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import DatePicker from 'react-native-date-picker';
 import { getUploadUrl } from '../../utils/imageHelpers';
-import moment from 'moment';
+import { refreshProfile } from '../../utils/profileManager';
 
 // TypeScript interfaces
 interface UserProfile {
@@ -292,12 +292,8 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   const loadProfileData = async () => {
     setIsRefreshing(true);
     try {
-      const userId = userDetails?.userId;
       if (userId) {
-        const refreshed = await getClientProfile(userId);
-        if (refreshed?.data) {
-          dispatch(setUserProfile(refreshed.data));
-        }
+        await refreshProfile(userId);
       }
     } catch (e) {
       console.error("Failed to refresh user profile:", e);
@@ -342,7 +338,13 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
   const handleEditField = (field: string) => {
     if (field === 'dateOfBirth') {
       const currentVal = profileData.dateOfBirth;
-      const parsedDate = currentVal ? moment(currentVal, 'YYYY-MM-DD').toDate() : new Date(2000, 0, 1);
+      let parsedDate = new Date(2000, 0, 1);
+      if (currentVal) {
+        const [year, month, day] = currentVal.split('-');
+        if (year && month && day) {
+          parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        }
+      }
       setDatePickerDate(parsedDate);
       setIsDatePickerVisible(true);
       return;
@@ -434,10 +436,7 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
 
       // Refresh Redux profile
       try {
-        const refreshed = await getClientProfile(userId);
-        if (refreshed?.data) {
-          dispatch(setUserProfile(refreshed.data));
-        }
+        await refreshProfile(userId);
       } catch (e) {
         // Best-effort refresh; screen still succeeds
       }
@@ -649,7 +648,12 @@ export default function ProfileUpdateScreen({ navigation, route }: ProfileUpdate
         maximumDate={new Date()}
         onConfirm={(date) => {
           setIsDatePickerVisible(false);
-          const formattedDate = moment(date).format('YYYY-MM-DD');
+          // Format date to YYYY-MM-DD
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const formattedDate = `${year}-${month}-${day}`;
+          
           setProfileData(prev => ({
             ...prev,
             dateOfBirth: formattedDate

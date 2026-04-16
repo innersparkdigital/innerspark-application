@@ -31,12 +31,14 @@ import {
   selectWalletRefreshing,
 } from '../../features/wallet/walletSlice';
 import { loadWalletBalance, loadWalletTransactions, refreshWalletBalance, refreshWalletTransactions } from '../../utils/walletManager';
+import { refreshProfile } from '../../utils/profileManager';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const WellnessVaultScreen = ({ navigation, route }: any) => {
   const toast = useToast();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const userProfile = useSelector((state: any) => state.userData.userProfile);
   const [showTopupModal, setShowTopupModal] = useState(false);
   const [isBalanceHidden, setIsBalanceHidden] = useState(true);
 
@@ -57,6 +59,7 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
       if (userId) {
         refreshWalletBalance(userId);
         refreshWalletTransactions(userId, 1, 5);
+        refreshProfile(userId);
       }
     }, [userDetails?.userId, userDetails?.id])
   );
@@ -66,7 +69,8 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
     if (userId) {
       await Promise.all([
         refreshWalletBalance(userId),
-        refreshWalletTransactions(userId, 1, 5)
+        refreshWalletTransactions(userId, 1, 5),
+        refreshProfile(userId)
       ]);
     }
   };
@@ -262,7 +266,9 @@ const WellnessVaultScreen = ({ navigation, route }: any) => {
             {/* Top Row: Label and Logo */}
             <View style={styles.cardTopRow}>
               {/* <Text style={styles.cardVaultTitle}>Wellness Vault</Text> */}
-              <Text style={styles.cardVaultTitle} numberOfLines={1} ellipsizeMode="tail">{userDetails?.firstName} {userDetails?.lastName}</Text>
+              <Text style={styles.cardVaultTitle} numberOfLines={1} ellipsizeMode="tail">
+                {userProfile?.firstName || userDetails?.firstName || ''} {userProfile?.lastName || userDetails?.lastName || userDetails?.name || 'User'}
+              </Text>
               <Image source={appImages.appIconWhite} style={styles.cardLogo} resizeMode="contain" />
             </View>
 

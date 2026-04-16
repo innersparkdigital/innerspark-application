@@ -75,10 +75,23 @@ export const getDashboardData = async (userId) => {
  */
 export const getBanners = async () => {
     try {
-        const response = await AuthInstance.get('/banners');
+        // Based on the working curl, the endpoint is at the root domain, not under /api
+        const rootUrl = AuthInstance.defaults.baseURL.replace(/\/api$/, '') || AuthInstance.defaults.baseURL;
+        const bannerUrl = `${rootUrl}/banners`.replace(/([^:])\/\//g, '$1/'); // Ensure single slash after domain
+        
+        console.log('📡 Fetching banners from:', bannerUrl);
+        const response = await AuthInstance.get(bannerUrl);
+        console.log('✅ Banners API Status:', response.status);
         return response.data;
     } catch (error) {
-        // Temporary mock data for testing UI when endpoint fails/missing
+        console.error('❌ Banners API Error:', {
+            message: error.message,
+            url: error.config?.url,
+            status: error.response?.status,
+            data: error.response?.data
+        });
+        // Commented out hardcoded mock data to use real API endpoint
+        /*
         return [
             { id: '1', image: 'https://cdn.pixabay.com/photo/2016/08/06/18/51/softball-1574962_1280.jpg' },
             { id: '2', image: 'https://cdn.pixabay.com/photo/2016/01/07/16/47/ipad-1126136_1280.jpg' },
@@ -86,5 +99,7 @@ export const getBanners = async () => {
             { id: '4', image: 'https://cdn.pixabay.com/photo/2013/04/10/18/07/child-102577_1280.jpg' },
             { id: '5', image: 'https://cdn.pixabay.com/photo/2023/06/28/18/00/children-8094952_1280.jpg' }
         ];
+        */
+        return [];
     }
 }

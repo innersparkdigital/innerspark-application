@@ -3,4 +3,5 @@ declare module '@env' {
   export const API_PRODUCTION_URL: string;
   export const API_VERSION: string;
   export const AUTH_TOKEN: string;
+  export const MEDIA_UPLOAD_URL: string;
 }

@@ -14,13 +14,19 @@ import { appColors, appFonts } from '../global/Styles';
 import { scale, moderateScale } from '../global/Scaling';
 import { useThemedColors } from '../hooks/useThemedColors';
 import { getBanners } from '../api/client/dashboard';
+import { getUploadUrl } from '../utils/imageHelpers';
+import { storeItemLS, retrieveItemLS } from '../global/StorageActions';
 import { useToast } from 'native-base';
 
 interface BannerData {
   id: string | number;
-  image: string;
+  imageUrl?: string | null;
+  linkUrl?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+  // Backward compatibility support for old code/mocks
+  image?: string;
   link?: string;
-  title?: string;
 }
 
 interface BannersCardProps {
@@ -42,22 +48,59 @@ export default function BannersCard({ showAdsBadge = false, openLinks = false, i
 
   useEffect(() => {
     if (isVisible) {
-      fetchBanners();
+      loadInitialBanners();
     }
   }, [isVisible]);
 
-  const fetchBanners = async () => {
+  const loadInitialBanners = async () => {
     try {
-      const data = await getBanners();
-      if (data && data.banners) {
-        setBanners(data.banners);
-      } else if (Array.isArray(data)) {
-        setBanners(data);
+      // 1. Try to load from local storage first for immediate display
+      const cachedBanners = await retrieveItemLS('bannersLS');
+      if (cachedBanners) {
+        const parsedBanners = typeof cachedBanners === 'string' ? JSON.parse(cachedBanners) : cachedBanners;
+        if (Array.isArray(parsedBanners) && parsedBanners.length > 0) {
+          console.log('📦 Loaded banners from cache:', parsedBanners.length);
+          setBanners(parsedBanners);
+          setLoading(false); // Stop loading if we have cached data
+        }
       }
     } catch (error) {
-      console.log('Failed to fetch banners:', error);
+      console.log('Error loading cached banners:', error);
+    } finally {
+      // 2. Always refresh from API in the background
+      fetchBanners();
+    }
+  };
+
+  const fetchBanners = async () => {
+    try {
+      const response = await getBanners();
+      console.log('🖼️ Banners API Raw Response:', JSON.stringify(response, null, 2));
+      
+      // Handle the observed API structure: { data: [...], success: true }
+      if (response && response.data && Array.isArray(response.data)) {
+        console.log('✅ Found banners array in response.data, count:', response.data.length);
+        setBanners(response.data);
+        saveBannersToStorage(response.data);
+      } else if (Array.isArray(response)) {
+        console.log('✅ Found banners as direct array, count:', response.length);
+        setBanners(response);
+        saveBannersToStorage(response);
+      } else {
+        console.log('⚠️ No recognizable banners array found in response');
+      }
+    } catch (error) {
+      console.log('❌ Failed to fetch banners:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveBannersToStorage = async (data: BannerData[]) => {
+    try {
+      await storeItemLS('bannersLS', data);
+    } catch (error) {
+      console.log('Error saving banners to storage:', error);
     }
   };
 
@@ -79,13 +122,16 @@ export default function BannersCard({ showAdsBadge = false, openLinks = false, i
     }
   };
 
-  // Modern fallback banner when nothing is returned or on error
-  const renderFallback = () => (
+  // Modern fallback banner when an individual banner slide lacks an image
+  // Can also be used as the last resort fallback
+  const renderFallback = (title?: string | null, subtitle?: string | null) => (
     <View style={[styles.fallbackContainer, { backgroundColor: themeColors.AppBlue }]}>
       <View style={styles.fallbackContent}>
-        <Text style={styles.fallbackTitle}>Mental Wellness Journey</Text>
+        <Text style={styles.fallbackTitle}>
+          {title || "Mental Wellness Journey"}
+        </Text>
         <Text style={styles.fallbackSubtitle}>
-          Discover new ways to improve your daily routine and find inner peace.
+          {subtitle || "Discover new ways to improve your daily routine and find inner peace."}
         </Text>
       </View>
       <View style={[styles.fallbackDot, { backgroundColor: '#FF2D55', top: '20%', right: '10%' }]} />
@@ -112,16 +158,13 @@ export default function BannersCard({ showAdsBadge = false, openLinks = false, i
   }
 
   if (banners.length === 0) {
-    return (
-      <View style={[styles.container, containerDynamicStyle, { backgroundColor: themeColors.CardBackground }]}>
-        {renderFallback()}
-      </View>
-    );
+    return null;
   }
 
   return (
     <View style={[styles.container, containerDynamicStyle, { backgroundColor: themeColors.CardBackground }]}>
       <Swiper
+        key={banners.length}
         style={styles.wrapper}
         height={CARD_HEIGHT}
         autoplay
@@ -132,25 +175,36 @@ export default function BannersCard({ showAdsBadge = false, openLinks = false, i
         paginationStyle={styles.paginationConfig}
         removeClippedSubviews={false}
       >
-        {banners.map((banner) => (
-          <TouchableOpacity
-            key={banner.id}
-            activeOpacity={0.9}
-            style={styles.slide}
-            onPress={() => handlePress(banner.link)}
-          >
-            <Image
-              source={{ uri: banner.image }}
-              style={styles.bannerImage}
-              resizeMode="cover"
-            />
-            {showAdsBadge && (
-              <View style={styles.adsBadge}>
-                <Text style={styles.adsText}>Ads</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        ))}
+        {banners.map((banner) => {
+          const rawImagePath = banner.imageUrl || banner.image;
+          const bannerImage = rawImagePath ? getUploadUrl(rawImagePath) : null;
+          const bannerLink = banner.linkUrl || banner.link;
+
+          return (
+            <TouchableOpacity
+              key={banner.id}
+              activeOpacity={0.9}
+              style={styles.slide}
+              onPress={() => handlePress(bannerLink || undefined)}
+            >
+              {bannerImage ? (
+                <Image
+                  source={{ uri: bannerImage }}
+                  style={styles.bannerImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                renderFallback(banner.title, banner.subtitle)
+              )}
+
+              {showAdsBadge && (
+                <View style={styles.adsBadge}>
+                  <Text style={styles.adsText}>Ads</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </Swiper>
     </View>
   );
@@ -175,9 +229,9 @@ const styles = StyleSheet.create({
   wrapper: {},
   slide: {
     flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#333',
   },
   bannerImage: {
     width: '100%',
@@ -217,6 +271,7 @@ const styles = StyleSheet.create({
   // Fallback Styles
   fallbackContainer: {
     flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     padding: scale(20),

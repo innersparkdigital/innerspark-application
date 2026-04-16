@@ -708,7 +708,7 @@ export default function HomeScreen({ navigation }: any) {
 
         {/* Dynamic Banners Section */}
         {/* <BannersCard isVisible={allCompleted} /> */}
-        {/* <BannersCard /> */}
+        <BannersCard />
 
         {/* Test Notification Button */}
         {/* <TestNotificationButton /> */}
