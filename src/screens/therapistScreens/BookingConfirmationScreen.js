@@ -18,10 +18,16 @@ import { Icon, Avatar, Button } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
+import { useSelector } from 'react-redux';
+import { resolveSessionType } from '../../utils/appointmentUtils';
+import { selectSessionTypes } from '../../features/appointments/appointmentsSlice';
 
 const BookingConfirmationScreen = ({ navigation, route }) => {
   const { therapist, appointmentDetails } = route.params;
   const toast = useToast();
+  const sessionTypes = useSelector(selectSessionTypes);
+  const userDetails = useSelector((state) => state.userData.userDetails);
+  const userAvatar = userDetails?.profileImage || userDetails?.avatar;
 
   // Animation values
   const fadeAnim = new Animated.Value(0);
@@ -44,12 +50,7 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
     ]).start();
   }, []);
 
-  const handleAddToCalendar = () => {
-    toast.show({
-      description: 'Appointment added to your calendar',
-      duration: 2000,
-    });
-  };
+
 
   const handleShareReceipt = async () => {
     try {
@@ -67,37 +68,25 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
   };
 
   const handleGoToAppointments = () => {
-    // World-class UX: Clear the stack so user cannot swipe back into a completed checkout
+    // Correctly reset the stack to show the Appointments screen on top of the bottom tabs
     navigation.dispatch(
       CommonActions.reset({
-        index: 0,
+        index: 1,
         routes: [
-          {
-            name: 'LHBottomTabs',
-            state: {
-              routes: [
-                {
-                  name: 'AppointmentsScreen',
-                },
-              ],
-            },
-          },
+          { name: 'LHBottomTabs' },
+          { name: 'AppointmentsScreen' },
         ],
       })
     );
   };
 
   const handleGoHome = () => {
+    // Similarly reset the stack but focused on the bottom tabs (Home/Therapists)
     navigation.dispatch(
       CommonActions.reset({
         index: 0,
         routes: [
-          {
-            name: 'LHBottomTabs',
-            state: {
-              routes: [{ name: 'TherapistsScreen' }],
-            },
-          },
+          { name: 'LHBottomTabs' }
         ],
       })
     );
@@ -130,7 +119,7 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
         </TouchableOpacity>
         <View style={{ width: scale(15) }} />
         <Avatar
-          source={therapist.image}
+          source={userAvatar ? { uri: userAvatar } : require('../../assets/images/avatar-placeholder.png')}
           size={scale(40)}
           rounded
           containerStyle={{ borderWidth: 1, borderColor: appColors.AppLightGray }}
@@ -226,7 +215,7 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Session Type:</Text>
-            <Text style={styles.summaryValue}>{appointmentDetails.sessionType || 'Individual Therapy'}</Text>
+            <Text style={styles.summaryValue}>{resolveSessionType(appointmentDetails.sessionType, sessionTypes)}</Text>
           </View>
 
           <View style={styles.summaryRow}>
@@ -271,12 +260,7 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
           { opacity: fadeAnim },
         ]}
       >
-        <Button
-          title="Add to calendar"
-          buttonStyle={styles.calendarButton}
-          titleStyle={styles.calendarButtonText}
-          onPress={handleAddToCalendar}
-        />
+
 
         <TouchableOpacity
           style={styles.appointmentsButton}
@@ -526,23 +510,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  calendarButton: {
-    backgroundColor: appColors.AppBlue,
-    borderRadius: scale(15),
-    paddingVertical: scale(15),
-    marginBottom: scale(12),
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  calendarButtonText: {
-    fontSize: moderateScale(16),
-    fontWeight: 'bold',
-    color: appColors.CardBackground,
-    fontFamily: appFonts.buttonTextBold,
-  },
+
   appointmentsButton: {
     alignItems: 'center',
     paddingVertical: scale(15),

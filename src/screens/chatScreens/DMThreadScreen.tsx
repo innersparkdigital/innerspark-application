@@ -59,9 +59,12 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   const [chatStatus, setChatStatus] = useState<string>('ACTIVE');
   const [scheduledStartTime, setScheduledStartTime] = useState<string | null>(null);
   const [countdownText, setCountdownText] = useState<string>('');
+  const [peerOnline, setPeerOnline] = useState<boolean>(isOnline || false);
 
-  // Track the previously loaded messages safely across re-renders to filter Live Array diffs dynamically generating Notifications
+  // Track previously loaded messages to diff against polling results
   const prevMessagesRef = useRef<Message[]>([]);
+  // Smart scroll: only auto-scroll if user is already near the bottom
+  const isNearBottomRef = useRef(true);
 
   useEffect(() => {
     loadMessagesData();
@@ -120,6 +123,9 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
       setChatStatus(status);
       setIsChatLocked(status === 'LOCKED');
       
+      const peerStatus = response.data?.is_peer_online ?? response.is_peer_online ?? false;
+      setPeerOnline(peerStatus);
+      
       const startTime = response.data?.scheduled_start_time || response.scheduled_start_time;
       if (startTime) setScheduledStartTime(startTime);
     } catch (e) {
@@ -147,13 +153,19 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
         type: msg.type || 'text',
       }));
 
-      const formattedMessages = mappedMessages.reverse();
+      // Explicit ascending sort — deterministic regardless of API response order
+      mappedMessages.sort((a: Message, b: Message) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
 
+      // Check for new incoming messages from other party
+      let hasNewMessages = false;
       if (isSilent && prevMessagesRef.current.length > 0) {
         const oldIds = new Set(prevMessagesRef.current.map(m => m.id));
-        const newMessages = formattedMessages.filter((m: any) => !oldIds.has(m.id) && !m.isOwn);
+        const newMessages = mappedMessages.filter((m: any) => !oldIds.has(m.id) && !m.isOwn);
 
         if (newMessages.length > 0) {
+          hasNewMessages = true;
           newMessages.forEach((msg: any) => {
             displayNotification({
               title: partnerName,
@@ -164,10 +176,14 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
         }
       }
 
-      setMessages(formattedMessages);
-      prevMessagesRef.current = formattedMessages;
+      setMessages(mappedMessages);
+      prevMessagesRef.current = mappedMessages;
 
       if (!isSilent) {
+        // Initial load: always scroll to bottom
+        scrollToBottom();
+      } else if (isNearBottomRef.current && hasNewMessages) {
+        // Silent poll: only scroll if user is already near the bottom AND new messages arrived
         scrollToBottom();
       }
     } catch (error) {
@@ -393,7 +409,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           <View style={styles.headerText}>
             <Text style={styles.headerName}>{partnerName}</Text>
             <Text style={styles.headerStatus}>
-              {isOnline ? 'Online' : `Last seen ${lastSeen}`}
+              {peerOnline ? 'Online' : `Last seen ${lastSeen}`}
             </Text>
           </View>
         </View>
@@ -401,7 +417,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.navigate('TherapistProfileViewScreen', {
-            therapist: { partnerId, partnerName, partnerAvatar, isOnline, lastSeen, partnerEmail }
+            therapist: { partnerId, partnerName, partnerAvatar, isOnline: peerOnline, lastSeen, partnerEmail }
           })}
         >
           <Icon name="info" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
@@ -421,7 +437,11 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           style={styles.messagesList}
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={scrollToBottom}
+          onScroll={(e) => {
+            const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+            isNearBottomRef.current = contentSize.height - contentOffset.y - layoutMeasurement.height < 80;
+          }}
+          scrollEventThrottle={100}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

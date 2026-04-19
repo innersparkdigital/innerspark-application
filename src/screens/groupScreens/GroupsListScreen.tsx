@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   RefreshControl,
   TextInput,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
@@ -31,14 +33,18 @@ interface SupportGroup {
   therapistName: string;
   therapistEmail: string;
   therapistAvatar?: any;
+  therapistSpecialization?: string;
   memberCount: number;
   maxMembers: number;
   icon: string;
-  category: 'anxiety' | 'depression' | 'addiction' | 'trauma' | 'general';
+  coverImage?: any;
+  category: string;
   isJoined: boolean;
   isPrivate: boolean;
   meetingSchedule: string;
   tags: string[];
+  subscriptionPrice?: number;
+  nextCohortDate?: string;
 }
 
 interface GroupsListScreenProps {
@@ -61,6 +67,11 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
 
   // Get membership info instantly from local Redux state tracking
   const membershipInfo = getMembershipInfo(joinedGroupIds.length);
@@ -116,48 +127,67 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     }
   };
 
-  const loadGroups = async () => {
-    setIsLoading(true);
+  const loadGroups = async (pageNumber = 1, shouldRefresh = false) => {
+    if (pageNumber === 1 && !shouldRefresh) setIsLoading(true);
+    if (pageNumber > 1) setIsMoreLoading(true);
+
     try {
-      console.log('📞 Calling getGroups API...');
-      const response = await getGroups(userId, 1, 50);
+      console.log(`📞 Calling getGroups API (Page: ${pageNumber})...`);
+      const response = await getGroups(userId, pageNumber, 15);
       console.log('✅ Groups API Response:', JSON.stringify(response, null, 2));
 
       const apiGroups = response.data?.groups || [];
+      const pagination = response.data?.pagination || {};
+      
+      if (pagination.totalPages) setTotalPages(pagination.totalPages);
+      setPage(pageNumber);
+
       const mappedGroups: SupportGroup[] = apiGroups.map((group: any) => {
         const id = group.id?.toString() || group._id?.toString();
-        // Priority: Redux strict local synchronization state array
         const dynamicallyJoined = joinedGroupIds.includes(id);
 
         return {
           id,
-          name: decodeHTMLEntities(group.name || group.groupName || group.group_name || 'Unnamed Group'),
+          name: decodeHTMLEntities(group.name || group.groupName || 'Unnamed Group'),
           description: decodeHTMLEntities(group.description || ''),
-          therapistName: decodeHTMLEntities(group.therapistName || group.therapist_name || group.facilitatorName || group.facilitator_name || 'Unknown'),
-          therapistEmail: group.therapistEmail || group.therapist_email || group.facilitatorEmail || group.facilitator_email || '',
-          therapistAvatar: getImageSource(group.therapistAvatar || group.therapist_avatar || group.facilitatorAvatar || group.facilitator_avatar, FALLBACK_IMAGES.avatar),
-          memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
-          maxMembers: group.maxMembers || group.max_members || group.capacity || 50,
+          therapistName: decodeHTMLEntities(group.therapistName || 'Unknown'),
+          therapistEmail: group.therapistEmail || '',
+          therapistAvatar: getImageSource(group.therapistPhoto || group.therapistAvatar, FALLBACK_IMAGES.avatar),
+          therapistSpecialization: decodeHTMLEntities(group.therapistSpecialization || ''),
+          memberCount: group.member_count || group.memberCount || 0,
+          maxMembers: group.max_capacity || group.maxMembers || 50,
           icon: group.icon || 'group',
+          coverImage: group.icon_url ? { uri: group.icon_url } : null,
           category: group.category || 'general',
           isJoined: dynamicallyJoined,
-          isPrivate: group.isPrivate || group.is_private || false,
-          meetingSchedule: group.meetingSchedule || group.meeting_schedule || group.schedule || 'Schedule TBD',
+          isPrivate: group.isPrivate || false,
+          meetingSchedule: group.meetingSchedule || '',
           tags: group.tags || [],
+          subscriptionPrice: group.subscription_price_ugx || 0,
+          nextCohortDate: group.next_cohort_start_date || '',
         };
       });
 
-      setGroups(mappedGroups);
-      console.log('✅ Mapped Groups:', mappedGroups.length);
+      if (pageNumber === 1) {
+        setGroups(mappedGroups);
+      } else {
+        setGroups(prev => [...prev, ...mappedGroups]);
+      }
     } catch (error: any) {
-      // console.error('❌ Error loading groups:', error);
       toast.show({
         description: error.response?.data?.message || 'Failed to load groups. Please try again.',
         duration: 3000,
       });
-      setGroups([]);
+      if (pageNumber === 1) setGroups([]);
     } finally {
       setIsLoading(false);
+      setIsMoreLoading(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (!isMoreLoading && page < totalPages) {
+      loadGroups(page + 1);
     }
   };
 
@@ -185,9 +215,9 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
 
   // Handle refresh 
   const handleRefresh = async () => {
-    setIsRefreshing(true); // Set refresh state
-    await loadGroups();
-    setIsRefreshing(false); // Reset refresh state
+    setIsRefreshing(true);
+    await loadGroups(1, true);
+    setIsRefreshing(false);
   };
 
   // Handle join group
@@ -340,12 +370,20 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
     >
       <View style={styles.groupHeader}>
         <View style={styles.groupIconContainer}>
-          <Icon
-            name={item.icon}
-            type="material"
-            color={getCategoryColor(item.category)}
-            size={scale(32)}
-          />
+          {item.coverImage ? (
+            <Image 
+              source={item.coverImage} 
+              style={styles.groupCoverImage} 
+              resizeMode="cover"
+            />
+          ) : (
+            <Icon
+              name={item.icon}
+              type="material"
+              color={getCategoryColor(item.category)}
+              size={scale(32)}
+            />
+          )}
           {item.isPrivate && (
             <View style={styles.privateIndicator}>
               <Icon name="lock" type="material" color={appColors.CardBackground} size={scale(12)} />
@@ -372,25 +410,39 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
       <View style={styles.therapistSection}>
         <Avatar
           source={item.therapistAvatar}
-          size={scale(32)}
+          size={scale(36)}
           rounded
           containerStyle={styles.therapistAvatar}
         />
         <View style={styles.therapistInfo}>
           <Text style={styles.therapistName}>{item.therapistName}</Text>
-          <Text style={styles.therapistEmail}>{item.therapistEmail}</Text>
+          <Text style={styles.therapistSpecialty} numberOfLines={1}>
+            {item.therapistSpecialization || 'Therapist'}
+          </Text>
+        </View>
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceText}>
+            {item.subscriptionPrice ? `${item.subscriptionPrice.toLocaleString()} UGX` : 'Free'}
+          </Text>
         </View>
       </View>
 
       <View style={styles.groupMeta}>
         <View style={styles.memberInfo}>
-          <Icon name="group" type="material" color={appColors.grey3} size={scale(16)} />
+          <Icon name="groups" type="material" color={appColors.grey3} size={scale(16)} />
           <Text style={styles.memberCount}>
             {item.memberCount}/{item.maxMembers} members
           </Text>
         </View>
 
-        <Text style={styles.schedule}>{item.meetingSchedule}</Text>
+        {item.nextCohortDate && (
+          <View style={styles.memberInfo}>
+            <Icon name="event" type="material" color={appColors.AppBlue} size={scale(16)} />
+            <Text style={styles.cohortText}>
+              Starts {new Date(item.nextCohortDate).toLocaleDateString()}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.groupFooter}>
@@ -485,6 +537,13 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
         renderItem={renderGroupCard}
         keyExtractor={(item) => item.id}
         extraData={filteredGroups}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[appColors.AppBlue]}
+          />
+        }
         ListHeaderComponent={
           <>
             {/* Combined Header: Plan Indicator + Search Bar */}
@@ -523,7 +582,7 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Category Filters */}
+            {/* Category Filters 
             <FlatList
               data={categories}
               renderItem={renderCategoryFilter}
@@ -534,17 +593,22 @@ const GroupsListScreen: React.FC<GroupsListScreenProps> = ({ navigation }) => {
               contentContainerStyle={styles.categoriesContainer}
               removeClippedSubviews={false}
             />
+            */}
           </>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={[appColors.AppBlue]}
-          />
         }
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          isMoreLoading ? (
+            <ActivityIndicator 
+              size="small" 
+              color={appColors.AppBlue} 
+              style={{ marginVertical: scale(20) }} 
+            />
+          ) : null
+        }
         contentContainerStyle={filteredGroups.length === 0 ? styles.emptyContainer : styles.listContainer}
         contentInset={{ top: 0, bottom: 0, left: 0, right: 0 }}
         contentOffset={{ x: 0, y: 0 }}
@@ -644,10 +708,15 @@ const styles = StyleSheet.create({
     marginRight: scale(12),
     alignItems: 'center',
     justifyContent: 'center',
-    width: scale(48),
-    height: scale(48),
-    borderRadius: scale(24),
+    width: scale(54),
+    height: scale(54),
+    borderRadius: scale(12),
     backgroundColor: appColors.grey6,
+    overflow: 'hidden',
+  },
+  groupCoverImage: {
+    width: '100%',
+    height: '100%',
   },
   privateIndicator: {
     position: 'absolute',
@@ -708,15 +777,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   therapistName: {
+    fontSize: moderateScale(15),
+    fontWeight: 'bold',
+    color: appColors.grey1,
+    fontFamily: appFonts.headerTextBold,
+  },
+  therapistSpecialty: {
+    fontSize: moderateScale(13),
+    color: appColors.grey2,
+    fontFamily: appFonts.bodyTextRegular,
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  priceText: {
     fontSize: moderateScale(14),
     fontWeight: 'bold',
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextBold,
   },
-  therapistEmail: {
+  cohortText: {
     fontSize: moderateScale(12),
-    color: appColors.grey3,
-    fontFamily: appFonts.bodyTextRegular,
+    color: appColors.AppBlue,
+    fontFamily: appFonts.bodyTextMedium,
+    marginLeft: scale(4),
+    fontWeight: '600',
   },
   groupMeta: {
     flexDirection: 'row',

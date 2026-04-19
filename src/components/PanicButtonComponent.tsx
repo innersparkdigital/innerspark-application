@@ -21,6 +21,7 @@ import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { appContents } from '../global/Data';
+import { normalizePhoneNumber } from '../utils/textHelpers';
 
 interface PanicButtonComponentProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
@@ -237,7 +238,7 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
 
   const handleCall = async (phone: string, name: string) => {
     try {
-      const phoneUrl = `tel:${phone.replace(/[^0-9+]/g, '')}`;
+      const phoneUrl = `tel:${normalizePhoneNumber(phone)}`;
       const canOpen = await Linking.canOpenURL(phoneUrl);
       
       if (canOpen) {
@@ -272,7 +273,7 @@ const PanicButtonComponent: React.FC<PanicButtonComponentProps> = ({
     try {
       // Get all phone numbers
       const phoneNumbers = emergencyContacts
-        .map((c: any) => c.phone.replace(/[^0-9+]/g, ''))
+        .map((c: any) => normalizePhoneNumber(c.phone))
         .filter((p: string) => p.length > 0);
 
       if (phoneNumbers.length === 0) {

@@ -79,6 +79,13 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
         lastSeen: humanizeLastSeen(chat.lastSeen || chat.lastMessageTime),
       }));
 
+      // Sort by most recent: conversations with a valid lastMessageTime come first
+      mappedConversations.sort((a: Conversation, b: Conversation) => {
+        const tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+        const tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+        return tB - tA; // descending — most recent at top
+      });
+
       setConversations(mappedConversations);
     } catch (error: any) {
       console.error('❌ Error fetching chats:', error);
@@ -168,7 +175,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
             {item.partnerName}
           </Text>
           <Text style={styles.lastMessageTime}>
-            {item.lastMessageTime}
+            {humanizeLastSeen(item.lastMessageTime) || item.lastMessageTime}
           </Text>
         </View>
 

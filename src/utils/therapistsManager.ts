@@ -34,6 +34,33 @@ const decodeHtmlEntities = (text: string): string => {
 };
 
 /**
+ * Maps raw session types from API to the format used by the UI
+ */
+const mapSessionTypes = (rawTypes: any[], defaultPrice: string) => {
+  if (!rawTypes || !Array.isArray(rawTypes) || rawTypes.length === 0) {
+    return [{ id: 'individual', name: 'Individual Session', price: defaultPrice, duration: '60 min' }];
+  }
+  return rawTypes.map((s: any, idx: number) => {
+    // Standardize duration (e.g., "60 minutes" -> "60 min")
+    let duration = s.duration || '60 min';
+    if (typeof duration === 'string') {
+      duration = duration.replace(' minutes', ' min').replace(' minute', ' min');
+    } else if (typeof duration === 'number') {
+      duration = `${duration} min`;
+    }
+
+    return {
+      id: s.id || `session-${idx}`,
+      name: s.name || 'Session',
+      price: s.price
+        ? (String(s.price).includes('UGX') ? String(s.price) : `${s.currency || 'UGX'} ${Number(s.price).toLocaleString()}`)
+        : defaultPrice,
+      duration: duration,
+    };
+  });
+};
+
+/**
  * Load therapists from API
  * Returns empty array if endpoint not implemented (404)
  */
@@ -98,6 +125,7 @@ export const loadTherapists = async (filters = {}) => {
           tags: decodedSpecialty !== 'Therapist'
             ? decodedSpecialty.split(',').map((s: string) => s.trim())
             : [],
+          sessionTypes: mapSessionTypes(t.sessionTypes, dynamicFallbackPrice),
         };
       });
 
@@ -185,6 +213,7 @@ export const refreshTherapists = async (filters = {}) => {
           tags: decodedSpecialty !== 'Therapist'
             ? decodedSpecialty.split(',').map((s: string) => s.trim())
             : [],
+          sessionTypes: mapSessionTypes(t.sessionTypes, dynamicFallbackPrice),
         };
       });
       store.dispatch(setTherapists(mappedTherapists));
@@ -229,7 +258,7 @@ export const loadTherapistDetails = async (therapistId: string, fallbackTherapis
 
   // 2. Fallback to route params if the /slots endpoint itself fails entirely
   if (!therapistData) {
-    if (fallbackTherapist && fallbackTherapist.id) {
+    if (fallbackTherapist && (fallbackTherapist.id || fallbackTherapist.user_id)) {
       console.log('⚠️ Failed to load base therapist details from API, using fallback data');
       therapistData = fallbackTherapist;
     } else {
@@ -253,9 +282,11 @@ export const loadTherapistDetails = async (therapistId: string, fallbackTherapis
   let availabilitySlots: any[] = [];
   if (availabilityResult.status === 'fulfilled') {
     const ar = availabilityResult.value;
-    // Look for slots in ar.slots (per payload), ar.data.slots, or ar.data
+    // Look for slots in ar.data.available_slots (new format), ar.slots (old), ar.data.slots, or ar.data
     let raw = [];
-    if (ar.slots && Array.isArray(ar.slots)) {
+    if (ar.data && ar.data.available_slots && Array.isArray(ar.data.available_slots)) {
+      raw = ar.data.available_slots;
+    } else if (ar.slots && Array.isArray(ar.slots)) {
       raw = ar.slots;
     } else if (ar.data && ar.data.slots && Array.isArray(ar.data.slots)) {
       raw = ar.data.slots;
@@ -270,14 +301,17 @@ export const loadTherapistDetails = async (therapistId: string, fallbackTherapis
       time: slot.av_time || slot.time || slot.slot_time || slot.startTime || '',
       available:
         slot.availability !== undefined
-          ? slot.availability === 1 || slot.availability === true
+          ? slot.availability === 1 || slot.availability === true || slot.availability === "1"
           : slot.available !== undefined
-            ? slot.available
+            ? (slot.available === 1 || slot.available === true || slot.available === "1")
             : slot.status === 'available' || slot.is_available === true || slot.booked === false,
     }));
   } else {
     console.log('⚠️ Availability request failed (will show empty slots):', (availabilityResult as any).reason?.message);
   }
+
+  // Determine fallback price
+  const defaultPrice = therapistData.price || 'UGX 50,000';
 
   const normalizedTherapist = {
     ...therapistData,
@@ -299,19 +333,7 @@ export const loadTherapistDetails = async (therapistId: string, fallbackTherapis
       if (Array.isArray(raw)) return raw.map((s: string) => decodeHtmlEntities(s));
       return decoded.split(',').map((s: string) => s.trim());
     })(),
-    sessionTypes:
-      pricingData.length > 0
-        ? pricingData.map((s: any, idx: number) => ({
-          id: s.id || `session-${idx}`,
-          name: s.name || 'Session',
-          price: s.price ? `${s.currency || 'UGX'} ${Number(s.price).toLocaleString()}` : 'UGX 50,000',
-          duration: s.duration
-            ? typeof s.duration === 'number'
-              ? `${s.duration} min`
-              : s.duration
-            : '60 min',
-        }))
-        : [{ id: 'individual', name: 'Individual Session', price: therapistData.price || 'UGX 50,000', duration: '60 min' }],
+    sessionTypes: mapSessionTypes(therapistData.sessionTypes || pricingData, defaultPrice),
     availableSlots: availabilitySlots,
   };
 
@@ -322,6 +344,7 @@ export const loadTherapistDetails = async (therapistId: string, fallbackTherapis
   store.dispatch(setSelectedTherapist(normalizedTherapist));
   return { success: true, therapist: normalizedTherapist };
 };
+
 
 
 

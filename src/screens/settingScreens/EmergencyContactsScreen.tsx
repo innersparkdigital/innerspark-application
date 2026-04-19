@@ -27,6 +27,7 @@ import {
   deleteEmergencyContact as deleteEmergencyContactAPI,
   getCrisisLines
 } from '../../api/client/emergency';
+import { normalizePhoneNumber } from '../../utils/textHelpers';
 import { mockEmergencyContacts, mockCrisisLines } from '../../global/MockData';
 import { isValidName, isValidPhoneNumber, isValidRelationship } from '../../global/LHValidators';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
@@ -168,7 +169,7 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
       confirmText: 'Call',
       cancelText: 'Cancel',
       onConfirm: () => {
-        Linking.openURL(`tel:${phone.replace(/\s/g, '')}`);
+        Linking.openURL(`tel:${normalizePhoneNumber(phone)}`);
       },
     });
   };
@@ -463,7 +464,7 @@ const EmergencyContactsScreen: React.FC<EmergencyContactsScreenProps> = ({ navig
                     </View>
                     <TouchableOpacity
                       style={styles.hotlineCallButton}
-                      onPress={() => Linking.openURL(`tel:${line.phone.replace(/[^0-9+]/g, '')}`)}
+                      onPress={() => Linking.openURL(`tel:${normalizePhoneNumber(line.phone)}`)}
                     >
                       <Icon name="phone" type="material" color="#FFF" size={18} />
                     </TouchableOpacity>

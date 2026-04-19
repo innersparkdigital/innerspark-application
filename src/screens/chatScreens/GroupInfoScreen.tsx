@@ -3,12 +3,13 @@
  * Accessible from ClientGroupChatScreen via info icon
  * Privacy-focused: No member names or personal info
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/base';
@@ -16,6 +17,9 @@ import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import { useSelector } from 'react-redux';
+import { getGroupById } from '../../api/client/groups';
+import { decodeHTMLEntities } from '../../utils/textHelpers';
 
 interface GroupInfoScreenProps {
   navigation: any;
@@ -23,37 +27,64 @@ interface GroupInfoScreenProps {
 }
 
 const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) => {
-  const { group } = route.params || {};
+  const { group, groupId, groupName, groupDescription, memberCount } = route.params || {};
+  const userId = useSelector((state: any) => state.userData.userDetails.userId);
 
-  // Mock group info data
-  const groupInfo = {
-    id: group?.id || 'group_1',
-    name: group?.name || 'Anxiety Support Group',
-    icon: group?.icon || '💬',
-    description: group?.description || 'A safe space to share experiences and coping strategies',
+  const resolvedGroupId = group?.id || groupId;
+  const [groupInfo, setGroupInfo] = useState({
+    name: decodeHTMLEntities(group?.name || groupName || 'Support Group'),
+    icon: group?.icon || group?.groupIcon || '\uD83D\uDCAC',
+    description: decodeHTMLEntities(group?.description || groupDescription || ''),
     type: 'Therapy Group',
-    facilitator: 'Dr. Sarah Johnson',
-    memberCount: 24,
-    createdDate: 'January 2025',
-    meetingSchedule: 'Tuesdays & Thursdays, 6:00 PM',
-    duration: '60 minutes per session',
-    guidelines: [
-      'Respect confidentiality - What is shared in the group stays in the group',
-      'Be respectful and non-judgmental of others',
-      'Allow everyone a chance to speak',
-      'Arrive on time and attend regularly',
-      'Turn off notifications during sessions',
-      'Share openly but respect your own boundaries',
-    ],
-    focus: [
-      'Understanding anxiety triggers',
-      'Developing coping strategies',
-      'Building support networks',
-      'Mindfulness and relaxation techniques',
-    ],
-  };
+    facilitator: '',
+    memberCount: group?.memberCount || memberCount || 0,
+    createdDate: '',
+    meetingSchedule: '',
+    duration: '',
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const renderInfoCard = (icon: string, title: string, content: string, iconType: string = 'material') => (
+  useEffect(() => {
+    if (!resolvedGroupId) {
+      setIsLoading(false);
+      return;
+    }
+    const fetchDetails = async () => {
+      try {
+        const response = await getGroupById(resolvedGroupId, userId);
+        const data = response.group || response.data || {};
+        setGroupInfo(prev => ({
+          ...prev,
+          name: decodeHTMLEntities(data.name || prev.name),
+          description: decodeHTMLEntities(data.description || prev.description),
+          facilitator: decodeHTMLEntities(data.therapistName || data.facilitator || data.facilitatorName || ''),
+          memberCount: data.memberCount || data.member_count || data.members || prev.memberCount,
+          createdDate: data.createdAt || data.created_at || data.createdDate || '',
+          meetingSchedule: data.meetingSchedule || data.meeting_schedule || data.schedule || '',
+          duration: data.duration ? `${data.duration} minutes per session` : '',
+          type: data.type || data.groupType || prev.type,
+        }));
+      } catch (err) {
+        console.warn('GroupInfoScreen: Could not fetch group details', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDetails();
+  }, [resolvedGroupId]);
+
+  const guidelines = [
+    'Respect confidentiality \u2014 what is shared in the group stays in the group',
+    'Be respectful and non-judgmental of others',
+    'Allow everyone a chance to speak',
+    'Arrive on time and attend regularly',
+    'Turn off notifications during sessions',
+    'Share openly but respect your own boundaries',
+  ];
+
+  const renderInfoCard = (icon: string, title: string, content: string, iconType: string = 'material') => {
+    if (!content) return null; // Don't render cards with empty content
+    return (
     <View style={styles.infoCard}>
       <View style={styles.infoIconContainer}>
         <Icon name={icon} type={iconType} size={moderateScale(20)} color={appColors.AppBlue} />
@@ -63,7 +94,8 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
         <Text style={styles.infoText}>{content}</Text>
       </View>
     </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -82,10 +114,11 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
           </View>
           <Text style={styles.groupName}>{groupInfo.name}</Text>
           <Text style={styles.groupType}>{groupInfo.type}</Text>
-          <Text style={styles.groupDescription}>{groupInfo.description}</Text>
+          {!!groupInfo.description && (
+            <Text style={styles.groupDescription}>{groupInfo.description}</Text>
+          )}
         </View>
 
-        {/* Privacy Notice */}
         <View style={styles.privacyCard}>
           <View style={styles.privacyHeader}>
             <Icon name="lock" type="material" size={moderateScale(20)} color={appColors.AppBlue} />
@@ -111,55 +144,24 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
           </View>
         </View>
 
-        {/* Group Details */}
-        {renderInfoCard(
-          'person',
-          'Facilitator',
-          groupInfo.facilitator
-        )}
-
-        {renderInfoCard(
-          'people',
-          'Group Size',
-          `${groupInfo.memberCount} members`
-        )}
-
-        {renderInfoCard(
-          'schedule',
-          'Meeting Schedule',
-          groupInfo.meetingSchedule
-        )}
-
-        {renderInfoCard(
-          'access-time',
-          'Session Duration',
-          groupInfo.duration
-        )}
-
-        {renderInfoCard(
-          'calendar-today',
-          'Started',
-          groupInfo.createdDate
-        )}
-
-        {/* Group Focus */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Group Focus</Text>
-          <View style={styles.focusContainer}>
-            {groupInfo.focus.map((item, index) => (
-              <View key={index} style={styles.focusItem}>
-                <Icon name="arrow-right" type="material" size={moderateScale(20)} color={appColors.AppBlue} />
-                <Text style={styles.focusText}>{item}</Text>
-              </View>
-            ))}
+        {isLoading ? (
+          <View style={{ alignItems: 'center', paddingVertical: scale(24) }}>
+            <ActivityIndicator size="small" color={appColors.AppBlue} />
           </View>
-        </View>
+        ) : (
+          <>
+            {renderInfoCard('person', 'Facilitator', groupInfo.facilitator || 'Not specified')}
+            {renderInfoCard('people', 'Group Size', `${groupInfo.memberCount} members`)}
+            {renderInfoCard('schedule', 'Meeting Schedule', groupInfo.meetingSchedule || 'Not specified')}
+            {renderInfoCard('access-time', 'Session Duration', groupInfo.duration || 'Not specified')}
+            {!!groupInfo.createdDate && renderInfoCard('calendar-today', 'Started', groupInfo.createdDate)}
+          </>
+        )}
 
-        {/* Group Guidelines */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Group Guidelines</Text>
           <View style={styles.guidelinesContainer}>
-            {groupInfo.guidelines.map((guideline, index) => (
+            {guidelines.map((guideline, index) => (
               <View key={index} style={styles.guidelineItem}>
                 <View style={styles.guidelineNumber}>
                   <Text style={styles.guidelineNumberText}>{index + 1}</Text>
@@ -170,7 +172,6 @@ const GroupInfoScreen: React.FC<GroupInfoScreenProps> = ({ navigation, route }) 
           </View>
         </View>
 
-        {/* Support Info */}
         <View style={styles.supportCard}>
           <Icon name="info" type="material" size={moderateScale(20)} color={appColors.grey3} />
           <Text style={styles.supportText}>
@@ -383,3 +384,4 @@ const styles = StyleSheet.create({
 });
 
 export default GroupInfoScreen;
+

@@ -73,6 +73,10 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
           ...msg,
           isOwn: String(msg.senderId || msg.sender_id) === String(userId)
         }));
+        // Sort oldest-first so messages flow top-to-bottom naturally
+        mappedMessages.sort((a: GroupMessage, b: GroupMessage) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
         setMessages(mappedMessages);
       }
     } catch (error: any) {
@@ -90,11 +94,13 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
     loadMessages();
   };
 
+  // Scroll to bottom only after the very first successful load
+  const hasScrolledOnceRef = useRef(false);
   useEffect(() => {
-    // Scroll to bottom when messages change
-    if (messages.length > 0) {
+    if (messages.length > 0 && !hasScrolledOnceRef.current) {
+      hasScrolledOnceRef.current = true;
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
+        flatListRef.current?.scrollToEnd({ animated: false });
       }, 100);
     }
   }, [messages]);
@@ -203,6 +209,16 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
     navigation.navigate('THGroupMembersScreen', { group, filter: 'muted' });
   };
 
+  const formatTime = (ts: string) => {
+    if (!ts) return '';
+    try {
+      const date = new Date(ts);
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch {
+      return ts;
+    }
+  };
+
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconCircle}>
@@ -288,7 +304,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
                 isOwn ? styles.ownTimestamp : styles.otherTimestamp,
               ]}
             >
-              {item.timestamp}
+              {formatTime(item.timestamp)}
             </Text>
             {isOwn && (
               <Icon 

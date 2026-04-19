@@ -24,12 +24,9 @@ import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
 import { NavigationProp } from '@react-navigation/native';
 import PanicButtonComponent from '../../components/PanicButtonComponent';
-import {
-  selectAppointments,
-  selectAppointmentsLoading,
-  selectAppointmentsRefreshing,
-} from '../../features/appointments/appointmentsSlice';
-import { loadAppointments, refreshAppointments, cancelAppointmentById } from '../../utils/appointmentsManager';
+import { loadAppointments, refreshAppointments, cancelAppointmentById, loadSessionTypes } from '../../utils/appointmentsManager';
+import { resolveSessionType } from '../../utils/appointmentUtils';
+import { selectAppointments, selectAppointmentsLoading, selectAppointmentsRefreshing, selectSessionTypes } from '../../features/appointments/appointmentsSlice';
 
 interface Appointment {
   id: string;
@@ -61,6 +58,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
 
   // Get appointments and user details from Redux
   const appointments = useSelector(selectAppointments);
+  const sessionTypes = useSelector(selectSessionTypes);
   const isLoading = useSelector(selectAppointmentsLoading);
   const isRefreshing = useSelector(selectAppointmentsRefreshing);
   const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -71,6 +69,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
     useCallback(() => {
       if (userId) {
         refreshAppointments({ status: selectedTab === 'past' ? 'past' : selectedTab === 'pending' ? 'pending' : 'upcoming' });
+        loadSessionTypes();
       }
     }, [selectedTab, userId])
   );
@@ -212,10 +211,10 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
         date: appointment.date,
         time: appointment.time,
       },
-      // Flags for existing appointment payment
       isExistingAppointment: true,
       appointmentId: appointment.id,
-      sessionType: appointment.sessionType || 'Individual Therapy',
+      sessionId: /^\d+$/.test(appointment.sessionType || '') ? parseInt(appointment.sessionType!) : 1,
+      sessionType: resolveSessionType(appointment.sessionType, sessionTypes),
       location: appointment.location || 'Virtual Session',
     };
 
@@ -294,7 +293,7 @@ const AppointmentsScreen: React.FC<AppointmentsScreenProps> = ({ navigation }) =
           <Text style={styles.therapistName}>{appointment.therapistName}</Text>
           {appointment.sessionType && (
             <Text style={styles.therapistType}>
-              {appointment.sessionType.charAt(0).toUpperCase() + appointment.sessionType.slice(1)}
+              {resolveSessionType(appointment.sessionType, sessionTypes)}
             </Text>
           )}
 

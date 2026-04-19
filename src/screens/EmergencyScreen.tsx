@@ -23,6 +23,7 @@ import LHGenericHeader from '../components/LHGenericHeader';
 import ISStatusBar from '../components/ISStatusBar';
 import { appContents } from '../global/Data';
 import ISAlert, { useISAlert } from '../components/alerts/ISAlert';
+import { normalizePhoneNumber } from '../utils/textHelpers';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -36,7 +37,7 @@ const EmergencyScreen = ({ navigation }) => {
     // First two items: Crisis hotlines from API (EmergencyContactsScreen)
     ...(crisisLines.length >= 1 ? [{
       id: 'crisis_1',
-      title: crisisLines[0].phone,
+      title: normalizePhoneNumber(crisisLines[0].phone),
       subtitle: crisisLines[0].name,
       contact: crisisLines[0].phone,
       name: crisisLines[0].name,
@@ -46,7 +47,7 @@ const EmergencyScreen = ({ navigation }) => {
     }] : []),
     ...(crisisLines.length >= 2 ? [{
       id: 'crisis_2',
-      title: crisisLines[1].phone,
+      title: normalizePhoneNumber(crisisLines[1].phone),
       subtitle: crisisLines[1].name,
       contact: crisisLines[1].phone,
       name: crisisLines[1].name,
@@ -57,7 +58,7 @@ const EmergencyScreen = ({ navigation }) => {
     // Third item: Support contact from app config
     {
       id: 'support',
-      title: appContents.supportPhone,
+      title: normalizePhoneNumber(appContents.supportPhone),
       subtitle: 'Innerspark Support',
       contact: appContents.supportPhone,
       name: 'Innerspark Support',
@@ -131,16 +132,16 @@ const EmergencyScreen = ({ navigation }) => {
 
   const handleCall = (contact) => {
     const phoneNumber = contact.phone || contact.number;
-    const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
 
     alert.show({
       type: 'confirm',
       title: 'Call ' + contact.name,
-      message: 'Are you sure you want to call ' + phoneNumber + '?',
+      message: 'Are you sure you want to call ' + normalizedNumber + '?',
       confirmText: 'Call',
       cancelText: 'Cancel',
       onConfirm: () => {
-        Linking.openURL(`tel:${cleanNumber}`);
+        Linking.openURL(`tel:${normalizedNumber}`);
       },
     });
   };

@@ -10,13 +10,14 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@rneui/themed';
+import { Icon, Avatar } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
-import ISGenericHeader from '../../../components/ISGenericHeader';
+import { scale, moderateScale } from '../../../global/Scaling';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { getChatMessages, sendMessage, markChatAsRead } from '../../../api/therapist';
+import { sendChatHeartbeat } from '../../../api/client/messages';
 
 const THChatConversationScreen = ({ navigation, route }: any) => {
   const { chat } = route.params || {};
@@ -37,11 +38,38 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
     }
   }, [chat?.id]);
 
+  const [peerOnline, setPeerOnline] = useState<boolean>(chat?.isOnline || false);
+
+  const sendHeartbeat = async () => {
+    if (!chat?.id || !userDetails?.userId) return;
+    try {
+      const response = await sendChatHeartbeat(chat.id, userDetails.userId);
+      const isOnline = response.data?.is_peer_online ?? response.is_peer_online ?? false;
+      setPeerOnline(isOnline);
+    } catch (e) {
+      console.warn('Heartbeat failed', e);
+    }
+  };
+
   useEffect(() => {
-    // Scroll to bottom when messages change
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    sendHeartbeat();
+    const hbInterval = setInterval(() => {
+      sendHeartbeat();
+    }, 10000);
+    return () => clearInterval(hbInterval);
+  }, []);
+
+  // Scroll to bottom only on first load, not on every messages change
+  const hasScrolledOnceRef = useRef(false);
+  const isNearBottomRef = useRef(true);
+
+  useEffect(() => {
+    if (messages.length > 0 && !hasScrolledOnceRef.current) {
+      hasScrolledOnceRef.current = true;
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 100);
+    }
   }, [messages]);
 
   const loadMessages = async () => {
@@ -58,8 +86,10 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
           text: msg.content,
           sender: msg.senderType, // 'client' or 'therapist'
           timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Unknown',
+          _sortKey: msg.timestamp || '',
         }));
-        // API likely returns newest first or oldest first. Assuming we want it in chronological order for FlatList standard rendering
+        // Explicit ascending sort — guard against API returning newest-first
+        mappedMessages.sort((a: any, b: any) => new Date(a._sortKey).getTime() - new Date(b._sortKey).getTime());
         setMessages(mappedMessages);
       } else {
         setMessages([]);
@@ -136,13 +166,27 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ISStatusBar />
-      <ISGenericHeader
-        title={chat?.clientName || 'Chat'}
-        navigation={navigation}
-        hasRightIcon={true}
-        rightIconName="info"
-        rightIconOnPress={handleViewClientProfile}
-      />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
+        </TouchableOpacity>
+
+        <View style={styles.headerInfo}>
+          {chat?.clientAvatar && (
+            <Avatar source={chat.clientAvatar} size={scale(40)} rounded containerStyle={styles.headerAvatar} />
+          )}
+          <View style={styles.headerText}>
+            <Text style={styles.headerName}>{chat?.clientName || 'Chat'}</Text>
+            <Text style={styles.headerStatus}>
+              {peerOnline ? 'Online' : 'Offline'}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.headerButton} onPress={handleViewClientProfile}>
+          <Icon name="info" type="material" color={appColors.CardBackground} size={moderateScale(24)} />
+        </TouchableOpacity>
+      </View>
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -178,7 +222,11 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
             messages.length === 0 && styles.emptyListContent
           ]}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onScroll={(e) => {
+            const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+            isNearBottomRef.current = contentSize.height - contentOffset.y - layoutMeasurement.height < 80;
+          }}
+          scrollEventThrottle={100}
           ListEmptyComponent={
             !loading ? (
               <View style={styles.emptyStateContainer}>
@@ -231,6 +279,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: appColors.AppLightGray,
+  },
+  header: {
+    backgroundColor: appColors.AppBlue,
+    paddingTop: moderateScale(10),
+    paddingBottom: moderateScale(16),
+    paddingHorizontal: moderateScale(16),
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: scale(8),
+    marginRight: scale(4),
+  },
+  headerInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerAvatar: {
+    marginRight: scale(12),
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerName: {
+    fontSize: moderateScale(16),
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
+  },
+  headerStatus: {
+    fontSize: moderateScale(12),
+    color: appColors.CardBackground + 'CC',
+    fontFamily: appFonts.bodyTextRegular,
+  },
+  headerButton: {
+    padding: scale(8),
   },
   keyboardView: {
     flex: 1,

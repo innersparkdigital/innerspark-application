@@ -9,6 +9,8 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon, Button } from '@rneui/base';
@@ -19,10 +21,16 @@ import { useSelector, useDispatch } from 'react-redux';
 import { getGroupById, subscribeGroup, leaveGroup, getGroupCohortAvailability } from '../../api/client/groups';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { generateAnonymousName } from '../../utils/privacyHelpers';
-import { addJoinedGroupId, removeJoinedGroupId, selectIsGroupJoined, selectJoinedGroupIds } from '../../features/groups/groupsSlice';
+import { addJoinedGroupId, selectIsGroupJoined, selectJoinedGroupIds } from '../../features/groups/groupsSlice';
+import { selectBalance, setBalance } from '../../features/wallet/walletSlice';
+import { getWalletBalance } from '../../api/client/wallet';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import { validateGroupJoin, getMembershipInfo } from '../../services/MembershipService';
 import MembershipLimitModal from '../../components/MembershipLimitModal';
+import { getGroupChatStatus } from '../../utils/GroupUtils';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+import { NavigationProp, RouteProp } from '@react-navigation/native';
 import { decodeHTMLEntities } from '../../utils/textHelpers';
 
 interface GroupMember {
@@ -45,6 +53,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
   const alert = useISAlert();
   const dispatch = useDispatch();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
+  const walletBalance = useSelector(selectBalance);
   const { group } = route.params;
   const isGroupJoined = useSelector(selectIsGroupJoined(group.id));
   const [groupDetails, setGroupDetails] = useState(group);
@@ -61,7 +70,16 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
   const loadGroupDetails = React.useCallback(async (isJoinedOverride?: boolean) => {
     setIsLoading(true);
     try {
-      const effectiveJoined = isJoinedOverride !== undefined ? isJoinedOverride : isGroupJoined;
+      const effectiveJoined = isJoinedOverride !== undefined ? isJoinedOverride : (group.isJoined || isGroupJoined);
+
+      // Concurrently ensure wallet balance isn't heavily stale
+      if (userId) {
+        getWalletBalance(userId).then(res => {
+          if (res?.success && res.data) {
+             dispatch(setBalance({ balance: res.data.balance, currency: res.data.currency, breakdown: res.data.breakdown }));
+          }
+        }).catch(err => console.log('Wallet sync ignored in detail load:', err.message));
+      }
 
       console.log('📞 Calling getGroupById API...');
       console.log('Group ID:', group.id);
@@ -76,6 +94,13 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
         if (groupData.name) groupData.name = decodeHTMLEntities(groupData.name);
         if (groupData.description) groupData.description = decodeHTMLEntities(groupData.description);
         if (groupData.therapistName) groupData.therapistName = decodeHTMLEntities(groupData.therapistName);
+        
+        // Normalize the group image from various potential keys
+        const groupImage = groupData.icon_url || groupData.image || groupData.cover_image || groupData.coverImage || groupData.avatar;
+        if (groupImage) {
+          groupData.coverImage = groupImage;
+        }
+
         setGroupDetails((prev: any) => ({ ...prev, ...groupData }));
       }
 
@@ -104,7 +129,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       setIsLoading(false);
     } catch (error: any) {
       console.error('❌ Error loading group details:', error);
-      const effectiveJoined = isJoinedOverride !== undefined ? isJoinedOverride : isGroupJoined;
+      const effectiveJoined = isJoinedOverride !== undefined ? isJoinedOverride : (group.isJoined || isGroupJoined);
 
       setMembers([]);
       setUserRole(effectiveJoined ? 'member' : 'none');
@@ -133,6 +158,17 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       return;
     }
 
+    const chatStatus = getGroupChatStatus(groupDetails.nextCohortDate || groupDetails.next_cohort_start_date || groupDetails.startDate);
+    
+    if (!chatStatus.canEnter) {
+      alert.show({
+        type: 'info',
+        title: 'Chat Access',
+        message: `This group cohort is scheduled to start on ${new Date(groupDetails.nextCohortDate || groupDetails.next_cohort_start_date || groupDetails.startDate).toLocaleDateString()}. Chat will be available then.`,
+      });
+      return;
+    }
+
     navigation.navigate('GroupChatScreen', {
       groupId: groupDetails.id,
       groupName: groupDetails.name,
@@ -152,17 +188,52 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
 
   const handleJoinGroup = () => {
     // Validate membership limits before confirming
-    const validation = validateGroupJoin([groupDetails], groupDetails.id, joinedGroupIds.length);
+    const validation = validateGroupJoin(joinedGroupIds.map(id => ({ id })), groupDetails.id, joinedGroupIds.length);
 
     if (!validation.canJoin) {
       if (validation.reason === 'membership_limit') {
         setShowLimitModal(true);
       } else {
         toast.show({
-          description: 'You cannot join this group.',
+          description: validation.message || 'You cannot join this group.',
           duration: 3000,
         });
       }
+      return;
+    }
+
+    // Tighten Logic: Check availability status first
+    if (cohortAvailability && !cohortAvailability.is_open) {
+      alert.show({
+        type: 'info',
+        title: 'Cohort Closed',
+        message: 'This group cohort is currently closed for new subscriptions. Please check back later.',
+      });
+      return;
+    }
+
+    if (cohortAvailability && cohortAvailability.available_seats <= 0) {
+      alert.show({
+        type: 'info',
+        title: 'Group Full',
+        message: 'This group is currently full. Would you like to be notified when a seat opens up?',
+        confirmText: 'Notify Me',
+        cancelText: 'Close',
+      });
+      return;
+    }
+
+    // Check Wallet Balance Preemptively
+    const price = cohortAvailability?.subscription_price_ugx || groupDetails.subscriptionPrice || 25000;
+    if (walletBalance < price) {
+      alert.show({
+        type: 'error',
+        title: 'Insufficient Balance',
+        message: `Subscription requires ${price.toLocaleString()} UGX, but your current balance is ${walletBalance.toLocaleString()} UGX.`,
+        confirmText: 'Top Up Wallet',
+        cancelText: 'Cancel',
+        onConfirm: () => navigation.navigate('WellnessVaultScreen'),
+      });
       return;
     }
 
@@ -373,6 +444,8 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
     );
   };
 
+    const chatStatus = getGroupChatStatus(groupDetails.nextCohortDate || groupDetails.next_cohort_start_date || groupDetails.startDate);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -399,43 +472,71 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Group Profile */}
-        <View style={styles.profileSection}>
-          <View style={[
-            styles.groupIconLarge,
-            { backgroundColor: getCategoryColor(groupDetails.category) + '20' }
-          ]}>
-            <Icon
-              name={groupDetails.icon}
-              type="material"
-              color={getCategoryColor(groupDetails.category)}
-              size={scale(48)}
+        {/* Hero Banner / Profile Image */}
+        {groupDetails.coverImage ? (
+          <View style={styles.heroContainer}>
+            <Image 
+              source={getImageSource(groupDetails.coverImage, FALLBACK_IMAGES.group)} 
+              style={styles.heroImage} 
+              resizeMode="cover"
             />
             {groupDetails.isPrivate && (
-              <View style={styles.privateBadge}>
-                <Icon name="lock" type="material" color={appColors.CardBackground} size={scale(16)} />
+              <View style={styles.privateBadgeOverlay}>
+                <Icon name="lock" type="material" color={appColors.CardBackground} size={scale(18)} />
+                <Text style={styles.privateBadgeText}>Private Group</Text>
               </View>
             )}
           </View>
+        ) : (
+          <View style={styles.profileSection}>
+            <View style={[
+              styles.groupIconLarge,
+              { backgroundColor: getCategoryColor(groupDetails.category) + '20' }
+            ]}>
+              <Icon
+                name={groupDetails.icon}
+                type="material"
+                color={getCategoryColor(groupDetails.category)}
+                size={scale(48)}
+              />
+              {groupDetails.isPrivate && (
+                <View style={styles.privateBadge}>
+                  <Icon name="lock" type="material" color={appColors.CardBackground} size={scale(16)} />
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
+        <View style={styles.detailsContent}>
           <Text style={styles.groupName}>{groupDetails.name}</Text>
           <Text style={styles.groupDescription}>{groupDetails.description}</Text>
 
           {/* New Cohort Status UI */}
-          {cohortAvailability && (
+          {(cohortAvailability || groupDetails.nextCohortDate) && (
             <View style={styles.cohortContainer}>
               <Text style={styles.cohortTitle}>
-                {cohortAvailability.is_open ? 'Next Cohort Now Forming' : 'Cohort Full / Closed'}
+                {cohortAvailability?.is_open || groupDetails.is_open_for_booking ? 'Next Cohort Now Forming' : 'Cohort Full / Closed'}
               </Text>
               <View style={styles.capacityBarBackground}>
-                <View style={[styles.capacityBarFill, { width: `${((10 - cohortAvailability.available_seats) / 10) * 100}%`, backgroundColor: cohortAvailability.is_open ? appColors.AppBlue : appColors.grey3 }]} />
+                <View style={[
+                  styles.capacityBarFill, 
+                  { 
+                    width: `${((cohortAvailability?.available_seats !== undefined 
+                      ? (groupDetails.maxMembers || 15) - cohortAvailability.available_seats 
+                      : (groupDetails.memberCount || 0)) / (groupDetails.maxMembers || 15)) * 100}%`, 
+                    backgroundColor: (cohortAvailability?.is_open || groupDetails.is_open_for_booking) ? appColors.AppBlue : appColors.grey3 
+                  }
+                ]} />
               </View>
               <Text style={styles.capacityText}>
-                {10 - cohortAvailability.available_seats} / 10 Seats Reserved
+                {cohortAvailability?.available_seats !== undefined 
+                  ? (groupDetails.maxMembers || 15) - cohortAvailability.available_seats 
+                  : (groupDetails.memberCount || 0)} / {groupDetails.maxMembers || 15} Seats Reserved
               </Text>
-              {cohortAvailability.next_cohort_start_date && (
+              {(cohortAvailability?.next_cohort_start_date || groupDetails.nextCohortDate) && (
                 <Text style={styles.cohortDateText}>
-                  Starts: {new Date(cohortAvailability.next_cohort_start_date).toLocaleDateString()}
+                  Starts: {new Date(cohortAvailability?.next_cohort_start_date || groupDetails.nextCohortDate).toLocaleDateString()}
                 </Text>
               )}
             </View>
@@ -449,7 +550,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>
-                {members.filter(m => m.isOnline).length}
+                {members.filter(m => m.isOnline).length || '0'}
               </Text>
               <Text style={styles.statLabel}>Online</Text>
             </View>
@@ -475,9 +576,8 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
             />
             <View style={styles.therapistInfo}>
               <Text style={styles.therapistName}>{groupDetails.therapistName || ''}</Text>
-              <Text style={styles.therapistEmail}>{groupDetails.therapistEmail || ''}</Text>
               <Text style={styles.therapistSpecialty}>
-                Specializes in {groupDetails.category || 'General'} support
+                {groupDetails.therapistSpecialization || `Specializes in ${groupDetails.category || 'General'} support`}
               </Text>
             </View>
             <TouchableOpacity style={styles.contactButtonDisabled} disabled>
@@ -501,7 +601,7 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
         {userRole !== 'none' && (
           <View style={styles.membersSection}>
             <View style={styles.membersSectionHeader}>
-              <Text style={styles.sectionTitle}>Members ({members.length})</Text>
+              <Text style={styles.sectionTitle}>Members ({groupDetails.memberCount || members.length || 0})</Text>
               <TouchableOpacity>
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
@@ -547,29 +647,44 @@ const GroupDetailScreen: React.FC<GroupDetailScreenProps> = ({ navigation, route
           <Button
             title={
               !cohortAvailability 
-                ? "Loading..." 
+                ? "Checking Availability..." 
                 : !cohortAvailability.is_open 
-                  ? "Cohort Full" 
-                  : `Subscribe - ${cohortAvailability.subscription_price_ugx.toLocaleString()} UGX / Week`
+                  ? "Cohort Closed" 
+                  : cohortAvailability.available_seats <= 0
+                    ? "Cohort Full"
+                    : `Subscribe - ${(cohortAvailability.subscription_price_ugx || groupDetails.subscriptionPrice || 0).toLocaleString()} UGX / Week`
             }
             buttonStyle={[
               styles.primaryButton,
-              { backgroundColor: !cohortAvailability?.is_open ? appColors.grey4 : getCategoryColor(group.category) }
+              { 
+                backgroundColor: (!cohortAvailability || !cohortAvailability.is_open || cohortAvailability.available_seats <= 0) 
+                  ? appColors.grey4 
+                  : getCategoryColor(group.category) 
+              }
             ]}
             titleStyle={styles.primaryButtonText}
             onPress={handleJoinGroup}
-            disabled={!cohortAvailability || !cohortAvailability.is_open}
+            disabled={!cohortAvailability || !cohortAvailability.is_open || cohortAvailability.available_seats <= 0}
           />
         ) : (
           <View style={styles.memberActions}>
             <Button
-              title="Enter Chat"
+              title={chatStatus.canEnter ? "Enter Chat" : chatStatus.statusLabel}
               buttonStyle={[
                 styles.chatButton,
-                { backgroundColor: getCategoryColor(group.category) }
+                { 
+                  backgroundColor: chatStatus.canEnter ? getCategoryColor(group.category) : appColors.grey4 
+                }
               ]}
               titleStyle={styles.chatButtonText}
               onPress={handleEnterChat}
+              icon={!chatStatus.canEnter ? { 
+                name: 'lock', 
+                type: 'material', 
+                size: scale(18), 
+                color: appColors.CardBackground 
+              } : undefined}
+              disabled={!chatStatus.canEnter}
             />
             <Button
               title="Leave Group"
@@ -629,11 +744,46 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  heroContainer: {
+    width: '100%',
+    height: scale(200),
+    position: 'relative',
+    backgroundColor: appColors.grey6,
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  privateBadgeOverlay: {
+    position: 'absolute',
+    top: scale(16),
+    right: scale(16),
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: scale(20),
+    gap: scale(6),
+  },
+  privateBadgeText: {
+    color: appColors.CardBackground,
+    fontSize: moderateScale(12),
+    fontWeight: 'bold',
+    fontFamily: appFonts.headerTextBold,
+  },
+  detailsContent: {
+    backgroundColor: appColors.CardBackground,
+    padding: scale(20),
+    borderTopLeftRadius: scale(24),
+    borderTopRightRadius: scale(24),
+    marginTop: scale(-24),
+    paddingTop: scale(30),
+  },
   profileSection: {
     backgroundColor: appColors.CardBackground,
     padding: scale(24),
     alignItems: 'center',
-    marginBottom: scale(12),
   },
   groupIconLarge: {
     width: scale(80),

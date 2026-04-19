@@ -12,6 +12,7 @@ import {
   setError,
   updateAppointmentStatus,
   removeAppointment,
+  setSessionTypes,
 } from '../features/appointments/appointmentsSlice';
 import {
   getAppointments,
@@ -21,6 +22,7 @@ import {
   cancelAppointment,
   submitAppointmentReview,
 } from '../api/client/appointments';
+import { getSessionsPricing } from '../api/client/therapists';
 
 /**
  * Helper to map backend appointment to UI format
@@ -285,5 +287,25 @@ export const submitReview = async (appointmentId: string, reviewData: any) => {
     }
 
     return { success: false, error: error?.backendMessage || error?.message || 'Failed to submit review' };
+  }
+};
+
+/**
+ * Load dynamic session types/pricing from backend
+ */
+export const loadSessionTypes = async () => {
+  try {
+    console.log('📅 Loading dynamic session types...');
+    const response = await getSessionsPricing();
+    
+    if (response.success && response.data && response.data.sessionTypes) {
+      console.log('✅ Session types loaded:', response.data.sessionTypes.length);
+      store.dispatch(setSessionTypes(response.data.sessionTypes));
+      return { success: true, data: response.data.sessionTypes };
+    }
+    return { success: false, error: 'Failed to load session types' };
+  } catch (error: any) {
+    console.log('❌ Error loading session types:', error?.message);
+    return { success: false, error: error?.message || 'Failed to load session types' };
   }
 };

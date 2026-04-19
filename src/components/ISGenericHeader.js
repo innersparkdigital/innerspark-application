@@ -39,7 +39,7 @@ export default function ISGenericHeader({
             >
                 <Icon name="arrow-back" type="material" color={hasLightBackground ? appColors.grey1 : appColors.CardBackground} size={24} />
             </TouchableOpacity>
-            <Text style={hasLightBackground ? styles.headerTitleLight : styles.headerTitle}>{title}</Text>
+            <Text style={hasLightBackground ? styles.headerTitleLight : styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
             { hasRightIcon && <TouchableOpacity 
                 style={hasLightBackground ? styles.rightButtonLight : styles.rightButton}
                 onPress={rightIconOnPress}
@@ -75,6 +75,8 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: appColors.CardBackground,
         fontFamily: appFonts.headerTextBold,
+        flexShrink: 1,
+        marginHorizontal: 10,
     },
     headerSpacer: {
         width: 40,
@@ -107,6 +109,8 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: appColors.grey1,
         fontFamily: appFonts.headerTextBold,
+        flexShrink: 1,
+        marginHorizontal: 10,
       },
        rightButtonLight: {
         padding: 8,

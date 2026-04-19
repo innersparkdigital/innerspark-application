@@ -16,18 +16,29 @@ import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector } from 'react-redux';
-import { getMyGroups } from '../../api/client/groups';
+import { getMyGroups, getGroupCohortAvailability } from '../../api/client/groups';
+import { humanizeLastSeen } from '../../utils/dateHelpers';
+import { decodeHTMLEntities } from '../../utils/textHelpers';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import { validateChatAccess, getGroupChatStatus } from '../../utils/GroupUtils';
 
 interface GroupChat {
   id: string;
   name: string;
   description: string;
   icon: string;
+  image?: string;
   memberCount: number;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
   userRole: 'therapist' | 'moderator' | 'member';
+  maxMembers?: number;
+  startDate?: string;
+  availability?: {
+    next_cohort_start_date?: string;
+    [key: string]: any;
+  };
 }
 
 interface MyGroupChatsListScreenProps {
@@ -36,47 +47,12 @@ interface MyGroupChatsListScreenProps {
 
 const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigation }) => {
   const toast = useToast();
+  const alert = useISAlert();
   const userId = useSelector((state: any) => state.userData.userDetails.userId);
   const [groups, setGroups] = useState<GroupChat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Mock group data moved to MockData.ts
-  const mockGroups: GroupChat[] = [
-    {
-      id: '1',
-      name: 'Anxiety Support Circle',
-      description: 'A safe space for individuals dealing with anxiety',
-      icon: 'favorite',
-      memberCount: 24,
-      lastMessage: 'Thanks everyone for the support today!',
-      lastMessageTime: '5 min ago',
-      unreadCount: 3,
-      userRole: 'member',
-    },
-    {
-      id: '2',
-      name: 'Mindfulness & Meditation',
-      description: 'Daily meditation practices',
-      icon: 'self-improvement',
-      memberCount: 18,
-      lastMessage: 'Today\'s meditation session was amazing',
-      lastMessageTime: '1 hour ago',
-      unreadCount: 0,
-      userRole: 'member',
-    },
-    {
-      id: '3',
-      name: 'Depression Recovery',
-      description: 'Supporting each other through recovery',
-      icon: 'psychology',
-      memberCount: 31,
-      lastMessage: 'Remember, small steps count too',
-      lastMessageTime: '3 hours ago',
-      unreadCount: 7,
-      userRole: 'moderator',
-    },
-  ];
 
   useEffect(() => {
     loadGroups();
@@ -95,15 +71,27 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
         name: group.name || group.groupName || group.group_name || 'Unnamed Group',
         description: group.description || '',
         icon: group.icon || 'group',
+        image: group.icon_url || group.image || group.cover_image || group.profileImageUrl || group.avatar || group.avatarUrl,
         memberCount: group.memberCount || group.member_count || group.membersCount || group.members_count || 0,
         lastMessage: group.lastMessage || group.last_message || 'No messages yet',
         lastMessageTime: group.lastMessageTime || group.last_message_time || '',
         unreadCount: group.unreadCount || group.unread_count || 0,
         userRole: group.userRole || group.user_role || group.role || 'member',
+        maxMembers: group.maxMembers || group.max_members || group.capacity || 15,
+        startDate: group.startDate || group.next_cohort_start_date || group.start_date,
       }));
 
+      // Sort by most recently active — group with latest message at top
+      mappedGroups.sort((a: GroupChat, b: GroupChat) => {
+        const tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+        const tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+        return isNaN(tB) || isNaN(tA) ? 0 : tB - tA;
+      });
+
       setGroups(mappedGroups);
-      console.log('✅ Mapped Groups:', mappedGroups.length);
+      
+      // Background fetch availability for each group to ensure security sync
+      fetchAvailabilityForGroups(mappedGroups);
     } catch (error: any) {
       console.error('❌ Error loading groups:', error);
       toast.show({
@@ -116,6 +104,24 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
     }
   };
 
+  const fetchAvailabilityForGroups = async (groupsList: GroupChat[]) => {
+    // Concurrent fetch for each joined group individually
+    groupsList.forEach(async (group) => {
+      try {
+        const availResponse = await getGroupCohortAvailability(group.id);
+        if (availResponse?.success && availResponse.data) {
+          setGroups(prev => prev.map(g => 
+            g.id === group.id 
+              ? { ...g, availability: availResponse.data } 
+              : g
+          ));
+        }
+      } catch (err) {
+        console.log(`Failed availability sync for group ${group.id}:`, err);
+      }
+    });
+  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadGroups();
@@ -123,41 +129,85 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
   };
 
   const handleGroupPress = (group: GroupChat) => {
+    // Priority: Background fetched cohort date > initial API date
+    const cohortDate = group.availability?.next_cohort_start_date || group.startDate;
+
+    // Safety check if user clicks while data is still empty (rare but possible during initial load)
+    if (!cohortDate && group.startDate === undefined) {
+      toast.show({
+        description: 'Verifying chat access...',
+        duration: 2000,
+      });
+      return;
+    }
+
+    // Validate access based on cohort start date
+    if (!validateChatAccess(cohortDate, alert)) {
+      return;
+    }
+
     navigation.navigate('GroupChatScreen', {
       groupId: group.id,
       groupName: group.name,
       groupIcon: group.icon,
+      groupAvatar: group.image,
       groupDescription: group.description,
       memberCount: group.memberCount,
       userRole: group.userRole,
       privacyMode: true, // Always enable privacy for client groups
       showModeration: false,
+      maxMembers: group.maxMembers,
+      startDate: group.startDate,
     });
   };
 
-  const renderGroupCard = ({ item }: { item: GroupChat }) => (
-    <TouchableOpacity
-      style={styles.groupCard}
-      onPress={() => handleGroupPress(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.groupIconContainer}>
-        <Icon name={item.icon} type="material" color={appColors.AppBlue} size={moderateScale(32)} />
-      </View>
+  const renderGroupCard = ({ item }: { item: GroupChat }) => {
+    const cohortDate = item.availability?.next_cohort_start_date || item.startDate;
+    const chatStatus = getGroupChatStatus(cohortDate);
+    const canEnter = chatStatus.canEnter;
 
-      <View style={styles.groupContent}>
-        <View style={styles.groupHeader}>
-          <Text style={styles.groupName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={styles.lastMessageTime}>{item.lastMessageTime}</Text>
+    return (
+      <TouchableOpacity
+        style={styles.groupCard}
+        onPress={() => handleGroupPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.groupIconContainer}>
+          {item.image ? (
+            <Avatar
+              source={{ uri: item.image }}
+              size={moderateScale(40)}
+              rounded
+              containerStyle={{ backgroundColor: 'transparent' }}
+            />
+          ) : (
+            <Icon name={item.icon} type="material" color={appColors.AppBlue} size={moderateScale(32)} />
+          )}
         </View>
 
-        <Text style={styles.lastMessage} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
+        <View style={styles.groupContent}>
+          <View style={styles.groupHeader}>
+            <Text style={styles.groupName} numberOfLines={1}>
+              {decodeHTMLEntities(item.name)}
+            </Text>
+            {canEnter && (
+              <Text style={styles.lastMessageTime}>
+                {humanizeLastSeen(item.lastMessageTime) || item.lastMessageTime || ''}
+              </Text>
+            )}
+          </View>
 
-        <View style={styles.groupFooter}>
+          <Text 
+            style={[
+              styles.lastMessage,
+              !canEnter && { color: appColors.AppBlue, fontWeight: '600' }
+            ]} 
+            numberOfLines={1}
+          >
+            {canEnter ? item.lastMessage : chatStatus.statusLabel}
+          </Text>
+
+          <View style={styles.groupFooter}>
           <View style={styles.memberCount}>
             <Icon name="group" type="material" color={appColors.grey3} size={moderateScale(14)} />
             <Text style={styles.memberCountText}>{item.memberCount} members</Text>
@@ -177,7 +227,8 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
         </View>
       )}
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -198,7 +249,15 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading groups...</Text>
+        {[...Array(5)].map((_, i) => (
+          <View key={i} style={styles.skeletonCard}>
+            <View style={styles.skeletonIcon} />
+            <View style={styles.skeletonContent}>
+              <View style={styles.skeletonLine} />
+              <View style={[styles.skeletonLine, { width: '60%' }]} />
+            </View>
+          </View>
+        ))}
       </View>
     );
   }
@@ -220,6 +279,7 @@ const MyGroupChatsListScreen: React.FC<MyGroupChatsListScreenProps> = ({ navigat
         contentContainerStyle={groups.length === 0 ? styles.emptyContainer : styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
+      <ISAlert ref={alert.ref} />
     </View>
   );
 };
@@ -365,6 +425,32 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextRegular,
     textAlign: 'center',
     marginTop: scale(32),
+  },
+  skeletonCard: {
+    flexDirection: 'row',
+    backgroundColor: appColors.CardBackground,
+    borderRadius: scale(12),
+    padding: scale(16),
+    marginHorizontal: scale(16),
+    marginBottom: scale(12),
+    marginTop: scale(4),
+  },
+  skeletonIcon: {
+    width: scale(56),
+    height: scale(56),
+    borderRadius: scale(28),
+    backgroundColor: appColors.grey6,
+    marginRight: scale(12),
+  },
+  skeletonContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  skeletonLine: {
+    height: scale(14),
+    backgroundColor: appColors.grey6,
+    borderRadius: scale(7),
+    marginBottom: scale(10),
   },
 });
 

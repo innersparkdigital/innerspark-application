@@ -6,6 +6,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Icon } from '@rneui/base';
 import { appColors, appFonts } from '../global/Styles';
+import { scale, moderateScale } from '../global/Scaling';
+import { getImageSource, FALLBACK_IMAGES } from '../utils/imageHelpers';
 
 interface Session {
   id: number | string;
@@ -13,10 +15,11 @@ interface Session {
   specialty: string;
   date: string;
   time: string;
-  duration: string;
+  duration: string | number;
   type: string;
   avatar?: any;
-  status?: 'confirmed' | 'pending' | 'cancelled';
+  therapistImage?: string | null;
+  status?: 'confirmed' | 'pending' | 'cancelled' | 'upcoming';
   urgent?: boolean;
 }
 
@@ -35,21 +38,16 @@ const SessionCard: React.FC<SessionCardProps> = ({
 }) => {
   const getStatusColor = (status?: string) => {
     switch(status) {
-      case 'confirmed': return '#4CAF50';
+      case 'confirmed':
+      case 'upcoming': return '#4CAF50';
       case 'pending': return '#FF9800';
       case 'cancelled': return '#F44336';
       default: return appColors.grey3;
     }
   };
 
-  const getStatusText = (status?: string) => {
-    switch(status) {
-      case 'confirmed': return 'Confirmed';
-      case 'pending': return 'Pending';
-      case 'cancelled': return 'Cancelled';
-      default: return '';
-    }
-  };
+  const statusColor = getStatusColor(session.status);
+  const therapistAvatar = getImageSource(session.therapistImage || session.avatar, FALLBACK_IMAGES.avatar);
 
   return (
     <TouchableOpacity 
@@ -59,85 +57,93 @@ const SessionCard: React.FC<SessionCardProps> = ({
         session.urgent && styles.urgentContainer
       ]}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
-      {/* Urgent Badge */}
-      {session.urgent && (
-        <View style={styles.urgentBadge}>
-          <Icon name="schedule" type="material" color="#fff" size={14} />
-          <Text style={styles.urgentText}>Starting Soon</Text>
-        </View>
-      )}
-
-      {/* Header */}
+      {/* Premium Header with Background Accent */}
       <View style={styles.header}>
-        <View style={styles.therapistAvatar}>
-          {session.avatar ? (
-            <Image 
-              source={session.avatar} 
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={styles.avatarText}>
-              {session.therapistName.split(' ').map(n => n[0]).join('')}
-            </Text>
-          )}
+        <View style={styles.avatarContainer}>
+          <Image 
+            source={therapistAvatar} 
+            style={styles.avatarImage}
+            resizeMode="cover"
+          />
+          {/* Status Dot Ring */}
+          <View style={[styles.avatarRing, { borderColor: statusColor }]} />
         </View>
         
         <View style={styles.sessionInfo}>
-          <Text style={styles.therapistName} numberOfLines={1}>
-            {session.therapistName}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.therapistName} numberOfLines={1}>
+              {session.therapistName}
+            </Text>
+            <View style={[styles.typeBadge, { backgroundColor: session.type === 'Video Call' ? '#4CAF5020' : '#FF980020' }]}>
+              <Icon
+                name={session.type === 'Video Call' ? 'videocam' : 'location-on'}
+                type="material"
+                color={session.type === 'Video Call' ? '#4CAF50' : '#FF9800'}
+                size={moderateScale(12)}
+              />
+            </View>
+          </View>
           <Text style={styles.sessionSpecialty} numberOfLines={1}>
-            {session.specialty}
+            {session.specialty || 'Professional Therapist'}
           </Text>
         </View>
-        
-        <View style={styles.sessionType}>
-          <Icon
-            name={session.type === 'Video Call' ? 'videocam' : 'location-on'}
-            type="material"
-            color={session.type === 'Video Call' ? '#4CAF50' : '#FF9800'}
-            size={20}
-          />
+
+        {/* Floating Urgency/Status Badge */}
+        <View style={[styles.floatingBadge, { backgroundColor: statusColor }]}>
+          <Text style={styles.floatingBadgeText}>
+            {session.urgent ? 'Starting Soon' : (session.status?.toUpperCase() || 'UPCOMING')}
+          </Text>
         </View>
       </View>
 
-      {/* Details */}
-      <View style={styles.details}>
-        <View style={styles.timeRow}>
-          <Icon name="schedule" type="material" color={appColors.grey3} size={16} />
-          <Text style={styles.dateTime}>
-            {session.date} at {session.time}
-          </Text>
+      {/* Decorative Divider */}
+      <View style={styles.divider} />
+
+      {/* Details Section - World Class Layout */}
+      <View style={styles.detailsContainer}>
+        <View style={styles.detailItem}>
+          <View style={styles.iconCircle}>
+            <Icon name="event" type="material" color={appColors.CardBackground} size={moderateScale(14)} />
+          </View>
+          <View>
+            <Text style={styles.detailLabel}>Date</Text>
+            <Text style={styles.detailValue}>{session.date}</Text>
+          </View>
         </View>
-        
-        <View style={styles.timeRow}>
-          <Icon name="timer" type="material" color={appColors.grey3} size={16} />
-          <Text style={styles.duration}>{session.duration}</Text>
+
+        <View style={styles.detailItem}>
+          <View style={styles.iconCircle}>
+            <Icon name="schedule" type="material" color={appColors.CardBackground} size={moderateScale(14)} />
+          </View>
+          <View>
+            <Text style={styles.detailLabel}>Time</Text>
+            <Text style={styles.detailValue}>{session.time}</Text>
+          </View>
+        </View>
+
+        <View style={styles.detailItem}>
+          <View style={styles.iconCircle}>
+            <Icon name="timer" type="material" color={appColors.CardBackground} size={moderateScale(14)} />
+          </View>
+          <View>
+            <Text style={styles.detailLabel}>Duration</Text>
+            <Text style={styles.detailValue}>{session.duration} min</Text>
+          </View>
         </View>
       </View>
 
-      {/* Status Badge */}
-      {session.status && (
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(session.status) + '20' }]}>
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor(session.status) }]} />
-          <Text style={[styles.statusText, { color: getStatusColor(session.status) }]}>
-            {getStatusText(session.status)}
-          </Text>
-        </View>
-      )}
-
-      {/* Action Button */}
+      {/* Modern Join Action */}
       {!compact && onJoin && (
         <TouchableOpacity 
           style={styles.joinButton}
           onPress={onJoin}
         >
           <Text style={styles.joinButtonText}>
-            {session.date === 'Today' ? 'Join Now' : 'View Details'}
+            {session.date === 'Today' ? 'Join Session' : 'View Details'}
           </Text>
+          <Icon name="chevron-right" type="material" color={appColors.CardBackground} size={moderateScale(18)} />
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -146,138 +152,154 @@ const SessionCard: React.FC<SessionCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: appColors.CardBackground,
-    borderRadius: 16,
-    padding: 16,
-    marginRight: 12,
-    width: 300,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: appColors.AppBlue, // Premium brand background
+    borderRadius: moderateScale(24),
+    padding: moderateScale(20),
+    marginRight: scale(16),
+    width: moderateScale(310),
+    elevation: 8,
+    shadowColor: appColors.AppBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    overflow: 'hidden',
   },
   compactContainer: {
-    width: 280,
-    padding: 14,
+    width: moderateScale(290),
+    padding: moderateScale(16),
   },
   urgentContainer: {
-    borderWidth: 2,
-    borderColor: '#FF9800',
-  },
-  urgentBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    flexDirection: 'row',
-    backgroundColor: '#FF9800',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  urgentText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginLeft: 4,
-    fontFamily: appFonts.headerTextBold,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: scale(20),
+    position: 'relative',
   },
-  therapistAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: appColors.AppBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    overflow: 'hidden',
+  avatarContainer: {
+    position: 'relative',
+    marginRight: scale(12),
   },
   avatarImage: {
-    width: '100%',
-    height: '100%',
+    width: moderateScale(56),
+    height: moderateScale(56),
+    borderRadius: moderateScale(28),
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
-  avatarText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: appColors.CardBackground,
-    fontFamily: appFonts.headerTextBold,
+  avatarRing: {
+    position: 'absolute',
+    top: -moderateScale(2),
+    left: -moderateScale(2),
+    right: -moderateScale(2),
+    bottom: -moderateScale(2),
+    borderRadius: moderateScale(30),
+    borderWidth: 2,
+    opacity: 0.6,
   },
   sessionInfo: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: scale(2),
+  },
   therapistName: {
-    fontSize: 16,
+    fontSize: moderateScale(17),
     fontWeight: 'bold',
-    color: appColors.grey1,
+    color: appColors.CardBackground,
     fontFamily: appFonts.headerTextBold,
-    marginBottom: 2,
+    marginRight: scale(6),
+  },
+  typeBadge: {
+    padding: scale(3),
+    borderRadius: moderateScale(6),
   },
   sessionSpecialty: {
-    fontSize: 13,
-    color: appColors.grey2,
+    fontSize: moderateScale(13),
+    color: 'rgba(255, 255, 255, 0.8)',
     fontFamily: appFonts.headerTextRegular,
   },
-  sessionType: {
-    marginLeft: 8,
+  floatingBadge: {
+    position: 'absolute',
+    top: -moderateScale(5),
+    right: -moderateScale(5),
+    paddingVertical: scale(4),
+    paddingHorizontal: scale(10),
+    borderRadius: moderateScale(12),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
-  details: {
-    marginBottom: 12,
+  floatingBadgeText: {
+    fontSize: moderateScale(9),
+    fontWeight: 'bold',
+    color: '#FFF',
+    fontFamily: appFonts.headerTextBold,
+    letterSpacing: 0.5,
   },
-  timeRow: {
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginBottom: scale(20),
+  },
+  detailsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: scale(20),
+  },
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
   },
-  dateTime: {
-    fontSize: 14,
-    color: appColors.grey2,
-    fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
-  },
-  duration: {
-    fontSize: 14,
-    color: appColors.grey2,
-    fontFamily: appFonts.headerTextRegular,
-    marginLeft: 8,
-  },
-  statusBadge: {
-    flexDirection: 'row',
+  iconCircle: {
+    width: moderateScale(28),
+    height: moderateScale(28),
+    borderRadius: moderateScale(14),
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginBottom: 12,
-    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    marginRight: scale(8),
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
+  detailLabel: {
+    fontSize: moderateScale(10),
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontFamily: appFonts.headerTextRegular,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: appFonts.headerTextSemiBold,
+  detailValue: {
+    fontSize: moderateScale(12),
+    fontWeight: 'bold',
+    color: appColors.CardBackground,
+    fontFamily: appFonts.headerTextBold,
   },
   joinButton: {
-    backgroundColor: appColors.AppBlue,
-    paddingVertical: 12,
-    borderRadius: 10,
+    flexDirection: 'row',
+    backgroundColor: appColors.CardBackground,
+    paddingVertical: scale(12),
+    paddingHorizontal: scale(16),
+    borderRadius: moderateScale(14),
     alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   joinButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: appColors.CardBackground,
-    fontFamily: appFonts.headerTextSemiBold,
+    fontSize: moderateScale(15),
+    fontWeight: '700',
+    color: appColors.AppBlue,
+    fontFamily: appFonts.headerTextBold,
+    marginRight: scale(6),
   },
 });
 

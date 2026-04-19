@@ -73,7 +73,7 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Specialities');
-  const [viewType, setViewType] = useState('compact'); // 'compact' or 'detailed'
+  const [viewType, setViewType] = useState<'compact' | 'detailed' | 'grid'>('compact');
   const [showFilters, setShowFilters] = useState(false);
 
   // Load therapists on mount
@@ -97,13 +97,15 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
     return ['All Specialities', ...uniqueSpecs];
   }, [therapists]);
 
-  const filteredTherapists = (therapists as Therapist[] || []).filter((therapist: Therapist) => {
-    const matchesSearch = therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      therapist.specialty.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialty = selectedSpecialty === 'All Specialities' ||
-      therapist.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase());
-    return matchesSearch && matchesSpecialty;
-  });
+  const filteredTherapists = useMemo(() => {
+    return (therapists as Therapist[] || []).filter((therapist: Therapist) => {
+      const matchesSearch = therapist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        therapist.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSpecialty = selectedSpecialty === 'All Specialities' ||
+        therapist.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase());
+      return matchesSearch && matchesSpecialty;
+    });
+  }, [therapists, searchQuery, selectedSpecialty]);
 
   const notifyWithToast = (description: string) => {
     toast.show({
@@ -130,9 +132,20 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
     setSearchQuery('');
   };
 
-  // Toggle View type
+  // Toggle View type (3-state cycle)
   const toggleViewType = () => {
-    setViewType(viewType === 'compact' ? 'detailed' : 'compact');
+    setViewType(prev => {
+      if (prev === 'compact') return 'detailed';
+      if (prev === 'detailed') return 'grid';
+      return 'compact';
+    });
+  };
+
+  // Get the icon name that tells the user what they will switch TO
+  const getViewToggleIcon = () => {
+    if (viewType === 'compact') return 'view-list';   // tap → go to detailed
+    if (viewType === 'detailed') return 'grid-view';   // tap → go to grid
+    return 'view-column';                              // tap → go back to compact
   };
 
   // Toggle filters
@@ -296,10 +309,38 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
     </TouchableOpacity>
   );
 
+  // Grid therapist card (minimalist: circular avatar + name only)
+  const GridTherapistCard: React.FC<{ therapist: Therapist }> = ({ therapist }) => (
+    <TouchableOpacity
+      style={styles.gridCard}
+      onPress={() => handleViewProfile(therapist)}
+      activeOpacity={0.75}
+    >
+      <View style={styles.gridAvatarContainer}>
+        <Avatar
+          source={therapist.image}
+          size={scale(80)}
+          rounded
+          avatarStyle={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+          containerStyle={styles.gridAvatar}
+        />
+        {/* Availability dot */}
+        <View style={[
+          styles.gridAvailabilityDot,
+          therapist.available ? styles.gridDotAvailable : styles.gridDotBusy
+        ]} />
+      </View>
+      <Text style={styles.gridName} numberOfLines={1} ellipsizeMode="tail">
+        {therapist.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
   const TherapistCard: React.FC<{ therapist: Therapist }> = ({ therapist }) => {
-    return viewType === 'compact' ?
-      <CompactTherapistCard therapist={therapist} /> :
-      <DetailedTherapistCard therapist={therapist} />;
+    if (viewType === 'grid') return <GridTherapistCard therapist={therapist} />;
+    return viewType === 'compact'
+      ? <CompactTherapistCard therapist={therapist} />
+      : <DetailedTherapistCard therapist={therapist} />;
   };
 
   const therapistsListRef = useRef<FlatList>(null);
@@ -377,23 +418,56 @@ const TherapistsScreen: React.FC<TherapistsScreenProps> = ({ navigation, route }
 
         {/* Therapists List */}
         <FlatList
+          key={viewType}
           ref={therapistsListRef}
           data={filteredTherapists}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => <TherapistCard therapist={item} />}
+          numColumns={viewType === 'grid' ? 3 : 1}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[
+            styles.listContainer,
+            viewType === 'grid' && styles.gridListContainer,
+          ]}
           ListHeaderComponent={
             <View>
               {/* Filter Section */}
               <View style={styles.filterSection}>
                 <Text style={styles.filterText}>All Specialities</Text>
                 <View style={styles.filterActions}>
-                  <TouchableOpacity style={styles.viewToggleButton} onPress={toggleViewType}>
+                  {/* Compact view icon */}
+                  <TouchableOpacity
+                    style={styles.viewToggleButton}
+                    onPress={() => setViewType('compact')}
+                  >
                     <Icon
-                      name={viewType === 'compact' ? 'view-list' : 'view-module'}
+                      name="view-stream"
                       type="material"
-                      color={appColors.grey2}
+                      color={viewType === 'compact' ? appColors.AppBlue : appColors.grey3}
+                      size={moderateScale(24)}
+                    />
+                  </TouchableOpacity>
+                  {/* Detailed view icon */}
+                  <TouchableOpacity
+                    style={styles.viewToggleButton}
+                    onPress={() => setViewType('detailed')}
+                  >
+                    <Icon
+                      name="view-list"
+                      type="material"
+                      color={viewType === 'detailed' ? appColors.AppBlue : appColors.grey3}
+                      size={moderateScale(24)}
+                    />
+                  </TouchableOpacity>
+                  {/* Grid view icon */}
+                  <TouchableOpacity
+                    style={styles.viewToggleButton}
+                    onPress={() => setViewType('grid')}
+                  >
+                    <Icon
+                      name="grid-view"
+                      type="material"
+                      color={viewType === 'grid' ? appColors.AppBlue : appColors.grey3}
                       size={moderateScale(24)}
                     />
                   </TouchableOpacity>
@@ -589,7 +663,7 @@ const styles = StyleSheet.create({
   },
   viewToggleButton: {
     padding: scale(8),
-    marginRight: scale(8),
+    marginRight: scale(4),
   },
   filterButton: {
     padding: scale(8),
@@ -838,6 +912,49 @@ const styles = StyleSheet.create({
     fontFamily: appFonts.bodyTextMedium,
     marginLeft: scale(8),
     fontWeight: '700',
+  },
+  // Grid view styles
+  gridListContainer: {
+    paddingHorizontal: scale(8),
+  },
+  gridCard: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: scale(6),
+    marginBottom: scale(20),
+  },
+  gridAvatarContainer: {
+    position: 'relative',
+    marginBottom: scale(8),
+  },
+  gridAvatar: {
+    borderWidth: 2,
+    borderColor: appColors.AppLightGray,
+    backgroundColor: appColors.AppLightGray,
+  },
+  gridAvailabilityDot: {
+    position: 'absolute',
+    bottom: scale(4),
+    right: scale(4),
+    width: scale(13),
+    height: scale(13),
+    borderRadius: scale(7),
+    borderWidth: 2,
+    borderColor: appColors.CardBackground,
+  },
+  gridDotAvailable: {
+    backgroundColor: '#4CAF50',
+  },
+  gridDotBusy: {
+    backgroundColor: '#F44336',
+  },
+  gridName: {
+    fontSize: moderateScale(12),
+    fontWeight: '600',
+    color: appColors.grey1,
+    fontFamily: appFonts.bodyTextMedium,
+    textAlign: 'center',
+    width: scale(82),
   },
 });
 

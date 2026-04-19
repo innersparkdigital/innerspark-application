@@ -18,6 +18,7 @@ import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import { getTherapistAvailability } from '../../api/client/therapists';
+import { resolveSessionType } from '../../utils/appointmentUtils';
 import { useSelector } from 'react-redux';
 import { useToast } from 'native-base';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
@@ -147,7 +148,13 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
             <View style={styles.headerCard}>
               <View style={styles.avatarContainer}>
                 {therapistProfile.avatar ? (
-                  <Avatar source={therapistProfile.avatar} size={scale(100)} rounded />
+                  <Avatar
+                    source={typeof therapistProfile.avatar === 'string'
+                      ? { uri: therapistProfile.avatar }
+                      : therapistProfile.avatar}
+                    size={scale(100)}
+                    rounded
+                  />
                 ) : (
                   <Avatar
                     title={therapistProfile.name.split(' ').map((n: string) => n[0]).join('')}
@@ -235,7 +242,7 @@ const TherapistProfileViewScreen: React.FC<TherapistProfileViewScreenProps> = ({
                   {therapistProfile.sessionTypes.map((type: string, index: number) => (
                     <View key={index} style={styles.sessionTypeBadge}>
                       <Icon name="check-circle" type="material" size={moderateScale(16)} color={appColors.AppGreen} />
-                      <Text style={styles.sessionTypeText}>{type}</Text>
+                      <Text style={styles.sessionTypeText}>{resolveSessionType(type)}</Text>
                     </View>
                   ))}
                 </View>

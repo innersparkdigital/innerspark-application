@@ -11,17 +11,20 @@ import {
   RefreshControl,
   ActionSheetIOS,
   Platform,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Avatar, Icon, Button } from '@rneui/base';
 import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
-import { getMyGroups, leaveGroup, renewGroupSubscription } from '../../api/client/groups';
+import { getMyGroups, leaveGroup, renewGroupSubscription, getGroupCohortAvailability } from '../../api/client/groups';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { removeJoinedGroupId, setJoinedGroupIds } from '../../features/groups/groupsSlice';
 import { decodeHTMLEntities } from '../../utils/textHelpers';
+import { getGroupChatStatus, validateChatAccess } from '../../utils/GroupUtils';
 
 interface MyGroup {
   id: string;
@@ -39,6 +42,12 @@ interface MyGroup {
   role: 'member' | 'moderator';
   membership_status?: 'ACTIVE' | 'PENDING' | 'EXPIRED';
   expiry_date?: string;
+  therapistSpecialization?: string;
+  attendance?: string;
+  icon_url?: string;
+  startDate?: string;
+  joinedDate?: string;
+  availability?: any;
 }
 
 interface MyGroupsScreenProps {
@@ -84,12 +93,20 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
         role: group.role || group.userRole || group.user_role || 'member',
         membership_status: group.membership_status || 'ACTIVE',
         expiry_date: group.expiry_date || null,
+        therapistSpecialization: decodeHTMLEntities(group.therapistSpecialization || group.therapist_specialization || ''),
+        attendance: group.attendance || '0%',
+        icon_url: group.icon_url || group.image,
+        startDate: group.next_cohort_start_date || group.startDate,
+        joinedDate: group.joinedDate || group.joined_date,
       }));
 
       setMyGroups(mappedGroups);
       // Sync Redux
       const joinedIds = mappedGroups.map(g => g.id);
       dispatch(setJoinedGroupIds(joinedIds));
+
+      // Background fetch availability for each group to ensure security sync
+      fetchAvailabilityForGroups(mappedGroups);
 
       console.log('✅ Mapped My Groups:', mappedGroups.length);
     } catch (error: any) {
@@ -104,6 +121,26 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
     }
   };
 
+  // Background availability fetcher
+  const fetchAvailabilityForGroups = async (groups: MyGroup[]) => {
+    groups.forEach(async (group) => {
+      try {
+        const availResponse = await getGroupCohortAvailability(group.id);
+        if (availResponse?.data) {
+          setMyGroups(prev => prev.map(g => 
+            g.id === group.id ? { 
+              ...g, 
+              availability: availResponse.data,
+              startDate: availResponse.data.next_cohort_start_date || g.startDate 
+            } : g
+          ));
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch availability for group ${group.id}`, err);
+      }
+    });
+  };
+
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -111,8 +148,14 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
     setIsRefreshing(false);
   };
 
-  // Handle open chat
   const handleOpenChat = (group: MyGroup) => {
+    const cohortDate = group.availability?.next_cohort_start_date || group.startDate;
+
+    // Validate access based on cohort start date using reusable utility
+    if (!validateChatAccess(cohortDate, alert)) {
+      return;
+    }
+
     navigation.navigate('GroupChatScreen', {
       groupId: group.id,
       groupName: group.name,
@@ -122,43 +165,7 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
     });
   };
 
-  // Handle renew group
-  const handleRenewGroup = async (group: MyGroup) => {
-    alert.show({
-      type: 'confirm',
-      title: 'Renew Subscription',
-      message: `Renew your subscription for ${group.name}? This will deduct 25000 UGX from your wallet.`,
-      confirmText: 'Renew',
-      cancelText: 'Cancel',
-      onConfirm: async () => {
-        try {
-          const response = await renewGroupSubscription(group.id, userId);
-          toast.show({
-            description: response.message || 'Subscription renewed successfully',
-            duration: 3000,
-          });
-          await loadMyGroups();
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to renew subscription';
-          if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('balance')) {
-            alert.show({
-              type: 'error',
-              title: 'Insufficient Balance',
-              message: errorMessage,
-              confirmText: 'Top Up Wallet',
-              onConfirm: () => navigation.navigate('Wallet')
-            });
-          } else {
-            alert.show({
-              type: 'error',
-              title: 'Error',
-              message: typeof errorMessage === 'object' ? errorMessage.message : errorMessage,
-            });
-          }
-        }
-      }
-    });
-  };
+
 
   // Handle group details
   const handleGroupDetails = (group: MyGroup) => {
@@ -278,6 +285,9 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
   // Render group card
   const renderGroupCard = ({ item }: { item: MyGroup }) => {
     const isExpired = item.membership_status === 'EXPIRED';
+    const chatStatus = item.availability 
+      ? getGroupChatStatus(item.availability.next_cohort_start_date || item.startDate)
+      : null;
 
     return (
       <TouchableOpacity
@@ -286,19 +296,25 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
           !item.isActive && styles.inactiveGroupCard,
           isExpired && { opacity: 0.8 }
         ]}
-        onPress={() => isExpired ? handleRenewGroup(item) : handleOpenChat(item)}
+        onPress={() => isExpired ? handleGroupDetails(item) : handleOpenChat(item)}
       >
         <View style={styles.groupHeader}>
-          <View style={[
-            styles.groupIconContainer,
-            { backgroundColor: getCategoryColor(item.category) + '20' }
-          ]}>
-            <Icon
-              name={item.icon}
-              type="material"
-              color={getCategoryColor(item.category)}
-              size={28}
-            />
+          <View style={styles.groupIconContainer}>
+            {item.icon_url ? (
+              <Image source={{ uri: item.icon_url }} style={styles.groupCoverImage} />
+            ) : (
+              <View style={[
+                styles.iconPlaceholder,
+                { backgroundColor: getCategoryColor(item.category) + '20' }
+              ]}>
+                <Icon
+                  name={item.icon}
+                  type="material"
+                  color={getCategoryColor(item.category)}
+                  size={28}
+                />
+              </View>
+            )}
             {item.role === 'moderator' && (
               <View style={styles.moderatorBadge}>
                 <Icon name="admin-panel-settings" type="material" color={appColors.CardBackground} size={12} />
@@ -329,9 +345,11 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
               )}
             </View>
 
-            <Text style={styles.lastActivity}>
-              {formatLastActivity(item.lastActivity)}
-            </Text>
+            <View style={styles.metadataRow}>
+              <Text style={styles.joinedDateText}>Joined: {item.joinedDate || 'Recent'}</Text>
+              <View style={styles.dot} />
+              <Text style={styles.attendanceText}>Attendance: {item.attendance}</Text>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -349,15 +367,20 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
         <View style={styles.therapistSection}>
           <Avatar
             source={item.therapistAvatar}
-            size={scale(32)}
+            size={scale(36)}
             rounded
             containerStyle={styles.therapistAvatar}
           />
           <View style={styles.therapistInfo}>
             <Text style={styles.therapistName}>{item.therapistName}</Text>
+            <Text style={styles.therapistSpecialty} numberOfLines={1}>
+              {item.therapistSpecialization || 'Therapist'}
+            </Text>
           </View>
-          <Icon name="group" type="material" color={appColors.grey3} size={14} />
-          <Text style={styles.memberCount}>{item.memberCount}</Text>
+          <View style={styles.memberInfoRow}>
+            <Icon name="group" type="material" color={appColors.grey3} size={14} />
+            <Text style={styles.memberCount}>{item.memberCount}</Text>
+          </View>
         </View>
 
         <View style={styles.groupFooter}>
@@ -379,22 +402,35 @@ const MyGroupsScreen: React.FC<MyGroupsScreenProps> = ({ navigation, onTabChange
 
             {isExpired ? (
               <TouchableOpacity
-                style={[styles.chatButton, { backgroundColor: '#F44336' }]}
-                onPress={() => handleRenewGroup(item)}
+                style={[styles.chatButton, { backgroundColor: appColors.grey4 }]}
+                disabled={true}
               >
-                <Icon name="autorenew" type="material" color={appColors.CardBackground} size={16} />
-                <Text style={styles.chatButtonText}>Renew</Text>
+                <Icon name="history" type="material" color={appColors.CardBackground} size={16} />
+                <Text style={styles.chatButtonText}>Past Cohort</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={[
                   styles.chatButton,
-                  { backgroundColor: getCategoryColor(item.category) }
+                  { 
+                    backgroundColor: !chatStatus 
+                      ? appColors.grey5 
+                      : chatStatus.canEnter 
+                        ? getCategoryColor(item.category) 
+                        : appColors.grey4 
+                  }
                 ]}
                 onPress={() => handleOpenChat(item)}
+                disabled={chatStatus ? !chatStatus.canEnter : false}
               >
-                <Icon name="chat" type="material" color={appColors.CardBackground} size={16} />
-                <Text style={styles.chatButtonText}>Chat</Text>
+                {!chatStatus ? (
+                  <ActivityIndicator size="small" color={appColors.CardBackground} />
+                ) : (
+                  <>
+                    <Icon name={chatStatus.canEnter ? "chat" : "lock"} type="material" color={appColors.CardBackground} size={16} />
+                    <Text style={styles.chatButtonText}>{chatStatus.canEnter ? "Chat" : chatStatus.statusLabel}</Text>
+                  </>
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -597,14 +633,23 @@ const styles = StyleSheet.create({
     marginBottom: scale(12),
   },
   groupIconContainer: {
-    width: scale(48),
-    height: scale(48),
-    borderRadius: scale(24),
+    width: scale(54),
+    height: scale(54),
+    borderRadius: scale(12),
     backgroundColor: appColors.grey6,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: scale(12),
     position: 'relative',
+    overflow: 'hidden',
+  },
+  groupCoverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  iconPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   moderatorBadge: {
     position: 'absolute',
@@ -667,6 +712,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
   },
+  metadataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  joinedDateText: {
+    fontSize: moderateScale(11),
+    color: appColors.grey3,
+    fontFamily: appFonts.bodyTextRegular,
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: appColors.grey4,
+    marginHorizontal: scale(6),
+  },
+  attendanceText: {
+    fontSize: moderateScale(11),
+    color: appColors.AppBlue,
+    fontWeight: '600',
+    fontFamily: appFonts.bodyTextMedium,
+  },
   lastActivity: {
     fontSize: moderateScale(12),
     color: appColors.grey3,
@@ -705,13 +772,17 @@ const styles = StyleSheet.create({
   therapistName: {
     fontSize: moderateScale(14),
     fontWeight: 'bold',
-    color: appColors.AppBlue,
+    color: appColors.grey1,
     fontFamily: appFonts.headerTextBold,
   },
-  therapistEmail: {
+  therapistSpecialty: {
     fontSize: moderateScale(12),
     color: appColors.grey3,
     fontFamily: appFonts.bodyTextRegular,
+  },
+  memberInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   memberInfo: {
     flexDirection: 'row',

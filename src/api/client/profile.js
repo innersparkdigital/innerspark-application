@@ -57,6 +57,7 @@ export const updateProfile = async (userId, firstNameOrPayload, lastName, phoneN
  */
 export const uploadAvatar = async (userId, imageUri, imageType, imageName) => {
     const formData = new FormData();
+    formData.append('user_id', userId);
     formData.append('avatar', {
         uri: imageUri,
         type: imageType || 'image/jpeg',
@@ -64,7 +65,6 @@ export const uploadAvatar = async (userId, imageUri, imageType, imageName) => {
     });
 
     const response = await APIInstance.post('/client/profile/avatar', formData, {
-        params: { user_id: userId },
         headers: {
             'Content-Type': 'multipart/form-data',
         },

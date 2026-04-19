@@ -18,7 +18,7 @@ import { useToast } from 'native-base';
 import { NavigationProp, RouteProp } from '@react-navigation/native';
 
 interface Notification {
-  id: number;
+  id: string | number;
   title: string;
   message: string;
   type: 'appointment' | 'reminder' | 'system' | 'event' | 'goal';
@@ -38,7 +38,10 @@ const NotificationDetailScreen: React.FC<NotificationDetailScreenProps> = ({ nav
   const toast = useToast();
 
   const formatFullTimestamp = (timestamp: string) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return timestamp; // Fallback to raw string
+
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',

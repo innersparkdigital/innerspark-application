@@ -15,9 +15,15 @@ import {
   setRefreshing,
   setError,
 } from '../features/notifications/notificationSlice';
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../api/client/notifications';
+import { 
+  getNotifications, 
+  markNotificationAsRead, 
+  markAllNotificationsAsRead,
+  deleteNotification as deleteNotificationAPI
+} from '../api/client/notifications';
 import { getNotifications as getTherapistNotifications, markNotificationAsRead as markTherapistNotificationRead, markAllNotificationsAsRead as markAllTherapistNotificationsRead } from '../api/therapist/notifications';
 import { syncBadges } from './BadgeManager';
+import { cancelNotification, cancelAllNotifications } from '../api/LHNotifications';
 
 /**
  * Load notifications from API
@@ -41,17 +47,28 @@ export const loadNotifications = async (userId: string, page: number = 1) => {
     console.log('✅ API Response:', JSON.stringify(response, null, 2));
     
     if (response.success && response.data) {
-      // Backend client response: { success, data: { notifications, unreadCount, pagination } }
-      // Backend therapist response: { success, data: { notifications, unreadCount } }
       const { notifications, unreadCount, pagination } = response.data;
-      console.log('📋 Notifications count:', notifications?.length, 'Unread:', unreadCount);
-      
+      const mappedNotifications = (notifications || []).map((n: any) => ({
+        id: n.id,
+        title: n.title,
+        message: n.message || n.body,
+        body: n.body,
+        timestamp: n.createdAt,
+        type: n.type || 'system',
+        isRead: n.is_read ?? n.isRead ?? false,
+      }));
+
+      // Calculate unread count locally if not explicitly provided
+      const finalUnreadCount = unreadCount !== undefined 
+        ? unreadCount 
+        : mappedNotifications.filter((n: any) => !n.isRead).length;
+
       store.dispatch(setNotifications({
-        notifications: notifications || [],
+        notifications: mappedNotifications,
         pagination: pagination || { currentPage: page, totalPages: 1, totalItems: 0 },
       }));
       
-      store.dispatch(setUnreadCount(unreadCount || 0));
+      store.dispatch(setUnreadCount(finalUnreadCount));
       syncBadges();
     } else {
       console.log('⚠️ API response missing success or data:', response);
@@ -110,12 +127,26 @@ export const refreshNotifications = async (userId: string) => {
     if (response.success && response.data) {
       const { notifications, unreadCount, pagination } = response.data;
       
+      const mappedNotifications = (notifications || []).map((n: any) => ({
+        id: n.id,
+        title: n.title,
+        message: n.message || n.body,
+        body: n.body,
+        timestamp: n.createdAt,
+        type: n.type || 'system',
+        isRead: n.is_read ?? n.isRead ?? false,
+      }));
+
+      const finalUnreadCount = unreadCount !== undefined 
+        ? unreadCount 
+        : mappedNotifications.filter((n: any) => !n.isRead).length;
+
       store.dispatch(setNotifications({
-        notifications: notifications || [],
+        notifications: mappedNotifications,
         pagination: pagination || { currentPage: 1, totalPages: 1, totalItems: 0 },
       }));
       
-      store.dispatch(setUnreadCount(unreadCount || 0));
+      store.dispatch(setUnreadCount(finalUnreadCount));
       syncBadges();
     }
   } catch (error: any) {
@@ -150,6 +181,9 @@ export const markNotificationRead = async (notificationId: string, userId: strin
       await markNotificationAsRead(notificationId, userId);
     }
     
+    // Clear from system tray
+    cancelNotification(notificationId);
+    
     syncBadges();
     return { success: true };
   } catch (error: any) {
@@ -180,6 +214,9 @@ export const markAllNotificationsRead = async (userId: string) => {
       await markAllNotificationsAsRead(userId);
     }
     
+    // Clear all from tray
+    cancelAllNotifications();
+    
     syncBadges();
     return { success: true };
   } catch (error: any) {
@@ -201,12 +238,22 @@ export const markAllNotificationsRead = async (userId: string) => {
 export const deleteNotification = async (notificationId: string) => {
   try {
     store.dispatch(deleteNotificationAction(notificationId));
+    
+    // Call API for client role
+    const role = (store.getState().userData?.userDetails as any)?.role || 'user';
+    if (role !== 'therapist') {
+      await deleteNotificationAPI(notificationId);
+    }
+    
+    // Clear from tray
+    cancelNotification(notificationId);
+    
     syncBadges();
     return { success: true };
   } catch (error: any) {
     console.log('Error deleting notification:', error);
     
-    // Still delete locally
+    // Still delete locally even if API fails (common requirement for dismissal)
     store.dispatch(deleteNotificationAction(notificationId));
     return { success: true };
   }
@@ -227,10 +274,16 @@ export const getUnreadCount = async (userId: string) => {
       response = await getNotifications(userId, 1);
     }
     
-    if (response.success && response.data?.unreadCount !== undefined) {
-      store.dispatch(setUnreadCount(response.data.unreadCount));
+    if (response.success && response.data) {
+      const { notifications, unreadCount } = response.data;
+      
+      const finalUnreadCount = unreadCount !== undefined 
+        ? unreadCount 
+        : (notifications || []).filter((n: any) => !(n.isRead || n.is_read)).length;
+
+      store.dispatch(setUnreadCount(finalUnreadCount));
       syncBadges();
-      return response.data.unreadCount;
+      return finalUnreadCount;
     }
   } catch (error: any) {
     console.log('Error getting unread count:', error);

@@ -41,3 +41,12 @@ export const markAllNotificationsAsRead = async (userId) => {
     });
     return response.data;
 };
+/**
+ * Delete notification
+ * @param {string} notificationId - Notification ID
+ * @returns {Promise} Success message
+ */
+export const deleteNotification = async (notificationId) => {
+    const response = await APIInstance.delete(`/client/notifications/${notificationId}`);
+    return response.data;
+};

@@ -22,6 +22,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
@@ -34,6 +35,7 @@ import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { maskName, generateAnonymousName } from '../../utils/privacyHelpers';
+import { decodeHTMLEntities } from '../../utils/textHelpers';
 import { displayNotification, NOTIFICATION_TYPES, CHANNELS } from '../../api/LHNotifications';
 
 interface GroupMessage {
@@ -72,11 +74,14 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     groupId,
     groupName,
     groupIcon = 'groups',
+    groupAvatar, // Destructure the physical image url
     groupDescription,
     memberCount,
     userRole = 'member',
     privacyMode: _privacyMode, // Safely alias from params
     showModeration = false,
+    maxMembers,
+    startDate,
   } = route.params || {};
 
   // For Client Apps, ALWAYS default to Privacy Mode enabled.
@@ -91,6 +96,14 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [membershipStatus, setMembershipStatus] = useState<string>(route.params?.membership_status || 'ACTIVE');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Smart scroll - only auto-scroll when user is near the bottom
+  const isNearBottomRef = useRef(true);
 
   useEffect(() => {
     loadMessages();
@@ -120,21 +133,26 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     }
   };
 
-  const loadMessages = async (isSilent = false) => {
+  const loadMessages = async (isSilent = false, page = 1) => {
     if (!isSilent) setIsLoading(true);
+    if (page > 1) setIsLoadingMore(true);
     try {
-      console.log('📞 Calling getGroupMessages API...');
-      console.log('Group ID:', groupId);
-      console.log('User ID:', userId);
+      console.log('📞 Calling getGroupMessages API... page:', page);
 
-      const response = await getGroupMessages(groupId, userId, 1, 50);
-      console.log('✅ Group messages response:', response);
+      const response = await getGroupMessages(groupId, userId, page, 50);
 
-      // Map API response to local message format safely unpacking nested "data" objects
+      // Map API response to local message format
       const apiMessages = response.data?.messages || response.messages;
+      const pagination = response.data?.pagination;
 
       if (apiMessages && apiMessages.length > 0) {
-        const mappedMessages = apiMessages.map((msg: any) => ({
+        // API returns newest-first — reverse to oldest-first for correct top-to-bottom display
+        const sorted = [...apiMessages].sort(
+          (a: any, b: any) => new Date(a.timestamp || a.created_at || a.createdAt).getTime()
+            - new Date(b.timestamp || b.created_at || b.createdAt).getTime()
+        );
+
+        const mappedMessages = sorted.map((msg: any) => ({
           id: msg.id || msg.message_id,
           senderId: msg.sender_id || msg.senderId,
           senderName: msg.sender_name || msg.senderName || 'Unknown',
@@ -146,60 +164,88 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           isSeen: msg.is_seen !== undefined ? msg.is_seen : false,
           isOwn: String(msg.sender_id) === String(userId) || String(msg.senderId) === String(userId),
           type: msg.type || 'text',
-        })).reverse(); // Reverse array so newest items (index 0 in API) sit at the bottom visually
+        }));
 
-        setMessages(prev => {
-          if (isSilent && prev.length > 0) {
-            // Compare new mappedMessages with previous state to find net-new messages
-            const newMessages = mappedMessages.filter((newMsg: GroupMessage) => !prev.some((oldMsg: GroupMessage) => oldMsg.id === newMsg.id));
+        if (isSilent) {
+          // Silent poll — notify only about genuinely new messages
+          setMessages(prev => {
+            const incoming = mappedMessages.filter(
+              (m: GroupMessage) => !prev.some((old: GroupMessage) => old.id === m.id)
+            ).filter((m: GroupMessage) => !m.isOwn);
 
-            // Only notify for messages from other users
-            const incomingMessages = newMessages.filter((msg: GroupMessage) => !msg.isOwn);
-
-            incomingMessages.forEach((msg: GroupMessage) => {
+            incoming.forEach((msg: GroupMessage) => {
               const senderDisplayName = (msg.senderRole === 'member' && privacyMode)
                 ? generateAnonymousName(msg.senderId, msg.senderName)
                 : msg.senderName;
 
               displayNotification({
-                title: `New message in ${groupName || 'Group'}`,
+                title: `New message in ${decodeHTMLEntities(groupName || 'Group')}`,
                 body: `${senderDisplayName}: ${msg.content || 'Sent an attachment'}`,
                 type: NOTIFICATION_TYPES.SUPPORT_GROUP_MESSAGE,
                 channelId: CHANNELS.SUPPORT_GROUPS,
               });
             });
-          }
-          return mappedMessages;
-        });
 
-      } else {
-        // Empty state - no messages
-        console.log('ℹ️ No messages found - showing empty state');
+            // Merge: only add messages that didn't exist before
+            const merged = [...prev];
+            let hasNewMessages = false;
+            
+            mappedMessages.forEach((m: GroupMessage) => {
+              if (!merged.some(old => old.id === m.id)) {
+                merged.push(m);
+                hasNewMessages = true;
+              }
+            });
+            
+            if (hasNewMessages) {
+              merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+              
+              // Smart scroll: only scroll to bottom if user is near it
+              if (isNearBottomRef.current) {
+                scrollToBottom();
+              }
+            }
+
+            return merged;
+          });
+        } else if (page === 1) {
+          // First load (active) → replace messages and scroll to bottom
+          setMessages(mappedMessages);
+          setHasMorePages(pagination?.hasMore || false);
+          setCurrentPage(1);
+          scrollToBottom();
+        } else {
+          // Older page → prepend without disturbing scroll position
+          setMessages(prev => [...mappedMessages, ...prev]);
+          setHasMorePages(pagination?.hasMore || false);
+          setCurrentPage(page);
+        }
+
+      } else if (page === 1) {
         setMessages([]);
       }
 
-      setIsLoading(false);
-      scrollToBottom();
       markMessagesAsSeen();
     } catch (error: any) {
       console.error('❌ Error loading messages:', error);
-
       if (!isSilent) {
         setMessages([]);
-        setIsLoading(false);
+        toast.show({ description: 'Failed to load messages', duration: 3000 });
       }
-      if (!isSilent) {
-        toast.show({
-          description: 'Failed to load messages',
-          duration: 3000,
-        });
-      }
+    } finally {
+      if (!isSilent) setIsLoading(false);
+      if (page > 1) setIsLoadingMore(false);
     }
+  };
+
+  const handleLoadOlderMessages = async () => {
+    if (!hasMorePages || isLoadingMore) return;
+    await loadMessages(false, currentPage + 1);
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await loadMessages();
+    await loadMessages(false, 1);
     setIsRefreshing(false);
   };
 
@@ -425,16 +471,28 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     return message.senderName;
   };
 
+  const decodedGroupName = decodeHTMLEntities(groupName || 'Group Chat');
+  const decodedGroupDesc = groupDescription ? decodeHTMLEntities(groupDescription) : '';
+
   const renderGroupInfoHeader = () => (
     <View style={styles.groupInfoCard}>
       <View style={styles.groupIconContainer}>
-        <Icon name={groupIcon} type="material" color={appColors.AppBlue} size={scale(40)} />
+        {groupAvatar ? (
+          <Avatar 
+            source={{ uri: groupAvatar }} 
+            size={scale(40)} 
+            rounded 
+            containerStyle={{ backgroundColor: 'transparent' }} 
+          />
+        ) : (
+          <Icon name={groupIcon} type="material" color={appColors.AppBlue} size={scale(40)} />
+        )}
       </View>
       <View style={styles.groupInfo}>
-        <Text style={styles.groupInfoName}>{groupName}</Text>
-        {groupDescription && (
-          <Text style={styles.groupInfoDescription}>{groupDescription}</Text>
-        )}
+        <Text style={styles.groupInfoName}>{decodedGroupName}</Text>
+        {decodedGroupDesc ? (
+          <Text style={styles.groupInfoDescription}>{decodedGroupDesc}</Text>
+        ) : null}
         {privacyMode && (
           <View style={styles.privacyNotice}>
             <Icon name="lock" type="material" size={scale(14)} color={appColors.grey3} />
@@ -528,7 +586,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
                 styles.senderName,
                 { color: appColors.grey3, alignSelf: 'flex-end', fontSize: scale(11), marginBottom: scale(2) }
               ]}>
-                You (Private)
+                {privacyMode ? 'You (Private)' : 'You'}
               </Text>
             )}
 
@@ -599,7 +657,7 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ISStatusBar />
       <ISGenericHeader
-        title={groupName || 'Group Chat'}
+        title={decodeHTMLEntities(groupName || 'Group Chat')}
         hasLightBackground={false}
         navigation={navigation}
         hasRightIcon={true}
@@ -612,6 +670,9 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
               icon: groupIcon,
               description: groupDescription,
               memberCount: memberCount,
+              coverImage: groupAvatar, // Match property expected by DetailScreen
+              maxMembers: maxMembers || 15,
+              startDate: startDate,
               // Pass therapist info from route params or use defaults without mocks
               therapistName: route.params?.therapistName || '',
               therapistAvatar: route.params?.therapistAvatar,
@@ -650,8 +711,25 @@ const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ navigation, route }) 
           style={styles.messagesList}
           contentContainerStyle={[styles.messagesContent, messages.length === 0 && { flexGrow: 1 }]}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={scrollToBottom}
-          ListHeaderComponent={renderGroupInfoHeader}
+          onScroll={(e) => {
+            const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+            const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
+            isNearBottomRef.current = distanceFromBottom < 80;
+          }}
+          scrollEventThrottle={100}
+          ListHeaderComponent={
+            <View>
+              {renderGroupInfoHeader()}
+              {hasMorePages ? (
+                <TouchableOpacity style={styles.loadMoreButton} onPress={handleLoadOlderMessages} disabled={isLoadingMore}>
+                  {isLoadingMore
+                    ? <ActivityIndicator size="small" color={appColors.AppBlue} />
+                    : <Text style={styles.loadMoreText}>↑ Load older messages</Text>
+                  }
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          }
           ListEmptyComponent={
             !isLoading ? (
               <View style={styles.emptyStateContainer}>
@@ -935,6 +1013,16 @@ const styles = StyleSheet.create({
   ownMessageBubble: {
     backgroundColor: appColors.AppBlue,
     borderBottomRightRadius: scale(4),
+  },
+  loadMoreButton: {
+    alignItems: 'center',
+    paddingVertical: scale(12),
+    marginBottom: scale(8),
+  },
+  loadMoreText: {
+    fontSize: moderateScale(13),
+    color: appColors.AppBlue,
+    fontFamily: appFonts.bodyTextMedium,
   },
   emptyStateContainer: {
     flex: 1,

@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@rneui/themed';
+import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
 import { moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISConfirmationModal from '../../../components/ISConfirmationModal';
+import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
+import { startAppointmentSession } from '../../../api/therapist';
 
 const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const { appointment } = route.params || {};
+  const userDetails = useSelector((state: any) => state.userData.userDetails);
   const [showActions, setShowActions] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const alert = useISAlert();
 
   const getBannerProps = () => {
     const status = appointment?.status?.toLowerCase() || '';
@@ -207,9 +213,19 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
       {/* Bottom Action Buttons */}
       {appointment.status === 'upcoming' && (
         <View style={styles.bottomActions}>
-          <TouchableOpacity style={styles.startButton} onPress={handleStartSession}>
-            <Icon type="material" name="play-circle-filled" size={24} color="#FFFFFF" />
-            <Text style={styles.startButtonText}>Start Session</Text>
+          <TouchableOpacity 
+            style={[styles.startButton, isStarting && { opacity: 0.7 }]} 
+            onPress={handleStartSession}
+            disabled={isStarting}
+          >
+            {isStarting ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <>
+                <Icon type="material" name="play-circle-filled" size={24} color="#FFFFFF" />
+                <Text style={styles.startButtonText}>Start Session</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <View style={styles.secondaryActions}>
@@ -234,14 +250,38 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
         cancelText="Not Yet"
         type="success"
         icon="play-circle-filled"
-        onConfirm={() => {
-          setShowStartModal(false);
-          if (appointment?.meetingLink) {
-            Linking.openURL(appointment.meetingLink);
+        onConfirm={async () => {
+          try {
+            setShowStartModal(false);
+            setIsStarting(true);
+            const therapistId = userDetails?.userId;
+
+            if (appointment?.id) {
+              await startAppointmentSession(appointment.id, therapistId);
+              
+              // Only open link after server confirms start
+              if (appointment?.meetingLink) {
+                Linking.openURL(appointment.meetingLink);
+              } else {
+                alert.show({ type: 'info', title: 'Start Meeting', message: 'Appointment started, but no meeting link was found.' });
+              }
+            } else {
+              alert.show({ type: 'error', title: 'Error', message: 'Appointment ID is missing.' });
+            }
+          } catch (error: any) {
+            alert.show({ 
+              type: 'error', 
+              title: 'Start Failed', 
+              message: error.backendMessage || error.message || 'Could not start the session at this time.' 
+            });
+          } finally {
+            setIsStarting(false);
           }
         }}
         onCancel={() => setShowStartModal(false)}
       />
+
+      <ISAlert ref={alert.ref} />
 
       {/* Cancel Appointment Confirmation Modal */}
       <ISConfirmationModal

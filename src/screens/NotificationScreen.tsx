@@ -36,7 +36,7 @@ import {
 } from '../utils/notificationManager';
 
 interface Notification {
-  id: number;
+  id: string | number;
   title: string;
   message: string;
   type: 'appointment' | 'reminder' | 'system' | 'event' | 'goal';
@@ -91,7 +91,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     navigation.navigate('NotificationDetailScreen', { notification });
   };
 
-  const handleMarkAsRead = async (notificationId: number) => {
+  const handleMarkAsRead = async (notificationId: string | number) => {
     if (userDetails?.userId) {
       const result = await markNotificationRead(notificationId.toString(), userDetails.userId);
       if (result.success) {
@@ -103,7 +103,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     }
   };
 
-  const handleDismissNotification = async (notificationId: number) => {
+  const handleDismissNotification = async (notificationId: string | number) => {
     const result = await deleteNotification(notificationId.toString());
     if (result.success) {
       toast.show({
@@ -113,7 +113,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     }
   };
 
-  const handleArchiveNotification = async (notificationId: number) => {
+  const handleArchiveNotification = async (notificationId: string | number) => {
     // Archive is same as marking as read for now
     if (userDetails?.userId) {
       const result = await markNotificationRead(notificationId.toString(), userDetails.userId);
@@ -150,14 +150,25 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   };
 
   const formatTimestamp = (timestamp: string) => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return timestamp; // Return raw string if invalid
+
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 48) return 'Yesterday';
-    return date.toLocaleDateString();
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
   };
 
   // unreadCount already from Redux
@@ -269,8 +280,10 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     <SafeAreaView style={styles.container}>
       <ISGenericHeader
         title="Notifications"
-        hasRightIcon={false}
-        //hasLightBackground={true}
+        hasRightIcon={notifications.some(n => !n.isRead)}
+        rightIconName="done-all"
+        rightIconOnPress={markAllAsRead}
+        rightIconSize={24}
         navigation={navigation}
       />
 

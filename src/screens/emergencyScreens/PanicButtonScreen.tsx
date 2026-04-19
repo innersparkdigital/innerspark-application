@@ -20,6 +20,7 @@ import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { NavigationProp } from '@react-navigation/native';
+import { normalizePhoneNumber } from '../../utils/textHelpers';
 
 interface PanicButtonScreenProps {
   navigation: NavigationProp<any>;
@@ -180,7 +181,8 @@ const PanicButtonScreen: React.FC<PanicButtonScreenProps> = ({ navigation }) => 
 
   const handleCall = async (phone: string, name: string) => {
     try {
-      const phoneUrl = `tel:${phone}`;
+      const normalizedNumber = normalizePhoneNumber(phone);
+      const phoneUrl = `tel:${normalizedNumber}`;
       const canOpen = await Linking.canOpenURL(phoneUrl);
 
       if (canOpen) {

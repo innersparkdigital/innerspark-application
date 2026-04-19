@@ -67,6 +67,20 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
   const [articles, setArticles] = useState<Article[]>([]);
   const [sounds, setSounds] = useState<Sound[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  
+  // Pagination State
+  const [articlePage, setArticlePage] = useState(1);
+  const [articleTotalPages, setArticleTotalPages] = useState(1);
+  const [isFetchingMoreArticles, setIsFetchingMoreArticles] = useState(false);
+  
+  const [soundPage, setSoundPage] = useState(1);
+  const [soundTotalPages, setSoundTotalPages] = useState(1);
+  const [isFetchingMoreSounds, setIsFetchingMoreSounds] = useState(false);
+  
+  const [quotePage, setQuotePage] = useState(1);
+  const [quoteTotalPages, setQuoteTotalPages] = useState(1);
+  const [isFetchingMoreQuotes, setIsFetchingMoreQuotes] = useState(false);
+
   const quoteFlatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -74,15 +88,22 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (isInitial = true) => {
+    if (isInitial) {
+      setIsLoading(true);
+      // Reset pages on initial load/tab switch
+      if (activeTab === 'articles') setArticlePage(1);
+      if (activeTab === 'sounds') setSoundPage(1);
+      if (activeTab === 'quotes') setQuotePage(1);
+    }
+    
     try {
       if (activeTab === 'articles') {
-        await loadArticles();
+        await fetchArticles(isInitial ? 1 : articlePage + 1);
       } else if (activeTab === 'sounds') {
-        await loadSounds();
+        await fetchSounds(isInitial ? 1 : soundPage + 1);
       } else if (activeTab === 'quotes') {
-        await loadQuotes();
+        await fetchQuotes(isInitial ? 1 : quotePage + 1);
       }
     } catch (error: any) {
       console.error('❌ Error loading meditation data:', error);
@@ -91,65 +112,107 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
         duration: 3000,
       });
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   };
 
-  const loadArticles = async () => {
-    console.log('📞 Calling getMeditationArticles API...');
-    const response = await getMeditationArticles(1, 20);
-    console.log('✅ Articles API Response:', JSON.stringify(response, null, 2));
-    const baseUrl = response.base_url || '';
-    const apiArticles = response.data?.articles || [];
-    const mappedArticles: Article[] = apiArticles.map((article: any) => ({
-      id: article.id?.toString() || article._id?.toString(),
-      title: article.title,
-      excerpt: article.excerpt || article.description || '',
-      readTime: article.readTime || article.read_time || calculateReadTime(article.content || article.excerpt || ''),
-      category: article.category || 'General',
-      image: article.image ? { uri: `${baseUrl}/${article.image}` } : appImages.isDefaultImage,
-      content: article.content || '',
-    }));
+  const fetchArticles = async (page: number) => {
+    if (page > 1) setIsFetchingMoreArticles(true);
+    
+    try {
+      console.log(`📞 Calling getMeditationArticles API for page ${page}...`);
+      const response = await getMeditationArticles(page, 10);
+      console.log('✅ Articles API Response:', JSON.stringify(response.data?.pagination, null, 2));
+      
+      const baseUrl = response.base_url || '';
+      const apiArticles = response.data?.articles || [];
+      const pagination = response.data?.pagination || { currentPage: 1, totalPages: 1 };
+      
+      const mappedArticles: Article[] = apiArticles.map((article: any) => ({
+        id: article.id?.toString() || article._id?.toString(),
+        title: article.title,
+        excerpt: article.excerpt || article.description || '',
+        readTime: article.readTime || article.read_time || calculateReadTime(article.content || article.excerpt || ''),
+        category: article.category || 'General',
+        image: article.image ? { uri: `${baseUrl}/${article.image}` } : appImages.isDefaultImage,
+        content: article.content || '',
+      }));
 
-    setArticles(mappedArticles);
-    console.log('✅ Mapped Articles:', mappedArticles.length);
+      if (page === 1) {
+        setArticles(mappedArticles);
+      } else {
+        setArticles(prev => [...prev, ...mappedArticles]);
+      }
+      
+      setArticlePage(page);
+      setArticleTotalPages(pagination.totalPages);
+    } finally {
+      setIsFetchingMoreArticles(false);
+    }
   };
 
-  const loadSounds = async () => {
-    console.log('📞 Calling getMeditationSounds API...');
-    const response = await getMeditationSounds(1, 20);
-    console.log('✅ Sounds API Response:', JSON.stringify(response, null, 2));
-    const baseUrl = response.base_url || '';
-    const apiSounds = response.data?.sounds || [];
-    const mappedSounds: Sound[] = apiSounds.map((sound: any) => ({
-      id: sound.id?.toString() || sound._id?.toString(),
-      title: sound.title,
-      duration: sound.duration || '30 min',
-      category: sound.category || 'General',
-      icon: sound.icon || 'music-note',
-      color: sound.color || '#2196F3',
-      description: sound.description || '',
-      audioUrl: sound.audioUrl ? `${baseUrl}/${sound.audioUrl}` : '',
-    }));
+  const fetchSounds = async (page: number) => {
+    if (page > 1) setIsFetchingMoreSounds(true);
+    
+    try {
+      console.log(`📞 Calling getMeditationSounds API for page ${page}...`);
+      const response = await getMeditationSounds(page, 10);
+      
+      const baseUrl = response.base_url || '';
+      const apiSounds = response.data?.sounds || [];
+      const pagination = response.data?.pagination || { currentPage: 1, totalPages: 1 };
+      
+      const mappedSounds: Sound[] = apiSounds.map((sound: any) => ({
+        id: sound.id?.toString() || sound._id?.toString(),
+        title: sound.title,
+        duration: sound.duration || '30 min',
+        category: sound.category || 'General',
+        icon: sound.icon || 'music-note',
+        color: sound.color || '#2196F3',
+        description: sound.description || '',
+        audioUrl: sound.audioUrl ? `${baseUrl}/${sound.audioUrl}` : '',
+      }));
 
-    setSounds(mappedSounds);
-    console.log('✅ Mapped Sounds:', mappedSounds.length);
+      if (page === 1) {
+        setSounds(mappedSounds);
+      } else {
+        setSounds(prev => [...prev, ...mappedSounds]);
+      }
+      
+      setSoundPage(page);
+      setSoundTotalPages(pagination.totalPages);
+    } finally {
+      setIsFetchingMoreSounds(false);
+    }
   };
 
-  const loadQuotes = async () => {
-    console.log('📞 Calling getMeditationQuotes API...');
-    const response = await getMeditationQuotes(1, 20);
-    console.log('✅ Quotes API Response:', JSON.stringify(response, null, 2));
+  const fetchQuotes = async (page: number) => {
+    if (page > 1) setIsFetchingMoreQuotes(true);
+    
+    try {
+      console.log(`📞 Calling getMeditationQuotes API for page ${page}...`);
+      const response = await getMeditationQuotes(page, 10);
+      
+      const apiQuotes = response.data?.quotes || [];
+      const pagination = response.data?.pagination || { currentPage: 1, totalPages: 1 };
+      
+      const mappedQuotes: Quote[] = apiQuotes.map((quote: any) => ({
+        id: quote.id?.toString() || quote._id?.toString(),
+        text: quote.text,
+        author: quote.author || 'Unknown',
+      }));
 
-    const apiQuotes = response.data?.quotes || [];
-    const mappedQuotes: Quote[] = apiQuotes.map((quote: any) => ({
-      id: quote.id?.toString() || quote._id?.toString(),
-      text: quote.text,
-      author: quote.author || 'Unknown',
-    }));
-
-    setQuotes(mappedQuotes);
-    console.log('✅ Mapped Quotes:', mappedQuotes.length);
+      if (page === 1) {
+        setQuotes(mappedQuotes);
+      } else {
+        setQuotes(prev => [...prev, ...mappedQuotes]);
+      }
+      
+      setQuotePage(page);
+      setQuoteTotalPages(pagination.totalPages);
+    } finally {
+      setIsFetchingMoreQuotes(false);
+    }
   };
 
 
@@ -199,11 +262,35 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
     </View>
   );
 
+  const handleLoadMore = () => {
+    if (activeTab === 'articles' && articlePage < articleTotalPages && !isFetchingMoreArticles) {
+      loadData(false);
+    } else if (activeTab === 'sounds' && soundPage < soundTotalPages && !isFetchingMoreSounds) {
+      loadData(false);
+    } else if (activeTab === 'quotes' && quotePage < quoteTotalPages && !isFetchingMoreQuotes) {
+      loadData(false);
+    }
+  };
+
+  const renderFooter = () => {
+    const isFetchingMore = 
+      (activeTab === 'articles' && isFetchingMoreArticles) || 
+      (activeTab === 'sounds' && isFetchingMoreSounds) ||
+      (activeTab === 'quotes' && isFetchingMoreQuotes);
+
+    if (!isFetchingMore) return <View style={styles.bottomSpacing} />;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={appColors.AppBlue} />
+      </View>
+    );
+  };
+
   const renderArticles = () => {
     if (isLoading) {
       return (
         <View style={styles.contentContainer}>
-          <ArticleSkeleton />
           <ArticleSkeleton />
           <ArticleSkeleton />
         </View>
@@ -215,8 +302,9 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
     }
 
     return (
-      <View style={styles.contentContainer}>
-        {articles.map((article) => (
+      <FlatList
+        data={articles}
+        renderItem={({ item: article }) => (
           <TouchableOpacity
             key={article.id}
             style={styles.articleCard}
@@ -241,8 +329,21 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
               </View>
             </View>
           </TouchableOpacity>
-        ))}
-      </View>
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.contentContainer}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      />
     );
   };
 
@@ -265,33 +366,47 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
     }
 
     return (
-      <View style={styles.contentContainer}>
-        <View style={styles.soundsGrid}>
-          {sounds.map((sound) => (
-            <TouchableOpacity
-              key={sound.id}
-              style={styles.soundCard}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('SoundPlayerScreen', { sound })}
-            >
-              <View style={[styles.soundIconContainer, { backgroundColor: sound.color + '20' }]}>
-                <Icon {...parseIconProps(sound.icon)} color={sound.color || appColors.AppBlue} size={moderateScale(32)} />
-              </View>
-              <Text style={styles.soundTitle} numberOfLines={1}>
-                {sound.title}
-              </Text>
-              <Text style={styles.soundCategory}>{sound.category}</Text>
-              <View style={styles.soundFooter}>
-                <Icon name="schedule" type="material" color={appColors.grey3} size={moderateScale(14)} />
-                <Text style={styles.soundDuration}>{sound.duration}</Text>
-              </View>
-              <View style={styles.playButton}>
-                <Icon name="play-arrow" type="material" color="#FFFFFF" size={moderateScale(20)} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      <FlatList
+        data={sounds}
+        numColumns={2}
+        columnWrapperStyle={styles.soundsGrid}
+        renderItem={({ item: sound }) => (
+          <TouchableOpacity
+            key={sound.id}
+            style={styles.soundCard}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('SoundPlayerScreen', { sound })}
+          >
+            <View style={[styles.soundIconContainer, { backgroundColor: sound.color + '20' }]}>
+              <Icon {...parseIconProps(sound.icon)} color={sound.color || appColors.AppBlue} size={moderateScale(32)} />
+            </View>
+            <Text style={styles.soundTitle} numberOfLines={1}>
+              {sound.title}
+            </Text>
+            <Text style={styles.soundCategory}>{sound.category}</Text>
+            <View style={styles.soundFooter}>
+              <Icon name="schedule" type="material" color={appColors.grey3} size={moderateScale(14)} />
+              <Text style={styles.soundDuration}>{sound.duration}</Text>
+            </View>
+            <View style={styles.playButton}>
+              <Icon name="play-arrow" type="material" color="#FFFFFF" size={moderateScale(20)} />
+            </View>
+          </TouchableOpacity>
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.contentContainer}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      />
     );
   };
 
@@ -367,6 +482,11 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
           onMomentumScrollEnd={(event) => {
             const index = Math.round(event.nativeEvent.contentOffset.x / width);
             setCurrentQuoteIndex(index);
+            
+            // If near end of current loaded quotes, load more
+            if (index >= quotes.length - 2) {
+              handleLoadMore();
+            }
           }}
         />
 
@@ -452,26 +572,11 @@ const MeditationsScreen: React.FC<MeditationsScreenProps> = ({ navigation }) => 
       </View>
 
       {/* Content */}
-      {activeTab === 'quotes' ? (
-        renderQuotes()
-      ) : (
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[appColors.AppBlue]}
-              tintColor={appColors.AppBlue}
-            />
-          }
-        >
-          {activeTab === 'articles' && renderArticles()}
-          {activeTab === 'sounds' && renderSounds()}
-          <View style={styles.bottomSpacing} />
-        </ScrollView>
-      )}
+      <View style={{ flex: 1 }}>
+        {activeTab === 'articles' && renderArticles()}
+        {activeTab === 'sounds' && renderSounds()}
+        {activeTab === 'quotes' && renderQuotes()}
+      </View>
     </SafeAreaView>
   );
 };
@@ -583,6 +688,11 @@ const styles = StyleSheet.create({
     color: appColors.AppBlue,
     fontFamily: appFonts.headerTextMedium,
     marginRight: scale(4),
+  },
+  footerLoader: {
+    paddingVertical: scale(20),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   // Sound Styles
   soundsGrid: {

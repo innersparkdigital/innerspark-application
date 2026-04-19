@@ -46,3 +46,40 @@ export const decodeHTMLEntities = (text: string): string => {
         .replace(/&#x27;/g, "'")
         .replace(/&nbsp;/g, ' ');
 };
+
+/**
+ * Normalizes a phone number for native dialing.
+ * - Ensures '+' prefix for international numbers
+ * - Removes redundant '0' after country codes (e.g. +25607... -> +2567...)
+ * - Converts local format (07...) to default international (+256...)
+ * @param {string} phone - The raw phone number
+ * @returns {string} Normalized numeric string with '+' prefix
+ */
+export const normalizePhoneNumber = (phone: string): string => {
+    if (!phone) return '';
+
+    // 1. Remove all non-dialable characters except '+'
+    let cleaned = phone.replace(/[^0-9+]/g, '');
+
+    // 2. Handle local format (0705...) to international (+256705...)
+    // Assuming +256 (Uganda) as default for local numbers in this app
+    if (cleaned.startsWith('0') && cleaned.length >= 10) {
+        cleaned = '+256' + cleaned.substring(1);
+    }
+
+    // 3. Handle missing '+' for likely country codes (e.g. 2567...)
+    // If it starts with 256/254/255 and has long length, prepend +
+    if (/^(256|254|255|250|257|211)\d{9}$/.test(cleaned)) {
+        cleaned = '+' + cleaned;
+    }
+
+    // 4. Handle redundant '0' after country code (e.g. +25607...)
+    // Standard international dialing removes the leading zero of the local part
+    const redundantZeroRegex = /^(\+\d{1,3})0(\d{9})$/;
+    if (redundantZeroRegex.test(cleaned)) {
+        cleaned = cleaned.replace(redundantZeroRegex, '$1$2');
+    }
+
+    return cleaned;
+};
+

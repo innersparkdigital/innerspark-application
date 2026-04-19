@@ -112,8 +112,11 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
         isOwn: String(msg.sender_id || msg.senderId || '') === String(userId),
       }));
 
-      // Ensure newest messages render at the bottom identically to Live Chat logic.
-      setMessages(mappedMessages.reverse());
+      // Sort ascending by timestamp: oldest at top, newest at bottom (consistent with live chat)
+      mappedMessages.sort((a: HistoryMessage, b: HistoryMessage) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      setMessages(mappedMessages);
       setIsLoading(false);
     } catch (error: any) {
       console.error('❌ Error loading message history:', error);
@@ -297,7 +300,7 @@ const GroupMessagesHistoryScreen: React.FC<GroupMessagesHistoryScreenProps> = ({
               </Text>
               {item.isOwn && (
                 <View style={[styles.roleBadge, { backgroundColor: appColors.grey4 }]}>
-                  <Text style={styles.roleBadgeText}>You (Private)</Text>
+                  <Text style={styles.roleBadgeText}>{privacyMode ? 'You (Private)' : 'You'}</Text>
                 </View>
               )}
               {!item.isOwn && item.senderRole === 'therapist' && (

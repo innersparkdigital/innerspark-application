@@ -12,6 +12,7 @@ const initialState = {
   },
   isLoading: false,
   isRefreshing: false,
+  sessionTypes: [],
   error: null,
   lastUpdated: null,
 };
@@ -27,6 +28,9 @@ const appointmentsSlice = createSlice({
     },
     setSelectedAppointment: (state, action) => {
       state.selectedAppointment = action.payload;
+    },
+    setSessionTypes: (state, action) => {
+      state.sessionTypes = action.payload;
     },
     setFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
@@ -71,6 +75,7 @@ export const {
   clearError,
   updateAppointmentStatus,
   removeAppointment,
+  setSessionTypes,
   clearAppointments,
 } = appointmentsSlice.actions;
 
@@ -81,6 +86,7 @@ export const selectFilters = (state) => state.appointments.filters;
 export const selectAppointmentsLoading = (state) => state.appointments.isLoading;
 export const selectAppointmentsRefreshing = (state) => state.appointments.isRefreshing;
 export const selectAppointmentsError = (state) => state.appointments.error;
+export const selectSessionTypes = (state) => state.appointments.sessionTypes;
 export const selectAppointmentsLastUpdated = (state) => state.appointments.lastUpdated;
 
 // Filtered selectors

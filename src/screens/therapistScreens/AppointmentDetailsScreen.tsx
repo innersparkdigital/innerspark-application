@@ -12,8 +12,10 @@ import {
   Linking,
   Modal,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar, Button } from '@rneui/base';
+import { resolveSessionType, SESSION_TYPE_MAP } from '../../utils/appointmentUtils';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
@@ -48,14 +50,37 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
   };
 
   const formatDate = (dateString: string) => {
-    const [day, month, year] = dateString.split('/');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
+    if (!dateString) return 'TBD';
+
+    // Check if format is YYYY-MM-DD
+    if (dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+    }
+
+    // Check if format is DD/MM/YYYY
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+    }
+
+    return dateString;
   };
 
   const getStatusColor = (status: string) => {
@@ -120,8 +145,50 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
   };
 
   const handlePayNow = () => {
+    // Determine the numeric ID if sessionType is a string name
+    // (This is for the payload to BookingCheckoutScreen)
+    let sessionId = 1;
+    if (appointment.sessionType) {
+      if (/^\d+$/.test(appointment.sessionType.toString())) {
+        sessionId = parseInt(appointment.sessionType.toString());
+      } else {
+        // Find ID by name if possible (fallback to 1)
+        const entries = Object.entries(SESSION_TYPE_MAP);
+        const match = entries.find(([id, name]) => name.toLowerCase() === appointment.sessionType.toLowerCase());
+        if (match) sessionId = parseInt(match[0]);
+      }
+    }
+
+    // Transform appointment data to checkout format
+    const checkoutData = {
+      therapist: {
+        id: appointment.therapistId || appointment.id,
+        name: appointment.therapistName,
+        price: `${appointment.currency} ${Number(appointment.price).toLocaleString()}`,
+        image: appointment.therapistAvatar ? { uri: appointment.therapistAvatar } : require('../../assets/images/avatar-placeholder.png'),
+        specialty: resolveSessionType(appointment.sessionType),
+        rating: 4.8,
+        reviews: 120,
+      },
+      selectedSlot: {
+        date: appointment.date,
+        time: appointment.time,
+      },
+      // Flags for existing appointment payment
+      isExistingAppointment: true,
+      appointmentId: appointment.id,
+      sessionId: sessionId,
+      sessionType: resolveSessionType(appointment.sessionType),
+      location: appointment.location || 'Virtual Session',
+    };
+
+    navigation.navigate('BookingCheckoutScreen', checkoutData);
+  };
+
+  const handleCopyMeetingLink = (link: string) => {
+    Clipboard.setString(link);
     toast.show({
-      description: 'Payment feature coming soon',
+      description: 'Meeting link copied to clipboard',
       duration: 2000,
     });
   };
@@ -178,7 +245,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
               <Text style={styles.therapistName}>{appointment.therapistName}</Text>
               {appointment.sessionType && (
                 <Text style={styles.therapistType}>
-                  {appointment.sessionType.charAt(0).toUpperCase() + appointment.sessionType.slice(1)}
+                  {resolveSessionType(appointment.sessionType)}
                 </Text>
               )}
             </View>
@@ -211,7 +278,10 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
             <Icon name="schedule" type="material" color={appColors.grey2} size={moderateScale(20)} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Time</Text>
-              <Text style={styles.detailValue}>{appointment.time} ({appointment.timezone})</Text>
+              <Text style={styles.detailValue}>
+                {appointment.time}
+                {appointment.timezone ? ` (${appointment.timezone})` : ''}
+              </Text>
             </View>
           </View>
 
@@ -227,7 +297,7 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
             <Icon name="psychology" type="material" color={appColors.grey2} size={moderateScale(20)} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Session Type</Text>
-              <Text style={styles.detailValue}>{appointment.sessionType}</Text>
+              <Text style={styles.detailValue}>{resolveSessionType(appointment.sessionType)}</Text>
             </View>
           </View>
 
@@ -237,6 +307,23 @@ const AppointmentDetailsScreen: React.FC<AppointmentDetailsScreenProps> = ({ nav
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Location</Text>
                 <Text style={styles.detailValue}>{appointment.location}</Text>
+              </View>
+            </View>
+          )}
+
+          {appointment.meetingLink && appointment.status === 'upcoming' && (
+            <View style={styles.detailRow}>
+              <Icon name="videocam" type="material" color={appColors.AppBlue} size={moderateScale(20)} />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Meeting Link</Text>
+                <View style={styles.meetingLinkContainer}>
+                  <Text style={[styles.detailValue, { color: appColors.AppBlue, flex: 1 }]} numberOfLines={1} ellipsizeMode="middle">
+                    {appointment.meetingLink}
+                  </Text>
+                  <TouchableOpacity onPress={() => handleCopyMeetingLink(appointment.meetingLink)}>
+                    <Icon name="content-copy" type="material" color={appColors.AppBlue} size={moderateScale(18)} />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           )}
@@ -362,6 +449,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: appColors.AppLightGray,
+  },
+  meetingLinkContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(10),
+    marginTop: scale(2),
   },
   header: {
     backgroundColor: appColors.AppBlue,

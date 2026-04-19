@@ -59,7 +59,6 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
   );
 
   const alert = useISAlert();
-  const [message, setMessage] = useState('');
   const [reason, setReason] = useState(isExistingAppointment ? 'Payment for scheduled appointment' : '');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('wellness_vault');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -135,7 +134,6 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
               therapist,
               appointmentDetails: {
                 ...appointmentDetails,
-                message: '',
                 reason: reason || 'Paid existing appointment',
                 paymentMethod: paymentMethods.find(method => method.id === selectedPaymentMethod),
                 bookingId: appointmentId || 'BK' + Date.now().toString().slice(-6),
@@ -163,10 +161,9 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
             const result = await createAppointment({
               therapistId: therapist.id.toString(),
               slotId: selectedSlot?.id?.toString() || '',
-              sessionType: sessionId,
+              sessionType: sessionId.toString(),
               date: selectedSlot?.date || '',
               time: get24hTime(selectedSlot?.time || ''),
-              duration: durationValue,
               reason: reason.trim(),
               paymentMethod: selectedPaymentMethod,
             });
@@ -178,7 +175,6 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
                 therapist,
                 appointmentDetails: {
                   ...appointmentDetails,
-                  message,
                   reason,
                   paymentMethod: paymentMethods.find(method => method.id === selectedPaymentMethod),
                   bookingId: result.data?.id || 'BK' + Date.now().toString().slice(-6),
@@ -198,7 +194,7 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
           alert.show({
             type: 'error',
             title: 'Error',
-            message: error?.message || 'An error occurred during booking',
+            message: error?.backendMessage || error?.message || 'An error occurred during booking',
           });
         }
       }
@@ -251,35 +247,28 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
           </View>
 
           <View style={styles.dateTimeContainer}>
-            <Text style={styles.appointmentDate}>{appointmentDetails.date}</Text>
-            <Text style={styles.appointmentTime}>{appointmentDetails.time}</Text>
+            <View style={styles.dateBlock}>
+              <Text style={styles.appointmentDate}>{appointmentDetails.date}</Text>
+            </View>
+            <View style={styles.timeBlock}>
+              <Text style={styles.appointmentTime}>{appointmentDetails.time}</Text>
+            </View>
           </View>
 
-          <View style={styles.locationContainer}>
-            <Icon name="location-on" type="material" color={appColors.grey2} size={moderateScale(18)} />
-            <Text style={styles.locationText}>{appointmentDetails.location}</Text>
-          </View>
-
-          <View style={styles.sessionDetails}>
-            <Text style={styles.sessionDuration}>{appointmentDetails.duration}</Text>
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Icon name="videocam" type="material" color={appColors.grey2} size={moderateScale(18)} />
+              <Text style={styles.metaText}>{appointmentDetails.location}</Text>
+            </View>
+            <View style={styles.metaDivider} />
+            <View style={styles.metaItem}>
+              <Icon name="schedule" type="material" color={appColors.grey2} size={moderateScale(18)} />
+              <Text style={styles.metaText}>{appointmentDetails.duration}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Message Input - Only show for new bookings */}
-        {!isExistingAppointment && (
-          <View style={styles.inputCard}>
-            <Text style={styles.inputLabel}>Message (Optional)</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Any specific concerns or topics you'd like to discuss..."
-              value={message}
-              onChangeText={setMessage}
-              multiline
-              numberOfLines={3}
-              placeholderTextColor={appColors.grey3}
-            />
-          </View>
-        )}
+
 
         {/* Reason Input - Only show for new bookings */}
         {!isExistingAppointment && (
@@ -430,45 +419,52 @@ const styles = StyleSheet.create({
     marginBottom: scale(15),
   },
   appointmentDate: {
-    fontSize: moderateScale(24),
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: appColors.grey1,
-    marginRight: scale(20),
     fontFamily: appFonts.bodyTextBold,
   },
   appointmentTime: {
-    fontSize: moderateScale(24),
+    fontSize: moderateScale(22),
     fontWeight: 'bold',
     color: '#4CAF50',
     fontFamily: appFonts.bodyTextBold,
   },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: scale(15),
-  },
-  locationText: {
-    fontSize: moderateScale(14),
-    color: appColors.grey2,
-    marginLeft: scale(8),
+  dateBlock: {
     flex: 1,
-    fontFamily: appFonts.bodyTextRegular,
+    borderRightWidth: 1,
+    borderRightColor: appColors.AppLightGray,
+    paddingRight: scale(10),
   },
-  sessionDetails: {
+  timeBlock: {
+    flex: 1,
+    paddingLeft: scale(20),
+  },
+  metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: scale(12),
+    padding: scale(12),
+    marginTop: scale(5),
   },
-  sessionType: {
-    fontSize: moderateScale(16),
-    fontWeight: '600',
-    color: appColors.grey1,
+  metaItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metaText: {
+    fontSize: moderateScale(13),
+    color: appColors.grey2,
+    marginLeft: scale(6),
     fontFamily: appFonts.bodyTextMedium,
   },
-  sessionDuration: {
-    fontSize: moderateScale(14),
-    color: appColors.grey2,
-    fontFamily: appFonts.bodyTextRegular,
+  metaDivider: {
+    width: 1,
+    height: scale(20),
+    backgroundColor: appColors.AppLightGray,
+    marginHorizontal: scale(10),
   },
   inputCard: {
     backgroundColor: appColors.CardBackground,

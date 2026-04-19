@@ -13,6 +13,7 @@ import { getGroupById, getGroupMembers, startGroupSession } from '../../../api/t
 import { ActivityIndicator } from 'react-native';
 import { useSelector } from 'react-redux';
 import { getGroupIcon } from '../../../utils/GroupUtils';
+import { decodeHTMLEntities } from '../../../utils/textHelpers';
 
 const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const { group } = route.params || {};
@@ -97,18 +98,14 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
       onConfirm: async () => {
         try {
           const therapistId = userDetails?.userId;
-          // Use nextSessionId if available, or fallback to group ID for some backend implementations
-          const sessionId = groupDetails?.nextSessionId || groupDetails?.nextSession?.id;
-
-          if (sessionId) {
-            await startGroupSession(group.id, sessionId, therapistId);
+          if (group?.id) {
+            await startGroupSession(group.id, therapistId);
             alert.show({ type: 'success', title: 'Session Started', message: 'Session started! Meeting link sent to all members.' });
           } else {
-            alert.show({ type: 'info', title: 'Start Meeting', message: 'No specific session ID found. Starting ad-hoc group meeting...' });
-            // Fallback ad-hoc logic or just open generic link
+            alert.show({ type: 'info', title: 'Start Meeting', message: 'Group ID not found. Unable to start session.' });
           }
         } catch (error: any) {
-          alert.show({ type: 'error', title: 'Error', message: error.backendMessage || 'Failed to start session' });
+          alert.show({ type: 'error', title: 'Error', message: error.backendMessage || error.message || 'Failed to start session' });
         }
       },
     });
@@ -193,8 +190,8 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
           <View style={styles.groupIconLarge}>
             <Text style={styles.groupIconLargeText}>{getGroupIcon(group?.icon)}</Text>
           </View>
-          <Text style={styles.groupName}>{group?.name}</Text>
-          <Text style={styles.groupDescription}>{group?.description}</Text>
+          <Text style={styles.groupName}>{decodeHTMLEntities(group?.name || '')}</Text>
+          <Text style={styles.groupDescription}>{decodeHTMLEntities(group?.description || '')}</Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
