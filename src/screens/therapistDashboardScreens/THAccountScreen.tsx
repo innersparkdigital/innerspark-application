@@ -155,7 +155,7 @@ const THAccountScreen = ({ navigation }: any) => {
     {
       title: 'Professional',
       items: [
-        { icon: 'schedule', label: 'Availability & Hours', screen: 'THAvailabilityScreen', color: appColors.AppGreen },
+        // { icon: 'schedule', label: 'Availability & Hours', screen: 'THAvailabilityScreen', color: appColors.AppGreen },
         { icon: 'event-seat', label: 'Availability Slots', screen: 'THAvailabilitySlotsScreen', color: appColors.AppBlue },
         { icon: 'attach-money', label: 'Pricing & Payments', screen: 'THPricingScreen', color: '#4CAF50' },
         { icon: 'assessment', label: 'Performance Analytics', screen: 'THAnalyticsScreen', color: '#FF9800' },

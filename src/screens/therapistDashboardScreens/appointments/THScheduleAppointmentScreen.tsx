@@ -27,6 +27,8 @@ import { createAppointment, updateAppointment } from '../../../api/therapist/app
 import { getClients } from '../../../api/therapist/clients';
 import { getPricingRates } from '../../../api/therapist/earnings';
 import { updateTherapistSessionTypes } from '../../../features/user/userDataSlice';
+import ISClientAvatar from '../../../components/ISClientAvatar';
+import { resolveTherapistImage } from '../../../utils/imageHelpers';
 
 const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
   const preSelectedClient = route.params?.client;
@@ -43,10 +45,10 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
 
   const [selectedClient, setSelectedClient] = useState(preSelectedClient || null);
   const [sessionType, setSessionType] = useState<string>(
-    existingAppointment?.type?.toLowerCase() || 'individual'
+    existingAppointment?.type || 'individual'
   );
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [duration, setDuration] = useState(existingAppointment?.duration?.replace(' min', '') || '60');
+  const [duration, setDuration] = useState(existingAppointment?.duration?.toString().replace(' min', '') || '60');
   const [notes, setNotes] = useState('');
   const [meetingType, setMeetingType] = useState<'in-person' | 'virtual'>('virtual');
   const [meetingLink, setMeetingLink] = useState(existingAppointment?.meetingLink || '');
@@ -111,6 +113,12 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
     });
   };
 
+  const formatTime24h = (date: Date) => {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const handleSchedule = async () => {
     if (!selectedClient) {
       alert.show({ type: 'warning', title: 'Missing Client', message: 'Please select a client' });
@@ -126,17 +134,24 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
       setLoading(true);
       const therapistId = userDetails?.userId;
 
-      // Prepare payload (simplified)
+      const selectedType = showSessionTypes.find((t: any) => 
+        (t.id?.toString() === sessionType?.toString()) || 
+        (t.name?.toLowerCase() === sessionType?.toLowerCase()) || 
+        (t.type?.toLowerCase() === sessionType?.toLowerCase()) ||
+        (t.name === sessionType) ||
+        (t.type === sessionType)
+      );
+      
       const payload = {
         therapist_id: therapistId,
         clientId: selectedClient.id,
-        type: showSessionTypes.find((t: any) => t.id === sessionType || t.type === sessionType)?.type || 'Session',
+        type: selectedType?.name || selectedType?.type || 'Session',
         date: selectedDate.toISOString().split('T')[0],
-        time: formatTime(selectedDate), // API expects HH:MM, formatTime returns human readable.
-        // In real app use date-fns/moment to format consistently
+        time: formatTime24h(selectedDate),
         duration: parseInt(duration),
         notes: notes,
-        meetingLink: meetingLink
+        meetingLink: meetingLink,
+        meeting_type: meetingType
       };
 
       if (isReschedule && existingAppointment?.id) {
@@ -185,9 +200,11 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
           >
             {selectedClient ? (
               <>
-                <Image
-                  source={selectedClient?.avatar?.startsWith('http') ? { uri: selectedClient.avatar } : appImages.avatarPlaceholder}
-                  style={styles.clientAvatar}
+                <ISClientAvatar
+                  clientId={selectedClient.id}
+                  initialAvatar={selectedClient.avatar}
+                  size={48}
+                  rounded
                 />
                 <View style={styles.clientInfo}>
                   <Text style={styles.clientName}>{selectedClient.name}</Text>
@@ -216,10 +233,19 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
             {showSessionTypes.map((type: any, index: number) => {
               const typeId = type.id || type.type; // support existing object shapes or custom response
               const isSelected = sessionType === typeId;
-              // Map colors appropriately or use a fallback. We can use index to alternate colors.
+              const typeName = type.name || type.label || type.type || 'Session';
+              const lowName = typeName.toLowerCase();
               const colors = [appColors.AppBlue, '#E91E63', appColors.AppGreen, '#FF9800', '#9C27B0'];
               const typeColor = type.color || colors[index % colors.length];
-              const iconName = type.icon || (type.type?.toLowerCase().includes('couple') ? 'people' : type.type?.toLowerCase().includes('consult') ? 'chat' : 'person');
+              
+              let iconName = type.icon;
+              if (!iconName) {
+                if (lowName.includes('video')) iconName = 'videocam';
+                else if (lowName.includes('chat') || lowName.includes('consult')) iconName = 'chat';
+                else if (lowName.includes('couple')) iconName = 'people';
+                else if (lowName.includes('friendly')) iconName = 'sentiment-very-satisfied';
+                else iconName = 'person';
+              }
 
               return (
                 <TouchableOpacity
@@ -231,7 +257,10 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
                       borderColor: typeColor,
                     },
                   ]}
-                  onPress={() => setSessionType(typeId)}
+                  onPress={() => {
+                    setSessionType(typeId);
+                    if (type.duration) setDuration(type.duration.toString());
+                  }}
                 >
                   <Icon
                     type="material"
@@ -245,7 +274,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
                       isSelected && { color: typeColor, fontWeight: 'bold' }
                     ]}
                   >
-                    {type.label || type.type}
+                    {typeName}
                   </Text>
                   <Text style={styles.typeRate}>
                     {type.rate || `${type.currency || 'UGX'} ${type.price?.toLocaleString()}`}
@@ -286,8 +315,8 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
           </View>
         </View>
 
-        {/* Duration */}
-        <View style={styles.section}>
+        {/* Duration picker hidden as it's now tied to session type */}
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Duration</Text>
           <TouchableOpacity
             style={styles.durationButton}
@@ -297,7 +326,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
             <Text style={styles.durationText}>{duration} minutes</Text>
             <Icon type="material" name="chevron-right" size={24} color={appColors.grey3} />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Meeting Type */}
         <View style={styles.section}>
@@ -396,11 +425,13 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Type:</Text>
-              <Text style={styles.summaryValue}>{selectedSessionType?.label} Session</Text>
+              <Text style={styles.summaryValue}>{selectedSessionType?.name || selectedSessionType?.label || selectedSessionType?.type || 'Standard'} Session</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Rate:</Text>
-              <Text style={styles.summaryValue}>{selectedSessionType?.rate}</Text>
+              <Text style={styles.summaryValue}>
+                {selectedSessionType?.rate || `${selectedSessionType?.currency || 'UGX'} ${selectedSessionType?.price?.toLocaleString()}`}
+              </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Duration:</Text>
@@ -449,9 +480,11 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
                     setShowClientPicker(false);
                   }}
                 >
-                  <Image
-                    source={client?.avatar?.startsWith('http') ? { uri: client.avatar } : appImages.avatarPlaceholder}
-                    style={styles.clientOptionAvatar}
+                  <ISClientAvatar
+                    clientId={client.id}
+                    initialAvatar={client.avatar}
+                    size={48}
+                    rounded
                   />
                   <View style={styles.clientOptionInfo}>
                     <Text style={styles.clientOptionName}>{client.name}</Text>
@@ -545,49 +578,7 @@ const THScheduleAppointmentScreen = ({ navigation, route }: any) => {
         </View>
       </Modal>
 
-      {/* Duration Picker Modal */}
-      <Modal
-        visible={showDurationPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowDurationPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.pickerContainer}>
-            <View style={styles.pickerHeader}>
-              <Text style={styles.pickerTitle}>Session Duration</Text>
-            </View>
-
-            <ScrollView style={styles.durationList}>
-              {['30', '45', '60', '90', '120'].map((mins) => (
-                <TouchableOpacity
-                  key={mins}
-                  style={[
-                    styles.durationOption,
-                    duration === mins && styles.durationOptionActive
-                  ]}
-                  onPress={() => {
-                    setDuration(mins);
-                    setShowDurationPicker(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.durationOptionText,
-                      duration === mins && styles.durationOptionTextActive
-                    ]}
-                  >
-                    {mins} minutes
-                  </Text>
-                  {duration === mins && (
-                    <Icon type="material" name="check" size={24} color={appColors.AppBlue} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      {/* Duration picker modal removed */}
     </SafeAreaView>
   );
 };
@@ -599,6 +590,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingTop: 16,
   },
   section: {
     marginHorizontal: 16,

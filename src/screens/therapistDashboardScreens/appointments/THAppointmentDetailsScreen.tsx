@@ -85,6 +85,10 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
         return { color: '#F44336', icon: 'cancel', text: 'Cancelled Appointment' };
       case 'pending':
         return { color: '#FF9800', icon: 'schedule', text: 'Pending Request' };
+      case 'in-progress':
+      case 'ongoing':
+      case 'started':
+        return { color: appColors.AppGreen, icon: 'play-circle-outline', text: 'Session In-Progress' };
       case 'upcoming':
       case 'scheduled':
       default:
@@ -101,7 +105,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const handleReschedule = () => {
     // Navigate to schedule screen with appointment data for rescheduling
     const clientData = {
-      id: displayAppointment.id,
+      id: displayClient.id,
       name: displayClient.name,
       avatar: displayClient.avatar,
     };
@@ -343,16 +347,21 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             setShowStartModal(false);
             setIsStarting(true);
             const therapistId = userDetails?.userId;
-            const appointmentId = displayAppointment.id || displayAppointment.sessionId;
+            const appointmentId = displayAppointment.id || displayAppointment.sessionId || appointment.id || appointment.sessionId;
 
             if (appointmentId) {
-              await startAppointmentSession(appointmentId, therapistId);
+              const res = await startAppointmentSession(appointmentId, therapistId);
               
-              // Only open link after server confirms start
-              if (displayAppointment?.meetingLink) {
-                Linking.openURL(displayAppointment.meetingLink);
-              } else {
-                alert.show({ type: 'info', title: 'Start Meeting', message: 'Appointment started, but no meeting link was found.' });
+              if (res?.success) {
+                // Refresh details to show In-Progress status
+                await loadDetails();
+                
+                // Only open link after server confirms start
+                if (displayAppointment?.meetingLink) {
+                  Linking.openURL(displayAppointment.meetingLink);
+                } else {
+                  alert.show({ type: 'info', title: 'Session Started', message: 'Session is now in progress.' });
+                }
               }
             } else {
               alert.show({ type: 'error', title: 'Error', message: 'Appointment ID is missing.' });
@@ -385,7 +394,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
           try {
             setIsCancelling(true);
             const therapistId = userDetails?.userId;
-            const appointmentId = displayAppointment.id || displayAppointment.sessionId;
+            const appointmentId = displayAppointment.id || displayAppointment.sessionId || appointment.id || appointment.sessionId;
             
             const response = await cancelAppointment(appointmentId, therapistId);
             

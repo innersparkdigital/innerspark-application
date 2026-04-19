@@ -76,7 +76,7 @@ export const getAppointments = async (therapistId, filters = {}) => {
  * // }
  */
 export const getAppointmentById = async (appointmentId, therapistId) => {
-    const response = await APIInstance.get(`/th/appointments/${appointmentId}`, {
+    const response = await APIInstance.get(`th/appointments/${appointmentId}`, {
         params: { therapist_id: therapistId }
     });
     return response.data;
@@ -145,7 +145,7 @@ export const createAppointment = async (appointmentData) => {
  * // }
  */
 export const updateAppointment = async (appointmentId, updateData) => {
-    const response = await APIInstance.put(`/th/appointments/${appointmentId}`, updateData);
+    const response = await APIInstance.put(`th/appointments/${appointmentId}`, updateData);
     return response.data;
 };
 
@@ -159,7 +159,7 @@ export const updateAppointment = async (appointmentId, updateData) => {
  * // Returns: { success: true, message: "Appointment cancelled successfully" }
  */
 export const cancelAppointment = async (appointmentId, therapistId) => {
-    const response = await APIInstance.delete(`/th/appointments/${appointmentId}`, {
+    const response = await APIInstance.delete(`th/appointments/${appointmentId}`, {
         params: { therapist_id: therapistId }
     });
     return response.data;
@@ -185,8 +185,11 @@ export const cancelAppointment = async (appointmentId, therapistId) => {
  * // }
  */
 export const startAppointmentSession = async (appointmentId, therapistId) => {
-    const response = await APIInstance.put(`/th/sessions/${appointmentId}/start`, {
+    const response = await APIInstance.post(`th/appointments/${appointmentId}/start`, {
         therapist_id: therapistId
     });
     return response.data;
 };
+
+// Alias for compatibility with some older components/utils
+export const startSession = startAppointmentSession;

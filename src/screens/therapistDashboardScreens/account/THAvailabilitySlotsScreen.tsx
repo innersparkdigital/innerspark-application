@@ -541,7 +541,6 @@ const styles = StyleSheet.create({
   },
   datePicker: {
     height: 120,
-    width: '100%',
     alignSelf: 'center',
   },
   availabilityToggle: {

@@ -97,7 +97,13 @@ const THAppointmentsScreen = ({ navigation }: any) => {
       const response: any = await startAppointmentSession(appointment.id || appointment.sessionId, therapistId);
       
       if (response && response.success !== false) {
-        navigation.navigate('THChatsScreen', { appointment });
+        navigation.navigate('THChatConversationScreen', { 
+          chat: {
+            id: appointment.clientId || appointment.id,
+            clientName: appointment.clientName,
+            avatar: appointment.clientAvatar || appointment.avatar,
+          }
+        });
       }
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to start session';
