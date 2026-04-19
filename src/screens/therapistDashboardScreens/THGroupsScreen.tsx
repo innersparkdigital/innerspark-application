@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@rneui/themed';
+import { Icon, Skeleton } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import { moderateScale } from '../../global/Scaling';
@@ -11,6 +11,7 @@ import { getGroups } from '../../api/therapist';
 import { useFocusEffect } from '@react-navigation/native';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { getGroupIcon } from '../../utils/GroupUtils';
+import { truncateText, decodeHTMLEntities } from '../../utils/textHelpers';
 import { startGroupSession } from '../../api/therapist';
 
 
@@ -108,6 +109,35 @@ const THGroupsScreen = ({ navigation }: any) => {
   const filteredGroups = getFilteredGroups();
   const totalMembers = groups.reduce((sum: number, g: any) => sum + (g.members || 0), 0);
 
+  const GroupStatSkeleton = () => (
+    <View style={styles.statBox}>
+      <Skeleton animation="pulse" width={50} height={40} style={{ borderRadius: 8, marginBottom: 4 }} />
+      <Skeleton animation="pulse" width={80} height={12} style={{ borderRadius: 4 }} />
+    </View>
+  );
+
+  const GroupCardSkeleton = () => (
+    <View style={styles.groupCard}>
+      <View style={styles.groupHeader}>
+        <View style={styles.groupIconContainer}>
+          <Skeleton animation="pulse" width={50} height={50} style={{ borderRadius: 25 }} />
+        </View>
+        <View style={styles.groupInfo}>
+          <Skeleton animation="pulse" width="60%" height={20} style={{ borderRadius: 4, marginBottom: 8 }} />
+          <Skeleton animation="pulse" width="90%" height={14} style={{ borderRadius: 4 }} />
+        </View>
+      </View>
+      <View style={styles.groupMeta}>
+        <Skeleton animation="pulse" width="30%" height={14} style={{ borderRadius: 4, marginRight: 16 }} />
+        <Skeleton animation="pulse" width="40%" height={14} style={{ borderRadius: 4 }} />
+      </View>
+      <View style={styles.groupActions}>
+        <Skeleton animation="pulse" width="48%" height={40} style={{ borderRadius: 8 }} />
+        <Skeleton animation="pulse" width="48%" height={40} style={{ borderRadius: 8 }} />
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
@@ -140,14 +170,23 @@ const THGroupsScreen = ({ navigation }: any) => {
       >
         {/* Stats Overview */}
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{groups.filter((g: any) => g.status === 'active').length}</Text>
-            <Text style={styles.statLabel}>Active Groups</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{totalMembers}</Text>
-            <Text style={styles.statLabel}>Total Members</Text>
-          </View>
+          {loading && !refreshing ? (
+            <>
+              <GroupStatSkeleton />
+              <GroupStatSkeleton />
+            </>
+          ) : (
+            <>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{groups.filter((g: any) => g.status === 'active').length}</Text>
+                <Text style={styles.statLabel}>Active Groups</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{totalMembers}</Text>
+                <Text style={styles.statLabel}>Total Members</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Tab Filters */}
@@ -180,11 +219,8 @@ const THGroupsScreen = ({ navigation }: any) => {
 
         {/* Groups List */}
         <View style={styles.groupsList}>
-          {loading ? (
-            <View style={{ padding: 40, alignItems: 'center' }}>
-              <ActivityIndicator size="large" color={appColors.AppBlue} />
-              <Text style={{ marginTop: 10, color: appColors.grey3 }}>Loading groups...</Text>
-            </View>
+          {loading && !refreshing ? (
+            [1, 2, 3].map(i => <GroupCardSkeleton key={i} />)
           ) : filteredGroups.length === 0 ? (
             <View style={{ padding: 60, alignItems: 'center' }}>
               <Icon type="material" name="people-outline" size={80} color={appColors.grey4} />
@@ -205,11 +241,18 @@ const THGroupsScreen = ({ navigation }: any) => {
               >
                 <View style={styles.groupHeader}>
                   <View style={styles.groupIconContainer}>
-                    <Text style={styles.groupIcon}>{getGroupIcon(group.icon)}</Text>
+                    {group.icon_url ? (
+                      <Image 
+                        source={{ uri: group.icon_url }} 
+                        style={styles.groupIconImage} 
+                      />
+                    ) : (
+                      <Text style={styles.groupIcon}>{getGroupIcon(group.icon)}</Text>
+                    )}
                   </View>
                   <View style={styles.groupInfo}>
-                    <Text style={styles.groupName}>{group.name}</Text>
-                    <Text style={styles.groupDescription}>{group.description}</Text>
+                    <Text style={styles.groupName}>{decodeHTMLEntities(group.name)}</Text>
+                    <Text style={styles.groupDescription}>{truncateText(decodeHTMLEntities(group.description), 150)}</Text>
                   </View>
                 </View>
 
@@ -346,6 +389,11 @@ const styles = StyleSheet.create({
   },
   groupIcon: {
     fontSize: moderateScale(24),
+  },
+  groupIconImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   groupInfo: {
     flex: 1,

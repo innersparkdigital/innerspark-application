@@ -526,6 +526,10 @@ export const setupNotificationEventListeners = () => {
       if (type === EventType.ACTION_PRESS) {
         handleNotificationAction(detail.pressAction?.id, detail.notification);
       }
+
+      if (type === EventType.DISMISSED) {
+        handleNotificationDismissed(detail.notification);
+      }
     });
 
     // Listen for background notification events
@@ -538,6 +542,10 @@ export const setupNotificationEventListeners = () => {
 
       if (type === EventType.ACTION_PRESS) {
         await handleNotificationAction(detail.pressAction?.id, detail.notification);
+      }
+
+      if (type === EventType.DISMISSED) {
+        await handleNotificationDismissed(detail.notification);
       }
     });
 
@@ -594,6 +602,29 @@ export const handleNotificationAction = async (actionId, notificationData) => {
     console.log('⚡ Notification action handled:', actionId);
   } catch (error) {
     console.error('❌ Failed to handle notification action:', error);
+  }
+};
+
+export const handleNotificationDismissed = async (notificationData: any) => {
+  try {
+    const { id } = notificationData;
+    console.log('🧹 Notification dismissed from tray:', id);
+    
+    if (id) {
+      // Use dynamic import to avoid circular dependency with notificationManager
+      // notificationManager imports LHNotifications for cancellation, 
+      // so we import it here only when needed for dismissal reporting.
+      const { markNotificationRead } = require('../utils/notificationManager');
+      const store = require('../app/store').default;
+      const userId = (store.getState().userData?.userDetails as any)?.userId;
+      
+      if (userId) {
+        await markNotificationRead(id, userId);
+        console.log(`✅ Sync complete: Notification ${id} marked as read on server`);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Failed to handle notification dismissal sync:', error);
   }
 };
 
@@ -694,6 +725,7 @@ interface BackendNotification {
   priority: 'low' | 'normal' | 'high';
   created_at: string;
   expires_at?: string;
+  read?: boolean;
 }
 
 // Fetch notifications from backend
@@ -741,6 +773,12 @@ export const processBackendNotifications = async (notifications: BackendNotifica
       // Check if notification is still valid (not expired)
       if (notification.expires_at && new Date(notification.expires_at) < new Date()) {
         console.log(`⏰ Notification ${notification.id} has expired, skipping`);
+        continue;
+      }
+
+      // 🛡️ Skip if already read (prevents redundant triggers)
+      if (notification.read) {
+        console.log(`🛡️ Notification ${notification.id} is already marked as read, skipping display`);
         continue;
       }
 

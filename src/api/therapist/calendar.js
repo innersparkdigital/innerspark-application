@@ -20,16 +20,12 @@ import { APIInstance } from '../LHAPI';
  * // Returns:
  * // {
  * //   success: true,
- * //   data: {
- * //     slots: [{
- * //       id: "slot_001",
- * //       date: "2025-10-24",
- * //       startTime: "09:00",
- * //       endTime: "10:00",
- * //       status: "available",
- * //       recurring: false
- * //     }]
- * //   }
+ * //   data: [{
+ * //     id: 28,
+ * //     date: "2026-04-19",
+ * //     time: "06:20 PM",
+ * //     availability: 1
+ * //   }]
  * // }
  */
 export const getAvailabilitySlots = async (therapistId, filters = {}) => {
@@ -67,16 +63,13 @@ export const getAvailability = async (therapistId) => {
  * const result = await createAvailabilitySlot({
  *   therapist_id: therapistId,
  *   date: "2025-10-24",
- *   startTime: "09:00",
- *   endTime: "10:00",
- *   recurring: true,
- *   recurrencePattern: { type: "weekly", endDate: "2025-12-31" }
+ *   time: "12:00 PM"
  * });
  * // Returns:
  * // {
  * //   success: true,
- * //   message: "Availability slot created successfully",
- * //   data: { slotId: "slot_001" }
+ * //   message: "Slot added successfully",
+ * //   data: { id: 30, date: "2025-10-24", time: "12:00 PM" }
  * // }
  */
 export const createAvailabilitySlot = async (slotData) => {

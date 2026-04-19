@@ -13,13 +13,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@rneui/themed';
+import { Icon, Skeleton } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import { moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
-import { getClientProfile } from '../../../api/therapist';
+import { getClientProfile, getClientBioData } from '../../../api/therapist';
 import { useSelector } from 'react-redux';
 
 const THClientProfileScreen = ({ navigation, route }: any) => {
@@ -45,26 +45,66 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
     loadProfile();
   }, [client?.id]);
 
+  const calculateAge = (dob: string) => {
+    if (!dob) return 'N/A';
+    try {
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age >= 0 ? age : 'N/A';
+    } catch (e) {
+      return 'N/A';
+    }
+  };
+
   const loadProfile = async () => {
     try {
       setLoading(true);
       const therapistId = userDetails?.userId;
-      if (client?.id) {
-        const response: any = await getClientProfile(client.id, therapistId);
-        if (response?.data) {
-          // Map properties gracefully from response.data directly
-          setClientDetails({
-            ...clientDetails,
-            ...response.data,
-            phone: response.data.phoneNumber || response.data.phone || clientDetails.phone,
-            age: response.data.age || clientDetails.age || 'N/A',
-            totalSessions: response.data.stats?.totalSessions ?? 0,
-            upcomingSessions: response.data.stats?.nextAppointment ? 1 : 0, // Using 1 as a generic indicator if nextAppointment exists
-            lastSession: response.data.stats?.lastSession ?? 'N/A',
-          });
-          if (response.data.sessions) setSessions(response.data.sessions);
-          if (response.data.notes) setNotes(response.data.notes);
+      const clientId = client?.id || client?.clientId;
+      
+      if (clientId) {
+        // Fetch dual data: Therapist-specific profile and general Bio data
+        const [profileResponse, bioResponse] = await Promise.allSettled([
+          getClientProfile(clientId, therapistId),
+          getClientBioData(clientId)
+        ]);
+
+        let combinedDetails = { ...clientDetails };
+
+        if (profileResponse.status === 'fulfilled' && profileResponse.value?.data) {
+          const profileData = profileResponse.value.data;
+          combinedDetails = {
+            ...combinedDetails,
+            ...profileData,
+            phone: profileData.phoneNumber || profileData.phone || combinedDetails.phone,
+            age: profileData.age || combinedDetails.age,
+            totalSessions: profileData.stats?.totalSessions ?? 0,
+            upcomingSessions: profileData.stats?.nextAppointment ? 1 : 0,
+            lastSession: profileData.stats?.lastSession ?? 'N/A',
+          };
+          if (profileData.sessions) setSessions(profileData.sessions);
+          if (profileData.notes) setNotes(profileData.notes);
         }
+
+        if (bioResponse.status === 'fulfilled' && bioResponse.value?.data) {
+          const bioData = bioResponse.value.data;
+          combinedDetails = {
+            ...combinedDetails,
+            email: bioData.email || combinedDetails.email,
+            phone: bioData.phoneNumber || combinedDetails.phone,
+            avatar: bioData.profileImage || combinedDetails.avatar,
+            gender: bioData.gender || combinedDetails.gender,
+            joinedDate: bioData.joinedDate || combinedDetails.joinedDate,
+            age: calculateAge(bioData.dateOfBirth)
+          };
+        }
+
+        setClientDetails(combinedDetails);
       }
     } catch (error: any) {
       const errorMessage = error.backendMessage || error.message || 'Failed to load client profile';
@@ -131,7 +171,8 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
         </View>
       </View>
 
-      {/* Emergency Contact */}
+      {/* Emergency Contact - COMMENTED OUT AS REQUESTED */}
+      {/* 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Emergency Contact</Text>
         <View style={styles.infoCard}>
@@ -145,6 +186,7 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
           </View>
         </View>
       </View>
+      */}
 
       {/* Quick Actions */}
       <View style={styles.section}>
@@ -252,6 +294,29 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
     </View>
   );
 
+   const renderSessionSkeleton = () => (
+    <View style={styles.sessionCard}>
+      <View style={styles.sessionHeader}>
+        <View style={styles.sessionLeft}>
+          <Skeleton animation="pulse" width={100} height={18} style={{ borderRadius: 4, marginBottom: 8 }} />
+          <Skeleton animation="pulse" width={150} height={14} style={{ borderRadius: 4 }} />
+        </View>
+        <Skeleton animation="pulse" width={80} height={24} style={{ borderRadius: 12 }} />
+      </View>
+      <Skeleton animation="pulse" width="100%" height={40} style={{ borderRadius: 8, marginTop: 12 }} />
+    </View>
+  );
+
+  const renderNoteSkeleton = () => (
+    <View style={styles.noteCard}>
+      <View style={styles.noteHeader}>
+        <Skeleton animation="pulse" width={120} height={18} style={{ borderRadius: 4 }} />
+        <Skeleton animation="pulse" width={60} height={12} style={{ borderRadius: 4 }} />
+      </View>
+      <Skeleton animation="pulse" width="100%" height={60} style={{ borderRadius: 8, marginTop: 12 }} />
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
@@ -266,31 +331,53 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
       >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
-          <Image
-            source={clientDetails?.avatar?.startsWith('http') ? { uri: clientDetails.avatar } : appImages.avatarPlaceholder}
-            style={styles.avatar}
-          />
-          <Text style={styles.name}>{clientDetails.name || clientDetails.clientName || 'Unknown'}</Text>
-          <View style={[styles.statusBadge, styles.statusActive]}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusActiveText}>{clientDetails.status || 'Active'}</Text>
-          </View>
+          {loading && !refreshing ? (
+            <Skeleton animation="pulse" width={80} height={80} style={{ borderRadius: 40, marginBottom: 16 }} />
+          ) : (
+            <Image
+              source={clientDetails?.avatar?.startsWith('http') ? { uri: clientDetails.avatar } : appImages.avatarPlaceholder}
+              style={styles.avatar}
+            />
+          )}
+          
+          {loading && !refreshing ? (
+            <Skeleton animation="pulse" width={180} height={28} style={{ borderRadius: 14, marginBottom: 12 }} />
+          ) : (
+            <Text style={styles.name}>{clientDetails.name || clientDetails.clientName || 'Unknown'}</Text>
+          )}
+
+          {!loading && (
+            <View style={[styles.statusBadge, styles.statusActive]}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusActiveText}>{clientDetails.status || 'Active'}</Text>
+            </View>
+          )}
         </View>
 
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{clientDetails.totalSessions}</Text>
-            <Text style={styles.statLabel}>Total Sessions</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{clientDetails.upcomingSessions}</Text>
-            <Text style={styles.statLabel}>Upcoming</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{clientDetails.lastSession}</Text>
-            <Text style={styles.statLabel}>Last Session</Text>
-          </View>
+          {loading && !refreshing ? (
+            <>
+              <View style={styles.statCard}><Skeleton animation="pulse" width={40} height={24} style={{ borderRadius: 4, marginBottom: 6 }} /><Skeleton animation="pulse" width={70} height={10} style={{ borderRadius: 4 }} /></View>
+              <View style={styles.statCard}><Skeleton animation="pulse" width={40} height={24} style={{ borderRadius: 4, marginBottom: 6 }} /><Skeleton animation="pulse" width={70} height={10} style={{ borderRadius: 4 }} /></View>
+              <View style={styles.statCard}><Skeleton animation="pulse" width={40} height={24} style={{ borderRadius: 4, marginBottom: 6 }} /><Skeleton animation="pulse" width={70} height={10} style={{ borderRadius: 4 }} /></View>
+            </>
+          ) : (
+            <>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{clientDetails.totalSessions}</Text>
+                <Text style={styles.statLabel}>Total Sessions</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{clientDetails.upcomingSessions}</Text>
+                <Text style={styles.statLabel}>Upcoming</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{clientDetails.lastSession}</Text>
+                <Text style={styles.statLabel}>Last Session</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Tabs */}
@@ -322,9 +409,28 @@ const THClientProfileScreen = ({ navigation, route }: any) => {
         </View>
 
         {/* Tab Content */}
-        {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'sessions' && renderSessions()}
-        {activeTab === 'notes' && renderNotes()}
+        {activeTab === 'overview' && (
+          loading && !refreshing ? (
+            <View style={styles.section}>
+              <View style={{ marginBottom: 20 }}><Skeleton animation="pulse" width={150} height={14} style={{ borderRadius: 4, marginBottom: 12 }} /><View style={styles.infoCard}><Skeleton animation="pulse" width="90%" height={20} style={{ borderRadius: 4, marginBottom: 12 }} /><Skeleton animation="pulse" width="80%" height={20} style={{ borderRadius: 4 }} /></View></View>
+              <View><Skeleton animation="pulse" width={150} height={14} style={{ borderRadius: 4, marginBottom: 12 }} /><View style={styles.infoCard}><Skeleton animation="pulse" width="90%" height={20} style={{ borderRadius: 4, marginBottom: 12 }} /><Skeleton animation="pulse" width="80%" height={20} style={{ borderRadius: 4 }} /></View></View>
+            </View>
+          ) : renderOverview()
+        )}
+        {activeTab === 'sessions' && (
+          loading && !refreshing ? (
+            <View style={styles.section}>
+              {[1, 2, 3].map(i => renderSessionSkeleton())}
+            </View>
+          ) : renderSessions()
+        )}
+        {activeTab === 'notes' && (
+          loading && !refreshing ? (
+            <View style={styles.section}>
+              {[1, 2, 3].map(i => renderNoteSkeleton())}
+            </View>
+          ) : renderNotes()
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>

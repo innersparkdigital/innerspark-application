@@ -1,91 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Animated, FlatList } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, FlatList, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Icon } from '@rneui/themed';
+import { Icon, Avatar, Badge, Skeleton } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
-import { scale } from '../../global/Scaling';
+import { scale, moderateScale } from '../../global/Scaling';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../api/therapist';
-import { moderateScale } from '../../global/Scaling';
-
-
+import { 
+  loadNotifications, 
+  refreshNotifications, 
+  markNotificationRead, 
+  markAllNotificationsRead, 
+  deleteNotification 
+} from '../../utils/notificationManager';
+import { 
+  selectNotifications, 
+  selectNotificationsLoading, 
+  selectNotificationsRefreshing, 
+  selectUnreadCount 
+} from '../../features/notifications/notificationSlice';
 
 const THNotificationsScreen = ({ navigation }: any) => {
   const userDetails = useSelector((state: any) => state.userData.userDetails);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const notifications = useSelector(selectNotifications);
+  const loading = useSelector(selectNotificationsLoading);
+  const refreshing = useSelector(selectNotificationsRefreshing);
+  const unreadCount = useSelector(selectUnreadCount);
 
   useEffect(() => {
-    loadNotifications();
-  }, []);
-
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      const therapistId = userDetails?.userId;
-
-      const response: any = await getNotifications(therapistId);
-
-      if (response?.data?.notifications) {
-        setNotifications(response.data.notifications);
-      } else {
-        setNotifications([]);
-      }
-    } catch (error: any) {
-      const errorMessage = error.backendMessage || error.message || 'Failed to load notifications';
-      console.error('Failed to load notifications:', errorMessage);
-      setNotifications([]);
-    } finally {
-      setLoading(false);
+    if (userDetails?.userId) {
+      loadNotifications(userDetails.userId);
     }
-  };
+  }, [userDetails?.userId]);
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await loadNotifications();
-    setRefreshing(false);
-  };
-
-  const markAsRead = async (id: string) => {
-    try {
-      const therapistId = userDetails?.userId;
-      // Optimistic update
-      setNotifications(notifications.map(notif =>
-        notif.id === id ? { ...notif, read: true } : notif
-      ));
-      await markNotificationAsRead(id, therapistId);
-    } catch (error: any) {
-      const errorMessage = error.backendMessage || error.message || 'Failed to mark notification read';
-      console.error('Failed to mark notification read:', errorMessage);
-      // Revert or show error if needed, but for read status silent fail is often acceptable
+    if (userDetails?.userId) {
+      await refreshNotifications(userDetails.userId);
     }
   };
 
-  const markAllAsRead = async () => {
-    try {
-      const therapistId = userDetails?.userId;
-      // Optimistic update
-      setNotifications(notifications.map(notif => ({ ...notif, read: true })));
-      await markAllNotificationsAsRead(therapistId);
-    } catch (error: any) {
-      const errorMessage = error.backendMessage || error.message || 'Failed to mark all read';
-      console.error('Failed to mark all read:', errorMessage);
+  const handleMarkAsRead = async (id: string) => {
+    if (userDetails?.userId) {
+      await markNotificationRead(id, userDetails.userId);
     }
   };
 
-  const deleteNotification = (id: string) => {
-    // Optimistic remove (assuming backend handles decay or we'd add a DELETE endpoint later)
-    setNotifications(notifications.filter(notif => notif.id !== id));
+  const handleMarkAllAsRead = async () => {
+    if (userDetails?.userId) {
+      await markAllNotificationsRead(userDetails.userId);
+    }
+  };
+
+  const handleDeleteNotification = async (id: string) => {
+    await deleteNotification(id);
+  };
+
+  const handleNotificationPress = (item: any) => {
+    navigation.navigate('THNotificationDetailScreen', { notification: item });
   };
 
   const getNotificationIcon = (type: string, title?: string) => {
     const lowerType = type?.toLowerCase() || '';
     const lowerTitle = title?.toLowerCase() || '';
-    
     if (lowerType.includes('appointment') || lowerTitle.includes('session')) 
       return { name: 'event', color: appColors.AppBlue };
     if (lowerType.includes('message') || lowerTitle.includes('chat')) 
@@ -94,16 +72,11 @@ const THNotificationsScreen = ({ navigation }: any) => {
       return { name: 'groups', color: appColors.AppGreen };
     if (lowerType.includes('alert') || lowerType.includes('system')) 
       return { name: 'info', color: appColors.grey2 };
-    if (lowerType.includes('event')) 
-      return { name: 'campaign', color: '#9C27B0' };
-      
-    // Default Fallback
     return { name: 'notifications', color: appColors.AppBlue };
   };
 
   const renderNotificationItem = ({ item }: { item: any }) => {
     const iconConfig = getNotificationIcon(item.type, item.title);
-    
     return (
       <Swipeable
         key={item.id}
@@ -112,84 +85,82 @@ const THNotificationsScreen = ({ navigation }: any) => {
         containerStyle={styles.swipeableContainer}
       >
         <TouchableOpacity
-          style={[
-            styles.notificationCard,
-            !item.read && styles.notificationCardUnread
-          ]}
-          onPress={() => markAsRead(item.id)}
+          style={[styles.notificationCard, !item.isRead && styles.notificationCardUnread]}
+          onPress={() => handleNotificationPress(item)}
           activeOpacity={0.7}
         >
-          <View style={[styles.iconContainer, { backgroundColor: (item.iconColor || iconConfig.color) + '15' }]}>
-            <Icon
-              type="material"
-              name={item.icon || iconConfig.name}
-              size={moderateScale(24)}
-              color={item.iconColor || iconConfig.color}
-            />
+          <View style={styles.iconContainer}>
+            {item.avatar || item.senderAvatar ? (
+              <Avatar source={{ uri: item.avatar || item.senderAvatar }} size={moderateScale(48)} rounded />
+            ) : (
+              <View style={[styles.iconWrapper, { backgroundColor: (item.iconColor || iconConfig.color) + '15' }]}>
+                <Icon type="material" name={item.icon || iconConfig.name} size={moderateScale(24)} color={item.iconColor || iconConfig.color} />
+              </View>
+            )}
+            {!item.isRead && <Badge status="error" containerStyle={styles.unreadBadge} />}
           </View>
-
           <View style={styles.notificationContent}>
-            <View style={styles.notificationHeader}>
-              <Text style={[styles.notificationTitle, !item.read && styles.notificationTitleUnread]}>{item.title}</Text>
-              {!item.read && <View style={styles.unreadDot} />}
-            </View>
-            <Text
-              style={[
-                styles.notificationMessage,
-                !item.read && styles.notificationMessageUnread
-              ]}
-              numberOfLines={2}
-            >
-              {item.message}
-            </Text>
-            <Text style={styles.notificationTime}>{item.time || 'Today'}</Text>
+            <Text style={[styles.notificationTitle, !item.isRead && styles.notificationTitleUnread]}>{item.title}</Text>
+            <Text style={[styles.notificationMessage, !item.isRead && styles.notificationMessageUnread]} numberOfLines={2}>{item.message}</Text>
+            <Text style={styles.notificationTime}>{formatTimestamp(item.timestamp)}</Text>
           </View>
         </TouchableOpacity>
       </Swipeable>
     );
   };
 
-  const renderRightActions = (id: string) => {
-    return (
-      <TouchableOpacity
-        style={styles.deleteAction}
-        onPress={() => deleteNotification(id)}
-      >
-        <Icon type="material" name="delete-outline" size={28} color="#FFFFFF" />
-        <Text style={styles.deleteActionText}>Dismiss</Text>
-      </TouchableOpacity>
-    );
+  const renderRightActions = (id: string) => (
+    <TouchableOpacity style={styles.deleteAction} onPress={() => handleDeleteNotification(id)}>
+      <Icon type="material" name="delete-outline" size={28} color="#FFFFFF" />
+      <Text style={styles.deleteActionText}>Dismiss</Text>
+    </TouchableOpacity>
+  );
+
+  const formatTimestamp = (timestamp: string) => {
+    if (!timestamp) return 'Today';
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return timestamp;
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const NotificationSkeleton = () => (
+    <View style={styles.notificationCard}>
+      <View style={styles.iconContainer}><Skeleton animation="pulse" width={48} height={48} style={{ borderRadius: 24 }} /></View>
+      <View style={styles.notificationContent}>
+        <View style={styles.notificationHeader}><Skeleton animation="pulse" width="60%" height={20} style={{ marginBottom: 4, borderRadius: 4 }} /></View>
+        <Skeleton animation="pulse" width="90%" height={14} style={{ marginBottom: 6, borderRadius: 4 }} />
+        <Skeleton animation="pulse" width="40%" height={12} style={{ borderRadius: 4 }} />
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
-
       <ISGenericHeader
         title="Notifications"
         navigation={navigation}
+        hasRightIcon={notifications.some((n: any) => !n.isRead)}
+        rightIconName="done-all"
+        rightIconOnPress={handleMarkAllAsRead}
+        rightIconSize={24}
       />
-
       <View style={styles.content}>
-        {/* Header with Mark All Read */}
         {unreadCount > 0 && (
           <View style={styles.header}>
-            <Text style={styles.headerText}>
-              {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-            </Text>
-            <TouchableOpacity onPress={markAllAsRead}>
-              <Text style={styles.markAllText}>Mark all as read</Text>
-            </TouchableOpacity>
+            <Text style={styles.headerText}>{unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}</Text>
+            <TouchableOpacity onPress={handleMarkAllAsRead}><Text style={styles.markAllText}>Mark all as read</Text></TouchableOpacity>
           </View>
         )}
-
-        {/* Notifications List */}
         {loading && !refreshing ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={appColors.AppBlue} />
-          </View>
+          <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+            {[1, 2, 3, 4, 5, 6].map((i) => <NotificationSkeleton key={i} />)}
+          </ScrollView>
         ) : (
           <FlatList
             data={notifications}
@@ -197,21 +168,13 @@ const THNotificationsScreen = ({ navigation }: any) => {
             keyExtractor={(item: any) => item.id.toString()}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
-            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <View style={styles.emptyIconCircle}>
-                  <Icon type="material" name="notifications-none" size={moderateScale(50)} color={appColors.AppBlue} />
-                </View>
+                <View style={styles.emptyIconCircle}><Icon type="material" name="notifications-none" size={moderateScale(50)} color={appColors.AppBlue} /></View>
                 <Text style={styles.emptyStateText}>In the Loop</Text>
-                <Text style={styles.emptyStateSubtext}>
-                  You're all caught up! Updates about appointments and messages will appear here.
-                </Text>
-                <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
-                  <Text style={styles.refreshButtonText}>Check for Updates</Text>
-                </TouchableOpacity>
+                <Text style={styles.emptyStateSubtext}>You're all caught up! Updates about appointments and messages will appear here.</Text>
+                <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}><Text style={styles.refreshButtonText}>Check for Updates</Text></TouchableOpacity>
               </View>
             }
           />
@@ -255,7 +218,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: 16,
+    padding: scale(16),
     flexGrow: 1,
   },
   loadingContainer: {
@@ -267,7 +230,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
+    padding: scale(16),
     marginBottom: 12,
     elevation: 3,
     shadowColor: '#000',
@@ -281,12 +244,20 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.AppBlue + '05',
   },
   iconContainer: {
+    marginRight: 12,
+    position: 'relative',
+  },
+  iconWrapper: {
     width: 48,
     height: 48,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
   },
   notificationContent: {
     flex: 1,
@@ -306,13 +277,6 @@ const styles = StyleSheet.create({
   notificationTitleUnread: {
     fontWeight: 'bold',
     fontFamily: appFonts.headerTextBold,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: appColors.AppBlue,
-    marginLeft: 8,
   },
   notificationMessage: {
     fontSize: 14,

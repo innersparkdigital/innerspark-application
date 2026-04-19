@@ -19,6 +19,7 @@ import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
+import ISClientAvatar from '../../../components/ISClientAvatar';
 import { getClients } from '../../../api/therapist';
 
 interface Client {
@@ -119,9 +120,11 @@ const THSelectClientScreen = ({ navigation }: any) => {
     >
       <View style={styles.clientLeft}>
         <View style={styles.avatarContainer}>
-          <Image
-            source={item?.avatar?.startsWith('http') ? { uri: item.avatar } : appImages.avatarPlaceholder}
-            style={styles.avatarImage}
+          <ISClientAvatar 
+            clientId={item.id} 
+            initialAvatar={item.avatar} 
+            size={50} 
+            rounded 
           />
           {item.status === 'active' && <View style={styles.onlineIndicator} />}
         </View>

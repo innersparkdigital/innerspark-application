@@ -14,9 +14,11 @@ import { Icon, Avatar } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
 import { scale, moderateScale } from '../../../global/Scaling';
+import { appImages } from '../../../global/Data';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { getChatMessages, sendMessage, markChatAsRead } from '../../../api/therapist';
+import ISClientAvatar from '../../../components/ISClientAvatar';
 import { sendChatHeartbeat } from '../../../api/client/messages';
 
 const THChatConversationScreen = ({ navigation, route }: any) => {
@@ -135,15 +137,32 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
   };
 
   const handleViewClientProfile = () => {
-    navigation.navigate('THClientProfileScreen', { client: chat });
+    navigation.navigate('THClientProfileScreen', { 
+      client: {
+        id: chat?.clientId || chat?.id,
+        name: chat?.clientName || chat?.name,
+        avatar: chat?.avatar || chat?.clientAvatar
+      } 
+    });
   };
 
   const handleScheduleSession = () => {
-    navigation.navigate('THScheduleAppointmentScreen', { client: chat });
+    navigation.navigate('THScheduleAppointmentScreen', { 
+      client: {
+        id: chat?.clientId || chat?.id,
+        name: chat?.clientName || chat?.name
+      } 
+    });
   };
 
   const handleViewNotes = () => {
-    navigation.navigate('THClientProfileScreen', { client: chat, initialTab: 'notes' });
+    navigation.navigate('THClientProfileScreen', { 
+      client: {
+        id: chat?.clientId || chat?.id,
+        name: chat?.clientName || chat?.name
+      }, 
+      initialTab: 'notes' 
+    });
   };
 
   const renderMessage = ({ item }: any) => {
@@ -172,11 +191,15 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
-          {chat?.clientAvatar && (
-            <Avatar source={chat.clientAvatar} size={scale(40)} rounded containerStyle={styles.headerAvatar} />
-          )}
+          <ISClientAvatar 
+            clientId={chat?.clientId || chat?.id} 
+            initialAvatar={chat?.clientAvatar || chat?.avatar} 
+            size={scale(40)} 
+            rounded 
+            containerStyle={styles.headerAvatar}
+          />
           <View style={styles.headerText}>
-            <Text style={styles.headerName}>{chat?.clientName || 'Chat'}</Text>
+            <Text style={styles.headerName}>{chat?.clientName || chat?.name || 'Chat'}</Text>
             <Text style={styles.headerStatus}>
               {peerOnline ? 'Online' : 'Offline'}
             </Text>

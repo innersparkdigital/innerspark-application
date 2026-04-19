@@ -13,6 +13,8 @@ import { moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISClientAvatar from '../../../components/ISClientAvatar';
+import { therapistMediaUrl } from '../../../api/LHAPI';
 import {
     getEventById, deleteEvent, startEvent,
     completeEvent, getEventAttendees, checkInAttendee
@@ -30,6 +32,7 @@ interface Attendee {
     paymentStatus: 'completed' | 'pending' | string;
     paymentAmount?: number;
     attended: boolean;
+    avatar?: string;
 }
 
 interface AttendeeStats {
@@ -281,6 +284,19 @@ const THEventDetailsScreen = ({ navigation, route }: any) => {
         }
     };
 
+    const resolveEventImage = (image: string | null | undefined) => {
+        if (!image || typeof image !== 'string') return appImages.isDefaultImage;
+        if (image.startsWith('http')) return { uri: image };
+ 
+        // Resolve therapist dashboard media base URL
+        const cleanBase = therapistMediaUrl.endsWith('/') ? therapistMediaUrl.slice(0, -1) : therapistMediaUrl;
+        
+        // Ensure relative path starts with a single slash
+        const cleanPath = image.startsWith('/') ? image : `/${image}`;
+        
+        return { uri: `${cleanBase}${cleanPath}` };
+    };
+
     // ── Render sections ───────────────────────────────────────────────────────
 
     const renderOverviewTab = () => (
@@ -295,9 +311,9 @@ const THEventDetailsScreen = ({ navigation, route }: any) => {
                 />
             }
         >
-            {/* Image Banner — remote URI when present, local default otherwise */}
+            {/* Image Banner — resolves absolute/relative remote images or local default fallback */}
             <Image
-                source={event.image ? { uri: event.image } : appImages.isDefaultImage}
+                source={resolveEventImage(event.image)}
                 style={[styles.bannerImage, { height: Math.round(width * 0.46) }]}
                 resizeMode="cover"
             />
@@ -465,11 +481,12 @@ const THEventDetailsScreen = ({ navigation, route }: any) => {
                 }
                 renderItem={({ item }: { item: Attendee }) => (
                     <View style={styles.attendeeCard}>
-                        <View style={styles.attendeeAvatar}>
-                            <Text style={styles.attendeeInitial}>
-                                {item.name?.charAt(0).toUpperCase()}
-                            </Text>
-                        </View>
+                        <ISClientAvatar 
+                            clientId={item.id} 
+                            initialAvatar={item.avatar} 
+                            size={42} 
+                            rounded 
+                        />
                         <View style={{ flex: 1 }}>
                             <Text style={styles.attendeeName}>{item.name}</Text>
                             <Text style={styles.attendeeEmail}>{item.email}</Text>

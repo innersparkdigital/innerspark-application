@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon, Button, BottomSheet } from '@rneui/themed';
+import { Icon, Button, BottomSheet, Skeleton } from '@rneui/themed';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { useSelector, useDispatch } from 'react-redux';
+import { useToast } from 'native-base';
+import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
 import { signout } from '../../features/user/userSlice';
 import { appColors, appFonts, parameters } from '../../global/Styles';
 import { moderateScale } from '../../global/Scaling';
@@ -10,14 +14,60 @@ import { removeItemLS, retrieveItemLS } from '../../global/StorageActions';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
 import TherapistProfilePreviewCard from '../../components/modals/TherapistProfilePreviewCard';
+import { updateAvatar } from '../../api/therapist/utilities';
+import { getTherapistProfile as getTherapistProfileAPI, getDashboardStats as getDashboardStatsAPI } from '../../api/therapist/dashboard';
+import { updateTherapistProfile as updateTherapistProfileRedux, updateDashboardStats as updateDashboardStatsRedux } from '../../features/therapist/dashboardSlice';
+import { resolveTherapistImage } from '../../utils/imageHelpers';
 
 const THAccountScreen = ({ navigation }: any) => {
   const dispatch = useDispatch();
   const userDetails = useSelector((state: any) => state.userData.userDetails);
   const analyticsOverview = useSelector((state: any) => state.therapistAnalytics.overview);
   const therapistProfile = useSelector((state: any) => state.therapistDashboard.profile);
-  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+  const dashboardStats = useSelector((state: any) => state.therapistDashboard.stats);
+  const dashboardLoading = useSelector((state: any) => state.therapistDashboard.loading);
+  const analyticsLoading = useSelector((state: any) => state.therapistAnalytics.loading);
+  const toast = useToast();
+  const alert = useISAlert();
+  const isLoading = dashboardLoading || analyticsLoading;
   const [isProfilePreviewVisible, setIsProfilePreviewVisible] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
+
+  const loadProfileData = async () => {
+    const therapistId = userDetails?.userId;
+    if (!therapistId) return;
+
+    try {
+      const [profileRes, statsRes] = await Promise.all([
+        getTherapistProfileAPI(therapistId),
+        getDashboardStatsAPI(therapistId)
+      ]);
+
+      if (profileRes?.success) {
+        dispatch(updateTherapistProfileRedux(profileRes.data));
+      }
+      if (statsRes?.success) {
+        dispatch(updateDashboardStatsRedux(statsRes.data));
+      }
+    } catch (error) {
+      console.error('[THAccountScreen] Failed to refresh profile data:', error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    await loadProfileData();
+    setIsRefreshing(false);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfileData();
+    }, [userDetails?.userId])
+  );
 
   /** Signout current user */
   const signOutHandler = async () => {
@@ -36,11 +86,77 @@ const THAccountScreen = ({ navigation }: any) => {
     }
   };
 
+  /** Decode HTML entities for specialization text */
+  const decodeHtmlEntities = (text: string): string => {
+    if (!text) return '';
+    return text
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  };
+ 
+  const handleAvatarEdit = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        includeBase64: false,
+      });
+ 
+      if (result.didCancel) return;
+      if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const file = {
+          uri: asset.uri,
+          name: asset.fileName || 'avatar.jpg',
+          type: asset.type || 'image/jpeg',
+        };
+ 
+        setIsUploading(true);
+        const therapistId = userDetails?.userId;
+        
+        // 1. Upload file using the specialized avatar endpoint
+        // This endpoint both uploads the file and updates the user's profile record
+        const uploadResponse = await updateAvatar(therapistId, file);
+        
+        if (uploadResponse?.success) {
+          // 2. Refresh profile in Redux to reflect the new image
+          const profileResponse = await getTherapistProfileAPI(therapistId);
+          if (profileResponse?.success) {
+            dispatch(updateTherapistProfileRedux(profileResponse.data));
+            toast.show({
+              description: 'Avatar updated successfully!',
+              duration: 3000,
+            });
+          }
+        } else {
+          throw new Error('File upload failed');
+        }
+      }
+    } catch (error: any) {
+      console.error('Avatar Upload Error:', error);
+      alert.show({
+        type: 'error',
+        title: 'Upload Failed',
+        message: error.message || 'There was an issue uploading your avatar. Please try again.',
+        confirmText: 'OK',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const rawProfileImage = therapistProfile?.profileImage || userDetails?.avatar || userDetails?.profilePicture;
+  const profileImage = resolveTherapistImage(rawProfileImage, 0);
+
   const menuSections = [
     {
       title: 'Professional',
       items: [
         { icon: 'schedule', label: 'Availability & Hours', screen: 'THAvailabilityScreen', color: appColors.AppGreen },
+        { icon: 'event-seat', label: 'Availability Slots', screen: 'THAvailabilitySlotsScreen', color: appColors.AppBlue },
         { icon: 'attach-money', label: 'Pricing & Payments', screen: 'THPricingScreen', color: '#4CAF50' },
         { icon: 'assessment', label: 'Performance Analytics', screen: 'THAnalyticsScreen', color: '#FF9800' },
         { icon: 'star', label: 'Reviews & Ratings', screen: 'THReviewsScreen', color: '#FFD700' },
@@ -49,7 +165,7 @@ const THAccountScreen = ({ navigation }: any) => {
     {
       title: 'Support',
       items: [
-        { icon: 'feedback', label: 'Send Feedback', screen: 'SendFeedbackScreen', color: '#00BCD4' },
+        // { icon: 'feedback', label: 'Send Feedback', screen: 'SendFeedbackScreen', color: '#00BCD4' },
         { icon: 'info', label: 'About', screen: 'AboutAppScreen', color: appColors.grey3 },
       ],
     },
@@ -64,32 +180,79 @@ const THAccountScreen = ({ navigation }: any) => {
         navigation={navigation}
       />
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={[appColors.AppBlue]}
+            tintColor={appColors.AppBlue}
+          />
+        }
+      >
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            {userDetails?.avatar || userDetails?.profilePicture ? (
+            {isLoading || isUploading ? (
+              <Skeleton animation="pulse" width={70} height={70} style={{ borderRadius: 35 }} />
+            ) : profileImage ? (
               <Image
-                source={{ uri: userDetails?.avatar || userDetails?.profilePicture }}
+                key={avatarLoadError ? 'fallback' : 'primary'}
+                source={{ uri: avatarLoadError ? resolveTherapistImage(rawProfileImage, 1) : profileImage }}
                 style={styles.avatarImage}
+                onError={() => {
+                  if (!avatarLoadError) {
+                    setAvatarLoadError(true);
+                  }
+                }}
               />
             ) : (
               <Text style={styles.avatarText}>
                 {userDetails?.firstName?.[0] || ''}{userDetails?.lastName?.[0] || ''}
               </Text>
             )}
+            <TouchableOpacity 
+              style={styles.avatarEditButton}
+              onPress={handleAvatarEdit}
+              disabled={isUploading}
+              activeOpacity={0.8}
+            >
+              {isUploading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Icon 
+                  type="material" 
+                  name="photo-camera" 
+                  size={14} 
+                  color="#FFFFFF" 
+                />
+              )}
+            </TouchableOpacity>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>
-              {userDetails?.firstName} {userDetails?.lastName}
-            </Text>
-            <Text style={styles.profileEmail}>{userDetails?.email}</Text>
-            <View style={styles.badgeContainer}>
-              <View style={styles.badge}>
-                <Icon type="material" name="verified" size={14} color={appColors.AppGreen} />
-                <Text style={styles.badgeText}>{therapistProfile?.specialization || 'Verified Therapist'}</Text>
-              </View>
-            </View>
+            {isLoading ? (
+              <>
+                <Skeleton animation="pulse" width={150} height={24} style={{ borderRadius: 6, marginBottom: 8 }} />
+                <Skeleton animation="pulse" width={120} height={14} style={{ borderRadius: 4, marginBottom: 12 }} />
+                <Skeleton animation="pulse" width={100} height={20} style={{ borderRadius: 10 }} />
+              </>
+            ) : (
+              <>
+                <Text style={styles.profileName}>
+                  {userDetails?.firstName} {userDetails?.lastName}
+                </Text>
+                <Text style={styles.profileEmail}>{userDetails?.email}</Text>
+                <View style={styles.badgeContainer}>
+                  <View style={styles.badge}>
+                    <Icon type="material" name="verified" size={14} color={appColors.AppGreen} />
+                    <Text style={styles.badgeText}>
+                      {decodeHtmlEntities(therapistProfile?.specialization || 'Verified Therapist')}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
           {/* Preview Profile Eye Icon */}
           <TouchableOpacity
@@ -103,18 +266,37 @@ const THAccountScreen = ({ navigation }: any) => {
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{analyticsOverview?.sessions?.total || 0}</Text>
-            <Text style={styles.statLabel}>Sessions</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{analyticsOverview?.rating?.average || '0.0'}</Text>
-            <Text style={styles.statLabel}>Rating</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{analyticsOverview?.clients?.total || 0}</Text>
-            <Text style={styles.statLabel}>Clients</Text>
-          </View>
+          {isLoading ? (
+            <>
+              <View style={styles.statBox}>
+                <Skeleton animation="pulse" width={40} height={28} style={{ borderRadius: 6, marginBottom: 4 }} />
+                <Skeleton animation="pulse" width={50} height={10} style={{ borderRadius: 4 }} />
+              </View>
+              <View style={styles.statBox}>
+                <Skeleton animation="pulse" width={40} height={28} style={{ borderRadius: 6, marginBottom: 4 }} />
+                <Skeleton animation="pulse" width={50} height={10} style={{ borderRadius: 4 }} />
+              </View>
+              <View style={styles.statBox}>
+                <Skeleton animation="pulse" width={40} height={28} style={{ borderRadius: 6, marginBottom: 4 }} />
+                <Skeleton animation="pulse" width={50} height={10} style={{ borderRadius: 4 }} />
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{therapistProfile?.totalSessions || 0}</Text>
+                <Text style={styles.statLabel}>Sessions</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{therapistProfile?.rating ? Number(therapistProfile.rating).toFixed(1) : '0.0'}</Text>
+                <Text style={styles.statLabel}>Rating</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{dashboardStats?.totalClients || 0}</Text>
+                <Text style={styles.statLabel}>Clients</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Menu Sections */}
@@ -252,6 +434,8 @@ const THAccountScreen = ({ navigation }: any) => {
         profile={therapistProfile}
         userDetails={userDetails}
       />
+      <View style={styles.bottomSpacing} />
+      <ISAlert ref={alert.ref} />
     </SafeAreaView>
   );
 };
@@ -307,6 +491,19 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
+  },
+  avatarEditButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: appColors.AppBlue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   profileInfo: {
     flex: 1,

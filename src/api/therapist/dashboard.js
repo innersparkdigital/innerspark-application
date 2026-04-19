@@ -76,7 +76,7 @@ export const getTherapistProfile = async (therapistId) => {
  * });
  */
 export const updateTherapistProfile = async (therapistId, updateData) => {
-    const response = await APIInstance.put('th/profile', {
+    const response = await APIInstance.post('th/profile', {
         therapist_id: therapistId,
         ...updateData
     });

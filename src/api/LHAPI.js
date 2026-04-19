@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL, API_VERSION, AUTH_TOKEN } from '../config/env';
+import { API_BASE_URL, API_VERSION, AUTH_TOKEN, THERAPIST_MEDIA_UPLOAD_URL } from '../config/env';
 
 // API configuration loaded from environment variables
 console.log('🔧 === LHAPI.js LOADED ==='); // just for debugging #DEVLOG
@@ -14,6 +14,7 @@ console.log('🔧 === END LHAPI.js ===');
 export const baseUrlRoot = API_BASE_URL; // API Base URL
 export const baseUrlV1 = API_VERSION; // API Version
 export const authToken = AUTH_TOKEN; // API Auth Token
+export const therapistMediaUrl = THERAPIST_MEDIA_UPLOAD_URL; // Therapist Media URL
 
 // Main API instance for versioned endpoints (/api/v1/*)
 export const APIInstance = axios.create({

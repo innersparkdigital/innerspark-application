@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon, Badge } from '@rneui/themed';
+import { Icon, Badge, Skeleton } from '@rneui/themed';
 import { useSelector, useDispatch } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
@@ -189,6 +189,7 @@ const THDashboardScreen = ({ navigation }: any) => {
       ]}
       onPress={() => navigation.navigate(item.screen)}
       activeOpacity={0.7}
+      disabled={loading}
     >
       <View style={[styles.cardLayout, isFullWidth && styles.fullWidthLayout]}>
         <View style={styles.cardHeader}>
@@ -200,20 +201,35 @@ const THDashboardScreen = ({ navigation }: any) => {
               size={normalizeSize(22)}
             />
           </View>
-          {item.badge && !isFullWidth && (
-            <View style={[styles.badge, { backgroundColor: item.badge === 'new' ? '#F44336' : '#FF9800' }]}>
-              <Text style={styles.badgeTextSmall}>{item.badge}</Text>
-            </View>
+          {loading ? (
+            <Skeleton animation="pulse" width={30} height={16} style={{ borderRadius: 4 }} />
+          ) : (
+            item.badge && !isFullWidth && (
+              <View style={[styles.badge, { backgroundColor: item.badge === 'new' ? '#F44336' : '#FF9800' }]}>
+                <Text style={styles.badgeTextSmall}>{item.badge}</Text>
+              </View>
+            )
           )}
         </View>
 
         <View style={[styles.cardContent, isFullWidth && styles.fullWidthContent]}>
           <View style={isFullWidth && styles.fullWidthCountContainer}>
-            <Text style={[styles.cardCount, isFullWidth && styles.fullWidthCardCount]}>{item.count}</Text>
-            {item.badge && isFullWidth && (
-              <View style={[styles.badge, { backgroundColor: item.badge === 'new' ? '#F44336' : '#FF9800', marginLeft: 8 }]}>
-                <Text style={styles.badgeTextSmall}>{item.badge}</Text>
-              </View>
+            {loading ? (
+              <Skeleton 
+                animation="pulse" 
+                width={normalizeSize(30)} 
+                height={normalizeSize(32)} 
+                style={[styles.skeletonCount, isFullWidth && { marginRight: 8 }]} 
+              />
+            ) : (
+              <>
+                <Text style={[styles.cardCount, isFullWidth && styles.fullWidthCardCount]}>{item.count}</Text>
+                {item.badge && isFullWidth && (
+                  <View style={[styles.badge, { backgroundColor: item.badge === 'new' ? '#F44336' : '#FF9800', marginLeft: 8 }]}>
+                    <Text style={styles.badgeTextSmall}>{item.badge}</Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
           <View>
@@ -222,14 +238,16 @@ const THDashboardScreen = ({ navigation }: any) => {
           </View>
         </View>
 
-        <View style={[styles.cardFooter, isFullWidth && styles.fullWidthCardFooter]}>
-          <Icon
-            type="material"
-            name="arrow-forward"
-            color={item.color}
-            size={normalizeSize(16)}
-          />
-        </View>
+        {!loading && (
+          <View style={[styles.cardFooter, isFullWidth && styles.fullWidthCardFooter]}>
+            <Icon
+              type="material"
+              name="arrow-forward"
+              color={item.color}
+              size={normalizeSize(16)}
+            />
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -268,26 +286,57 @@ const THDashboardScreen = ({ navigation }: any) => {
 
         {/* Greeting Section */}
         <View style={styles.greetingSection}>
-          <Text style={[styles.greeting, { fontSize: normalizeSize(24) }]}>
-            Hello {getFirstName(userDetails?.firstName) || 'Therapist'} 👋
-          </Text>
-          <Text style={[styles.subtitle, { fontSize: normalizeSize(14) }]}>Here's what's happening with your practice</Text>
+          {loading ? (
+            <>
+              <Skeleton 
+                animation="pulse" 
+                width={normalizeSize(180)} 
+                height={normalizeSize(32)} 
+                style={{ marginBottom: 8, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.2)' }} 
+              />
+              <Skeleton 
+                animation="pulse" 
+                width={normalizeSize(240)} 
+                height={normalizeSize(16)} 
+                style={{ borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.2)' }} 
+              />
+            </>
+          ) : (
+            <>
+              <Text style={[styles.greeting, { fontSize: normalizeSize(24) }]}>
+                Hello {getFirstName(userDetails?.firstName) || 'Therapist'} 👋
+              </Text>
+              <Text style={[styles.subtitle, { fontSize: normalizeSize(14) }]}>Here's what's happening with your practice</Text>
+            </>
+          )}
         </View>
 
         {/* Quick Stats Row */}
         <View style={styles.quickStatsRow}>
           <View style={styles.quickStatItem}>
-            <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.todayAppointments || 0}</Text>
+            {loading ? (
+              <Skeleton animation="pulse" width={30} height={24} style={styles.skeletonQuickStat} />
+            ) : (
+              <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.todayAppointments || 0}</Text>
+            )}
             <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Today</Text>
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.pendingRequests || 0}</Text>
+            {loading ? (
+              <Skeleton animation="pulse" width={30} height={24} style={styles.skeletonQuickStat} />
+            ) : (
+              <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.pendingRequests || 0}</Text>
+            )}
             <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Pending</Text>
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>
-            <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.totalClients || 0}</Text>
+            {loading ? (
+              <Skeleton animation="pulse" width={30} height={24} style={styles.skeletonQuickStat} />
+            ) : (
+              <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.totalClients || 0}</Text>
+            )}
             <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Clients</Text>
           </View>
         </View>
@@ -525,6 +574,15 @@ const styles = StyleSheet.create({
   },
   fullWidthCardFooter: {
     paddingTop: 0,
+  },
+  skeletonQuickStat: {
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 4,
+  },
+  skeletonCount: {
+    borderRadius: 8,
+    marginBottom: 4,
   },
 });
 

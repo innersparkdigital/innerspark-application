@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@rneui/themed';
+import { Icon, Skeleton } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../../global/Styles';
 import { moderateScale } from '../../../global/Scaling';
@@ -10,7 +10,8 @@ import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
 import ISConfirmationModal from '../../../components/ISConfirmationModal';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
-import { startAppointmentSession } from '../../../api/therapist';
+import { startAppointmentSession, cancelAppointment, getAppointmentById } from '../../../api/therapist/appointments';
+import { getClientBioData } from '../../../api/therapist/clients';
 
 const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const { appointment } = route.params || {};
@@ -19,13 +20,67 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const [showStartModal, setShowStartModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [fullDetails, setFullDetails] = useState<any>(null);
   const alert = useISAlert();
 
+  useEffect(() => {
+    loadDetails();
+  }, []);
+
+  const loadDetails = async () => {
+    try {
+      setLoading(true);
+      const therapistId = userDetails?.userId;
+      const appointmentId = appointment.id || appointment.sessionId;
+
+      if (appointmentId) {
+        const response = await getAppointmentById(appointmentId, therapistId);
+        if (response?.success && response.data) {
+          const mainData = response.data;
+          setFullDetails(mainData);
+          
+          // Supplement with bio data if clientId exists
+          const clientId = mainData.client?.id || mainData.appointment?.clientId || appointment.clientId;
+          if (clientId) {
+            try {
+              const bioResponse = await getClientBioData(clientId);
+              if (bioResponse?.success && bioResponse.data) {
+                setFullDetails((prev: any) => ({
+                  ...prev,
+                  bio: bioResponse.data
+                }));
+              }
+            } catch (bioError) {
+              console.error('Bio Data Fetch Error:', bioError);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Fetch Details Error:', error);
+      // Fallback is still using the passed appointment from route.params
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayAppointment = fullDetails?.appointment || appointment;
+  const displayClient = {
+    ...fullDetails?.client,
+    name: fullDetails?.bio ? `${fullDetails.bio.firstName} ${fullDetails.bio.lastName}` : (fullDetails?.client?.name || appointment.clientName),
+    avatar: fullDetails?.bio?.profileImage || fullDetails?.client?.avatar || appointment.clientAvatar || appointment.avatar,
+    email: fullDetails?.bio?.email || fullDetails?.client?.email || appointment.email,
+    phone: fullDetails?.bio?.phoneNumber || fullDetails?.client?.phone || appointment.phone,
+    id: fullDetails?.client?.id || appointment.clientId
+  };
+
   const getBannerProps = () => {
-    const status = appointment?.status?.toLowerCase() || '';
+    const status = displayAppointment?.status?.toLowerCase() || '';
     switch (status) {
       case 'completed':
-        return { color: appColors.AppGreen, icon: 'check-circle', text: 'Completed Session' };
+        return { color: appColors.AppLightGreen || '#4CAF50', icon: 'check-circle', text: 'Completed Session' };
       case 'cancelled':
         return { color: '#F44336', icon: 'cancel', text: 'Cancelled Appointment' };
       case 'pending':
@@ -46,14 +101,14 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const handleReschedule = () => {
     // Navigate to schedule screen with appointment data for rescheduling
     const clientData = {
-      id: appointment.id,
-      name: appointment.clientName,
-      avatar: appointment.avatar,
+      id: displayAppointment.id,
+      name: displayClient.name,
+      avatar: displayClient.avatar,
     };
     navigation.navigate('THScheduleAppointmentScreen', {
       client: clientData,
       isReschedule: true,
-      existingAppointment: appointment
+      existingAppointment: displayAppointment
     });
   };
 
@@ -64,9 +119,9 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const handleViewClientProfile = () => {
     // Navigate to client profile with client data
     const clientData = {
-      id: appointment.clientId,
-      name: appointment.clientName,
-      avatar: appointment.avatar,
+      id: displayClient.id,
+      name: displayClient.name,
+      avatar: displayClient.avatar,
     };
     navigation.navigate('THClientProfileScreen', { client: clientData });
   };
@@ -87,9 +142,9 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
 
   const handleViewNotes = () => {
     const clientData = {
-      id: appointment.clientId,
-      name: appointment.clientName,
-      avatar: appointment.avatar,
+      id: displayClient.id || displayAppointment.clientId,
+      name: displayClient.name,
+      avatar: displayClient.avatar,
     };
     navigation.navigate('THClientProfileScreen', { client: clientData, initialTab: 'notes' });
   };
@@ -117,24 +172,45 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
 
           <View style={styles.clientInfo}>
             <View style={styles.avatarLarge}>
-              <Image
-                source={appointment?.avatar?.startsWith('http') ? { uri: appointment.avatar } : appImages.avatarPlaceholder}
-                style={styles.avatarLargeImage}
-              />
+              {loading && !fullDetails ? (
+                <Skeleton animation="pulse" width={80} height={80} style={{ borderRadius: 40 }} />
+              ) : (
+                <Image
+                  source={
+                    (displayClient?.avatar)?.startsWith('http') 
+                      ? { uri: displayClient.avatar } 
+                      : appImages.avatarPlaceholder
+                  }
+                  style={styles.avatarLargeImage}
+                />
+              )}
             </View>
             <View style={styles.clientDetails}>
-              <Text style={styles.clientName}>{appointment.clientName}</Text>
-              <Text style={styles.clientMeta}>First-time client</Text>
-              <View style={styles.clientStats}>
-                <View style={styles.statItem}>
-                  <Icon type="material" name="event" size={16} color={appColors.grey3} />
-                  <Text style={styles.statText}>3 sessions</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Icon type="material" name="star" size={16} color="#FFD700" />
-                  <Text style={styles.statText}>4.8 rating</Text>
-                </View>
-              </View>
+              {loading && !fullDetails ? (
+                <>
+                  <Skeleton animation="pulse" width={150} height={24} style={{ borderRadius: 4, marginBottom: 8 }} />
+                  <Skeleton animation="pulse" width={100} height={14} style={{ borderRadius: 4, marginBottom: 8 }} />
+                  <View style={styles.clientStats}>
+                    <Skeleton animation="pulse" width={60} height={14} style={{ borderRadius: 4 }} />
+                    <Skeleton animation="pulse" width={60} height={14} style={{ borderRadius: 4 }} />
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.clientName}>{displayClient?.name}</Text>
+                  <Text style={styles.clientMeta}>{displayClient?.email || 'First-time client'}</Text>
+                  <View style={styles.clientStats}>
+                    <View style={styles.statItem}>
+                      <Icon type="material" name="event" size={16} color={appColors.grey3} />
+                      <Text style={styles.statText}>{displayClient?.totalSessions || 0} sessions</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Icon type="material" name="star" size={16} color="#FFD700" />
+                      <Text style={styles.statText}>{displayClient?.rating || '0.0'} rating</Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -147,7 +223,11 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             <Icon type="material" name="calendar-today" size={20} color={appColors.AppBlue} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Date & Time</Text>
-              <Text style={styles.detailValue}>{appointment.date} at {appointment.time}</Text>
+              {loading && !fullDetails ? (
+                <Skeleton animation="pulse" width={180} height={18} style={{ borderRadius: 4 }} />
+              ) : (
+                <Text style={styles.detailValue}>{displayAppointment?.date} at {displayAppointment?.time}</Text>
+              )}
             </View>
           </View>
 
@@ -155,7 +235,11 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             <Icon type="material" name="access-time" size={20} color={appColors.AppBlue} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Duration</Text>
-              <Text style={styles.detailValue}>{appointment.duration}</Text>
+              {loading && !fullDetails ? (
+                <Skeleton animation="pulse" width={100} height={18} style={{ borderRadius: 4 }} />
+              ) : (
+                <Text style={styles.detailValue}>{displayAppointment?.duration} mins</Text>
+              )}
             </View>
           </View>
 
@@ -163,7 +247,11 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             <Icon type="material" name="category" size={20} color={appColors.AppBlue} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Session Type</Text>
-              <Text style={styles.detailValue}>{appointment.type}</Text>
+              {loading && !fullDetails ? (
+                <Skeleton animation="pulse" width={120} height={18} style={{ borderRadius: 4 }} />
+              ) : (
+                <Text style={styles.detailValue}>{displayAppointment?.type}</Text>
+              )}
             </View>
           </View>
 
@@ -171,7 +259,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             <Icon type="material" name="videocam" size={20} color={appColors.AppBlue} />
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Meeting Link</Text>
-              <TouchableOpacity onPress={() => Linking.openURL('https://meet.innerspark.com/room/123')}>
+              <TouchableOpacity onPress={() => displayAppointment?.meetingLink ? Linking.openURL(displayAppointment.meetingLink) : null}>
                 <Text style={styles.linkText}>Join Video Session</Text>
               </TouchableOpacity>
             </View>
@@ -211,7 +299,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
       </ScrollView>
 
       {/* Bottom Action Buttons */}
-      {appointment.status === 'upcoming' && (
+      {displayAppointment?.status?.toLowerCase() === 'upcoming' && (
         <View style={styles.bottomActions}>
           <TouchableOpacity 
             style={[styles.startButton, isStarting && { opacity: 0.7 }]} 
@@ -245,7 +333,7 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
       <ISConfirmationModal
         visible={showStartModal}
         title="Start Session"
-        message={`Ready to start the session with ${appointment?.clientName}?`}
+        message={`Ready to start the session with ${displayClient?.name}?`}
         confirmText="Start Session"
         cancelText="Not Yet"
         type="success"
@@ -255,13 +343,14 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
             setShowStartModal(false);
             setIsStarting(true);
             const therapistId = userDetails?.userId;
+            const appointmentId = displayAppointment.id || displayAppointment.sessionId;
 
-            if (appointment?.id) {
-              await startAppointmentSession(appointment.id, therapistId);
+            if (appointmentId) {
+              await startAppointmentSession(appointmentId, therapistId);
               
               // Only open link after server confirms start
-              if (appointment?.meetingLink) {
-                Linking.openURL(appointment.meetingLink);
+              if (displayAppointment?.meetingLink) {
+                Linking.openURL(displayAppointment.meetingLink);
               } else {
                 alert.show({ type: 'info', title: 'Start Meeting', message: 'Appointment started, but no meeting link was found.' });
               }
@@ -288,13 +377,36 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
         visible={showCancelModal}
         title="Cancel Appointment"
         message="Are you sure you want to cancel this appointment? The client will be notified."
-        confirmText="Yes, Cancel"
+        confirmText={isCancelling ? "Cancelling..." : "Yes, Cancel"}
         cancelText="No"
         type="destructive"
         icon="cancel"
-        onConfirm={() => {
-          setShowCancelModal(false);
-          navigation.goBack();
+        onConfirm={async () => {
+          try {
+            setIsCancelling(true);
+            const therapistId = userDetails?.userId;
+            const appointmentId = displayAppointment.id || displayAppointment.sessionId;
+            
+            const response = await cancelAppointment(appointmentId, therapistId);
+            
+            setShowCancelModal(false);
+            if (response?.success !== false) {
+              alert.show({
+                type: 'success',
+                title: 'Cancelled',
+                message: 'Appointment has been successfully cancelled.',
+                onConfirm: () => navigation.goBack()
+              });
+            }
+          } catch (error: any) {
+            alert.show({
+              type: 'error',
+              title: 'Error',
+              message: error.backendMessage || error.message || 'Failed to cancel appointment'
+            });
+          } finally {
+            setIsCancelling(false);
+          }
         }}
         onCancel={() => setShowCancelModal(false)}
       />

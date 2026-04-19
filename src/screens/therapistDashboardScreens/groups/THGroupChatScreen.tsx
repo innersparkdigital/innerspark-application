@@ -30,6 +30,7 @@ import {
   deleteGroupMessage,
   muteGroupMember
 } from '../../../api/therapist';
+import { decodeHTMLEntities } from '../../../utils/textHelpers';
 import { messageSchema, announcementSchema } from '../../../global/LHValidators';
 
 interface GroupMessage {
@@ -325,7 +326,7 @@ const THGroupChatScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ISStatusBar />
       <ISGenericHeader
-        title={group?.name || 'Group Chat'}
+        title={decodeHTMLEntities(group?.name || 'Group Chat')}
         navigation={navigation}
         hasRightIcon={true}
         rightIconName="more-vert"

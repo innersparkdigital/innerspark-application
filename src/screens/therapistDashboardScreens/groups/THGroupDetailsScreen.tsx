@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Icon } from '@rneui/themed';
+import { Icon, Skeleton } from '@rneui/themed';
 import { appColors, appFonts } from '../../../global/Styles';
 import { moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
@@ -111,10 +111,6 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
     });
   };
 
-  const handleEditGroup = () => {
-    navigation.navigate('THCreateGroupScreen', { group });
-  };
-
   const handleMessageGroup = () => {
     navigation.navigate('THGroupChatScreen', { group });
   };
@@ -122,6 +118,37 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
   const handleScheduleSession = () => {
     navigation.navigate('THScheduleGroupSessionScreen', { group });
   };
+
+  const renderMemberSkeleton = () => (
+    <View style={styles.memberCard}>
+      <View style={styles.memberLeft}>
+        <View style={styles.memberAvatar}>
+          <Skeleton animation="pulse" width={50} height={50} style={{ borderRadius: 25 }} />
+        </View>
+        <View style={styles.memberInfo}>
+          <Skeleton animation="pulse" width={100} height={18} style={{ borderRadius: 4, marginBottom: 6 }} />
+          <Skeleton animation="pulse" width={80} height={12} style={{ borderRadius: 4 }} />
+        </View>
+      </View>
+      <View style={styles.memberRight}>
+        <Skeleton animation="pulse" width={40} height={14} style={{ borderRadius: 4, marginBottom: 8 }} />
+        <Skeleton animation="pulse" width={8} height={8} style={{ borderRadius: 4 }} />
+      </View>
+    </View>
+  );
+
+  const renderSessionSkeleton = () => (
+    <View style={styles.sessionCard}>
+      <View style={styles.sessionHeader}>
+        <Skeleton animation="pulse" width={60} height={20} style={{ borderRadius: 8 }} />
+        <Skeleton animation="pulse" width={80} height={14} style={{ borderRadius: 4 }} />
+      </View>
+      <Skeleton animation="pulse" width="80%" height={18} style={{ borderRadius: 4, marginBottom: 12 }} />
+      <View style={styles.sessionFooter}>
+        <Skeleton animation="pulse" width={60} height={14} style={{ borderRadius: 4 }} />
+      </View>
+    </View>
+  );
 
   const renderMember = ({ item }: any) => (
     <TouchableOpacity style={styles.memberCard}>
@@ -166,11 +193,8 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
       <ISGenericHeader
-        title={group?.name || 'Group Details'}
+        title={decodeHTMLEntities(group?.name || 'Group Details')}
         navigation={navigation}
-        hasRightIcon={true}
-        rightIconName="edit"
-        rightIconOnPress={handleEditGroup}
       />
 
       <ScrollView
@@ -188,7 +212,14 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
         {/* Group Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.groupIconLarge}>
-            <Text style={styles.groupIconLargeText}>{getGroupIcon(group?.icon)}</Text>
+            {group?.icon_url ? (
+              <Image 
+                source={{ uri: group.icon_url }} 
+                style={styles.groupIconLargeImage} 
+              />
+            ) : (
+              <Text style={styles.groupIconLargeText}>{getGroupIcon(group?.icon)}</Text>
+            )}
           </View>
           <Text style={styles.groupName}>{decodeHTMLEntities(group?.name || '')}</Text>
           <Text style={styles.groupDescription}>{decodeHTMLEntities(group?.description || '')}</Text>
@@ -196,19 +227,31 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Icon type="material" name="people" size={20} color={appColors.AppBlue} />
-              <Text style={styles.statValue}>{group?.members}</Text>
+              {loading && !refreshing ? (
+                <Skeleton animation="pulse" width={30} height={24} style={{ borderRadius: 4, marginTop: 4 }} />
+              ) : (
+                <Text style={styles.statValue}>{group?.members}</Text>
+              )}
               <Text style={styles.statLabel}>Members</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Icon type="material" name="event" size={20} color={appColors.AppBlue} />
-              <Text style={styles.statValue}>{sessions.length || groupDetails?.sessionsCount || '--'}</Text>
+              {loading && !refreshing ? (
+                <Skeleton animation="pulse" width={30} height={24} style={{ borderRadius: 4, marginTop: 4 }} />
+              ) : (
+                <Text style={styles.statValue}>{sessions.length || groupDetails?.sessionsCount || '--'}</Text>
+              )}
               <Text style={styles.statLabel}>Sessions</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Icon type="material" name="trending-up" size={20} color={appColors.AppBlue} />
-              <Text style={styles.statValue}>{groupDetails?.stats?.attendance || '--%'}</Text>
+              {loading && !refreshing ? (
+                <Skeleton animation="pulse" width={40} height={24} style={{ borderRadius: 4, marginTop: 4 }} />
+              ) : (
+                <Text style={styles.statValue}>{groupDetails?.stats?.attendance || '--%'}</Text>
+              )}
               <Text style={styles.statLabel}>Attendance</Text>
             </View>
           </View>
@@ -262,11 +305,20 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
               <View style={styles.nextSessionInfo}>
                 <Icon type="material" name="event" size={24} color={appColors.AppBlue} />
                 <View style={styles.nextSessionDetails}>
-                  <Text style={styles.nextSessionDate}>{groupDetails?.nextSession || 'No upcoming sessions'}</Text>
-                  <Text style={styles.nextSessionTopic}>{groupDetails?.nextSessionTopic || 'Topic not set'}</Text>
+                  {loading && !refreshing ? (
+                    <>
+                      <Skeleton animation="pulse" width="60%" height={18} style={{ borderRadius: 4, marginBottom: 6 }} />
+                      <Skeleton animation="pulse" width="40%" height={14} style={{ borderRadius: 4 }} />
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.nextSessionDate}>{groupDetails?.nextSession || 'No upcoming sessions'}</Text>
+                      <Text style={styles.nextSessionTopic}>{groupDetails?.nextSessionTopic || 'Topic not set'}</Text>
+                    </>
+                  )}
                 </View>
               </View>
-              <TouchableOpacity style={styles.startButton} onPress={handleStartSession}>
+              <TouchableOpacity style={styles.startButton} onPress={handleStartSession} disabled={loading}>
                 <Icon type="material" name="play-circle-filled" size={20} color="#FFFFFF" />
                 <Text style={styles.startButtonText}>Start Session</Text>
               </TouchableOpacity>
@@ -291,23 +343,31 @@ const THGroupDetailsScreen = ({ navigation, route }: any) => {
               <Text style={styles.viewAllText}>View All Members & Manage</Text>
               <Icon type="material" name="arrow-forward" size={20} color={appColors.AppBlue} />
             </TouchableOpacity>
-            <FlatList
-              data={members.slice(0, 5)}
-              renderItem={renderMember}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
+            {loading && !refreshing ? (
+              [1, 2, 3].map(i => renderMemberSkeleton())
+            ) : (
+              <FlatList
+                data={members.slice(0, 5)}
+                renderItem={renderMember}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+              />
+            )}
           </View>
         )}
 
         {selectedTab === 'sessions' && (
           <View style={styles.tabContent}>
-            <FlatList
-              data={sessions}
-              renderItem={renderSession}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
+            {loading && !refreshing ? (
+              [1, 2, 3].map(i => renderSessionSkeleton())
+            ) : (
+              <FlatList
+                data={sessions}
+                renderItem={renderSession}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+              />
+            )}
           </View>
         )}
 
@@ -349,6 +409,11 @@ const styles = StyleSheet.create({
   },
   groupIconLargeText: {
     fontSize: moderateScale(40),
+  },
+  groupIconLargeImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   groupName: {
     fontSize: moderateScale(22),

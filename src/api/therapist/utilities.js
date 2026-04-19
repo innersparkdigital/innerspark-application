@@ -1,7 +1,7 @@
 /**
  * Therapist Utilities API Functions
  */
-import { APIInstance } from '../LHAPI';
+import { APIInstance, authToken } from '../LHAPI';
 
 
 /**
@@ -54,8 +54,25 @@ export const uploadFile = async (therapistId, file) => {
     formData.append('therapist_id', therapistId);
     formData.append('file', file);
 
-    const response = await APIInstance.post('/th/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+    const response = await APIInstance.post('v1/th/upload', formData);
+    return response.data;
+};
+
+/**
+ * Update therapist avatar using the client-side profile endpoint
+ * @param {string} therapistId - Therapist ID
+ * @param {File} file - File object (uri, name, type)
+ * @returns {Promise<{success: boolean, data: Object}>}
+ */
+export const updateAvatar = async (therapistId, file) => {
+    const formData = new FormData();
+    formData.append('user_id', therapistId);
+    formData.append('avatar', file);
+
+    const response = await APIInstance.post('client/profile/avatar', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
     });
     return response.data;
 };

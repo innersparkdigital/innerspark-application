@@ -113,9 +113,7 @@ export const getEventById = async (eventId, therapistId) => {
  * // }
  */
 export const createEvent = async (eventData) => {
-    const response = await APIInstance.post('/th/events', eventData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const response = await APIInstance.post('v1/th/events', eventData);
     return response.data;
 };
 

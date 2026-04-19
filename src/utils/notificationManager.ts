@@ -21,7 +21,11 @@ import {
   markAllNotificationsAsRead,
   deleteNotification as deleteNotificationAPI
 } from '../api/client/notifications';
-import { getNotifications as getTherapistNotifications, markNotificationAsRead as markTherapistNotificationRead, markAllNotificationsAsRead as markAllTherapistNotificationsRead } from '../api/therapist/notifications';
+import { 
+  getNotifications as getTherapistNotifications, 
+  markNotificationAsRead as markTherapistNotificationRead, 
+  markAllNotificationsAsRead as markAllTherapistNotificationsRead
+} from '../api/therapist/notifications';
 import { syncBadges } from './BadgeManager';
 import { cancelNotification, cancelAllNotifications } from '../api/LHNotifications';
 
@@ -55,7 +59,7 @@ export const loadNotifications = async (userId: string, page: number = 1) => {
         body: n.body,
         timestamp: n.createdAt,
         type: n.type || 'system',
-        isRead: n.is_read ?? n.isRead ?? false,
+        isRead: n.read ?? n.is_read ?? n.isRead ?? false,
       }));
 
       // Calculate unread count locally if not explicitly provided
@@ -134,7 +138,7 @@ export const refreshNotifications = async (userId: string) => {
         body: n.body,
         timestamp: n.createdAt,
         type: n.type || 'system',
-        isRead: n.is_read ?? n.isRead ?? false,
+        isRead: n.read ?? n.is_read ?? n.isRead ?? false,
       }));
 
       const finalUnreadCount = unreadCount !== undefined 
@@ -239,9 +243,16 @@ export const deleteNotification = async (notificationId: string) => {
   try {
     store.dispatch(deleteNotificationAction(notificationId));
     
-    // Call API for client role
-    const role = (store.getState().userData?.userDetails as any)?.role || 'user';
-    if (role !== 'therapist') {
+    // Call API for appropriate role
+    const state = store.getState();
+    const role = (state.userData?.userDetails as any)?.role || 'user';
+    const userId = (state.userData?.userDetails as any)?.userId;
+
+    if (role === 'therapist') {
+      if (userId) {
+        await markTherapistNotificationRead(notificationId, userId);
+      }
+    } else {
       await deleteNotificationAPI(notificationId);
     }
     

@@ -36,7 +36,7 @@ import { APIInstance } from '../LHAPI';
  * // }
  */
 export const getAppointments = async (therapistId, filters = {}) => {
-    const response = await APIInstance.get('th/sessions', {
+    const response = await APIInstance.get('th/appointments', {
         params: { therapist_id: therapistId, ...filters }
     });
     return response.data;
@@ -76,7 +76,7 @@ export const getAppointments = async (therapistId, filters = {}) => {
  * // }
  */
 export const getAppointmentById = async (appointmentId, therapistId) => {
-    const response = await APIInstance.get(`/th/sessions/${appointmentId}`, {
+    const response = await APIInstance.get(`/th/appointments/${appointmentId}`, {
         params: { therapist_id: therapistId }
     });
     return response.data;
@@ -114,7 +114,7 @@ export const getAppointmentById = async (appointmentId, therapistId) => {
  * // }
  */
 export const createAppointment = async (appointmentData) => {
-    const response = await APIInstance.post('th/sessions', appointmentData);
+    const response = await APIInstance.post('th/appointments', appointmentData);
     return response.data;
 };
 
@@ -145,7 +145,7 @@ export const createAppointment = async (appointmentData) => {
  * // }
  */
 export const updateAppointment = async (appointmentId, updateData) => {
-    const response = await APIInstance.put(`/th/sessions/${appointmentId}`, updateData);
+    const response = await APIInstance.put(`/th/appointments/${appointmentId}`, updateData);
     return response.data;
 };
 
@@ -159,7 +159,7 @@ export const updateAppointment = async (appointmentId, updateData) => {
  * // Returns: { success: true, message: "Appointment cancelled successfully" }
  */
 export const cancelAppointment = async (appointmentId, therapistId) => {
-    const response = await APIInstance.delete(`/th/sessions/${appointmentId}`, {
+    const response = await APIInstance.delete(`/th/appointments/${appointmentId}`, {
         params: { therapist_id: therapistId }
     });
     return response.data;

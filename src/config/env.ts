@@ -18,6 +18,7 @@ export const API_VERSION = VERSION || '';
 // Auth token
 export const AUTH_TOKEN = TOKEN || '';
 export const MEDIA_UPLOAD_URL = MEDIA_URL || 'https://server.innersparkafrica.us/';
+export const THERAPIST_MEDIA_UPLOAD_URL = 'https://app.innersparkafrica.us/';
 
 // Warn if token is missing
 if (!AUTH_TOKEN || AUTH_TOKEN === '') {

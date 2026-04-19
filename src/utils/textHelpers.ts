@@ -83,3 +83,15 @@ export const normalizePhoneNumber = (phone: string): string => {
     return cleaned;
 };
 
+/**
+ * Truncates text to a specified limit and appends an ellipsis if exceeded.
+ * @param {string} text - The input text string.
+ * @param {number} limit - The maximum character limit.
+ * @returns {string} Truncated string with ellipsis.
+ */
+export const truncateText = (text: string, limit: number = 150): string => {
+    if (!text || typeof text !== 'string') return '';
+    if (text.length <= limit) return text;
+    return text.substring(0, limit).trim() + '...';
+};
+

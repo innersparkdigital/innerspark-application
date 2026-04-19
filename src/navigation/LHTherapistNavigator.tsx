@@ -5,6 +5,7 @@ import LHTherapistBottomTabs from './LHTherapistBottomTabs';
 // Import therapist-specific screens
 import THRequestsScreen from '../screens/therapistDashboardScreens/THRequestsScreen';
 import THNotificationsScreen from '../screens/therapistDashboardScreens/THNotificationsScreen';
+import THNotificationDetailScreen from '../screens/therapistDashboardScreens/THNotificationDetailScreen';
 import THAppointmentDetailsScreen from '../screens/therapistDashboardScreens/appointments/THAppointmentDetailsScreen';
 import THScheduleAppointmentScreen from '../screens/therapistDashboardScreens/appointments/THScheduleAppointmentScreen';
 import THGroupDetailsScreen from '../screens/therapistDashboardScreens/groups/THGroupDetailsScreen';
@@ -18,6 +19,7 @@ import THAddClientNoteScreen from '../screens/therapistDashboardScreens/clients/
 import THChatConversationScreen from '../screens/therapistDashboardScreens/chats/THChatConversationScreen';
 import THSelectClientScreen from '../screens/therapistDashboardScreens/chats/THSelectClientScreen';
 import THAvailabilityScreen from '../screens/therapistDashboardScreens/account/THAvailabilityScreen';
+import THAvailabilitySlotsScreen from '../screens/therapistDashboardScreens/account/THAvailabilitySlotsScreen';
 import THPricingScreen from '../screens/therapistDashboardScreens/account/THPricingScreen';
 import THAnalyticsScreen from '../screens/therapistDashboardScreens/account/THAnalyticsScreen';
 import THReviewsScreen from '../screens/therapistDashboardScreens/account/THReviewsScreen';
@@ -61,6 +63,14 @@ const LHTherapistNavigator = () => {
       <THStack.Screen
         name="THNotificationsScreen"
         component={THNotificationsScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+
+      <THStack.Screen
+        name="THNotificationDetailScreen"
+        component={THNotificationDetailScreen}
         options={{
           ...TransitionPresets.SlideFromRightIOS,
         }}
@@ -165,6 +175,13 @@ const LHTherapistNavigator = () => {
       <THStack.Screen
         name="THAvailabilityScreen"
         component={THAvailabilityScreen}
+        options={{
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      <THStack.Screen
+        name="THAvailabilitySlotsScreen"
+        component={THAvailabilitySlotsScreen}
         options={{
           ...TransitionPresets.SlideFromRightIOS,
         }}

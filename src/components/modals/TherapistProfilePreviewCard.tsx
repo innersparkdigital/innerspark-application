@@ -34,6 +34,7 @@ import { Icon } from '@rneui/themed';
 import { appColors, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import { getTherapistProfile } from '../../api/therapist';
+import { resolveTherapistImage } from '../../utils/imageHelpers';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -78,6 +79,7 @@ const TherapistProfilePreviewCard: React.FC<TherapistProfilePreviewCardProps> = 
     const [localProfile, setLocalProfile] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [fetchError, setFetchError] = useState(false);
+    const [avatarLoadError, setAvatarLoadError] = useState(false);
 
     // Use Redux profile if available, otherwise use locally fetched profile
     const profile = reduxProfile || localProfile;
@@ -114,7 +116,8 @@ const TherapistProfilePreviewCard: React.FC<TherapistProfilePreviewCardProps> = 
     const lastName = profile?.lastName || userDetails?.lastName || '';
     const email = profile?.email || userDetails?.email || '';
     const phone = profile?.phoneNumber || userDetails?.phone || '';
-    const profileImage = profile?.profileImage || userDetails?.avatar || userDetails?.profilePicture;
+    const rawProfileImage = profile?.profileImage || userDetails?.avatar || userDetails?.profilePicture;
+    const profileImage = resolveTherapistImage(rawProfileImage, 0);
     const specialization = decodeHtmlEntities(profile?.specialization || '');
     const bio = profile?.bio || '';
     const education = profile?.education || '';
@@ -197,7 +200,16 @@ const TherapistProfilePreviewCard: React.FC<TherapistProfilePreviewCardProps> = 
                                 {/* Avatar positioned to overlap the header/content boundary */}
                                 <View style={styles.avatarWrapper}>
                                     {profileImage ? (
-                                        <Image source={{ uri: profileImage }} style={styles.avatar} />
+                                        <Image 
+                                            key={avatarLoadError ? 'fallback' : 'primary'}
+                                            source={{ uri: avatarLoadError ? resolveTherapistImage(rawProfileImage, 1) : profileImage }} 
+                                            style={styles.avatar} 
+                                            onError={() => {
+                                                if (!avatarLoadError) {
+                                                    setAvatarLoadError(true);
+                                                }
+                                            }}
+                                        />
                                     ) : (
                                         <View style={styles.avatarPlaceholder}>
                                             <Text style={styles.avatarInitials}>{initials}</Text>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@rneui/themed';
+import { Icon, Skeleton } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { appColors, appFonts } from '../../global/Styles';
 import { appImages } from '../../global/Data';
 import ISGenericHeader from '../../components/ISGenericHeader';
 import ISStatusBar from '../../components/ISStatusBar';
+import ISClientAvatar from '../../components/ISClientAvatar';
 import { getConversations } from '../../api/therapist';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -73,6 +74,23 @@ const THChatsScreen = ({ navigation }: any) => {
     chat.clientName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const ChatCardSkeleton = () => (
+    <View style={styles.chatCard}>
+      <View style={styles.avatarContainer}>
+        <Skeleton animation="pulse" width={50} height={50} style={{ borderRadius: 25 }} />
+      </View>
+      <View style={styles.chatInfo}>
+        <View style={styles.chatHeader}>
+          <Skeleton animation="pulse" width={120} height={18} style={{ borderRadius: 4 }} />
+          <Skeleton animation="pulse" width={40} height={12} style={{ borderRadius: 4 }} />
+        </View>
+        <View style={styles.messageRow}>
+          <Skeleton animation="pulse" width="80%" height={14} style={{ borderRadius: 4, marginTop: 8 }} />
+        </View>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ISStatusBar />
@@ -104,7 +122,9 @@ const THChatsScreen = ({ navigation }: any) => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[appColors.AppBlue]} />
           }
         >
-          {filteredChats.length > 0 ? (
+          {loading && !refreshing ? (
+            [1, 2, 3, 4, 5, 6].map(i => <ChatCardSkeleton key={i} />)
+          ) : filteredChats.length > 0 ? (
             filteredChats.map((chat) => (
               <TouchableOpacity
                 key={chat.id}
@@ -113,9 +133,11 @@ const THChatsScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
               >
                 <View style={styles.avatarContainer}>
-                  <Image
-                    source={chat?.avatar?.startsWith('http') ? { uri: chat.avatar } : appImages.avatarPlaceholder}
-                    style={styles.avatarImage}
+                  <ISClientAvatar 
+                    clientId={chat.id} 
+                    initialAvatar={chat.avatar} 
+                    size={50} 
+                    rounded 
                   />
                   {chat.online && <View style={styles.onlineIndicator} />}
                 </View>
@@ -139,15 +161,13 @@ const THChatsScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             ))
           ) : (
-            !loading ? (
-              <View style={styles.emptyStateContainer}>
-                <Icon type="material" name="chat-bubble-outline" size={60} color={appColors.grey4} />
-                <Text style={styles.emptyStateTitle}>No Conversations</Text>
-                <Text style={styles.emptyStateText}>
-                  {searchQuery.trim() ? "No chats match your search." : "You don't have any active conversations. Start a new chat to connect with your clients."}
-                </Text>
-              </View>
-            ) : null
+            <View style={styles.emptyStateContainer}>
+              <Icon type="material" name="chat-bubble-outline" size={60} color={appColors.grey4} />
+              <Text style={styles.emptyStateTitle}>No Conversations</Text>
+              <Text style={styles.emptyStateText}>
+                {searchQuery.trim() ? "No chats match your search." : "You don't have any active conversations. Start a new chat to connect with your clients."}
+              </Text>
+            </View>
           )}
         </ScrollView>
 

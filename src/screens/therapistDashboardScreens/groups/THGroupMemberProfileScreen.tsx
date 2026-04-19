@@ -11,6 +11,7 @@ import { scale, moderateScale } from '../../../global/Scaling';
 import { appImages } from '../../../global/Data';
 import ISGenericHeader from '../../../components/ISGenericHeader';
 import ISStatusBar from '../../../components/ISStatusBar';
+import ISClientAvatar from '../../../components/ISClientAvatar';
 
 const THGroupMemberProfileScreen = ({ navigation, route }: any) => {
   const { member } = route.params || {};
@@ -24,9 +25,11 @@ const THGroupMemberProfileScreen = ({ navigation, route }: any) => {
         {/* Member Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.avatarLarge}>
-            <Image
-              source={member?.avatar?.startsWith('http') ? { uri: member.avatar } : appImages.avatarPlaceholder}
-              style={styles.avatarLargeImage}
+            <ISClientAvatar 
+              clientId={member?.id} 
+              initialAvatar={member?.avatar} 
+              size={scale(100)} 
+              rounded 
             />
           </View>
           <Text style={styles.memberName}>{member?.name || 'Member'}</Text>

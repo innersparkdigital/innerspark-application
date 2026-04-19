@@ -2,7 +2,7 @@
  * Image URL Helpers
  * Utilities for handling image URLs from the backend
  */
-import { UPLOADS_BASE_URL } from '../config/env';
+import { UPLOADS_BASE_URL, THERAPIST_MEDIA_UPLOAD_URL } from '../config/env';
 import { ImageSourcePropType } from 'react-native';
 
 /**
@@ -67,6 +67,25 @@ export const getUploadUrl = (imagePath: any): string => {
 
   const sanitizedPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
   return `${UPLOADS_BASE_URL}/${sanitizedPath}`;
+};
+
+export const resolveTherapistImage = (imagePath: any, domainPriority: number = 0): string => {
+  if (!imagePath || typeof imagePath !== 'string' || imagePath === 'null' || imagePath === 'undefined') return '';
+  
+  if (imagePath.startsWith('http')) return imagePath;
+
+  // Normalize backslashes just in case
+  const normalizedPath = imagePath.replace(/\\/g, '/');
+
+  // Select base URL based on priority
+  let baseUrl = domainPriority === 1 ? THERAPIST_MEDIA_UPLOAD_URL : UPLOADS_BASE_URL;
+
+  const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    
+  const path = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+  
+  // Final cleanup for any potential double slashes at the junction (except after protocol)
+  return `${base}${path}`.replace(/([^:])\/\//g, '$1/');
 };
 
 /**

@@ -77,3 +77,14 @@ export const getClientProfile = async (clientId, therapistId) => {
     });
     return response.data;
 };
+/**
+ * Get client bio data from the general client profile endpoint
+ * @param {string} clientId - Client/User ID
+ * @returns {Promise<{success: boolean, data: Object}>} General client profile data
+ */
+export const getClientBioData = async (clientId) => {
+    const response = await APIInstance.get('/client/profile', {
+        params: { user_id: clientId }
+    });
+    return response.data;
+};

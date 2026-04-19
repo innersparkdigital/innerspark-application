@@ -26,6 +26,7 @@ import {
   unmuteGroupMember,
   removeGroupMember
 } from '../../../api/therapist';
+import ISClientAvatar from '../../../components/ISClientAvatar';
 
 interface Member {
   id: string;
@@ -100,7 +101,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
         onPress: async () => {
           try {
             await updateGroupMemberRole(group.id, member.id, therapistId, 'moderator');
-            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'moderator' as const } : m));
+            loadMembers(); // Refresh list
             setTimeout(() => {
               alert.show({ type: 'success', title: 'Success', message: `${member.name} is now a moderator` });
             }, 300);
@@ -117,7 +118,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
         onPress: async () => {
           try {
             await updateGroupMemberRole(group.id, member.id, therapistId, 'member');
-            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, role: 'member' as const } : m));
+            loadMembers(); // Refresh list
             setTimeout(() => {
               alert.show({ type: 'success', title: 'Success', message: `${member.name} is no longer a moderator` });
             }, 300);
@@ -136,7 +137,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
         onPress: async () => {
           try {
             await unmuteGroupMember(group.id, member.id, therapistId);
-            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'active' as const } : m));
+            loadMembers(); // Refresh list
             setTimeout(() => {
               alert.show({ type: 'success', title: 'Success', message: `${member.name} has been unmuted` });
             }, 300);
@@ -153,7 +154,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
         onPress: async () => {
           try {
             await muteGroupMember(group.id, member.id, therapistId, 300); // Mute for 5 minutes
-            setMembers((prev) => prev.map((m) => m.id === member.id ? { ...m, status: 'muted' as const } : m));
+            loadMembers(); // Refresh list
             setTimeout(() => {
               alert.show({ type: 'success', title: 'Success', message: `${member.name} has been muted` });
             }, 300);
@@ -181,7 +182,7 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
             onConfirm: async () => {
               try {
                 await removeGroupMember(group.id, member.id, therapistId);
-                setMembers((prev) => prev.filter((m) => m.id !== member.id));
+                loadMembers(); // Refresh list
                 // Delay ensures the 'Remove Member' confirmation is hidden before showing success
                 setTimeout(() => {
                   alert.show({ type: 'success', title: 'Removed', message: `${member.name} has been removed` });
@@ -216,9 +217,11 @@ const THGroupMembersScreen = ({ navigation, route }: any) => {
     >
       <View style={styles.memberLeft}>
         <View style={styles.memberAvatar}>
-          <Image
-            source={item?.avatar?.startsWith('http') ? { uri: item.avatar } : appImages.avatarPlaceholder}
-            style={styles.memberAvatarImage}
+          <ISClientAvatar 
+            clientId={item.id} 
+            initialAvatar={item.avatar} 
+            size={50} 
+            rounded 
           />
           {item.status === 'active' && <View style={styles.onlineDot} />}
         </View>
