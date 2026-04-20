@@ -83,8 +83,8 @@ android {
         applicationId "com.innersparkafrica.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.1"
+        versionCode 5
+        versionName "1.1.0"
 
         multiDexEnabled true // Added for WebView and large app support
         missingDimensionStrategy 'react-native-camera', 'mlkit' // For RN Camera with ML Kit

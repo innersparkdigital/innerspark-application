@@ -18,30 +18,27 @@ import { Button, Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
-import { appImages } from '../../global/Data';
+import { appImages, appLinks } from '../../global/Data';
 import { checkVersion } from 'react-native-check-version';
 
 
 // Returns a touchable opacity button that opens a url on press
 const OpenURLButton = ({ url, title, children, alertRef }) => {
     const handlePress = useCallback(async () => {
+        const finalUrl = url || appLinks.appGooglePlayURL;
 
-        // Checking if the link is supported for links with custom URL scheme.
-        const supported = await Linking.canOpenURL(url);
-
-        if (supported) {
-            // Opening the link with some app, if the URL scheme is "http" the web link should be opened
-            // by some browser in the mobile
-            await Linking.openURL(url);
-        } else {
+        try {
+            // Devices & Emulators often falsely report 'unsupported' for store links in canOpenURL.
+            // It's safer to just try opening it directly and catch any actual errors.
+            await Linking.openURL(finalUrl);
+        } catch (error) {
             alertRef?.current?.show({
                 type: 'info',
                 title: 'Cannot Open URL',
-                message: `Don't know how to open this URL: ${url}`,
+                message: `Failed to open the store link. Are you using an Emulator? URL: ${finalUrl}`,
                 confirmText: 'OK',
             });
         }
-
     }, [url]);
 
     // return <TouchableOpacity onPress={handlePress}>{children}</TouchableOpacity>;
@@ -63,16 +60,19 @@ export default function VerifyAppVersionScreen({ navigation }) {
     const alert = useISAlert();
 
     // default update url
-    const [updateURL, setUpdateURL] = useState("https://play.google.com/store/apps/details?id=com.innersparkafrica.innerspark");
-    //const [updateURL, setUpdateURL] = useState("https://play.google.com/store/apps/");
-    //const [updateURL, setUpdateURL] = useState("#");
+    const [updateURL, setUpdateURL] = useState(appLinks.appGooglePlayURL);
 
     // the function running the whole thing
     const checkAppUpdate = async () => {
-        const version = await checkVersion();
-        //console.log("Got version info: ", version);
-        const url = version.url;
-        setUpdateURL(url);
+        try {
+            const version = await checkVersion();
+
+            if (version?.url) {
+                setUpdateURL(version.url);
+            }
+        } catch (error) {
+            console.warn("Could not fetch store url from checkVersion:", error);
+        }
     }
 
     useEffect(
@@ -81,39 +81,80 @@ export default function VerifyAppVersionScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle='light-content' backgroundColor={appColors.AppBlue} />
-            <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, }}>
-                <View style={{ flex: 3, alignItems: 'center', justifyContent: 'center', paddingHorizontal: scale(15) }}>
-                    <Icon type="material-icons" name="update" color={appColors.AppBlue} size={moderateScale(90)} />
-                    <Text style={{ fontSize: moderateScale(22), paddingVertical: scale(10), color: appColors.AppBlue, fontWeight: 'bold', textAlign: 'center', fontFamily: appFonts.headerTextBold }}>
-                        Innerspark has a new update!
-                    </Text>
-                    <View style={{ padding: scale(8) }}>
-                        <Text style={{ color: appColors.black, fontSize: moderateScale(15), textAlign: 'center', fontFamily: appFonts.bodyTextRegular }}>
-                            Update the app to unlock new features.
-                        </Text>
+            <StatusBar barStyle='dark-content' backgroundColor='transparent' translucent />
+            <ImageBackground source={appImages.bgPatterns} style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: scale(20) }}>
+
+                    {/* Premium Icon Container */}
+                    <View style={{
+                        width: moderateScale(130),
+                        height: moderateScale(130),
+                        borderRadius: moderateScale(65),
+                        backgroundColor: appColors.AppBlue + '12', // subtle blue tint
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginBottom: scale(30),
+                    }}>
+                        <View style={{
+                            width: moderateScale(90),
+                            height: moderateScale(90),
+                            borderRadius: moderateScale(45),
+                            backgroundColor: appColors.AppBlue + '20', // slightly darker inner circle
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}>
+                            <Icon type="material-community" name="rocket-launch-outline" color={appColors.AppBlue} size={moderateScale(45)} />
+                        </View>
                     </View>
+
+                    <Text style={{
+                        fontSize: moderateScale(26),
+                        color: appColors.AppBlue,
+                        fontWeight: '800',
+                        textAlign: 'center',
+                        fontFamily: appFonts.headerTextBold,
+                        marginBottom: scale(15)
+                    }}>
+                        Update Available!
+                    </Text>
+
+                    <Text style={{
+                        color: appColors.grey1,
+                        fontSize: moderateScale(16),
+                        textAlign: 'center',
+                        fontFamily: appFonts.bodyTextRegular,
+                        lineHeight: moderateScale(24),
+                        paddingHorizontal: scale(15)
+                    }}>
+                        Innerspark just got better! We’ve added new features and performance improvements to elevate your wellness journey.
+                    </Text>
                 </View>
 
-                <View style={{ flex: 1, paddingVertical: scale(20), paddingHorizontal: scale(25) }}>
-                    {/* ... (buttons remain same, OpenURLButton title is fixed) */}
-                    <OpenURLButton title="Update" url={updateURL} alertRef={alert.ref} />
+                {/* Bottom Action Area */}
+                <View style={{ paddingVertical: scale(20), paddingHorizontal: scale(25), paddingBottom: scale(40) }}>
+                    <OpenURLButton title="Update Now" url={updateURL} alertRef={alert.ref} />
+
                     <Pressable
-                        style={{ marginVertical: scale(10), paddingVertical: scale(5), alignItems: 'center' }}
+                        style={{ marginTop: scale(20), paddingVertical: scale(12), alignItems: 'center' }}
                         onPress={
                             () => {
                                 dispatch(updateAppNeedsUpdate(false));
                             }
                         }
                     >
-                        <Text style={{ color: appColors.grey2, fontSize: moderateScale(15), fontWeight: 'bold', fontFamily: appFonts.bodyTextMedium }}>Not Now</Text>
+                        <Text style={{
+                            color: appColors.grey2,
+                            fontSize: moderateScale(16),
+                            fontWeight: '600',
+                            fontFamily: appFonts.bodyTextMedium
+                        }}>
+                            Maybe Later
+                        </Text>
                     </Pressable>
-
                 </View>
             </ImageBackground>
             <ISAlert ref={alert.ref} />
         </SafeAreaView>
-
     );
 }
 

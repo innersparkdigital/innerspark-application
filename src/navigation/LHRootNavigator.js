@@ -154,9 +154,8 @@ export default function LHRootNavigator() {
     */
 
 
-    /*
     // checking if a new app version is available
-    useEffect( 
+    useEffect(
         () => {
 
             let isUpdateAvailable = false; // default
@@ -172,7 +171,7 @@ export default function LHRootNavigator() {
                     isUpdateAvailable = version.needsUpdate;
                 }
 
-                    dispatch(updateAppNeedsUpdate(isUpdateAvailable));
+                dispatch(updateAppNeedsUpdate(isUpdateAvailable));
 
             };
 
@@ -181,7 +180,6 @@ export default function LHRootNavigator() {
         }, []
     );
 
-    */
 
 
     // Load splashscreen while fetching the token from local storage
