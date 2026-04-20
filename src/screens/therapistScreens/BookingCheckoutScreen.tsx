@@ -166,7 +166,7 @@ const BookingCheckoutScreen = ({ navigation, route }: any) => {
               time: get24hTime(selectedSlot?.time || ''),
               reason: reason.trim(),
               paymentMethod: selectedPaymentMethod,
-            });
+            }, userId);
 
             setIsProcessing(false);
 

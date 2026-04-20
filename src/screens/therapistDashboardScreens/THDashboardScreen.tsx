@@ -43,6 +43,7 @@ const THDashboardScreen = ({ navigation }: any) => {
   // Normalize backend response to flat shape the UI expects
   const normalizeStats = useCallback((data: any) => ({
     todayAppointments: data?.todayAppointments ?? data?.appointments?.today ?? data?.sessionsToday ?? data?.appointment_count ?? 0,
+    upcomingAppointments: data?.upcomingAppointments ?? data?.appointments?.upcoming ?? 0,
     pendingRequests: data?.pendingRequests ?? data?.requests?.pending ?? data?.request_count ?? 0,
     activeGroups: data?.activeGroups ?? data?.groups?.active ?? data?.group_count ?? 0,
     unreadMessages: data?.unreadMessages ?? data?.messages?.unread ?? data?.unread_count ?? 0,
@@ -132,12 +133,12 @@ const THDashboardScreen = ({ navigation }: any) => {
     {
       id: 1,
       title: 'Appointments',
-      subtitle: 'Today',
+      subtitle: 'Upcoming',
       icon: 'calendar-today',
       color: appColors.AppBlue,
       screen: 'THAppointments',
-      count: String(dashboardStats?.todayAppointments || 0),
-      badge: (dashboardStats?.todayAppointments || 0) > 0 ? 'today' : null,
+      count: String(dashboardStats?.upcomingAppointments || 0),
+      badge: (dashboardStats?.upcomingAppointments || 0) > 0 ? 'new' : null,
     },
     {
       id: 2,
@@ -189,7 +190,8 @@ const THDashboardScreen = ({ navigation }: any) => {
       ]}
       onPress={() => navigation.navigate(item.screen)}
       activeOpacity={0.7}
-      disabled={loading}
+      delayPressIn={0}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
       <View style={[styles.cardLayout, isFullWidth && styles.fullWidthLayout]}>
         <View style={styles.cardHeader}>
@@ -317,9 +319,9 @@ const THDashboardScreen = ({ navigation }: any) => {
             {loading ? (
               <Skeleton animation="pulse" width={30} height={24} style={styles.skeletonQuickStat} />
             ) : (
-              <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.todayAppointments || 0}</Text>
+              <Text style={[styles.quickStatNumber, { fontSize: normalizeSize(22) }]}>{dashboardStats?.upcomingAppointments || 0}</Text>
             )}
-            <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Today</Text>
+            <Text style={[styles.quickStatLabel, { fontSize: normalizeSize(10) }]}>Upcoming</Text>
           </View>
           <View style={styles.quickStatDivider} />
           <View style={styles.quickStatItem}>

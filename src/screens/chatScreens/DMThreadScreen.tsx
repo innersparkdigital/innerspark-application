@@ -12,16 +12,31 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, Icon } from '@rneui/base';
 import { appColors, parameters, appFonts } from '../../global/Styles';
+import { appImages } from '../../global/Data';
 import { useToast } from 'native-base';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useSelector, useDispatch } from 'react-redux';
 import { getChatMessages, sendChatMessage, markChatAsRead, sendChatHeartbeat } from '../../api/client/messages';
 import { displayNotification } from '../../api/LHNotifications';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import ISTherapistAvatar from '../../components/ISTherapistAvatar';
+import { getAvatarInitials } from '../../utils/textHelpers';
+
+// Safe date parsing helper - respects server format without forcing UTC shift
+const parseDateSafe = (dateStr: string, forceUTC = false) => {
+  if (!dateStr) return new Date();
+  // Force UTC only if requested and no timezone indicator is present
+  const safeStr = (forceUTC && !dateStr.includes('Z') && !dateStr.includes('+')) 
+    ? `${dateStr}Z` 
+    : dateStr;
+  return new Date(safeStr);
+};
 
 interface Message {
   id: string;
@@ -60,6 +75,11 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   const [scheduledStartTime, setScheduledStartTime] = useState<string | null>(null);
   const [countdownText, setCountdownText] = useState<string>('');
   const [peerOnline, setPeerOnline] = useState<boolean>(isOnline || false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Track previously loaded messages to diff against polling results
   const prevMessagesRef = useRef<Message[]>([]);
@@ -133,25 +153,37 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
     }
   };
 
-  const loadMessagesData = async (isSilent = false) => {
+  const loadMessagesData = async (isSilent = false, page = 1) => {
     if (!isSilent && messages.length === 0) {
       setIsLoading(true);
     }
     try {
-      const response = await getChatMessages(chatId, userId);
+      const response = await getChatMessages(chatId, userId, page);
       const apiMessages = response.data?.messages || response.messages || [];
+      const pagination = response.data?.pagination || response.pagination || {};
+      
+      setHasMore(pagination.hasMore ?? pagination.has_more ?? false);
 
-      const mappedMessages = apiMessages.map((msg: any) => ({
-        id: msg.id,
-        senderId: String(msg.senderId || msg.sender_id),
-        senderName: msg.senderName || msg.sender_name || 'User',
-        content: msg.content || msg.message || '',
-        createdAt: msg.createdAt || msg.created_at || msg.timestamp || new Date().toISOString(),
-        isRead: msg.isRead || msg.is_read || false,
-        isSent: msg.isSent !== false,
-        isOwn: String(msg.senderId || msg.sender_id || '') === String(userId),
-        type: msg.type || 'text',
-      }));
+      const mappedMessages = apiMessages.map((msg: any) => {
+        const msgSenderId = String(msg.senderId || msg.sender_id || '');
+        const isOwn = msg.isOwn ?? (msgSenderId === String(userId));
+        const senderType = msg.senderType || (isOwn ? 'client' : 'therapist'); // Workaround for mixed mapping
+        const isUTC = senderType === 'client';
+        
+        const dateObj = parseDateSafe(msg.createdAt || msg.created_at || msg.timestamp, isUTC);
+        
+        return {
+          id: msg.id,
+          senderId: msgSenderId,
+          senderName: msg.senderName || msg.sender_name || (isOwn ? 'You' : partnerName),
+          content: msg.content || msg.message || '',
+          createdAt: dateObj.toISOString(),
+          isRead: msg.isRead || msg.is_read || false,
+          isSent: msg.isSent !== false,
+          isOwn: isOwn,
+          type: msg.type || 'text',
+        };
+      });
 
       // Explicit ascending sort — deterministic regardless of API response order
       mappedMessages.sort((a: Message, b: Message) =>
@@ -176,8 +208,20 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
         }
       }
 
-      setMessages(mappedMessages);
-      prevMessagesRef.current = mappedMessages;
+      // Functional merge: Ensure we don't wipe out history during background polls
+      setMessages(prev => {
+        const combined = [...prev, ...mappedMessages];
+        // Unique by ID
+        const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+        // Final ascending sort
+        const sorted = unique.sort((a: any, b: any) => 
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        
+        // Update ref for next notification comparison
+        prevMessagesRef.current = sorted;
+        return sorted;
+      });
 
       if (!isSilent) {
         // Initial load: always scroll to bottom
@@ -199,22 +243,74 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
     }
   };
 
-  const markMessagesAsRead = async () => {
-    if (!chatId || !userId) return;
-
+  const loadMoreMessages = async () => {
+    if (!hasMore || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    const nextPage = currentPage + 1;
+    
     try {
-      console.log(`📡 Marking Thread Read -> Chat:${chatId} | User:${userId}`);
-      const response = await markChatAsRead(chatId, String(userId));
-      console.log('✅ Read confirmation synchronized:', JSON.stringify(response));
-    } catch (error: any) {
-      console.error('❌ Error synchronizing thread read status:', error.response?.data || error.message);
+      const response = await getChatMessages(chatId, userId, nextPage);
+      const apiMessages = response.data?.messages || response.messages || [];
+      const pagination = response.data?.pagination || response.pagination || {};
+      
+      if (apiMessages.length > 0) {
+        const mappedOlder = apiMessages.map((msg: any) => {
+          const msgSenderId = String(msg.senderId || msg.sender_id || '');
+          const isOwn = msg.isOwn ?? (msgSenderId === String(userId));
+          const senderType = msg.senderType || (isOwn ? 'client' : 'therapist');
+          const isUTC = senderType === 'client';
+          
+          const dateObj = parseDateSafe(msg.createdAt || msg.created_at || msg.timestamp, isUTC);
+          
+          return {
+            id: msg.id,
+            senderId: msgSenderId,
+            senderName: msg.senderName || msg.sender_name || (isOwn ? 'You' : partnerName),
+            content: msg.content || msg.message || '',
+            createdAt: dateObj.toISOString(),
+            isRead: msg.isRead || msg.is_read || false,
+            isSent: msg.isSent !== false,
+            isOwn: isOwn,
+            type: msg.type || 'text',
+          };
+        });
+
+        // Add older messages to the beginning
+        setMessages(prev => {
+          const combined = [...mappedOlder, ...prev];
+          // Determine unique by ID
+          const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+          // Final ascending sort
+          return unique.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        });
+        
+        setCurrentPage(nextPage);
+      }
+      
+      setHasMore(pagination.hasMore ?? pagination.has_more ?? false);
+    } catch (e) {
+      console.warn('Could not load older messages', e);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await loadMessagesData(false);
+    setCurrentPage(1); // Reset to first page
+    await loadMessagesData(false, 1);
     setIsRefreshing(false);
+  };
+
+  const markMessagesAsRead = async () => {
+    if (!chatId || !userId) return;
+
+    try {
+      await markChatAsRead(chatId, String(userId));
+    } catch (error: any) {
+      console.error('❌ Error synchronizing thread read status:', error.message);
+    }
   };
 
   const scrollToBottom = () => {
@@ -250,12 +346,23 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
     try {
       await sendChatMessage(chatId, String(userId), content);
       await loadMessagesData(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error sending message:', error);
-      toast.show({
-        description: 'Failed to send message',
-        duration: 3000,
-      });
+      
+      const hasEmoji = /\p{Extended_Pictographic}/u.test(content);
+      if (error.response?.status === 500 && hasEmoji) {
+        alert.show({
+          type: 'error',
+          title: 'Emoji Support',
+          message: 'Your message contains emojis. Send without them?',
+        });
+      } else {
+        toast.show({
+          description: error.backendMessage || error.message || 'Failed to send message',
+          duration: 3000,
+        });
+      }
+      
       // Rollback optimism payload if failure resolves
       setMessages(prev => prev.filter(m => m.id !== tempId));
     } finally {
@@ -283,7 +390,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   };
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = parseDateSafe(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -292,7 +399,7 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = parseDateSafe(dateString);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -319,6 +426,8 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
     return currentDate !== previousDate;
   };
 
+
+
   const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const previousMessage = index > 0 ? messages[index - 1] : undefined;
     const showDateSeparator = shouldShowDateSeparator(item, previousMessage);
@@ -338,11 +447,13 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           item.isOwn ? styles.ownMessageContainer : styles.partnerMessageContainer
         ]}>
           {!item.isOwn && (
-            <Avatar
-              source={partnerAvatar}
+            <ISTherapistAvatar
+              therapistId={partnerId}
+              initialAvatar={partnerAvatar}
               size={scale(32)}
               rounded
               containerStyle={styles.messageAvatar}
+              title={getAvatarInitials(partnerName)}
             />
           )}
 
@@ -398,14 +509,15 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
-          {partnerAvatar && (
-            <Avatar
-              source={partnerAvatar}
-              size={scale(40)}
-              rounded
-              containerStyle={styles.headerAvatar}
-            />
-          )}
+          <ISTherapistAvatar
+            therapistId={partnerId}
+            initialAvatar={partnerAvatar}
+            size={scale(40)}
+            rounded
+            containerStyle={styles.headerAvatar}
+            title={getAvatarInitials(partnerName)}
+            titleStyle={{ fontSize: moderateScale(14) }}
+          />
           <View style={styles.headerText}>
             <Text style={styles.headerName}>{partnerName}</Text>
             <Text style={styles.headerStatus}>
@@ -434,14 +546,47 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
-          style={styles.messagesList}
-          contentContainerStyle={styles.messagesContent}
-          showsVerticalScrollIndicator={false}
-          onScroll={(e) => {
-            const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-            isNearBottomRef.current = contentSize.height - contentOffset.y - layoutMeasurement.height < 80;
+          contentContainerStyle={[
+            styles.messagesContent,
+            messages.length === 0 && { flexGrow: 1 }
+          ]}
+          onContentSizeChange={() => {
+            // Auto-scroll to bottom on first load or when sending manual messages
+            if (messages.length > 0 && !isLoadingMore) {
+              scrollToBottom();
+            }
           }}
-          scrollEventThrottle={100}
+          ListHeaderComponent={
+            <View>
+              {hasMore && (
+                <TouchableOpacity 
+                  style={styles.loadMoreButton} 
+                  onPress={loadMoreMessages}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <ActivityIndicator size="small" color={appColors.AppBlue} />
+                  ) : (
+                    <Text style={styles.loadMoreText}>↑ Load older messages</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          }
+          ListEmptyComponent={
+            !isLoading ? (
+              <View style={styles.emptyStateContainer}>
+                <Image 
+                  source={appImages.no_messages || { uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076402.png' }} 
+                  style={styles.emptyStateImage}
+                />
+                <Text style={styles.emptyStateTitle}>No Messages Yet</Text>
+                <Text style={styles.emptyStateText}>
+                  Send a message to start the conversation with {partnerName}.
+                </Text>
+              </View>
+            ) : null
+          }
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -449,6 +594,12 @@ const DMThreadScreen: React.FC<DMThreadScreenProps> = ({ navigation, route }) =>
               colors={[appColors.AppBlue]}
             />
           }
+          onScroll={(e) => {
+            const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+            const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
+            isNearBottomRef.current = distanceFromBottom < 80;
+          }}
+          scrollEventThrottle={16}
         />
 
         {/* Message Composer */}

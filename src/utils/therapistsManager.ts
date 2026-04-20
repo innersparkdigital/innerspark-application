@@ -252,8 +252,11 @@ export const loadTherapistDetails = async (therapistId: string, fallbackTherapis
 
   // 1. Try to get details provided inside the slots endpoint (backend disorganization)
   if (availabilityResult.status === 'fulfilled' && availabilityResult.value.success && availabilityResult.value.data) {
-    // In the /slots payload, data contains the therapist info directly
-    therapistData = availabilityResult.value.data;
+    const data = availabilityResult.value.data;
+    // CRITICAL: Only use ar.data as therapist info if it's an object, not an array of slots
+    if (data && !Array.isArray(data)) {
+      therapistData = data;
+    }
   }
 
   // 2. Fallback to route params if the /slots endpoint itself fails entirely
@@ -295,17 +298,24 @@ export const loadTherapistDetails = async (therapistId: string, fallbackTherapis
     }
 
     // Defensive sorting/mapping
-    availabilitySlots = raw.map((slot: any, idx: number) => ({
-      id: slot.id || slot.slotId || `slot-${idx}`,
-      date: slot.av_date || slot.date || slot.slot_date || '',
-      time: slot.av_time || slot.time || slot.slot_time || slot.startTime || '',
-      available:
-        slot.availability !== undefined
-          ? slot.availability === 1 || slot.availability === true || slot.availability === "1"
-          : slot.available !== undefined
-            ? (slot.available === 1 || slot.available === true || slot.available === "1")
-            : slot.status === 'available' || slot.is_available === true || slot.booked === false,
-    }));
+    availabilitySlots = raw.map((slot: any, idx: number) => {
+      // Prioritize real database IDs. Fallback to index-based integer if missing.
+      // NEVER generate strings like 'slot-0' as the backend requires an INTEGER slot_id.
+      const rawId = slot.id || slot.slotId || slot.slot_id || slot.pk;
+      const id = (rawId !== undefined && rawId !== null) ? Number(rawId) : (idx + 1);
+
+      return {
+        id: isNaN(id) ? (idx + 1) : id,
+        date: slot.av_date || slot.date || slot.slot_date || '',
+        time: slot.av_time || slot.time || slot.slot_time || slot.startTime || '',
+        available:
+          slot.availability !== undefined
+            ? slot.availability === 1 || slot.availability === true || slot.availability === "1"
+            : slot.available !== undefined
+              ? (slot.available === 1 || slot.available === true || slot.available === "1")
+              : slot.status === 'available' || slot.is_available === true || slot.booked === false,
+      };
+    });
   } else {
     console.log('⚠️ Availability request failed (will show empty slots):', (availabilityResult as any).reason?.message);
   }

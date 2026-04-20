@@ -19,7 +19,15 @@ export const getAppointments = async (filters = {}) => {
 /**
  * Book new appointment
  * @param {Object} appointmentData - Appointment details
- * @returns {Promise} Created appointment
+ * @param {string} appointmentData.user_id - Client User ID (Must be String)
+ * @param {string} appointmentData.therapistId - Therapist ID (Must be String)
+ * @param {string} appointmentData.slotId - Time slot ID (Must be String)
+ * @param {string} appointmentData.date - Date (YYYY-MM-DD)
+ * @param {string} appointmentData.time - Time (HH:mm)
+ * @param {string} appointmentData.sessionType - Type of session (e.g. "1")
+ * @param {string} appointmentData.reason - Reason for visit
+ * @param {string} appointmentData.paymentMethod - Payment source (e.g. 'wellness_vault')
+ * @returns {Promise} Created appointment data
  */
 export const bookAppointment = async (appointmentData) => {
     const response = await APIInstance.post('/client/appointments', appointmentData);

@@ -5,7 +5,7 @@ import {
     ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@rneui/themed';
+import { Icon, Skeleton } from '@rneui/themed';
 import { useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { appColors, appFonts } from '../../global/Styles';
@@ -230,8 +230,26 @@ const THEventsScreen = ({ navigation }: any) => {
                 </View>
             </View>
 
-            <Icon type="material" name="chevron-right" size={20} color={appColors.grey5} />
+    <Icon type="material" name="chevron-right" size={20} color={appColors.grey5} />
         </TouchableOpacity>
+    );
+
+    const renderSkeletons = () => (
+        <View style={{ paddingBottom: 20 }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+                <View key={i} style={[styles.eventCard, { marginBottom: 10 }]}>
+                    <Skeleton animation="pulse" width={52} height={60} style={{ borderRadius: 10 }} />
+                    <View style={styles.eventContent}>
+                        <Skeleton animation="pulse" width="80%" height={20} style={{ marginBottom: 6, borderRadius: 4 }} />
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                            <Skeleton animation="pulse" width={60} height={14} style={{ borderRadius: 4 }} />
+                            <Skeleton animation="pulse" width={40} height={14} style={{ borderRadius: 4 }} />
+                        </View>
+                        <Skeleton animation="pulse" width={70} height={18} style={{ borderRadius: 8 }} />
+                    </View>
+                </View>
+            ))}
+        </View>
     );
 
     // ── Stats Bar ──────────────────────────────────────────────────────────────
@@ -328,13 +346,7 @@ const THEventsScreen = ({ navigation }: any) => {
                 })}
             </ScrollView>
 
-            {/* Inline loading bar under filters */}
-            {loading && (
-                <View style={styles.inlineLoader}>
-                    <ActivityIndicator size="small" color={appColors.AppBlue} />
-                    <Text style={styles.inlineLoaderText}>Loading events…</Text>
-                </View>
-            )}
+            {/* Remove inline ActivityIndicator - skeletons handle initial load */}
         </View>
     );
 
@@ -388,11 +400,11 @@ const THEventsScreen = ({ navigation }: any) => {
             />
 
             <FlatList
-                data={events}
+                data={loading ? [] : events}
                 renderItem={renderEvent}
                 keyExtractor={(item) => item.id}
                 ListHeaderComponent={renderListHeader}
-                ListEmptyComponent={renderEmpty}
+                ListEmptyComponent={loading ? renderSkeletons : renderEmpty}
                 ListFooterComponent={renderFooter}
                 contentContainerStyle={{ flexGrow: 1 }}
                 refreshControl={

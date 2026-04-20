@@ -37,16 +37,33 @@ const THChatsScreen = ({ navigation }: any) => {
       const response: any = await getConversations(therapistId);
 
       if (response?.data?.conversations) {
-        const mappedChats = response.data.conversations.map((conv: any) => ({
-          id: conv.clientId, // Required for navigation to works using the clientId
+        const rawChats = response.data.conversations.map((conv: any) => ({
+          id: conv.clientId,
+          uniqueKey: conv.id || conv.clientId,
           clientName: conv.clientName,
           lastMessage: conv.lastMessage,
           time: new Date(conv.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          lastMessageTime: conv.lastMessageTime,
           unread: conv.unreadCount,
           online: conv.isOnline,
           avatar: conv.clientAvatar || '👤',
         }));
-        setChats(mappedChats);
+
+        // De-duplicate by clientId, keeping the most recent one
+        const deDuplicated: any[] = [];
+        const seenClients = new Set();
+        
+        // Sort by time descending first just in case
+        rawChats.sort((a: any, b: any) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime());
+
+        for (const chat of rawChats) {
+          if (!seenClients.has(chat.id)) {
+            seenClients.add(chat.id);
+            deDuplicated.push(chat);
+          }
+        }
+
+        setChats(deDuplicated);
       } else {
         setChats([]);
       }
@@ -127,7 +144,7 @@ const THChatsScreen = ({ navigation }: any) => {
           ) : filteredChats.length > 0 ? (
             filteredChats.map((chat) => (
               <TouchableOpacity
-                key={chat.id}
+                key={chat.uniqueKey}
                 style={styles.chatCard}
                 onPress={() => navigation.navigate('THChatConversationScreen', { chat })}
                 activeOpacity={0.7}

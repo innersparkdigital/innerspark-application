@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, Avatar } from '@rneui/themed';
@@ -21,6 +22,16 @@ import { getChatMessages, sendMessage, markChatAsRead } from '../../../api/thera
 import ISClientAvatar from '../../../components/ISClientAvatar';
 import { sendChatHeartbeat } from '../../../api/client/messages';
 
+// Safe date parsing helper - respects server format without forcing UTC shift
+const parseDateSafe = (dateStr: string, forceUTC = false) => {
+  if (!dateStr) return new Date();
+  // Force UTC only if requested and no timezone indicator is present
+  const safeStr = (forceUTC && !dateStr.includes('Z') && !dateStr.includes('+')) 
+    ? `${dateStr}Z` 
+    : dateStr;
+  return new Date(safeStr);
+};
+
 const THChatConversationScreen = ({ navigation, route }: any) => {
   const { chat } = route.params || {};
   const userDetails = useSelector((state: any) => state.userData.userDetails);
@@ -28,6 +39,8 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -57,43 +70,40 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
     sendHeartbeat();
     const hbInterval = setInterval(() => {
       sendHeartbeat();
+      loadMessages(true); // Poll for new messages every 10s
     }, 10000);
     return () => clearInterval(hbInterval);
   }, []);
 
-  // Scroll to bottom only on first load, not on every messages change
-  const hasScrolledOnceRef = useRef(false);
-  const isNearBottomRef = useRef(true);
-
-  useEffect(() => {
-    if (messages.length > 0 && !hasScrolledOnceRef.current) {
-      hasScrolledOnceRef.current = true;
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, 100);
-    }
-  }, [messages]);
-
-  const loadMessages = async () => {
+  const loadMessages = async (isRefreshing = false) => {
     try {
-      setLoading(true);
+      if (!isRefreshing) setLoading(true);
       const therapistId = userDetails?.userId;
       if (!chat?.id) return;
 
       const response: any = await getChatMessages(chat.id, therapistId);
 
       if (response?.data?.messages) {
-        const mappedMessages = response.data.messages.map((msg: any) => ({
-          id: msg.id,
-          text: msg.content,
-          sender: msg.senderType, // 'client' or 'therapist'
-          timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Unknown',
-          _sortKey: msg.timestamp || '',
-        }));
-        // Explicit ascending sort — guard against API returning newest-first
-        mappedMessages.sort((a: any, b: any) => new Date(a._sortKey).getTime() - new Date(b._sortKey).getTime());
-        setMessages(mappedMessages);
-      } else {
+        const mappedMessages = response.data.messages.map((msg: any) => {
+          const isClient = msg.senderType === 'client';
+          const dateObj = parseDateSafe(msg.timestamp || msg.created_at || msg.createdAt, isClient);
+          return {
+            id: msg.id,
+            text: msg.content,
+            sender: msg.senderType, // 'client' or 'therapist'
+            timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            _sortKey: dateObj.toISOString(),
+          };
+        });
+        // Functional merge: Don't wipe out history during background syncs
+        setMessages(prev => {
+          const combined = [...prev, ...mappedMessages];
+          // Unique by ID
+          const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+          // Final ascending sort
+          return unique.sort((a: any, b: any) => new Date(a._sortKey).getTime() - new Date(b._sortKey).getTime());
+        });
+      } else if (!isRefreshing && !loading) {
         setMessages([]);
       }
     } catch (error: any) {
@@ -102,20 +112,28 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
       setMessages([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadMessages(true);
   };
 
   const handleSend = async () => {
     if (!message.trim() || !chat?.id) return;
 
     // UI Optimistic Update
+    const now = new Date();
     const newMessage = {
-      id: Date.now().toString(),
+      id: `temp-${Date.now()}`,
       text: message.trim(),
       sender: 'therapist',
-      timestamp: 'Sending...',
+      timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      _sortKey: now.toISOString(),
     };
-    setMessages([...messages, newMessage]);
+    setMessages([...messages, newMessage]); 
     const messageToSend = message.trim();
     setMessage('');
 
@@ -128,9 +146,20 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
         // loadMessages(); 
       }
     } catch (error: any) {
-      const errorMessage = error.backendMessage || 'Failed to send message';
-      alert.show({ type: 'error', title: 'Error', message: errorMessage });
-      console.error('Send Error:', error);
+      console.error('❌ Error sending therapist message:', error);
+      
+      const hasEmoji = /\p{Extended_Pictographic}/u.test(messageToSend);
+      if (error.response?.status === 500 && hasEmoji) {
+        alert.show({
+          type: 'error',
+          title: 'Emoji Support',
+          message: 'Your message contains emojis. Send without them?',
+        });
+      } else {
+        const errorMessage = error.backendMessage || error.message || 'Failed to send message';
+        alert.show({ type: 'error', title: 'Error', message: errorMessage });
+      }
+      
       // Remove the optimistic message if it failed
       setMessages(msgs => msgs.filter(m => m.id !== newMessage.id));
     }
@@ -245,11 +274,25 @@ const THChatConversationScreen = ({ navigation, route }: any) => {
             messages.length === 0 && styles.emptyListContent
           ]}
           showsVerticalScrollIndicator={false}
-          onScroll={(e) => {
-            const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-            isNearBottomRef.current = contentSize.height - contentOffset.y - layoutMeasurement.height < 80;
-          }}
           scrollEventThrottle={100}
+          onContentSizeChange={() => {
+            // Automatically scroll to bottom on initial load or content update
+            if (messages.length > 0) {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <ActivityIndicator size="small" color={appColors.AppBlue} style={{ marginVertical: scale(10) }} />
+            ) : null
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[appColors.AppBlue]}
+            />
+          }
           ListEmptyComponent={
             !loading ? (
               <View style={styles.emptyStateContainer}>
@@ -374,7 +417,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     padding: 16,
-    paddingBottom: 8,
+    paddingBottom: 20,
   },
   messageContainer: {
     marginBottom: 12,

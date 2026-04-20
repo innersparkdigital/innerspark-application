@@ -12,10 +12,12 @@ import ISConfirmationModal from '../../../components/ISConfirmationModal';
 import ISAlert, { useISAlert } from '../../../components/alerts/ISAlert';
 import { startAppointmentSession, cancelAppointment, getAppointmentById } from '../../../api/therapist/appointments';
 import { getClientBioData } from '../../../api/therapist/clients';
+import { resolveSessionType } from '../../../utils/appointmentUtils';
 
 const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
   const { appointment } = route.params || {};
   const userDetails = useSelector((state: any) => state.userData.userDetails);
+  const sessionTypes = useSelector((state: any) => state.appointments?.sessionTypes || []);
   const [showActions, setShowActions] = useState(false);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -254,7 +256,9 @@ const THAppointmentDetailsScreen = ({ navigation, route }: any) => {
               {loading && !fullDetails ? (
                 <Skeleton animation="pulse" width={120} height={18} style={{ borderRadius: 4 }} />
               ) : (
-                <Text style={styles.detailValue}>{displayAppointment?.type}</Text>
+                <Text style={styles.detailValue}>
+                  {resolveSessionType(displayAppointment?.type || displayAppointment?.sessionType, sessionTypes)}
+                </Text>
               )}
             </View>
           </View>

@@ -162,6 +162,14 @@ const TherapistDetailScreen: React.FC<TherapistDetailScreenProps> = ({ navigatio
     }
 
     const selectedSession = sessionTypes.find(st => st.id === selectedSessionType);
+
+    console.log('🚀 [ TherapistDetailScreen ] Navigating to Checkout with:', {
+      therapistId: therapist.id,
+      slotId: selectedSlot?.id,
+      sessionId: selectedSession?.id || '1',
+      fullSlot: selectedSlot
+    });
+
     navigation.navigate('BookingCheckoutScreen', {
       therapist,
       selectedSlot: selectedSlot,

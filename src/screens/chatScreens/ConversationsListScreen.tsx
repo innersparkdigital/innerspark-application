@@ -15,10 +15,12 @@ import { appColors, appFonts } from '../../global/Styles';
 import { scale, moderateScale } from '../../global/Scaling';
 import { useToast } from 'native-base';
 import { useSelector, useDispatch } from 'react-redux';
-import { getChats } from '../../api/client/messages';
+import { getChats, markChatAsRead } from '../../api/client/messages';
 import { getImageSource, FALLBACK_IMAGES } from '../../utils/imageHelpers';
 import { humanizeLastSeen } from '../../utils/dateHelpers';
 import ISAlert, { useISAlert } from '../../components/alerts/ISAlert';
+import ISTherapistAvatar from '../../components/ISTherapistAvatar';
+import { getAvatarInitials } from '../../utils/textHelpers';
 
 interface Conversation {
   id: string;
@@ -107,6 +109,11 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
   };
 
   const handleOpenConversation = (conversation: Conversation) => {
+    // Persist read status immediately on tap to ensure synchronization
+    markChatAsRead(conversation.id, String(userId)).catch(err => {
+      console.warn('⚠️ Background read sync failed:', err.message);
+    });
+
     // Optimistically clear the unread badge natively upon open
     setConversations(prev => prev.map(c =>
       c.id === conversation.id ? { ...c, unreadCount: 0 } : c
@@ -119,6 +126,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
       partnerAvatar: conversation.partnerAvatar,
       isOnline: conversation.isOnline,
       lastSeen: conversation.lastSeen,
+      partnerEmail: conversation.partnerEmail,
     });
   };
 
@@ -139,10 +147,7 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
     });
   };
 
-  const getAvatarInitials = (name: string) => {
-    if (!name) return '??';
-    return name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase();
-  };
+
 
   const renderConversationItem = ({ item }: { item: Conversation }) => (
     <TouchableOpacity
@@ -151,21 +156,14 @@ const ConversationsListScreen: React.FC<ConversationsListScreenProps> = ({ navig
       onLongPress={() => handleDeleteConversation(item.id, item.partnerName)}
     >
       <View style={styles.avatarContainer}>
-        {item.partnerAvatar ? (
-          <Avatar
-            source={item.partnerAvatar}
-            size={scale(60)}
-            rounded
-          />
-        ) : (
-          <Avatar
-            title={getAvatarInitials(item.partnerName)}
-            size={scale(60)}
-            rounded
-            containerStyle={{ backgroundColor: appColors.AppBlue }}
-            titleStyle={styles.avatarText}
-          />
-        )}
+        <ISTherapistAvatar
+          therapistId={item.partnerId}
+          initialAvatar={item.partnerAvatar}
+          size={scale(60)}
+          rounded
+          title={getAvatarInitials(item.partnerName)}
+          titleStyle={styles.avatarText}
+        />
         {item.isOnline && <View style={styles.onlineIndicator} />}
       </View>
 

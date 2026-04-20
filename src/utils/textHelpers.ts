@@ -94,4 +94,17 @@ export const truncateText = (text: string, limit: number = 150): string => {
     if (text.length <= limit) return text;
     return text.substring(0, limit).trim() + '...';
 };
-
+/**
+ * Generates initials for a name (e.g. "John Doe" -> "JD").
+ * @param {string} name - The full name.
+ * @returns {string} Uppercase initials.
+ */
+export const getAvatarInitials = (name: string): string => {
+    if (!name) return '??';
+    return name
+        .split(' ')
+        .filter(Boolean)
+        .map(n => n[0])
+        .join('')
+        .toUpperCase();
+};

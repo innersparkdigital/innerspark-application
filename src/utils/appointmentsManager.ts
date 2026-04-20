@@ -178,21 +178,36 @@ export const loadAppointmentDetails = async (appointmentId: string) => {
 /**
  * Book a new appointment
  */
-export const createAppointment = async (appointmentData: any) => {
+export const createAppointment = async (appointmentData: any, explicitUserId?: string | number) => {
   const state = store.getState() as any;
-  const userId = state.userData?.userDetails?.userId || state.user?.userToken?.userId;
+  const userId = explicitUserId || state.userData?.userDetails?.userId || state.user?.userToken?.userId;
 
   try {
-    const finalData: any = { ...appointmentData };
-    if (userId) {
-      finalData.user_id = userId;
+    // Convert IDs back to Numbers to satisfy the database's INTEGER column requirements
+    // shown in the 'Incorrect integer value' SQL error.
+    const finalData: any = {
+      user_id: userId ? Number(userId) : null,
+      therapistId: appointmentData.therapistId ? Number(appointmentData.therapistId) : null,
+      slotId: appointmentData.slotId ? Number(appointmentData.slotId) : null,
+      sessionType: appointmentData.sessionType ? appointmentData.sessionType.toString() : '1',
+      date: appointmentData.date || '',
+      time: appointmentData.time || '',
+      reason: appointmentData.reason || '',
+      paymentMethod: appointmentData.paymentMethod || 'wellness_vault',
+    };
+
+    // Defensive check to prevent sending 'NaN' or other invalid strings to integer columns
+    if (isNaN(finalData.slotId) || finalData.slotId === null) {
+      console.warn('❌ [ appointmentsManager ] Aborting: slotId is NaN', appointmentData.slotId);
+      return { success: false, error: 'Invalid time slot selected. Please refresh and try again.' };
     }
 
-    console.log('📅 Booking new appointment:', finalData);
+    console.log('📅 [ appointmentsManager ] Booking with SQL-aligned payload:', JSON.stringify(finalData, null, 2));
     const response = await bookAppointment(finalData);
+    console.log('📅 [ appointmentsManager ] Booking response RECEIVED:', JSON.stringify(response, null, 2));
 
     if (response.success && response.data) {
-      console.log('✅ Appointment booked successfully:', response.data);
+      console.log('✅ [ appointmentsManager ] Appointment booked successfully:', response.data);
 
       const newAppointment = {
         id: response.data.appointmentId || response.data.id,
@@ -208,11 +223,20 @@ export const createAppointment = async (appointmentData: any) => {
       await loadAppointments();
       return { success: true, data: newAppointment };
     } else {
-      return { success: false, error: response.message || 'Failed to book appointment' };
+      console.warn('⚠️ [ appointmentsManager ] Backend returned success: false', response);
+      // Handle backend returning success: false with 200 OK
+      const errorMessage = response.message || response.error || response.msg || 'Failed to book appointment';
+      return { success: false, error: errorMessage };
     }
   } catch (error: any) {
-    console.log('❌ Error booking appointment:', error?.backendMessage || error?.message);
-    return { success: false, error: error?.backendMessage || error?.message || 'Failed to book appointment' };
+    console.error('❌ [ appointmentsManager ] EXCEPTION booking appointment:', {
+      message: error?.message,
+      backendMessage: error?.backendMessage,
+      status: error?.response?.status,
+      responseData: error?.response?.data,
+    });
+    const errorMessage = error?.backendMessage || error?.message || 'Failed to book appointment';
+    return { success: false, error: errorMessage };
   }
 };
 

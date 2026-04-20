@@ -81,8 +81,10 @@ APIInstance.interceptors.response.use(
         // Handle custom backend errors
         if (error.response && error.response.data) {
             const backendData = error.response.data;
-            if (backendData.message) {
-                error.backendMessage = backendData.message;
+            // Check all common field names for error messages
+            const message = backendData.message || backendData.error || backendData.msg;
+            if (message) {
+                error.backendMessage = message;
             }
             if (backendData.success !== undefined) {
                 error.isBackendError = !backendData.success;
@@ -134,8 +136,10 @@ AuthInstance.interceptors.response.use(
         // Handle custom backend errors
         if (error.response && error.response.data) {
             const backendData = error.response.data;
-            if (backendData.message) {
-                error.backendMessage = backendData.message;
+            // Check all common field names for error messages
+            const message = backendData.message || backendData.error || backendData.msg;
+            if (message) {
+                error.backendMessage = message;
             }
             if (backendData.success !== undefined) {
                 error.isBackendError = !backendData.success;
